@@ -1,7 +1,7 @@
 # network_traffic_modeler_py3
 This is the network traffic modeler written in python 3.  Version 1.2.  All further updates to network_traffic_modeler will be in python3 and in this repository.
 
-Recent improvement: I modified the code to fully leverage networkx for path computation, which makes this code perform very well at scale.  I am testing scale on a model with over 1430 interfaces and 374 nodes.
+Recent improvement: In v1.2 I modified the code to fully leverage networkx for path computation, which makes this code perform very well at scale.  I am testing scale on a model with over 1430 interfaces and 374 nodes.
 
 Other changes: Some code refactoring was necessary to increase consistency and improve user experience.
 
