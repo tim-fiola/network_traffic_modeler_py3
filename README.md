@@ -6,7 +6,7 @@ Recent improvement: I modified the code to fully leverage networkx for path comp
 Other changes: Some code refactoring was necessary to increase consistency and improve user experience.
 
 DESCRIPTION:
-A set of native python APIs to create a network model and run
+A set of native python APIs to create a network model, visualize the model, and run
 network simulations.       
 
 This code allows users to define a layer 3 network topology, define a traffic
