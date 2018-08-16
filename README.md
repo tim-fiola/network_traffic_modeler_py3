@@ -3,6 +3,8 @@ This is the network traffic modeler written in python 3.  Version 1.2.  All furt
 
 Recent improvement: I modified the code to fully leverage networkx for path computation, which makes this code perform very well at scale.  I am testing scale on a model with over 1430 interfaces and 374 nodes.
 
+Other changes: Some code refactoring was necessary to increase consistency and improve user experience.
+
 DESCRIPTION:
 A set of native python APIs to create a network model and run
 network simulations.       
