@@ -47,6 +47,9 @@ Use Cases TO DO:
 
 User experience TO DO:
 - modify __dir__ to not show internal methods
+- modify Node.lat and Node.lon (latitute, longitude) to have guardrails for 
+staying within lat/lon boundaries.  Right now they just serve as holders of 
+coordinate data
 
 Needed optimizations:
 - add guardrails to Demand and Interface attributes (traffic must be a float), etc
@@ -64,3 +67,5 @@ import collections
 
 Version = collections.namedtuple('Version', ['major', 'minor'])
 version = Version(1,2)
+
+__author__ = 'tim_fiola'
