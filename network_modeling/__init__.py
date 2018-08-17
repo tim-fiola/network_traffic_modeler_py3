@@ -1,6 +1,8 @@
 """A set of native python APIs to create a network model and run
 network simulations.       
 
+There are no implied or explicit warranties associated with this app.
+
 This code allows users to define a layer 3 network topology, define a traffic
 matrix, and then run a simulation to determine how the traffic will traverse
 the topology.  If you've used Cariden MATE or WANDL, this code solves for
