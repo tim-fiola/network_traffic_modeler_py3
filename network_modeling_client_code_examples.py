@@ -307,6 +307,19 @@ model1.fail_node('E')
 model1.fail_interface('B-to-D', 'B')
 model1.update_simulation()
 
+# Get a demand and view its path
+print("Get a demand and view its path.")
+dmd_A_D = model1.get_demand_object('A', 'D')
+print("Demand from A to D is")
+print(dmd_A_D)
+print()
+print("The path for dmd_A_D is:")
+for hop in dmd_A_D.path:
+    pprint(hop)
+print()
+
+
+
 t2 = time.time()
 tot_time = t2-t1
 print('tot_time = ', tot_time)
