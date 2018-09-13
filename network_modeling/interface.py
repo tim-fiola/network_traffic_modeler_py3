@@ -6,7 +6,7 @@ class Interface(object):
     """An object representing a Node interface"""
 
     def __init__(self, name, cost, capacity, node_object, remote_node_object,
-                 address):
+                 address = 0):
         self.name = name
         self.cost = cost
         self.capacity = capacity
@@ -18,6 +18,12 @@ class Interface(object):
         self._failed = False
 
         validation_info = []
+        
+        # Validate cost and capacity values
+        if not(isinstance(cost, (int, float))):
+            raise ValueError('Cost must be positive integer or float')
+        if not(isinstance(capacity, (int, float))):
+            raise ValueError('Capacity must be positive integer or float')        
 
     @property
     def _key(self):
@@ -36,15 +42,14 @@ class Interface(object):
 
 
     def __repr__(self):
-        return '%s(name = %r, cost = %s, capacity = %s,\
- node_object = %r, remote_node_object = %r, address = %r, failed = %s)'%(self.__class__.__name__,
+        return '%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
+remote_node_object = %r, address = %r)'%(self.__class__.__name__,
                                            self.name,
                                             self.cost,
                                             self.capacity,
                                             self.node_object,
                                             self.remote_node_object,
-                                            self.address,
-                                            self.failed)
+                                            self.address)
 
     ###### TODO - is this call necessary?! ####
     @staticmethod

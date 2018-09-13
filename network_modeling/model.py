@@ -401,7 +401,9 @@ nodes have duplicate interface names %s"%exception_interfaces
         # TODO - It seems like this part could be optimized
         node_object_list = [node for node in self.node_objects]
         node_names = [node.name for node in node_object_list]
-
+        
+#        pdb.set_trace()
+        
         if node_name in node_names:
             node_index = node_names.index(node_name)
             node_object = node_object_list[node_index]
@@ -470,7 +472,7 @@ nodes have duplicate interface names %s"%exception_interfaces
         
         if demand_to_return == None:
             raise ModelException('no matching demand')
-
+   
     # Interface calls
     def get_interface_object(self, interface_name, node_name):
         """Returns an interface object for specified node name and interface name"""       
@@ -722,10 +724,9 @@ nodes have duplicate interface names %s"%exception_interfaces
         G = self._make_weighted_network_graph()
         
         # Get the paths
-        all_feasible_digraph_paths = nx.all_shortest_paths(G, source_node_name,
-                                                            dest_node_name,
-                                                            weight = 'cost')
-        
+        all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
+                                                            dest_node_name,)
+
         # Convert each path to the Model format
         model_feasible_paths = []
         for digraph_path in all_feasible_digraph_paths:
@@ -951,4 +952,89 @@ nodes have duplicate interface names %s"%exception_interfaces
             self.add_demand(demand['source'], demand['dest'], 
                 demand['traffic'], demand_name)
 
+    @staticmethod
+    def load_model_file(data_file):
+        """Opens a network_modeling data file and returns a model containing
+        the info in the data file.  The data file must be of the appropriate
+        format to produce a valid model"""
+        # Open the file with the data, read it, and split it into lines
+        with open(data_file, 'r') as f:
+            data = f.read()
+    
+        lines = data.splitlines()
+    
+        # Define the interfaces info 
+        int_info_begin_index = 2
+        int_info_end_index = lines.index("NODES_TABLE,,,,") - 1
+        interface_lines = lines[int_info_begin_index:int_info_end_index]
+        interface_set = set([]) 
+        node_list = []
+        for interface_line in interface_lines:
+            node_name, remote_node_name, name, cost, capacity = \
+                        interface_line.split(',')
+            interface_set.add(Interface(name, int(cost), int(capacity), Node(node_name),
+                                Node(remote_node_name)))
+            node_list.append(Node(node_name))
+            node_list.append(Node(remote_node_name))
+        model = Model(interface_set, set(node_list))
+        
+        # Define the nodes info
+        nodes_info_begin_index = int_info_end_index + 3
+        nodes_info_end_index = lines.index("DEMANDS_TABLE,,,,") -1
+        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
+        node_names = set([node.name for node in node_list])
+        for node_line in node_lines:
+            node_info = node_line.split(',')
+            node_name = node_info[0]
+            try:
+                node_lat = int(node_info[1])
+            except ValueError:
+                node_lat = 0
+            try:
+                node_lon = int(node_info[2])
+            except ValueError:
+                node_lon = 0        
+            if node_name not in node_names: # Pick up orphan nodes
+                new_node = Node(node_name)
+                model.add_node(new_node)
+                new_node.lat = node_lat
+                new_node.lon = node_lon
+            else:
+                model.get_node_object(node_name).lat = node_lat
+                model.get_node_object(node_name).lon = node_lon
+        
+        # Define the demands info
+        demands_info_begin_index = nodes_info_end_index + 3
+        demands_lines = lines[demands_info_begin_index:]
+        for demand_line in demands_lines:
+            demand_info = demand_line.split(',')
+            source = demand_info[0]
+            dest = demand_info[1]
+            traffic = int(demand_info[2])
+            name = demand_info[3] 
+            if name == '':
+                demand_name = 'none'
+            else: 
+                demand_name = name 
+            model.add_demand(source, dest, traffic, demand_name)
+            
+        return model
+    
+    def get_demand_objects_source_node(self, source_node_name):
+        """Returns list of demand objects originating at the source node"""
+        demand_list = []
+        for demand in (demand for demand in self.demand_objects):
+            if demand.source_node_object.name == source_node_name:
+                demand_list.append(demand)
+        
+        return demand_list
 
+    def get_demand_objects_dest_node(self, dest_node_name):
+        """Returns list of demands objects originating at the 
+        destination node """
+        demand_list = []
+        for demand in (demand for demand in self.demand_objects):
+            if demand.dest_node_object.name == dest_node_name:
+                demand_list.append(demand)
+        
+        return demand_list        

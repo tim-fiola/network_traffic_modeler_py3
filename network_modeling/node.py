@@ -11,6 +11,12 @@ class Node(object):
         self._failed = False
         self.lat = lat
         self.lon = lon
+        
+        # Validate lat, lon values
+        if (lat > 90 or lat < -90):
+            raise ValueError('lat must be in range -90 to +90')
+        if (lon > 180 or lon < -180):
+            raise ValueError('lon must be in range -180 to +180')
 
     def __repr__(self):
         return 'Node(%r)'%self.name

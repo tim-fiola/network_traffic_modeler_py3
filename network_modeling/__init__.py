@@ -40,6 +40,8 @@ not have any practical bearing on the simulation results
 
 
 Use Cases TO DO:
+- Save an existing model to a file
+- RSVP auto-bandwidth LSP
 - Specific Model calls to
     - Remove a Node
     - Remove an Interface/Circuit
@@ -48,13 +50,14 @@ Use Cases TO DO:
     *** These can all be done now, but require a few API calls to do so
 
 User experience TO DO:
+- new client code that uses the load_model and save_model calls
+- make simple UI
+- for network graph, have option to only show circuits with interfaces above a 
+  certain % utilization (important for scaled networks)
+- add node tags
+- for network graph plot, have option to only show nodes with certain user specified tags
 - modify __dir__ to not show internal methods
-- modify Node.lat and Node.lon (latitute, longitude) to have guardrails for 
-staying within lat/lon boundaries.  Right now they just serve as holders of 
-coordinate data
 
-Needed optimizations:
-- add guardrails to Demand and Interface attributes (traffic must be a float), etc
 """
 
 from .circuit import Circuit
@@ -68,6 +71,6 @@ from .node import Node
 import collections
 
 Version = collections.namedtuple('Version', ['major', 'minor'])
-version = Version(1,2)
+version = Version(1,3)
 
 __author__ = 'tim_fiola'

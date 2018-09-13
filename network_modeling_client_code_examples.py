@@ -132,7 +132,7 @@ print()
 
 # Find all paths between source and destination nodes
 
-print("Find all paths from Node A to Node B:")
+print("Find the number of loop free, unique paths from Node A to Node B:")
 good_paths = model1.get_feasible_paths(source, dest)
 print("There are %i unique paths between %s and %s"%(len(good_paths),
                                                      source, dest))
@@ -191,13 +191,25 @@ print("Add a circuit between Node('A') and Node('G')")
 model1.add_circuit(Node('A'), Node('G'), 'a-to-g', 'g-to-a')
 print()
 
+
 # Add traffic to the model
+shortest_paths_B_D = model1.get_shortest_path('B', 'D')
+print('The shortest paths between nodes B and D are:')
+for path in shortest_paths_B_D['path']:
+    pprint(path)
+    print()
+print('These paths both have a cost of', shortest_paths_B_D['cost'])
+print()
 print('Adding 100 traffic from Node B to Node D:')
 model1.add_demand('B', 'D', 100)
 model1.update_simulation()
 print('Here is the interface traffic after adding the traffic:')
+print('Notice the difference in traffic - ')
+print('Each path has 50 additional traffic: B-to-D and (B-to-E and E-to-D)')
 model1.display_interfaces_traffic()
 print()
+print()
+
 
 # Return an interface object
 print("Get an interface object via interface name and node name:")
@@ -238,13 +250,8 @@ print()
 print("Now unfail Node('D')")
 model1.unfail_node('D')
 print()
-
-# Get Node('D')'s interfaces
-print("Here are Node('D')'s interfaces:")
-pprint(model1.get_node_interfaces('D'))
-print()
-
 model1.update_simulation()
+
 
 print("Here is the interface traffic after Node('D') is restored:")
 print(model1.display_interfaces_traffic())
@@ -253,28 +260,6 @@ print()
 # Unfail the B-to-A interface and display traffic
 print('Unfail the interface from Node B to Node A')
 model1.unfail_interface('B-to-A', 'B', True )
-model1.update_simulation()
-model1.display_interfaces_traffic()
-print()
-
-# Fail Nodes 'A' and 'G' and display traffic
-print('Fail Nodes A and G and display the interface traffic:')
-model1.fail_node('G')
-model1.fail_node('A')
-model1.update_simulation()
-model1.display_interfaces_traffic()
-print()
-
-# Unfail Node('G') and display traffic
-print('Unfail Node("G") and display traffic:')
-model1.unfail_node('G')
-model1.update_simulation()
-model1.display_interfaces_traffic()
-print()
-
-# Unfail Node('A') and display traffic
-print("Unfail Node('A') and display traffic:")
-model1.unfail_node('A')
 model1.update_simulation()
 model1.display_interfaces_traffic()
 print()
@@ -327,6 +312,7 @@ print('tot_time = ', tot_time)
 graph_network.make_utilization_graph_neat(model1, 
                                         'node_e_and_link_B-to-D_failed',
                                           display_plot=True)
+
 
 
 
