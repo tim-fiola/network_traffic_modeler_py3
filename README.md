@@ -1,9 +1,12 @@
 # network_traffic_modeler_py3
 This is the network traffic modeler written in python 3.  Version 1.2.  All further updates to network_traffic_modeler will be in python3 and in this repository.
 
-The big add in this commit is the addition of a simple, menu-based UI.  Simply download this repository and run the simple_user_interface.py script.  Load up either of the sample network models.  
+The big adds in this commit are:
+- the addition of a simple, menu-based UI.  Simply download this repository and run the simple_user_interface.py script.  Load up either of the sample network models.  
+- a standardized file format for the network model data
+- ability to load a model from a network model file
 
-The UI is specifically designed to:
+The UI is specifically designed to address common modeling use cases:
 - provide quick linkage between related objects: Nodes, interfaces, and demands (traffic)
 - allow the user to explore the shortest paths and all feasible (loop free) paths between selected nodes
 - examine traffic on interfaces above a specified utilization percentage
