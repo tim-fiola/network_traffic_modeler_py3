@@ -1,32 +1,14 @@
 # network_traffic_modeler_py3
 This is the network traffic modeler written in python 3.  Version 1.2.  All further updates to network_traffic_modeler will be in python3 and in this repository.
 
-Recent improvement: In v1.2 I modified the code to fully leverage networkx for path computation, which makes this code perform very well at scale.  I am testing scale on a model with over 1430 interfaces and 374 nodes.
+The big add in this commit is the addition of a simple, menu-based UI.  Simply download this repository and run the simple_user_interface.py script.  Load up either of the sample network models.  
 
-Other changes: Some code refactoring was necessary to increase consistency and improve user experience.
+The UI is specifically designed to:
+- provide quick linkage between related objects: Nodes, interfaces, and demands (traffic)
+- allow the user to explore the shortest paths and all feasible (loop free) paths between selected nodes
+- examine traffic on interfaces above a specified utilization percentage
 
-DESCRIPTION:
-A set of native python APIs to create a network model, visualize the model, and run
-network simulations.       
 
-This code allows users to define a layer 3 network topology, define a traffic
-matrix, and then run a simulation to determine how the traffic will traverse
-the topology.  If you've used Cariden MATE or WANDL, this code solves for
-some of the same basic use cases those do (but those solve for much
-more as well).
-
-Changes to the topology can be done to simulate new routers, circuits,
-circuit capacity, network failures, etc.
-Changes to the traffic matrix can be done to simulate increases/decreases
-in existing traffic or additional traffic matrix entries.
-
-Examine and run the client code to get an understanding of how this code works.
-
-Currently this modeling code supports simple OSPF/ISIS routing and only layer 3.  
-There is no RSVP or layer 1 SRLG support at the moment.
-
-This code should perform well at scale as it leverages path calculations 
-from the networkx module.
 
 Use cases include:
   - simulating how traffic will transit your layer 3 network, given a
@@ -44,6 +26,9 @@ NOTES:
 - interface addresses are only used to match interfaces into circuits and do
 not have any practical bearing on the simulation results
 
+Capabilities TO DO:
+- Add RSVP auto-bandwidth capabilities
+- Enable UI to fail nodes/interfaces
 
 Use Cases TO DO:
 - Specific Model calls to
