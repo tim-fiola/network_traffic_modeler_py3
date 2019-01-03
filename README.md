@@ -22,10 +22,17 @@ circuit capacity, network failures, etc.
 Changes to the traffic matrix can be done to simulate increases/decreases
 in existing traffic or additional traffic matrix entries.
 
-Examine and run the client code to get an understanding of how this code works.
+**TO GET STARTED:
+- Simply run one of the client code examples from the CLI
+- OR - To use the simple UI:
+    - Run simple_user_interface.py from the CLI
+    - When prompted in the UI, load the sample_network_model_file.csv file
+    - Explore the network topology and traffic paths in the UI using the various tabs 
+      dropdown menus on each tab
+=========================================================
 
 Currently this modeling code supports simple OSPF/ISIS routing and only layer 3.  
-There is no RSVP or layer 1 SRLG support at the moment.
+There is no RSVP or layer 1 SRLG support at the moment, but that is in development.
 
 This code should perform well at scale as it leverages path calculations 
 from the networkx module.
