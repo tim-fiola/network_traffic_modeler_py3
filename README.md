@@ -55,8 +55,9 @@ NOTES:
   not have any practical bearing on the simulation results
 
 
-======== TO DO ===========
-simple_user_interface.py TO DO:
+======== TODO ===========
+
+simple_user_interface.py TODO:
 - Select multiple points on interactive graph and drag to new position
 - better notification to user if model file has a problem in simple ui
 - fail node or interface from simple ui
@@ -68,7 +69,7 @@ simple_user_interface.py TO DO:
 - remove node from simple ui
 - save model from simple ui
 
-API TO DO:
+API TODO:
 - a save_model call
 - optimize model convergence by creating a networkx model once and routing
   demands across it versus the current method that creates the networkx topology
