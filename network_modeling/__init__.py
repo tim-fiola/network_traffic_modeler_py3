@@ -3,6 +3,12 @@ network simulations.
 
 There are no implied or explicit warranties associated with this app.
 
+**This code now features an interactive network graph capability that lets the
+user:
+    - move interface endpoints for better viewing
+    - filter visualization to interfaces with a certain % utilization(s)
+    - zoom and pan 
+
 This code allows users to define a layer 3 network topology, define a traffic
 matrix, and then run a simulation to determine how the traffic will traverse
 the topology.  If you've used Cariden MATE or WANDL, this code solves for
@@ -32,31 +38,54 @@ Use cases include:
     - adding a new node with links
     - changing a link's capacity
     - adding a new traffic matrix entry (demand) to the traffic matrix
-    - increasing/decreasing the magnitude of an existing demand in the traffic matrix failover       
+    - increasing/decreasing the magnitude of an existing demand in the 
+      traffic matrix failover       
 
 NOTES:
 - interface addresses are only used to match interfaces into circuits and do
-not have any practical bearing on the simulation results
+  not have any practical bearing on the simulation results
 
 
-Use Cases TO DO:
-- Save an existing model to a file
+======== TO DO ===========
+simple_user_interface.py TO DO:
+- Select multiple points on interactive graph and drag to new position
+- better notification to user if model file has a problem in simple ui
+- fail node or interface from simple ui
+- add demand from simple ui
+- remove demand from simple ui
+- add circuit from simple ui
+- remove circuit from simple ui
+- add node from simple ui
+- remove node from simple ui
+- save model from simple ui
+
+API TO DO:
+- a save_model call
+- optimize model convergence by creating a networkx model once and routing
+  demands across it versus the current method that creates the networkx topology
+  for each demand
+- new client code that uses a save_model call
+- embed node label in interactive network graph so label drags with node point
+- Node tags
+    - add node tags
+    - for network graph plot, have option to only show nodes with 
+      certain user specified tags
+- modify __dir__ to not show internal methods
 - RSVP auto-bandwidth LSP
 - Specific Model calls to
     - Remove a Node
     - Remove an Interface/Circuit
     - Remove a demand
     - Change demand magnitude
-    *** These can all be done now, but require a few API calls to do so
+    *** These can all be done now, but require a few API calls to do s
 
-User experience TO DO:
-- new client code that uses the load_model and save_model calls
-- make simple UI
+
+Completed enhancements since last release
+- make interactive network plot - done
 - for network graph, have option to only show circuits with interfaces above a 
-  certain % utilization (important for scaled networks)
-- add node tags
-- for network graph plot, have option to only show nodes with certain user specified tags
-- modify __dir__ to not show internal methods
+  certain % utilization (important for scaled networks) - done
+- new client code that uses the load_model call - done
+
 
 """
 
@@ -67,10 +96,12 @@ from .interface import Interface
 from .model import Model
 from .model_exception import ModelException
 from .node import Node
+from .rsvp_lsp import RSVP_LSP
+from .modeling_utilities import *
 
 import collections
 
 Version = collections.namedtuple('Version', ['major', 'minor'])
-version = Version(1,3)
+version = Version(1,4)
 
 __author__ = 'tim_fiola'

@@ -1,6 +1,10 @@
 """An object representing a Node interface"""
 
 from .circuit import Circuit
+from .rsvp_lsp import RSVP_LSP
+from .model_exception import ModelException
+import pdb
+
 
 class Interface(object):
     """An object representing a Node interface"""
@@ -14,8 +18,9 @@ class Interface(object):
         self.remote_node_object = remote_node_object
         self.address = address
         self.traffic = 0.0
-
         self._failed = False
+        self.reserved_bandwidth = 0
+#        self._reservable_bandwidth = self.capacity - self.reserved_bandwidth
 
         validation_info = []
         
@@ -35,7 +40,11 @@ class Interface(object):
         if not isinstance(other_object, Interface):
             return NotImplemented
 
-        return self.__dict__ == other_object.__dict__
+        return [self.node_object, self.remote_node_object, self.name, 
+            self.capacity, self.address] == [other_object.node_object, 
+                other_object.remote_node_object, other_object.name, 
+                other_object.capacity, other_object.address]
+        #return self.__dict__ == other_object.__dict__
     
     def __hash__(self):
         return hash(tuple(sorted(self.__dict__.items())))
@@ -52,17 +61,34 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
                                             self.address)
 
     ###### TODO - is this call necessary?! ####
-    @staticmethod
-    def get_interface(interface_name, node_name, model):
-        """Returns an interface object for specified node name and interface name"""
+    #@staticmethod
+    #def get_interface(interface_name, node_name, model):
+        #"""Returns an interface object for specified node name and interface name"""
 
-        for interface in (interface for interface in model.interface_objects):
-            if interface.node_object.name == node_name and \
-               interface.name == interface_name:
-                needed_interface = interface
-                break
+        #for interface in (interface for interface in model.interface_objects):
+            #if interface.node_object.name == node_name and \
+               #interface.name == interface_name:
+                #needed_interface = interface
+                #break
 
-        return needed_interface
+        #return needed_interface
+
+    @property
+    def reservable_bandwidth(self):
+        """Amount of bandwidth available for rsvp lsp reservation"""
+#        pdb.set_trace() #Reservable_bandwidth is not updating 
+        
+        #return self._reservable_bandwidth
+        return self.capacity - self.reserved_bandwidth
+        
+    #@reservable_bandwidth.setter
+    #def reservable_bandwidth(self, res_bw):
+        ### make sure it stays greater than 0   
+        #if self.capacity - self.reserved_bandwidth >= 0:
+            #self._reservable_bandwidth = self.capacity - self.reserved_bandwidth
+        #else:
+            #self._reservable_bandwidth = 0
+            
         
     @property
     def failed(self):
@@ -138,45 +164,16 @@ unfailed interface on failed node"
                       'and', self, 'fail validation checks'
             raise ModelException(message)
 
-    def get_circuit(self, model):
-        """Returns the circuit that an interface is associated with"""
-        unknown_interface_node_object = self.remote_node_object
-        address = self.address
+    def get_circuit_object(self, model):
+        """Returns the circuit from the model that an 
+        interface is associated with."""
+        
+        ckt = model.get_circuit_object_from_interface(self.name, 
+                                                        self.node_object.name)
+        
+        return ckt
+        
 
-        circuit_found = False
-
-        for candidate_interface in model.interface_objects:
-            if candidate_interface.node_object == unknown_interface_node_object \
-               and candidate_interface.address == address:
-                unknown_interface = candidate_interface
-                circuit_found = True
-                break
-      
-        else:
-            message = self, 'has no corresponding interface in the \
-network_interfaces table'
-            raise ModelException(message)
-
-        if circuit_found == True:
-            # double check
-            if not(unknown_interface.remote_node_object == self.node_object):
-                message = 'Internal Validation Error:', self ,' and', \
-                unknown_interface, ' do not match up in the network_interfaces \
-        table for the (node, remote_node, address):', \
-        unknown_interface.remote_node_object, self.node_object, \
-        unknown_interface.remote_node_object == self.node_object
-                raise ModelException(message)
-
-            # Create the circuit
-            interface_a_key = self._key
-            interface_b_key = unknown_interface._key
-
-            return Circuit(interface_a_key, interface_b_key)
-
-        else:
-            message = self, 'has no corresponding interface in the \
-network_interfaces table'
-            raise ModelException(message)
 
     def demands(self, model):
         """Returns list of demands that egress the interface"""
@@ -184,7 +181,12 @@ network_interfaces table'
         demands = model.demand_objects
         for demand in demands:
             for demand_path in demand.path:
-                if self in demand_path:
+                # If demand_path is an RSVP LSP, look at the LSP path
+                if isinstance(demand_path, RSVP_LSP):
+                    for dmd in demand_path.demands_on_lsp(model):
+                        dmd_list.append(dmd)
+                # If demand_path is not an LSP, look for self in demand_path
+                elif self in demand_path:
                     dmd_list.append(demand)
 
         return dmd_list
