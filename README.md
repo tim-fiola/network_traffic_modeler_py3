@@ -29,7 +29,8 @@ in existing traffic or additional traffic matrix entries.
     - When prompted in the UI, load the sample_network_model_file.csv file
     - Explore the network topology and traffic paths in the UI using the various tabs 
       dropdown menus on each tab
-=========================================================
+
+======================USE CASES=============================
 
 Currently this modeling code supports simple OSPF/ISIS routing and only layer 3.  
 There is no RSVP or layer 1 SRLG support at the moment, but that is in development.
@@ -53,7 +54,6 @@ Use cases include:
 NOTES:
 - interface addresses are only used to match interfaces into circuits and do
   not have any practical bearing on the simulation results
-
 
 ======== TODO ===========
 
@@ -89,6 +89,7 @@ API TODO:
     - Change demand magnitude
     *** These can all be done now, but require a few API calls to do s
 
+=============ADDED FEATURES==========
 
 Completed enhancements since last release
 - make interactive network plot - done
