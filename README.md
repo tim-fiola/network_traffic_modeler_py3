@@ -7,6 +7,7 @@ There are no implied or explicit warranties associated with this app.
 
 **This code now features an interactive network graph capability that lets the
 user:
+
     - move interface endpoints for better viewing
     - filter visualization to interfaces with a certain % utilization(s)
     - zoom and pan 
