@@ -14,7 +14,7 @@ import networkx as nx
 
 from networkx.readwrite import json_graph
 import json
-import http_server
+import network_modeling.http_server
 
 import pdb
 
@@ -46,7 +46,7 @@ def _draw_node_labels(G):
             labels={data['name']:data['name'] \
                     for data in G.nodes.values()})
 
-    
+
 
 def make_network_graph(model, graph_file_name, display_plot=False):
     """
@@ -61,7 +61,7 @@ def make_network_graph(model, graph_file_name, display_plot=False):
 
     lat_lon for a node is simply y,x coordinates at this point; the coordinates
     are not normalized to -90<=lat<=90 or -180<=lon<=180 at this point
-    
+
     """
 
     # Get edge and node names from the model
@@ -80,20 +80,20 @@ def make_network_graph(model, graph_file_name, display_plot=False):
         lat_lon = (node.lat, node.lon)
         nx.set_node_attributes(G, {name: lat_lon}, 'pos')
         nx.set_node_attributes(G, {name: name}, 'name')
-        
+
     model_nodes_in_up_status = model.get_non_failed_node_objects()
-    model_nodes_in_down_status = model.get_failed_node_objects()    
+    model_nodes_in_down_status = model.get_failed_node_objects()
 
     # Draw the green/up network nodes
     nx.draw_networkx_nodes(G, pos=nx.get_node_attributes(G, 'pos'),
-                    nodelist = [node.name for node in model_nodes_in_up_status],                       
+                    nodelist = [node.name for node in model_nodes_in_up_status],
                     node_color='g')
 
     # Draw the red/failed network nodes
     nx.draw_networkx_nodes(G, pos=nx.get_node_attributes(G, 'pos'),
                 nodelist = [node.name for node in model_nodes_in_down_status],
                 node_color='r')
-   
+
     # Add the node labels
     nx.draw_networkx_labels(G, pos=nx.get_node_attributes(G, 'pos'),
             labels={data['name']:data['name'] \
@@ -125,7 +125,7 @@ def make_network_graph(model, graph_file_name, display_plot=False):
 
     # Add plot title
     plt.title(graph_file_name)
-    
+
     # Save the graph file
     plt.savefig(graph_file_name)
 
@@ -157,8 +157,8 @@ def make_utilization_graph_neat(model, graph_file_name, display_plot=False):
 
     lat_lon for a node is simply y,x coordinates at this point; the coordinates
     are not normalized to -90<=lat<=90 or -180<=lon<=180 at this point
-    
-    """    
+
+    """
 
     # Define a graph
     G = nx.DiGraph()
@@ -223,7 +223,7 @@ def make_utilization_graph_neat(model, graph_file_name, display_plot=False):
         new_midpoint_edges = [(midpoint_node, node_A), (midpoint_node, node_B)]
         G.add_edges_from(new_midpoint_edges)
 
-        # Draw the edges on the graph ### add the labels        
+        # Draw the edges on the graph ### add the labels
         nx.draw_networkx_edges(G, pos=nx.get_node_attributes(G, 'pos'),
 		       edgelist=[(midpoint_node, node_A)],
                                edge_color=int_colors[edge_1_name],
@@ -236,10 +236,10 @@ def make_utilization_graph_neat(model, graph_file_name, display_plot=False):
         # Determine the labels
         midpoint_label = {midpoint_node:midpoint_node}
         midpoint_pos = {midpoint_node:G.node[midpoint_node]['pos']}
-    
+
     # Draw node labels and nodes
     _draw_node_labels(G)
-    
+
     # Draw non-failed nodes
     non_failed_node_names = [node.name for node in model.node_objects \
                              if node.failed == False]
@@ -250,7 +250,7 @@ def make_utilization_graph_neat(model, graph_file_name, display_plot=False):
     failed_node_names = [node.name for node in model.get_failed_node_objects()]
     nx.draw_networkx_nodes(G, pos=nx.get_node_attributes(G, 'pos'),
                            nodelist=failed_node_names,
-                           node_color='grey', edgecolors='black')    
+                           node_color='grey', edgecolors='black')
 
     # Prepare the legend - TODO this could be automated better
     dv = mlines.Line2D([],[], color = 'darkviolet', label = '100% <= util',
@@ -279,7 +279,7 @@ def make_utilization_graph_neat(model, graph_file_name, display_plot=False):
 
     # Save the plot pic
     plt.savefig(graph_file_name)
-    
+
     if display_plot == True:
         # Display the plot
         plt.show()
@@ -304,8 +304,8 @@ def make_utilization_graph_curves(model, graph_file_name):
 
     lat_lon for a node is simply y,x coordinates at this point; the coordinates
     are not normalized to -90<=lat<=90 or -180<=lon<=180 at this point
-    
-    """    
+
+    """
 ##    arrow_style = "->"
 
     G = nx.MultiDiGraph()
@@ -313,7 +313,7 @@ def make_utilization_graph_curves(model, graph_file_name):
     edges = ((circuit.interface_a.node_object.name,
           circuit.interface_b.node_object.name) for circuit in \
          model.get_circuit_objects())
-    
+
     G.add_edges_from(edges)
 
 
@@ -336,8 +336,8 @@ def make_utilization_graph_curves(model, graph_file_name):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.set_facecolor('tan')
-    
-    # Print the failed nodes 
+
+    # Print the failed nodes
     nx.draw_networkx_nodes(G, pos=nx.get_node_attributes(G, 'pos'),
                            nodelist=failed_node_names, node_color='grey',
                            edgecolors='darkred')
@@ -369,7 +369,7 @@ def make_utilization_graph_curves(model, graph_file_name):
                     int1.remote_node_object.name)
         edge_2_name = (int2.node_object.name,
                     int2.remote_node_object.name)
-        
+
         int_colors = {}
 
         # Assign utilization color to interface
@@ -377,7 +377,7 @@ def make_utilization_graph_curves(model, graph_file_name):
             if int1.utilization*100 >= item[1]:
                 int_colors[edge_1_name] = item[0]
                 break
-        
+
         for item in util_ranges_2:
             if int2.utilization*100 >= item[1]:
                 int_colors[edge_2_name] = item[0]
@@ -422,7 +422,7 @@ def make_utilization_graph_curves(model, graph_file_name):
         # Add the edge labels at the midpoint of straight line between
         # the source,dest nodes
         #<do this>
-        
+
 
     # Draw node labels and nodes
     draw_node_labels(G)
@@ -432,20 +432,20 @@ def make_utilization_graph_curves(model, graph_file_name):
                            nodelist=non_failed_node_names,
                            node_color='cadetblue', edgecolors='black')
 
-   
+
     # Display the plot
     plt.show()
 
 
 
 def interactive_graph(model, graph_file_name):
-    
+
     G = nx.DiGraph()
 
     edges = ((circuit.interface_a.node_object.name,
           circuit.interface_b.node_object.name) for circuit in \
          model.get_circuit_objects())
-    
+
     G.add_edges_from(edges)
 
 
@@ -468,8 +468,8 @@ def interactive_graph(model, graph_file_name):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.set_facecolor('tan')
-    
-    # Print the failed nodes 
+
+    # Print the failed nodes
     nx.draw_networkx_nodes(G, pos=nx.get_node_attributes(G, 'pos'),
                            nodelist=failed_node_names, node_color='grey',
                            edgecolors='darkred')
@@ -501,7 +501,7 @@ def interactive_graph(model, graph_file_name):
                     int1.remote_node_object.name)
         edge_2_name = (int2.node_object.name,
                     int2.remote_node_object.name)
-        
+
         int_colors = {}
 
         # Assign utilization color to interface
@@ -509,7 +509,7 @@ def interactive_graph(model, graph_file_name):
             if int1.utilization*100 >= item[1]:
                 int_colors[edge_1_name] = item[0]
                 break
-        
+
         for item in util_ranges_2:
             if int2.utilization*100 >= item[1]:
                 int_colors[edge_2_name] = item[0]
@@ -554,7 +554,7 @@ def interactive_graph(model, graph_file_name):
         # Add the edge labels at the midpoint of straight line between
         # the source,dest nodes
         #<do this>
-        
+
 
     # Draw node labels and nodes
     _draw_node_labels(G)
@@ -563,15 +563,15 @@ def interactive_graph(model, graph_file_name):
     nx.draw_networkx_nodes(G, pos=nx.get_node_attributes(G, 'pos'),
                            nodelist=non_failed_node_names,
                            node_color='cadetblue', edgecolors='black')
-    
+
     for n in G:
         G.node[n]['name'] = n
-        
 
-       
+
+
     d = json_graph.node_link_data(G)
 
-    pdb.set_trace()     
+    pdb.set_trace()
 
     json.dump(d, open('force/force.json', 'w'))
     http_server.load_url('force/force.html')
