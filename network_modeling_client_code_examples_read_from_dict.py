@@ -5,7 +5,7 @@ Client code to demonstrate how to use the network_modeling classes
 from network_modeling import Model
 from network_modeling import Circuit
 from network_modeling import Demand
-from network_modeling import graph_network
+from network_modeling import graph_network_interactive
 from network_modeling import Interface
 from network_modeling import ModelException
 from network_modeling import Node
@@ -219,7 +219,7 @@ print()
 
 # Find the circuit for the interface
 print("The circuit for Interface(Node('A'), 'A-to-B') is")
-ckt_object = interface_object.get_circuit(model1)
+ckt_object = interface_object.get_circuit_object(model1)
 print(ckt_object)
 print()
 
@@ -266,7 +266,7 @@ print()
 
 # test get_circuit call from Interface object
 int1 = model1.get_interface_object('A-to-B', 'A')
-ckt1 = int1.get_circuit(model1)
+ckt1 = int1.get_circuit_object(model1)
 print("The circuit associated with %s is %s"%(int1, ckt1))
 print()
 
@@ -308,10 +308,10 @@ print()
 t2 = time.time()
 tot_time = t2-t1
 print('tot_time = ', tot_time)
+print()
 
-graph_network.make_utilization_graph_neat(model1, 
-                                        'node_e_and_link_B-to-D_failed',
-                                          display_plot=True)
+print("Making interactive network graph in browser.")
+graph_network_interactive.make_interactive_network_graph(model1)
 
 
 

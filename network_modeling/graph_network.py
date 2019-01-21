@@ -14,7 +14,7 @@ import networkx as nx
 
 from networkx.readwrite import json_graph
 import json
-import http_server
+#import http_server
 
 import pdb
 
@@ -439,6 +439,7 @@ def make_utilization_graph_curves(model, graph_file_name):
 
 
 def interactive_graph(model, graph_file_name):
+    """Dont' use.  Dead end. """
     
     G = nx.DiGraph()
 
@@ -569,9 +570,7 @@ def interactive_graph(model, graph_file_name):
         
 
        
-    d = json_graph.node_link_data(G)
+    nld = json_graph.node_link_data(G)
 
-    pdb.set_trace()     
-
-    json.dump(d, open('force/force.json', 'w'))
+    json.dump(nld, open('force/force.json', 'w'))
     http_server.load_url('force/force.html')

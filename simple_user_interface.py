@@ -8,7 +8,8 @@ from network_modeling import Interface
 from network_modeling import Demand
 from network_modeling import Node 
 from network_modeling import graph_network
- 
+from network_modeling import graph_network_interactive 
+
 from tkinter import ttk as ttk
 from tkinter import *
 from tkinter import filedialog
@@ -16,6 +17,9 @@ from tkinter import filedialog
 import re
 
 import pdb
+
+
+background_color = 'tan'
 
 def open_file():
     """Opens the file that describes the Model and allows user to save
@@ -63,27 +67,21 @@ def open_file():
     graph_network_button["text"] = "Push to create network graph"
     # Don't add the trailing () or this will execute immediately/automatically
 
-    graph_network_button["command"] = create_network_graph_and_refresh 
+    graph_network_button["command"] = create_interactive_network_graph_and_refresh 
     
     if network_graph_file.get() != '':
         graph_label_text = "Graph file saved at: "+network_graph_file.get()
         graph_file_label = Label(label_frame, text=graph_label_text)
         graph_file_label.grid(row=13, column=0, sticky='W')
-    
-    
-        
-        
+
+#def create_network_graph():
+    #"""Makes a network graph"""
 
 
-
-def create_network_graph():
-    """Makes a network graph"""
-
-
-    network_graph_file.set(filedialog.asksaveasfilename(initialdir="/",
-                        title = "Select or Create file:"))
-    graph_network.make_utilization_graph_neat(model, network_graph_file.get(),
-                        display_plot=False)
+    #network_graph_file.set(filedialog.asksaveasfilename(initialdir="/",
+                        #title = "Select or Create file:"))
+    #graph_network.make_utilization_graph_neat(model, network_graph_file.get(),
+                        #display_plot=False)
     
 def create_network_graph_and_refresh():
     """Makes a network graph and refreshes open_file_tab"""
@@ -94,13 +92,15 @@ def create_network_graph_and_refresh():
     graph_network.make_utilization_graph_neat(model, network_graph_file.get(),
                         display_plot=False)
     open_file()
-     
-        
+    
+def create_interactive_network_graph_and_refresh():
+    """Makes an interactive network graph and refreshes open_file_tab"""  
+    graph_network_interactive.make_interactive_network_graph(model)
+          
 def set_active_interface_from_listbox(event):
     """Sets the selected interface value from a listbox to the 
     active_interface"""
     w = event.widget
-    print(w) #debug
     value = (w.curselection()) # TODO -- comment this out and test
     value_position = (w.curselection())
     
@@ -113,8 +113,7 @@ def set_active_interface_from_listbox(event):
     selected_interface_value = value_in_position
     
     selected_interface.set(selected_interface_value)
-    print(selected_interface.get())#debug
-    
+   
     # Refresh the tabs
     # TODO - add the destroy() function?
     examine_selected_node()
@@ -124,11 +123,9 @@ def set_active_interface_from_listbox(event):
 def set_active_demand_from_listbox(event):
     """Sets the selected demand value from a listbox to the active_demand"""
     w = event.widget
-    print(w) #debug
     value = (w.curselection()) # get the current selection
     value_position = (w.curselection()) # get the position of the current selection
     selected_demand.set(w.get(value_position)) # set selected_demand to the current selection
-    print(selected_demand.get())#debug 
     
     # Try to delete the Node Demand Info labelframe to clear the demand paths
     for thing in demand_tab.grid_slaves():
@@ -246,7 +243,7 @@ def display_selected_objects(canvas_object, row_, column_):
         pass
 
 
-    selected_object_frame = LabelFrame(canvas_object, 
+    selected_object_frame = LabelFrame(canvas_object, background=background_color,
                                 text="Selected Interface, Demand, and Node")
     selected_object_frame.grid(column=column_, row=row_, columnspan=3, pady=10)
     selected_object_frame.column_width=40
@@ -254,31 +251,32 @@ def display_selected_objects(canvas_object, row_, column_):
     selected_object_frame.columnconfigure(1, weight=2)
     selected_object_frame.columnconfigure(2, weight=1)
     
-    Label(selected_object_frame, text='Name').grid(row=row_+1, column=1)
-    Label(selected_object_frame, text='Status').grid(row=row_+1, column=2)
-    
-    Label(selected_object_frame, text="Selected Node:").grid(row=row_+2, 
-                                                column=0, sticky='W')
+    Label(selected_object_frame, text='Name', 
+            background=background_color).grid(row=row_+1, column=1)
+    Label(selected_object_frame, text='Status', 
+            background=background_color).grid(row=row_+1, column=2)
+            
+    Label(selected_object_frame, text="Selected Node:", 
+            background=background_color).grid(row=row_+2, column=0, sticky='W')
     Label(selected_object_frame, text=selected_node.get(), width=52, 
-                borderwidth=1, relief="solid").grid(row=row_+2, column=1)
-    Label(selected_object_frame, text=node_status,).grid(row=row_+2, 
-                                                        column=2, sticky='E')
-                                                        
-    Label(selected_object_frame, text="Selected Interface:").grid(row=row_+3, 
-                                                    column=0, sticky='W')
+            borderwidth=1, relief="solid").grid(row=row_+2, column=1)
+    Label(selected_object_frame, text=node_status, 
+            background=background_color).grid(row=row_+2, column=2, sticky='E')
+            
+    Label(selected_object_frame, text="Selected Interface:", 
+            background=background_color).grid(row=row_+3, column=0, sticky='W')
     Label(selected_object_frame, text=selected_interface.get(), 
-        width=52, justify=LEFT, wraplength=450, borderwidth=1, 
-        relief="solid").grid(row=row_+3, column=1)
-    Label(selected_object_frame, text=interface_status).grid(row=row_+3,
-                                                        column=2, sticky='E')
-                                                        
-    Label(selected_object_frame, text="Selected Demand:").grid(row=row_+4, 
-                                                    column=0, sticky='W')
+            width=52, justify=LEFT, wraplength=450, 
+            borderwidth=1, relief="solid").grid(row=row_+3, column=1)
+    Label(selected_object_frame, text=interface_status, 
+            background=background_color).grid(row=row_+3, column=2, sticky='E')
+            
+    Label(selected_object_frame, text="Selected Demand:", 
+            background=background_color).grid(row=row_+4, column=0, sticky='W')
     Label(selected_object_frame, text=selected_demand.get(), width=52, 
-        borderwidth=1, wraplength=450, relief="solid").grid(row=row_+4, 
-                                                        column=1)   
-    Label(selected_object_frame, text=demand_status).grid(row=row_+4, 
-                                                        column=2, sticky='E') 
+        borderwidth=1, wraplength=450, relief="solid").grid(row=row_+4, column=1)   
+    Label(selected_object_frame, text=demand_status, 
+        background=background_color).grid(row=row_+4, column=2, sticky='E') 
     
 def display_demands(label_info, canvas_object, list_of_demands, row_, 
                 column_,):
@@ -508,8 +506,8 @@ def examine_selected_interface(*args):
     utilization_pct = [x for x in range(0,100)]
     
     # Label for pct util selection
-    pct_label = Label(utilization_frame, text="Select the minimum interface \
-percent to filter against:")
+    pct_label = Label(utilization_frame, text="Display interfaces with \
+utilization % greater than:")
     pct_label.grid(row=0, column=0, columnspan=2, sticky='W')
     pct_label.config(width=50)
     
