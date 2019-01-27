@@ -124,6 +124,6 @@ import collections
 
 Version = collections.namedtuple('Version', ['major', 'minor'])
 
-version = Version(1,4)
+version = Version(1,5)
 
 __author__ = 'tim_fiola'
