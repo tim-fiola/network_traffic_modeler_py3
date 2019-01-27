@@ -12,6 +12,39 @@ The UI is specifically designed to address common modeling use cases:
 - examine traffic on interfaces above a specified utilization percentage
 
 
+=======
+    - move interface endpoints for better viewing
+    - filter visualization to interfaces with a certain % utilization(s)
+    - zoom and pan 
+
+This code allows users to define a layer 3 network topology, define a traffic
+matrix, and then run a simulation to determine how the traffic will traverse
+the topology.  If you've used Cariden MATE or WANDL, this code solves for
+some of the same basic use cases those do (but those solve for much
+more as well).
+
+Changes to the topology can be done to simulate new routers, circuits,
+circuit capacity, network failures, etc.
+Changes to the traffic matrix can be done to simulate increases/decreases
+in existing traffic or additional traffic matrix entries.
+
+**TO GET STARTED:
+- Simply run one of the client code examples from the CLI
+- OR - To use the simple UI:
+    - Run simple_user_interface.py from the CLI
+    - When prompted in the UI, load the sample_network_model_file.csv file
+    - Explore the network topology and traffic paths in the UI using the various tabs 
+      dropdown menus on each tab
+
+=============ADDED FEATURES==========
+
+Completed enhancements since last release
+- make interactive network plot - done
+- for network graph, have option to only show circuits with interfaces above a 
+  certain % utilization (important for scaled networks) - done
+- new client code that uses the load_model call - done
+
+
 
 Use cases include:
   - simulating how traffic will transit your layer 3 network, given a
@@ -40,12 +73,6 @@ Use Cases TO DO:
     - Remove a demand
     - Change demand magnitude
     *** These can all be done now, but require a few API calls to do so
-
-User experience TO DO:
-- modify __dir__ to not show internal methods
-- modify Node.lat and Node.lon (latitute, longitude) to have guardrails for 
-staying within lat/lon boundaries.  Right now they just serve as holders of 
-coordinate data
 
 Needed optimizations:
 - add guardrails to Demand and Interface attributes (traffic must be a float), etc
