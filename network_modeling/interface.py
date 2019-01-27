@@ -45,6 +45,7 @@ class Interface(object):
                 other_object.remote_node_object, other_object.name, 
                 other_object.capacity, other_object.address]
         #return self.__dict__ == other_object.__dict__
+
     
     def __hash__(self):
         return hash(tuple(sorted(self.__dict__.items())))
@@ -76,28 +77,14 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
     @property
     def reservable_bandwidth(self):
         """Amount of bandwidth available for rsvp lsp reservation"""
-#        pdb.set_trace() #Reservable_bandwidth is not updating 
-        
-        #return self._reservable_bandwidth
         return self.capacity - self.reserved_bandwidth
-        
-    #@reservable_bandwidth.setter
-    #def reservable_bandwidth(self, res_bw):
-        ### make sure it stays greater than 0   
-        #if self.capacity - self.reserved_bandwidth >= 0:
-            #self._reservable_bandwidth = self.capacity - self.reserved_bandwidth
-        #else:
-            #self._reservable_bandwidth = 0
-            
         
     @property
     def failed(self):
-#        print 'called getter'
         return self._failed
 
     @failed.setter
     def failed(self, status):
-#        print 'called setter: failed =', status
         if not(isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
@@ -164,8 +151,11 @@ unfailed interface on failed node"
                       'and', self, 'fail validation checks'
             raise ModelException(message)
 
+    # TODO - figure out if these get circuit calls are even appropriate 
+    # to be in the Interface Class; would they be better served just 
+    # being in the Model?
     def get_circuit_object(self, model):
-        """Returns the circuit from the model that an 
+        """Returns the circuit object from the model that an 
         interface is associated with."""
         
         ckt = model.get_circuit_object_from_interface(self.name, 
@@ -173,14 +163,13 @@ unfailed interface on failed node"
         
         return ckt
         
-
-
     def demands(self, model):
         """Returns list of demands that egress the interface"""
         dmd_list = []
         demands = model.demand_objects
         for demand in demands:
             for demand_path in demand.path:
+
                 # If demand_path is an RSVP LSP, look at the LSP path
                 if isinstance(demand_path, RSVP_LSP):
                     for dmd in demand_path.demands_on_lsp(model):

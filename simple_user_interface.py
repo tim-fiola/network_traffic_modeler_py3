@@ -8,6 +8,7 @@ from network_modeling import Interface
 from network_modeling import Demand
 from network_modeling import Node 
 from network_modeling import graph_network
+
 from network_modeling import graph_network_interactive 
 
 from tkinter import ttk as ttk
@@ -17,7 +18,6 @@ from tkinter import filedialog
 import re
 
 import pdb
-
 
 background_color = 'tan'
 
@@ -74,14 +74,14 @@ def open_file():
         graph_file_label = Label(label_frame, text=graph_label_text)
         graph_file_label.grid(row=13, column=0, sticky='W')
 
-#def create_network_graph():
-    #"""Makes a network graph"""
+def create_network_graph():
+    """Makes a network graph"""
 
 
-    #network_graph_file.set(filedialog.asksaveasfilename(initialdir="/",
-                        #title = "Select or Create file:"))
-    #graph_network.make_utilization_graph_neat(model, network_graph_file.get(),
-                        #display_plot=False)
+    network_graph_file.set(filedialog.asksaveasfilename(initialdir="/",
+                        title = "Select or Create file:"))
+    graph_network.make_utilization_graph_neat(model, network_graph_file.get(),
+                        display_plot=False)
     
 def create_network_graph_and_refresh():
     """Makes a network graph and refreshes open_file_tab"""
@@ -96,7 +96,7 @@ def create_network_graph_and_refresh():
 def create_interactive_network_graph_and_refresh():
     """Makes an interactive network graph and refreshes open_file_tab"""  
     graph_network_interactive.make_interactive_network_graph(model)
-          
+
 def set_active_interface_from_listbox(event):
     """Sets the selected interface value from a listbox to the 
     active_interface"""
@@ -113,7 +113,7 @@ def set_active_interface_from_listbox(event):
     selected_interface_value = value_in_position
     
     selected_interface.set(selected_interface_value)
-   
+
     # Refresh the tabs
     # TODO - add the destroy() function?
     examine_selected_node()

@@ -3,12 +3,14 @@ network simulations.
 
 There are no implied or explicit warranties associated with this app.
 
+
 **This code now features an interactive network graph capability that lets the
 user:
     - move interface endpoints for better viewing
     - filter visualization to interfaces with a certain % utilization(s)
     - zoom and pan 
 
+=======
 This code allows users to define a layer 3 network topology, define a traffic
 matrix, and then run a simulation to determine how the traffic will traverse
 the topology.  If you've used Cariden MATE or WANDL, this code solves for
@@ -71,6 +73,15 @@ API TO DO:
     - for network graph plot, have option to only show nodes with 
       certain user specified tags
 - modify __dir__ to not show internal methods
+- increasing/decreasing the magnitude of an existing demand in the traffic matrix failover       
+
+NOTES:
+- interface addresses are only used to match interfaces into circuits and do
+not have any practical bearing on the simulation results
+
+
+Use Cases TO DO:
+- Save an existing model to a file
 - RSVP auto-bandwidth LSP
 - Specific Model calls to
     - Remove a Node
@@ -85,6 +96,16 @@ Completed enhancements since last release
 - for network graph, have option to only show circuits with interfaces above a 
   certain % utilization (important for scaled networks) - done
 - new client code that uses the load_model call - done
+
+
+User experience TO DO:
+- new client code that uses the load_model and save_model calls
+- make simple UI
+- for network graph, have option to only show circuits with interfaces above a 
+  certain % utilization (important for scaled networks)
+- add node tags
+- for network graph plot, have option to only show nodes with certain user specified tags
+- modify __dir__ to not show internal methods
 
 
 """
@@ -102,6 +123,7 @@ from .modeling_utilities import *
 import collections
 
 Version = collections.namedtuple('Version', ['major', 'minor'])
+
 version = Version(1,4)
 
 __author__ = 'tim_fiola'

@@ -74,6 +74,9 @@ class Demand(object):
                 #demand_path = model.get_shortest_path(self.source_node_object.name,
                                                 #self.dest_node_object.name)['path']
 
+        demand_path = model.get_shortest_path(self.source_node_object.name,
+                                                     self.dest_node_object.name)['path']
+
         if demand_path == []:
             demand_path = 'Unrouted'
         
@@ -81,4 +84,4 @@ class Demand(object):
 
         return self 
 
-    
+
