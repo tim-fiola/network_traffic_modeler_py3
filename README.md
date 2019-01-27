@@ -1,5 +1,5 @@
 # network_traffic_modeler_py3
-This is the network traffic modeler written in python 3.  Version 1.2.  All further updates to network_traffic_modeler will be in python3 and in this repository.
+This is the network traffic modeler written in python 3.  Version 1.5.  All further updates to network_traffic_modeler will be in python3 and in this repository.
 
 The big adds in this commit are:
 - the addition of a simple, menu-based UI.  Simply download this repository and run the simple_user_interface.py script.  Load up either of the sample network models.  
