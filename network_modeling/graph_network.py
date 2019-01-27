@@ -76,7 +76,7 @@ def make_network_graph(model, graph_file_name, display_plot=False):
 
     # Set lat/lon for each node in graph
     for name in node_names:
-        node = model.get_node(name)
+        node = model.get_node_object(name)
         lat_lon = (node.lat, node.lon)
         nx.set_node_attributes(G, {name: lat_lon}, 'pos')
         nx.set_node_attributes(G, {name: name}, 'name')
