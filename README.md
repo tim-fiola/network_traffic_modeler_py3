@@ -1,18 +1,20 @@
 # network_traffic_modeler_py3
 This is the network traffic modeler written in python 3.  Version 1.5.  All further updates to network_traffic_modeler will be in python3 and in this repository.
 
-The big adds in this commit are:
-- the addition of a simple, menu-based UI.  Simply download this repository and run the simple_user_interface.py script.  Load up either of the sample network models.  
-- a standardized file format for the network model data
-- ability to load a model from a network model file
+The big add in this commit is interactive network visualization allowing user to 
+  - view network
+  - move nodes
+  - get tooltips via hovering over links
+  - filter to visualizing only links in certain utilization ranges
 
-The UI is specifically designed to address common modeling use cases:
+
+The UI (simple_user_interface.py) is specifically designed to address common modeling use cases:
 - provide quick linkage between related objects: Nodes, interfaces, and demands (traffic)
 - allow the user to explore the shortest paths and all feasible (loop free) paths between selected nodes
 - examine traffic on interfaces above a specified utilization percentage
 
 
-Use cases include:
+Full API set use cases include:
   - simulating how traffic will transit your layer 3 network, given a
   traffic matrix
   - simulating how your traffic will failover if any link(s) or node(s) fail
@@ -29,7 +31,7 @@ NOTES:
 not have any practical bearing on the simulation results
 
 Capabilities TO DO:
-- Add RSVP auto-bandwidth capabilities
+- Add RSVP auto-bandwidth capabilities (in progress)
 - Enable UI to fail nodes/interfaces
 
 Use Cases TO DO:
@@ -47,4 +49,5 @@ staying within lat/lon boundaries.  Right now they just serve as holders of
 coordinate data
 
 Needed optimizations:
+- optimize path finding for non-LSP demands by making a single networkx model for a group of demands versus making the networkx model for each demand
 - add guardrails to Demand and Interface attributes (traffic must be a float), etc
