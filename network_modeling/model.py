@@ -477,15 +477,6 @@ class Model(object):
                                 #non_failed_interfaces_model)
 
 
-        
-
-
-
-
-
-
-
-
     def _unique_interface_per_node(self):
         """Checks that the interface names on each node are unique; returns
         an message if a duplicate interface name is found on the same node
