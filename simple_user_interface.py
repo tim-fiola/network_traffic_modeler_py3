@@ -464,7 +464,7 @@ def examine_selected_demand(*args):
     #### Display the selected demand's path(s) ####
 
     demand_path_frame = LabelFrame(demand_tab, 
-                    text="Demand Path Info (Ordered hops from source to destination)")
+                    text="Demand Path Info (Ordered hops from source to destination); Displays all paths for ECMP demands.")
     demand_path_frame.grid(row=3, column=0, columnspan=10, sticky='W', 
                             padx=10, pady=10)
     
