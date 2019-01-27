@@ -31,6 +31,14 @@ in existing traffic or additional traffic matrix entries.
     - Explore the network topology and traffic paths in the UI using the various tabs 
       dropdown menus on each tab
 
+=============ADDED FEATURES==========
+
+Completed enhancements since last release
+- make interactive network plot - done
+- for network graph, have option to only show circuits with interfaces above a 
+  certain % utilization (important for scaled networks) - done
+- new client code that uses the load_model call - done
+
 ======================USE CASES=============================
 
 Currently this modeling code supports simple OSPF/ISIS routing and only layer 3.  
@@ -90,11 +98,5 @@ API TODO:
     - Change demand magnitude
     *** These can all be done now, but require a few API calls to do s
 
-=============ADDED FEATURES==========
 
-Completed enhancements since last release
-- make interactive network plot - done
-- for network graph, have option to only show circuits with interfaces above a 
-  certain % utilization (important for scaled networks) - done
-- new client code that uses the load_model call - done
 
