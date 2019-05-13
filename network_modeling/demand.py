@@ -61,16 +61,16 @@ class Demand(object):
             if (lsp.source_node_object == self.source_node_object and \
                 lsp.dest_node_object == self.dest_node_object and \
                 lsp.path != 'Unrouted'):
-                print()
-                print("# DEBUG lsp", lsp, self)
-                status = 'lsp routing'
+                #print()
+                #print("# DEBUG lsp", lsp, self)
+                #status = 'lsp routing'
                 #pdb.set_trace()
                 demand_path.append(lsp)
             ## If no LSPs, use shortest path IGP routing
             else:
-                print()
-                print("# DEBUG no LSP", lsp, self)
-                status = 'shortest path routing'
+                #print()
+                #print("# DEBUG no LSP", lsp, self)
+                #status = 'shortest path routing'
                 #pdb.set_trace()
                 demand_path = model.get_shortest_path(self.source_node_object.name,
                                                 self.dest_node_object.name)['path']
