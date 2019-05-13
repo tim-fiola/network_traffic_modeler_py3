@@ -56,6 +56,7 @@ class Demand(object):
             demand_path = model.get_shortest_path(self.source_node_object.name,
                                             self.dest_node_object.name)['path']
         
+        # This code turns on capability to have demand take an RSVP LSP
         for lsp in (lsp for lsp in model.rsvp_lsp_objects):
             if (lsp.source_node_object == self.source_node_object and \
                 lsp.dest_node_object == self.dest_node_object and \
@@ -74,6 +75,7 @@ class Demand(object):
                 demand_path = model.get_shortest_path(self.source_node_object.name,
                                                 self.dest_node_object.name)['path']
 
+        # TODO - remove this legacy code (does not support LSP routing)
         #demand_path = model.get_shortest_path(self.source_node_object.name,
         #                                             self.dest_node_object.name)['path']
 
