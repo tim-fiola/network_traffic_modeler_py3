@@ -51,6 +51,8 @@ class Model(object):
                                 len(self.demand_objects),
                                 len(self.rsvp_lsp_objects))
 
+    # TODO - not sure if this method is needed; can't recall what the use case is
+    # TODO - I don't see this call anywhere in the code
     @classmethod
     def create_network_model(cls, network_interfaces):
         """
@@ -71,7 +73,7 @@ class Model(object):
         
         model = Model(interface_objects, node_objects) 
         
-        self._make_circuits()
+        model._make_circuits()
         
         validated_network_model = model.validate_model()
 
@@ -1277,9 +1279,19 @@ does not exist in model"%(source_node_name, dest_node_name,
         interface_lines = lines[int_info_begin_index:int_info_end_index]
         interface_set = set([]) 
         node_list = []
+        # TODO - fix this so it can load from model file
         for interface_line in interface_lines:
-            node_name, remote_node_name, name, cost, capacity = \
-                        interface_line.split(',')
+            # Initialize interface characteristics
+            node_name, remote_node_name, name, cost, capacity = ['','','','','']
+            # Read interface characteristics
+            if len(interface_line.split()) == 5:
+                node_name, remote_node_name, name, cost, capacity = \
+                        interface_line.split()
+            else:
+                print(interface_line.split())
+                msg = ("node_name, remote_node_name, name, cost, and capacity "
+                       "must be defined for {}".format(interface_line))
+                raise ModelException(msg)
             interface_set.add(Interface(name, int(cost), int(capacity), 
                                     Node(node_name), Node(remote_node_name)))
             node_list.append(Node(node_name))
@@ -1292,7 +1304,7 @@ does not exist in model"%(source_node_name, dest_node_name,
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
         node_names = set([node.name for node in node_list])
         for node_line in node_lines:
-            node_info = node_line.split(',')
+            node_info = node_line.split()
             node_name = node_info[0]
             try:
                 node_lat = int(node_info[1])
@@ -1323,7 +1335,7 @@ does not exist in model"%(source_node_name, dest_node_name,
         demands_lines = lines[demands_info_begin_index:demands_info_end_index]
         
         for demand_line in demands_lines:
-            demand_info = demand_line.split(',')
+            demand_info = demand_line.split()
             source = demand_info[0]
             dest = demand_info[1]
             traffic = int(demand_info[2])
@@ -1342,7 +1354,7 @@ does not exist in model"%(source_node_name, dest_node_name,
             lsp_lines = lines[lsp_info_begin_index:]
             
             for lsp_line in lsp_lines:
-                lsp_info = lsp_line.split(',')
+                lsp_info = lsp_line.split()
                 source = lsp_info[0]
                 dest = lsp_info[1]
                 name = lsp_info[2]

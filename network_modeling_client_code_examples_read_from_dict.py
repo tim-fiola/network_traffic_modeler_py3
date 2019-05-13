@@ -2,6 +2,7 @@
 Client code to demonstrate how to use the network_modeling classes
 """
 
+
 from network_modeling import Model
 from network_modeling import Circuit
 from network_modeling import Demand

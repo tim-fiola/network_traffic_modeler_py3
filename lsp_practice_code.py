@@ -18,8 +18,6 @@ from pprint import pprint
 #       their reserved bandwidth accordingly
 # 5.  A non lsp demand will properly route
 
-
-
 model = Model.load_model_file('lsp_model_test_file.csv')
 
 # Test 1
