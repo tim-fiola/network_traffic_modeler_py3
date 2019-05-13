@@ -7,7 +7,6 @@ from network_modeling import Circuit
 from network_modeling import Demand
 from network_modeling import graph_network_interactive
 from network_modeling import Interface
-from network_modeling import ModelException
 from network_modeling import Node
 
 from pprint import pprint
