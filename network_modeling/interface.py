@@ -165,20 +165,41 @@ unfailed interface on failed node"
         
     def demands(self, model):
         """Returns list of demands that egress the interface"""
-        dmd_list = []
+        dmd_set = set()
         demands = model.demand_objects
         for demand in demands:
-            for demand_path in demand.path:
+            for path in demand.path:
+                # If demand_path is an RSVP LSP, look at the LSP path and
+                # get demands on the LSP and add them to dmd_set
+                if isinstance(path, RSVP_LSP):
+                    for dmd in path.demands_on_lsp(model):
+                        dmd_set.add(dmd)
+                # If path is not an LSP, then it's a list of Interface
+                # objects; look for self in demand_path
+                elif self in path:
+                    dmd_set.add(demand)
 
-                # If demand_path is an RSVP LSP, look at the LSP path
-                if isinstance(demand_path, RSVP_LSP):
-                    for dmd in demand_path.demands_on_lsp(model):
-                        dmd_list.append(dmd)
-                # If demand_path is not an LSP, look for self in demand_path
-                elif self in demand_path:
-                    dmd_list.append(demand)
+        dmd_list = list(dmd_set)
 
         return dmd_list
+
+
+    def lsps(self, model):
+        """
+        Returns a list of RSVP LSPs that egress the interface
+        :param model: Model object
+        :return: list of RSVP LSPs that egress the interface
+        """
+
+        lsp_set = set()
+
+        for lsp in (lsp for lsp in model.rsvp_lsp_objects if lsp.path != 'Unrouted'):
+            if self in lsp.path['interfaces']:
+                lsp_set.add(lsp)
+
+        lsp_list = list(lsp_set)
+        return lsp_list
+
 
     @property
     def utilization(self):

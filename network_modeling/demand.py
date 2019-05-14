@@ -30,7 +30,13 @@ class Demand(object):
                                                 self.name)
 
     def _add_demand_path(self, model):
-        """Adds a path to a demand"""
+        """
+
+        :param model: Model object
+        :return: list of paths the demand takes or 'Unrouted' string
+        """
+
+
 
         # Find if there is an LSP with source/dest same as demand source/dest
         #if len(model.rsvp_lsp_objects) > 0:
@@ -48,11 +54,11 @@ class Demand(object):
         # TODO - FIX THIS - looks like we have duplicate code here and the code just below!!
         # Find all LSPs that can carry the demand:
         for lsp in (lsp for lsp in model.rsvp_lsp_objects):
-            pdb.set_trace()
+         #   pdb.set_trace()
             if (lsp.source_node_object == self.source_node_object and \
                     lsp.dest_node_object == self.dest_node_object and \
                     lsp.path != 'Unrouted'):
-                print("LSP/demand match {}".format(lsp, self))
+             #   print("LSP/demand match {}".format(lsp, self))
                 demand_path.append(lsp)
             
         # If demand can't be carried by LSP, do shortest path routing
@@ -61,23 +67,23 @@ class Demand(object):
                                             self.dest_node_object.name)['path']
         
         # This code turns on capability to have demand take an RSVP LSP
-        for lsp in (lsp for lsp in model.rsvp_lsp_objects):
-            if (lsp.source_node_object == self.source_node_object and \
-                lsp.dest_node_object == self.dest_node_object and \
-                lsp.path != 'Unrouted'):
+        #for lsp in (lsp for lsp in model.rsvp_lsp_objects):
+        #    if (lsp.source_node_object == self.source_node_object and \
+        #        lsp.dest_node_object == self.dest_node_object and \
+         #       lsp.path != 'Unrouted'):
                 #print()
                 #print("# DEBUG lsp", lsp, self)
                 #status = 'lsp routing'
                 #pdb.set_trace()
-                demand_path.append(lsp)
+         #       demand_path.append(lsp)
             ## If no LSPs, use shortest path IGP routing
-            else:
+         #   else:
                 #print()
                 #print("# DEBUG no LSP", lsp, self)
                 #status = 'shortest path routing'
                 #pdb.set_trace()
-                demand_path = model.get_shortest_path(self.source_node_object.name,
-                                                self.dest_node_object.name)['path']
+         #       demand_path = model.get_shortest_path(self.source_node_object.name,
+         #                                       self.dest_node_object.name)['path']
 
         # TODO - remove this legacy code (does not support LSP routing)
         #demand_path = model.get_shortest_path(self.source_node_object.name,

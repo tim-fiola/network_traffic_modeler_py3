@@ -61,5 +61,8 @@ pprint(dmd2.path)
 print()
 print("Here is the interface utilization:")
 model.display_interfaces_traffic()
-
+print()
+a_to_b = model.get_interface_object('A-to-B', 'A')
+print("Here are the LSPs on {}:".format(a_to_b))
+pprint(a_to_b.lsps(model))
 

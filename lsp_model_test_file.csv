@@ -26,7 +26,7 @@ DEMANDS_TABLE
 source	dest	traffic	name
 A	D	80	test1
 E	F	20	test2
-A	D	80	test3
+A	D	70	test3
 F	E	400	test4
 
 RSVP_LSP_TABLE
