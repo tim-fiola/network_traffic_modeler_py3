@@ -24,8 +24,9 @@ in existing traffic or additional traffic matrix entries.
 
 Examine and run the client code to get an understanding of how this code works.
 
-Currently this modeling code supports simple OSPF/ISIS routing and only layer 3.  
-There is no RSVP or layer 1 SRLG support at the moment.
+Currently this modeling code supports simple OSPF/ISIS routing and RSVP
+auto-bandwidth LSPs (new in 1.6).  See 'Completed enhancements since
+last release' section for more detail.
 
 This code should perform well at scale as it leverages path calculations 
 from the networkx module.
@@ -33,7 +34,7 @@ from the networkx module.
 Use cases include:
   - simulating how traffic will transit your layer 3 network, given a
   traffic matrix
-  - simulating how your traffic will failover if any link(s) or node(s) fail
+  - simulating how your traffic will fail over if any link(s) or node(s) fail
   - simulating how a given network augment will affect link utilization
   and traffic flow; possible augments include: 
     - adding a new link
@@ -51,18 +52,20 @@ NOTES:
 ======== TO DO ===========
 simple_user_interface.py TO DO:
 - Select multiple points on interactive graph and drag to new position
-- better notification to user if model file has a problem in simple ui
-- fail node or interface from simple ui
-- add demand from simple ui
-- remove demand from simple ui
-- add circuit from simple ui
-- remove circuit from simple ui
-- add node from simple ui
-- remove node from simple ui
-- save model from simple ui
+- More functionality from simple ui
+    - better notification to user if model file has a problem in simple ui
+    - fail node or interface from simple ui
+    - add demand from simple ui
+    - remove demand from simple ui
+    - add circuit from simple ui
+    - remove circuit from simple ui
+    - add node from simple ui
+    - remove node from simple ui
+    - save model from simple ui
+
 
 API TO DO:
-- a save_model call
+- a save_model call that saves model state to a new file
 - optimize model convergence by creating a networkx model once and routing
   demands across it versus the current method that creates the networkx topology
   for each demand
@@ -75,34 +78,31 @@ API TO DO:
 - modify __dir__ to not show internal methods
 - increasing/decreasing the magnitude of an existing demand in the traffic matrix failover       
 
-NOTES:
-- interface addresses are only used to match interfaces into circuits and do
-not have any practical bearing on the simulation results
-
 
 Use Cases TO DO:
 - Save an existing model to a file
-- RSVP auto-bandwidth LSP
 - Specific Model calls to
     - Remove a Node
     - Remove an Interface/Circuit
     - Remove a demand
     - Change demand magnitude
-    *** These can all be done now, but require a few API calls to do s
+    *** These can all be done now, but require a few API calls to do so
 
 
 Completed enhancements since last release
-- make interactive network plot - done
-- for network graph, have option to only show circuits with interfaces above a 
-  certain % utilization (important for scaled networks) - done
-- new client code that uses the load_model call - done
+- RSVP auto-bandwidth LSP
+    - RSVP LSPs carry traffic for traffic when traffic source/dest node
+    matches that of the RSVP LSP (when the LSP carries traffic from its
+    source to destination)
+    - still supports non-LSP traffic, now alongside LSP-routed traffic
+    - does not support
+        - LSPs advertised into IGP
+        - traffic taking LSP for just a portion of its path
+        in the model
 
 
 User experience TO DO:
 - new client code that uses the load_model and save_model calls
-- make simple UI
-- for network graph, have option to only show circuits with interfaces above a 
-  certain % utilization (important for scaled networks)
 - add node tags
 - for network graph plot, have option to only show nodes with certain user specified tags
 - modify __dir__ to not show internal methods
@@ -124,6 +124,6 @@ import collections
 
 Version = collections.namedtuple('Version', ['major', 'minor'])
 
-version = Version(1,5)
+version = Version(1, 6)
 
 __author__ = 'tim_fiola'
