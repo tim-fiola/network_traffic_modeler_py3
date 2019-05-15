@@ -730,103 +730,98 @@ def examine_paths():
             node_choices, dest_node, 1, 0)
     dest_node_select.grid(sticky='W')
     
-    #### Display shortest path(s) ####
-    
-    # Find shortest paths
-    try:
-        shortest_path = model.get_shortest_path(source_node.get(),
-                                                        dest_node.get())
-        
-        paths = shortest_path['path']
-        cost = shortest_path['cost']
-            
-        # Create a frame to hold the shortest path(s)
-        shortest_path_frame = LabelFrame(path_tab, text="Shortest Paths")
-        shortest_path_frame.grid(row = 2, column = 0, sticky='W', padx=10)
-        
-        column_counter = 0
-        path_counter = 0
-        
-        for path in paths:
-            list_of_interfaces = path
-            label = "Shortest Path %s, cost = %s"%(str(path_counter), 
-                                                            str(cost)) 
-            display_interfaces(label, shortest_path_frame, list_of_interfaces,
-                1, column_counter)
-            column_counter += 2
-            path_counter += 1
-          
-    except ModelException:
-        pass
+    if source_node.get() != '' and dest_node.get() != '':
+        #### Display shortest path(s) ####
+        # Find shortest paths
+        try:
+            shortest_path = model.get_shortest_path(source_node.get(), dest_node.get())
 
-    # Display all LSPs between source/dest nodes
-    # Create a frame to hold the LSPs
-    shortest_path = model.get_shortest_path(source_node.get(), dest_node.get())
-    lsp_frame = LabelFrame(path_tab, text="LSPs between source/dest nodes; cost = {}".format(shortest_path['cost']))
-    lsp_frame.grid(row=2, column=1, sticky='W', padx=10)
+            paths = shortest_path['path']
+            cost = shortest_path['cost']
 
-    # Get LSPs
-    lsps = (lsp for lsp in model.rsvp_lsp_objects if (lsp.source_node_object.name == source_node.get() and
-                                                      lsp.dest_node_object.name == dest_node.get()))
+            # Create a frame to hold the shortest path(s)
+            shortest_path_frame = LabelFrame(path_tab, text="Shortest Paths")
+            shortest_path_frame.grid(row = 2, column = 0, sticky='W', padx=10)
 
+            column_counter = 0
+            path_counter = 0
 
+            for path in paths:
+                list_of_interfaces = path
+                label = "Shortest Path %s, cost = %s"%(str(path_counter),
+                                                                str(cost))
+                display_interfaces(label, shortest_path_frame, list_of_interfaces,
+                    1, column_counter)
+                column_counter += 2
+                path_counter += 1
 
-    display_lsp_list('', lsp_frame, lsps, 0, 0)
+        except ModelException as e:
+            print('e1 is {}'.format(e))
+            pass
 
-    #### Display all paths ####
-    # Note - python, wtf?! Getting the horizontal scrollbar to work with
-    # multiple listboxes was WAY more difficult than it should have been
-    try:
-        # TODO - remove these calls?  Are they used?
-#        model.get_node_object(source_node.get())
-#        model.get_node_object(dest_node.get())
-        
-        all_paths = model.get_feasible_paths(source_node.get(), 
-                                                        dest_node.get())
+        # Display all LSPs between source/dest nodes
+        # Create a frame to hold the LSPs
+        shortest_path = model.get_shortest_path(source_node.get(), dest_node.get())
+        lsp_frame = LabelFrame(path_tab, text="LSPs between source/dest nodes; cost = {}".format(shortest_path['cost']))
+        lsp_frame.grid(row=2, column=1, sticky='W', padx=10)
 
-        # Create label frame to hold the feasible path(s) # frame_canvas
-        feasible_path_frame = LabelFrame(path_tab, text="All Paths")
-        feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
-        
-        feasible_path_frame.grid_rowconfigure(0, weight=1)
-        feasible_path_frame.grid_columnconfigure(0, weight=1)
-        feasible_path_frame.grid_propagate(False)
+        # Get LSPs
+        lsps = (lsp for lsp in model.rsvp_lsp_objects if (lsp.source_node_object.name == source_node.get() and
+                                                          lsp.dest_node_object.name == dest_node.get()))
 
-        # canvas
-        feasible_path_canvas = Canvas(feasible_path_frame)
-        feasible_path_canvas.grid(row=0, column=0, sticky='news')
+        display_lsp_list('', lsp_frame, lsps, 0, 0)
 
-        # Horizontal Scrollbar
-        horizontal_scrollbar = Scrollbar(feasible_path_frame, orient=HORIZONTAL,
-                    command=feasible_path_canvas.xview)
-        horizontal_scrollbar.grid(row=4, column=0, sticky='ew')
-        feasible_path_canvas.configure(xscrollcommand=horizontal_scrollbar.set)   
-             
-        # Create a frame to house the path(s)
-        path_frame = Frame(feasible_path_canvas) # frame_buttons
-        feasible_path_canvas.create_window((0,0), window=path_frame, 
-                                                        anchor='nw')
-                
-        column_counter = 0
-        path_counter = 0
+        #### Display all paths ####
+        # Note - python, wtf?! Getting the horizontal scrollbar to work with
+        # multiple listboxes was WAY more difficult than it should have been
+        try:
+            all_paths = model.get_feasible_paths(source_node.get(),
+                                                            dest_node.get())
 
-        for path in all_paths:
-            list_of_interfaces = path
-            label = "Feasible Path %s"%(str(path_counter))
-            display_interfaces(label, path_frame, list_of_interfaces,
-                1, column_counter)
-            column_counter += 2
-            path_counter += 1 
-            
-        # These next 3 things need to be in this order or the horizontal 
-        # scrollbar for the multiple listboxes doesn't work; holy cow, python,
-        # it shouldn't be this difficult    
-        path_frame.update_idletasks() 
-        feasible_path_frame.config(width=1200, height=300)
-        feasible_path_canvas.config(scrollregion=feasible_path_canvas.bbox("all"))
+            # Create label frame to hold the feasible path(s) # frame_canvas
+            feasible_path_frame = LabelFrame(path_tab, text="All Paths")
+            feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
 
-    except ModelException:
-        pass    
+            feasible_path_frame.grid_rowconfigure(0, weight=1)
+            feasible_path_frame.grid_columnconfigure(0, weight=1)
+            feasible_path_frame.grid_propagate(False)
+
+            # canvas
+            feasible_path_canvas = Canvas(feasible_path_frame)
+            feasible_path_canvas.grid(row=0, column=0, sticky='news')
+
+            # Horizontal Scrollbar
+            horizontal_scrollbar = Scrollbar(feasible_path_frame, orient=HORIZONTAL,
+                        command=feasible_path_canvas.xview)
+            horizontal_scrollbar.grid(row=4, column=0, sticky='ew')
+            feasible_path_canvas.configure(xscrollcommand=horizontal_scrollbar.set)
+
+            # Create a frame to house the path(s)
+            path_frame = Frame(feasible_path_canvas) # frame_buttons
+            feasible_path_canvas.create_window((0,0), window=path_frame,
+                                                            anchor='nw')
+
+            column_counter = 0
+            path_counter = 0
+
+            for path in all_paths:
+                list_of_interfaces = path
+                label = "Feasible Path %s"%(str(path_counter))
+                display_interfaces(label, path_frame, list_of_interfaces,
+                    1, column_counter)
+                column_counter += 2
+                path_counter += 1
+
+            # These next 3 things need to be in this order or the horizontal
+            # scrollbar for the multiple listboxes doesn't work; holy cow, python,
+            # it shouldn't be this difficult
+            path_frame.update_idletasks()
+            feasible_path_frame.config(width=1200, height=300)
+            feasible_path_canvas.config(scrollregion=feasible_path_canvas.bbox("all"))
+
+        except ModelException as e:
+            print('e2 is {}'.format(e))
+            pass
 
 
 def node_dropdown_select(label, node_choices, target_variable, row_, column_):
