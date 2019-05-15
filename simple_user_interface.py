@@ -345,9 +345,13 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     horizontal_scrollbar.config(command=demand_listbox.xview)
     
     demand_counter = 1
-    for demand in list_of_demands:
-        demand_listbox.insert(demand_counter, demand)
-        demand_counter += 1
+
+    if list_of_demands != None:
+        for demand in list_of_demands:
+            demand_listbox.insert(demand_counter, demand)
+            demand_counter += 1
+    else:
+        pass
         
     demand_listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
     demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox) 
@@ -573,7 +577,16 @@ def examine_selected_demand(*args):
     demands_on_interface = get_demands_on_interface(selected_interface.get())               
 
     display_demands("Demands Egressing Selected Interface", demand_tab,
-                        demands_on_interface, 4, 3)
+                        demands_on_interface, 4, 1)
+
+    # Get/display demands on selected_lsp on demand_tab and lsp_tab
+    demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
+
+    display_demands("Demands on Selected LSP", demand_tab,
+                    demands_on_lsp, 4, 3)
+
+    display_demands("Demands on Selected LSP", lsp_tab,
+                    demands_on_lsp, 4, 0)
 
 
 def examine_selected_interface(*args):
@@ -870,26 +883,30 @@ def examine_selected_lsp(*args): #TODO
     #### Create a frame to show selected object info ####
     display_selected_objects(lsp_tab, 0, 4)
 
-def get_demands_on_lsp(selected_lsp):
+def get_demands_on_lsp(selected_lsp_get):
     """
     Returns a list of demands on selected_lsp
-    :param selected_lsp: selected_lsp variable
+    :param selected_lsp_get: selected_lsp.get()
     :return: list of demands on the selected_lsp
     """
 
     try:
-        lsp_data = selected_lsp.split("'")
-        lsp_name = lsp_data[1]
-        lsp_source = lsp_data
-        lsp_dest = lsp_data
+#        lsp_data = selected_lsp.split("'")
+#        lsp_name = lsp_data[1]
+#        lsp_source = lsp_data
+#        lsp_dest = lsp_data
 
-        lsp_object = model.get_rsvp_lsp(lsp_source, lsp_dest, lsp_name)
+#        pdb.set_trace()
+
+        lsp_object = get_lsp_object_from_repr(selected_lsp_get)
         demands_on_lsp = lsp_object.demands_on_lsp(model)
 
-    except (ModelException, IndexError):
-        lsp_object = None
+    # These exceptions have to be caught
+    # AttributeError - so demands_on_lsp does not error out when selected_lsp is None
+    except (ModelException, IndexError, AttributeError):
         demands_on_lsp = []
-        return demands_on_lsp
+
+    return demands_on_lsp
 
 def get_lsp_object_from_repr(lsp_repr):
     """
