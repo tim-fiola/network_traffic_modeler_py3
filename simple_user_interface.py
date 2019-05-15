@@ -805,8 +805,11 @@ def examine_paths():
             path_counter = 0
 
             for path in all_paths:
+                cost = 0
+                for intf in path:
+                    cost += cost + intf.cost
                 list_of_interfaces = path
-                label = "Feasible Path %s"%(str(path_counter))
+                label = "Feasible Path {}, cost = {}".format(str(path_counter), cost)
                 display_interfaces(label, path_frame, list_of_interfaces,
                     1, column_counter)
                 column_counter += 2
