@@ -8,6 +8,7 @@ from network_modeling import Interface
 from network_modeling import Demand
 from network_modeling import Node 
 from network_modeling import graph_network
+from network_modeling import RSVP_LSP
 
 from network_modeling import graph_network_interactive 
 
@@ -159,8 +160,8 @@ def set_active_object_from_option_menu(event):
     for thing in interface_tab.grid_slaves():
         thing.destroy()
     # TODO - this below was commented out; i enabled it
-    for thing in path_tab.grid_slaves():
-        thing.destroy()
+#    for thing in path_tab.grid_slaves():
+#        thing.destroy()
 
     for thing in lsp_tab.grid_slaves():
         thing.destroy()
@@ -269,7 +270,6 @@ def display_selected_objects(canvas_object, row_, column_):
         else:
             lsp_status = 'Routed'
     except (ModelException, AttributeError) as e:
-        print("Error is {}".format(e))  # Debug
         pass
 
     selected_object_frame = LabelFrame(canvas_object, background=background_color,
@@ -308,11 +308,11 @@ def display_selected_objects(canvas_object, row_, column_):
         background=background_color).grid(row=row_+4, column=2, sticky='E')
 
     Label(selected_object_frame, text="Selected LSP:",
-          background=background_color).grid(row=row_+4, column=0, sticky='W')
+          background=background_color).grid(row=row_+5, column=0, sticky='W')
     Label(selected_object_frame, text=selected_lsp.get(), width=52,
-        borderwidth=1, wraplength=450, relief="solid").grid(row=row_+4, column=1)
+        borderwidth=1, wraplength=450, relief="solid").grid(row=row_+5, column=1)
     Label(selected_object_frame, text=lsp_status,
-        background=background_color).grid(row=row_+4, column=2, sticky='E')
+        background=background_color).grid(row=row_+5, column=2, sticky='E')
 
     
 def display_demands(label_info, canvas_object, list_of_demands, row_, 
@@ -369,7 +369,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     horizontal_scrollbar.grid(row=(row_+2), column=column_, sticky=E+W,
                             columnspan=2)
                                                         
-    # Create a listbox with the available interfaces for the Node
+    # Create a listbox with the available interfaces
     interfaces_listbox = Listbox(canvas_object, selectmode='single', 
                 height = 8, width=40, xscrollcommand=horizontal_scrollbar.set,
                 yscrollcommand=vertical_scrollbar.set)
@@ -389,6 +389,44 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     interfaces_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox) 
 
     return interfaces_listbox
+
+def display_lsp(label_info, canvas_object, lsp, row_, column_):
+    """
+
+    :param label_info:
+    :param canvas_object:
+    :param lsp:
+    :param row_:
+    :param column_:
+    :return:
+    """
+    Label(canvas_object, text=label_info).grid(row=row_, column=column_,
+                                               sticky='W', padx=5)
+
+    # Vertical scrollbar
+    vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
+    vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
+
+    horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
+    horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
+                              columnspan=2)
+
+    # Create a listbox with the lsp
+    lsp_listbox = Listbox(canvas_object, selectmode='single',
+                height = 8, width=40, xscrollcommand=horizontal_scrollbar.set,
+                yscrollcommand=vertical_scrollbar.set)
+    lsp_listbox.grid(row=row_+1, column=column_, columnspan=2,
+                                sticky='W', padx=5)
+
+    horizontal_scrollbar.config(command=lsp_listbox.xview)
+    vertical_scrollbar.config(command=lsp_listbox.yview)
+
+    lsp_listbox.insert(1, lsp.__repr__())
+
+    lsp_listbox.bind("<<ListBoxSelect>>", set_active_lsp_from_listbox)
+    lsp_listbox.bind("<Double-Button-1>", set_active_lsp_from_listbox)
+
+    return lsp_listbox
 
 
 def examine_selected_node(*args):
@@ -515,10 +553,16 @@ def examine_selected_demand(*args):
         
         for path in dmd_paths:
             label_info = "Demand hops ordered from source to dest"
-            interface_info = [str(round((interface.utilization * 100),1))\
-                    +'%   '+ interface.__repr__() for interface in path]
-            display_interfaces(label_info, demand_path_frame,
-                                    interface_info, 0, column_num)
+            if isinstance(path, RSVP_LSP):
+                lsp_info = path
+                display_lsp(label_info, demand_path_frame,
+                                   lsp_info, 0, column_num)
+
+            else:
+                interface_info = [str(round((interface.utilization * 100),1))\
+                        +'%   '+ interface.__repr__() for interface in path]
+                display_interfaces(label_info, demand_path_frame,
+                                        interface_info, 0, column_num)
             column_num += 3
 
 
