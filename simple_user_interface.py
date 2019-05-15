@@ -22,6 +22,23 @@ import pdb
 
 background_color = 'tan'
 
+def update_tabs():
+    """
+    Updates the info displayed on each tab
+    :return: None
+    """
+    # Update the Node Explorer tab
+    examine_selected_node()
+    # Update the Demand Explorer tab
+    examine_selected_demand()
+    # Update the Interface Explorer tab
+    examine_selected_interface()
+    # Update the Path Explorer tab
+    examine_paths()
+    # Update the RSVP LSP Explorer tab
+    examine_selected_lsp()
+
+
 def open_file():
     """Opens the file that describes the Model and allows user to save
     a diagram of the network graph"""
@@ -50,17 +67,17 @@ def open_file():
         model_file_display = ttk.Label(label_frame, text=model)
         model_file_display.grid(row=9, column=0, sticky='W')  
 
-        # TODO - put all these in a list of tabs to update and iterate the list
-        # Update the Node Explorer tab
-        examine_selected_node()
-        # Update the Demand Explorer tab
-        examine_selected_demand()
-        # Update the Interface Explorer tab
-        examine_selected_interface()
-        # Update the Path Explorer tab
-        examine_paths()
-        # Update the RSVP LSP Explorer tab
-        examine_selected_lsp()
+        # # Update the Node Explorer tab
+        # examine_selected_node()
+        # # Update the Demand Explorer tab
+        # examine_selected_demand()
+        # # Update the Interface Explorer tab
+        # examine_selected_interface()
+        # # Update the Path Explorer tab
+        # examine_paths()
+        # # Update the RSVP LSP Explorer tab
+        # examine_selected_lsp()
+        update_tabs()
 
     # Create a button to produce a network graph
     graph_network_button = Button(label_frame)
@@ -118,11 +135,12 @@ def set_active_interface_from_listbox(event):
 
     # Refresh the tabs
     # TODO - add the destroy() function?
-    examine_selected_node()
-    examine_selected_demand()
-    examine_selected_interface()
-    examine_selected_lsp()
-    examine_paths()
+    # examine_selected_node()
+    # examine_selected_demand()
+    # examine_selected_interface()
+    # examine_selected_lsp()
+    # examine_paths()
+    update_tabs()()
 
 
 def set_active_demand_from_listbox(event):
@@ -141,11 +159,12 @@ def set_active_demand_from_listbox(event):
         thing.destroy()
         
     # Refresh the info on tabs
-    examine_selected_node()
-    examine_selected_demand()
-    examine_selected_interface()
-    examine_paths()
-    examine_selected_lsp()
+    # examine_selected_node()
+    # examine_selected_demand()
+    # examine_selected_interface()
+    # examine_paths()
+    # examine_selected_lsp()
+    update_tabs()
 
 
 def set_active_object_from_option_menu(event):
@@ -167,11 +186,12 @@ def set_active_object_from_option_menu(event):
         thing.destroy()
     
     # Refresh the Node Info and Demand Info tabs
-    examine_selected_node()
-    examine_selected_demand()
-    examine_selected_interface()
-    examine_paths()
-    examine_selected_lsp()
+    # examine_selected_node()
+    # examine_selected_demand()
+    # examine_selected_interface()
+    # examine_paths()
+    # examine_selected_lsp()
+    update_tabs()
 
 
 def get_demand_object_from_repr(demand_repr):
@@ -394,6 +414,52 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
 
     return interfaces_listbox
 
+
+def display_lsp_list(label_info, canvas_object, list_of_lsps,
+                       row_, column_):
+    """
+    Displays interfaces from list of lsps in single selectable listbox.
+    A label with label_info will appear above the listbox.
+    :param label_info: Label for displayed list
+    :param canvas_object: object where list will be displayed
+    :param list_of_lsps: list of RSVP_LSP objects
+    :param row_: row position
+    :param column_: column position
+    :return:
+    """
+    # Display LSP list's Label
+    Label(canvas_object, text=label_info).grid(row=row_, column=column_,
+                                               sticky='W', padx=5)
+
+    # Vertical scrollbar
+    vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
+    vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
+
+    horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
+    horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
+                              columnspan=2)
+
+    # Create a listbox with the available interfaces
+    lsps_listbox = Listbox(canvas_object, selectmode='single',
+                                 height=8, width=40, xscrollcommand=horizontal_scrollbar.set,
+                                 yscrollcommand=vertical_scrollbar.set)
+    lsps_listbox.grid(row=row_ + 1, column=column_, columnspan=2,
+                            sticky='W', padx=5)
+
+    horizontal_scrollbar.config(command=lsps_listbox.xview)
+    vertical_scrollbar.config(command=lsps_listbox.yview)
+
+    lsp_counter = 1
+
+    for intf_name in list_of_lsps:
+        lsps_listbox.insert(lsp_counter, intf_name)
+        lsp_counter += 1
+
+    lsps_listbox.bind("<<ListBoxSelect>>", set_active_interface_from_listbox)
+    lsps_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox)
+
+    return lsps_listbox
+
 def display_lsp(label_info, canvas_object, lsp, row_, column_):
     """
 
@@ -433,8 +499,8 @@ def display_lsp(label_info, canvas_object, lsp, row_, column_):
     return lsp_listbox
 
 
-def examine_selected_node(*args):
-    """Examine the selected_node"""
+def examine_selected_node():
+    """Controls information displayed on node_tab"""
     
     #### Frame to choose a node ####
     choose_node_frame = LabelFrame(node_tab)
@@ -516,11 +582,22 @@ def examine_selected_node(*args):
     display_selected_objects(node_tab, 0, 4)
     
 
-    # TODO - fail selected interface or node    
+    # TODO - add frame for LSPs that source on node
+    # TODO - add frame for LSPs that terminate on node
+
+    # TODO - fail selected node
     
 
-def examine_selected_demand(*args):
-    """Examine selected_demand object"""
+def examine_selected_demand():
+    """
+    Controls the display of information on demand_tab
+    Displays a dropdown list on demand_tab, allowing user to select a demand.
+    Displays selected objects on demand_tab
+    Displays all paths for selected_demand on demand_tab
+    Displays demands egressing selected_interface on demand_tab
+    Displays demands on selected_lsp on demand_tab
+    :return:
+    """
     
     # Label for choosing interface
     choose_demand_label = Label(demand_tab, 
@@ -553,21 +630,25 @@ def examine_selected_demand(*args):
         except AttributeError:
             pass
         
-        column_num = 0
+
         
         for path in dmd_paths:
-            label_info = "Demand hops ordered from source to dest"
+            row_num = 0
             if isinstance(path, RSVP_LSP):
+                label_info = "LSPs that carry demand"
                 lsp_info = path
-                display_lsp(label_info, demand_path_frame,
-                                   lsp_info, 0, column_num)
+                display_lsp_list(label_info, demand_path_frame,
+                                 dmd_paths, row_num, 0)
+                break
 
             else:
+                label_info = "Demand hops ordered from source to dest"
+                column_num = 0
                 interface_info = [str(round((interface.utilization * 100),1))\
                         +'%   '+ interface.__repr__() for interface in path]
                 display_interfaces(label_info, demand_path_frame,
                                         interface_info, 0, column_num)
-            column_num += 3
+                column_num += 3
 
 
         
@@ -579,7 +660,7 @@ def examine_selected_demand(*args):
     display_demands("Demands Egressing Selected Interface", demand_tab,
                         demands_on_interface, 4, 1)
 
-    # Get/display demands on selected_lsp on demand_tab and lsp_tab
+    # Get/display demands on selected_lsp on demand_tab
     demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
     display_demands("Demands on Selected LSP", demand_tab,
@@ -589,8 +670,8 @@ def examine_selected_demand(*args):
                     demands_on_lsp, 4, 0)
 
 
-def examine_selected_interface(*args):
-    """Allows user to explore interfaces with different characteristics"""
+def examine_selected_interface():
+    """Controls display of information on interface_tab"""
     
     #### Filter to interfaces above a certain utilization ####
     utilization_frame = LabelFrame(interface_tab)
@@ -629,10 +710,13 @@ def examine_selected_interface(*args):
     display_demands("Demands Egressing Selected Interface", interface_tab,
                         demands_on_interface, 6, 0)
 
+    # TODO - fail selected interface
 
-def examine_paths(*args):
-    """Allows user to examine shortest paths and all paths between the
-    selected source and destination nodes in the Model"""
+
+def examine_paths():
+    """Controls display of information on path_tab"""
+
+    # TODO - define all frames on path_tab in one area to keep track better
 
     #### Select source and dest nodes ####
     node_choices = [node.name for node in model.node_objects]
@@ -650,11 +734,7 @@ def examine_paths(*args):
     
     # Find shortest paths
     try:
-        # TODO - remove these calls?  Are they used?
-        source_node_object = model.get_node_object(source_node.get())
-        dest_node_object = model.get_node_object(dest_node.get())
-      
-        shortest_path = model.get_shortest_path(source_node.get(), 
+        shortest_path = model.get_shortest_path(source_node.get(),
                                                         dest_node.get())
         
         paths = shortest_path['path']
@@ -679,20 +759,34 @@ def examine_paths(*args):
     except ModelException:
         pass
 
+    # Display all LSPs between source/dest nodes
+    # Create a frame to hold the LSPs
+    shortest_path = model.get_shortest_path(source_node.get(), dest_node.get())
+    lsp_frame = LabelFrame(path_tab, text="LSPs between source/dest nodes; cost = {}".format(shortest_path['cost']))
+    lsp_frame.grid(row=2, column=1, sticky='W', padx=10)
+
+    # Get LSPs
+    lsps = (lsp for lsp in model.rsvp_lsp_objects if (lsp.source_node_object.name == source_node.get() and
+                                                      lsp.dest_node_object.name == dest_node.get()))
+
+
+
+    display_lsp_list('', lsp_frame, lsps, 0, 0)
+
     #### Display all paths ####
     # Note - python, wtf?! Getting the horizontal scrollbar to work with
     # multiple listboxes was WAY more difficult than it should have been
     try:
         # TODO - remove these calls?  Are they used?
-        source_node_object = model.get_node_object(source_node.get())
-        dest_node_object = model.get_node_object(dest_node.get())
+#        model.get_node_object(source_node.get())
+#        model.get_node_object(dest_node.get())
         
         all_paths = model.get_feasible_paths(source_node.get(), 
                                                         dest_node.get())
 
         # Create label frame to hold the feasible path(s) # frame_canvas
         feasible_path_frame = LabelFrame(path_tab, text="All Paths")
-        feasible_path_frame.grid(row = 3, column = 0, padx=10, pady=10)
+        feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
         
         feasible_path_frame.grid_rowconfigure(0, weight=1)
         feasible_path_frame.grid_columnconfigure(0, weight=1)
@@ -734,17 +828,18 @@ def examine_paths(*args):
     except ModelException:
         pass    
 
+
 def node_dropdown_select(label, node_choices, target_variable, row_, column_):
-    """"Creates a labelframe with a node select option menu"""
+    """Creates a labelframe with a node select option menu"""
     #### Frame to choose a node ####
     choose_node_frame = LabelFrame(path_tab)
     choose_node_frame.grid(row=row_, column=column_, padx=10, pady=10)
     # Label for choosing node
     Label(choose_node_frame, text=label).grid(row=0, column=0, sticky='W', 
-                                                pady=10)
+                                              pady=10)
 
     # Dropdown menu to choose a node
-    node_choices_list = node_choices
+#    node_choices_list = node_choices
 
     # Put the node selection button on the node_tab.
     # This option menu will call examine_selected_node when the choice is made.
@@ -827,13 +922,18 @@ def set_active_lsp_from_listbox(event):
     for thing in lsp_tab.grid_slaves():
         thing.destroy()
 
-    examine_selected_node()
-    examine_selected_demand()
-    examine_selected_interface()
-    examine_selected_lsp()
-    examine_paths()
+    # examine_selected_node()
+    # examine_selected_demand()
+    # examine_selected_interface()
+    # examine_selected_lsp()
+    # examine_paths()
+    update_tabs()
 
-def examine_selected_lsp(*args): #TODO
+def examine_selected_lsp():
+    """
+    Controls the display of information on the lsp_tab
+    :return:
+    """
 
     #### Frame to choose an LSP ####
     choose_lsp_frame = LabelFrame(lsp_tab)
@@ -882,6 +982,12 @@ def examine_selected_lsp(*args): #TODO
 
     #### Create a frame to show selected object info ####
     display_selected_objects(lsp_tab, 0, 4)
+
+
+    demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
+
+    display_demands("Demands on Selected LSP", lsp_tab,
+                    demands_on_lsp, 4, 0)
 
 def get_demands_on_lsp(selected_lsp_get):
     """
