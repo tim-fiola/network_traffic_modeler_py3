@@ -792,7 +792,7 @@ def examine_paths():
         #### Display all paths ####
         # Note - python, wtf?! Getting the horizontal scrollbar to work with
         # multiple listboxes was WAY more difficult than it should have been
-        # TODO - path cost value is coming up too high; look at it again; on RSVP explore tab the path cost is accurate
+        # TODO - path cost value is coming up too high; look at it again
         try:
             all_paths = model.get_feasible_paths(source_node.get(),
                                                             dest_node.get())
@@ -826,7 +826,7 @@ def examine_paths():
             for path in all_paths:
                 cost = 0
                 for intf in path:
-                    cost += cost + intf.cost
+                    cost += intf.cost
                 list_of_interfaces = path
                 label = "Feasible Path {}, cost = {}".format(str(path_counter), cost)
                 display_interfaces(label, path_frame, list_of_interfaces,
@@ -847,7 +847,7 @@ def examine_paths():
             pass
 
 
-def node_dropdown_select(label, node_choices, target_variable, row_, column_, frame):
+def node_dropdown_select(label, node_choices, target_variable, row_, column_, canvas_object):
     """
     Creates a labelframe with a node select option menu
     :param label: text displayed above the dropdown
@@ -855,11 +855,11 @@ def node_dropdown_select(label, node_choices, target_variable, row_, column_, fr
     :param target_variable: variable to be selected from list
     :param row_: row number
     :param column_: column number
-    :param frame: LabelFrame to put this menu
+    :param canvas_object: LabelFrame to place this menu in to
     :return:
     """
     #### Frame to choose a node ####
-    choose_node_frame = LabelFrame(frame)
+    choose_node_frame = LabelFrame(canvas_object)
     choose_node_frame.grid(row=row_, column=column_, padx=10, pady=10)
     # Label for choosing node
     Label(choose_node_frame, text=label).grid(row=0, column=0, sticky='W', 
@@ -1020,8 +1020,12 @@ def examine_selected_lsp():
         path_ints = path['interfaces']
         path_cost = path['path_cost']
         path_headroom = path['path_headroom']
+        available_bw = path['available_bw'] # amount of additional bw on path available for reservation
 
-        label = "LSP path info: cost = {}, headroom = {}".format(path_cost, path_headroom)
+        # TODO - fix available bw calculation
+        label = "LSP path info: cost = {}, headroom = {}, available bandwidth = {}".format(path_cost,
+                                                                                           path_headroom,
+                                                                                           available_bw)
         display_interfaces(label, lsp_tab, path_ints, 5, 0)
 
 

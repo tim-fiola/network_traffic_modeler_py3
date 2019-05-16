@@ -136,13 +136,20 @@ class RSVP_LSP(object):
             # Path headroom is the max amount of traffic that the path 
             # can handle without saturating a component interface
             path_headroom = min([interface.reservable_bandwidth for interface in path])
-            path_info = {'interfaces':path, 'path_cost':path_cost,
-                                        'path_headroom': path_headroom}
+            # amount of additional bw on path available for reservation
+            if self.path != 'Unrouted':
+                available_bw = int(path_headroom) - int(self.reserved_bandwidth)
+            else:
+                available_bw = 'NA'
+
+            path_info = {'interfaces': path, 'path_cost': path_cost,
+                         'path_headroom': path_headroom,
+                         'available_bw': available_bw}
             
             candidate_path_info.append(path_info)
 #            path_counter += 1
             
-        return  candidate_path_info  
+        return candidate_path_info
 
     def lsp_can_route(self, model):
         """ """
