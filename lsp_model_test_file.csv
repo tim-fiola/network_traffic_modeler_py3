@@ -12,6 +12,8 @@ A	E	A-to-E	10	300
 E	A	E-to-A	10	300
 D	F	D-to-F	10	300
 F	D	F-to-D	10	300
+A	D	A-to-D	40	20
+D	A	D-to-A	40	20
 
 NODES_TABLE
 name	lon	lat

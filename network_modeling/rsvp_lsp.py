@@ -135,9 +135,7 @@ class RSVP_LSP(object):
                 path_cost += interface.cost
             # Path headroom is the max amount of traffic that the path 
             # can handle without saturating a component interface
-            path_headroom = min([interface.reservable_bandwidth \
-                for interface in path])
-#            path_info = {}
+            path_headroom = min([interface.reservable_bandwidth for interface in path])
             path_info = {'interfaces':path, 'path_cost':path_cost,
                                         'path_headroom': path_headroom}
             

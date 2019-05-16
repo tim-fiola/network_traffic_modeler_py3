@@ -38,6 +38,10 @@ def update_tabs():
     # Update the RSVP LSP Explorer tab
     examine_selected_lsp()
 
+    print("selected_node set to {}".format(selected_node.get()))
+    print("selected_demand set to {}".format(selected_demand.get()))
+    print("selected_interface set to {}".format(selected_interface.get()))
+    print("selected_lsp set to {}".format(selected_lsp.get()))
 
 def open_file():
     """Opens the file that describes the Model and allows user to save
@@ -383,7 +387,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     A label with label_info will appear above the listbox."""
     # Display Node's Interfaces Label
     Label(canvas_object, text=label_info).grid(row=row_, column=column_, 
-                                                sticky='W', padx=5)
+                                                sticky='W', padx=10)
 
     # Vertical scrollbar
     vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
@@ -398,7 +402,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
                 height = 8, width=40, xscrollcommand=horizontal_scrollbar.set,
                 yscrollcommand=vertical_scrollbar.set)
     interfaces_listbox.grid(row=row_+1, column=column_, columnspan=2, 
-                                sticky='W', padx=5)
+                                sticky='W', padx=10)
 
     horizontal_scrollbar.config(command=interfaces_listbox.xview)
     vertical_scrollbar.config(command=interfaces_listbox.yview)
@@ -455,8 +459,8 @@ def display_lsp_list(label_info, canvas_object, list_of_lsps,
         lsps_listbox.insert(lsp_counter, intf_name)
         lsp_counter += 1
 
-    lsps_listbox.bind("<<ListBoxSelect>>", set_active_interface_from_listbox)
-    lsps_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox)
+    lsps_listbox.bind("<<ListBoxSelect>>", set_active_lsp_from_listbox)
+    lsps_listbox.bind("<Double-Button-1>", set_active_lsp_from_listbox)
 
     return lsps_listbox
 
@@ -672,7 +676,11 @@ def examine_selected_demand():
 
 def examine_selected_interface():
     """Controls display of information on interface_tab"""
-    
+
+    ## TODO - add reserved bandwidth to display
+    ## TODO - add reservable bandwidth to display
+    ## TODO - add LSPs on interface
+
     #### Filter to interfaces above a certain utilization ####
     utilization_frame = LabelFrame(interface_tab)
     utilization_frame.grid(row=0, column=0)
@@ -710,6 +718,8 @@ def examine_selected_interface():
     display_demands("Demands Egressing Selected Interface", interface_tab,
                         demands_on_interface, 6, 0)
 
+
+
     # TODO - fail selected interface
 
 
@@ -718,19 +728,38 @@ def examine_paths():
 
     # TODO - define all frames on path_tab in one area to keep track better
 
+    node_select_and_lsp_frame = LabelFrame(path_tab)
+    node_select_and_lsp_frame.grid(row=0, column=0, sticky='W', padx=10, pady=10, rowspan=2, columnspan=3)
+
     #### Select source and dest nodes ####
     node_choices = [node.name for node in model.node_objects]
     node_choices.sort()
     
     src_node_select_frame = node_dropdown_select("Select a source node",
-            node_choices, source_node, 0, 0)
+            node_choices, source_node, 0, 0, node_select_and_lsp_frame)
     src_node_select_frame.grid(sticky='W')
             
     dest_node_select = node_dropdown_select("Select a dest node", 
-            node_choices, dest_node, 1, 0)
+            node_choices, dest_node, 1, 0, node_select_and_lsp_frame)
     dest_node_select.grid(sticky='W')
-    
+
+
+
     if source_node.get() != '' and dest_node.get() != '':
+        # Display all LSPs between source/dest nodes
+        # Create a frame to hold the LSPs
+        shortest_path = model.get_shortest_path(source_node.get(), dest_node.get())
+        lsp_frame = LabelFrame(node_select_and_lsp_frame, text="LSPs between source/dest nodes; "
+                               "cost = {}".format(shortest_path['cost']))
+        lsp_frame.grid(row=0, column=1, sticky='W', padx=30, pady=10, rowspan=2)
+
+        # Get LSPs
+        lsps = (lsp for lsp in model.rsvp_lsp_objects if (lsp.source_node_object.name == source_node.get() and
+                                                          lsp.dest_node_object.name == dest_node.get()))
+
+        display_lsp_list('', lsp_frame, lsps, 0, 0)
+
+
         #### Display shortest path(s) ####
         # Find shortest paths
         try:
@@ -755,25 +784,15 @@ def examine_paths():
                 column_counter += 2
                 path_counter += 1
 
+        # TODO - this catch may not be necessary given the if statement it's nested in
         except ModelException as e:
             print('e1 is {}'.format(e))
             pass
 
-        # Display all LSPs between source/dest nodes
-        # Create a frame to hold the LSPs
-        shortest_path = model.get_shortest_path(source_node.get(), dest_node.get())
-        lsp_frame = LabelFrame(path_tab, text="LSPs between source/dest nodes; cost = {}".format(shortest_path['cost']))
-        lsp_frame.grid(row=2, column=1, sticky='W', padx=10)
-
-        # Get LSPs
-        lsps = (lsp for lsp in model.rsvp_lsp_objects if (lsp.source_node_object.name == source_node.get() and
-                                                          lsp.dest_node_object.name == dest_node.get()))
-
-        display_lsp_list('', lsp_frame, lsps, 0, 0)
-
         #### Display all paths ####
         # Note - python, wtf?! Getting the horizontal scrollbar to work with
         # multiple listboxes was WAY more difficult than it should have been
+        # TODO - path cost value is coming up too high; look at it again; on RSVP explore tab the path cost is accurate
         try:
             all_paths = model.get_feasible_paths(source_node.get(),
                                                             dest_node.get())
@@ -822,15 +841,25 @@ def examine_paths():
             feasible_path_frame.config(width=1200, height=300)
             feasible_path_canvas.config(scrollregion=feasible_path_canvas.bbox("all"))
 
+        # TODO - this catch may not be necessary given the if statement it's nested in
         except ModelException as e:
             print('e2 is {}'.format(e))
             pass
 
 
-def node_dropdown_select(label, node_choices, target_variable, row_, column_):
-    """Creates a labelframe with a node select option menu"""
+def node_dropdown_select(label, node_choices, target_variable, row_, column_, frame):
+    """
+    Creates a labelframe with a node select option menu
+    :param label: text displayed above the dropdown
+    :param node_choices: list of nodes
+    :param target_variable: variable to be selected from list
+    :param row_: row number
+    :param column_: column number
+    :param frame: LabelFrame to put this menu
+    :return:
+    """
     #### Frame to choose a node ####
-    choose_node_frame = LabelFrame(path_tab)
+    choose_node_frame = LabelFrame(frame)
     choose_node_frame.grid(row=row_, column=column_, padx=10, pady=10)
     # Label for choosing node
     Label(choose_node_frame, text=label).grid(row=0, column=0, sticky='W', 
@@ -933,6 +962,8 @@ def examine_selected_lsp():
     :return:
     """
 
+    display_selected_objects(lsp_tab, 0, 1)
+
     #### Frame to choose an LSP ####
     choose_lsp_frame = LabelFrame(lsp_tab)
     choose_lsp_frame.grid(row=0, column=0, padx=10, pady=10)
@@ -952,40 +983,47 @@ def examine_selected_lsp():
                                      command=set_active_object_from_option_menu)
 
     # Specify position of menu to select LSP
-    lsp_dropdown_select.grid(row=0, column=1, sticky='E')
+    lsp_dropdown_select.grid(row=0, column=1, sticky='NW')
 
-    # Display_selected LSPs
-    display_selected_objects(lsp_tab, 0, 3)
+    # # Display_selected LSPs
+    # display_selected_objects(lsp_tab, 0, 3)
+    #
+    # # Display the selected LSP's path in a Frame
+    # lsp_path_frame = LabelFrame(lsp_tab,
+    #                             text="LSP Path Info (ordered from source to destination)")
+    # # Position the Frame
+    # lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W',
+    #                     padx=10, pady=10)
+    #
+    # try:
+    #     lsp_object = get_lsp_object_from_repr(selected_lsp.get())
+    #     try:
+    #         lsp_path = lsp_object.path
+    #     except AttributeError:
+    #         pass
+    #
+    # except (IndexError, UnboundLocalError):
+    #     pass
+    #
+    #
+    # #### Create a frame to show selected object info ####
+    # display_selected_objects(lsp_tab, 0, 4)
+    #
 
-    # Display the selected LSP's path in a Frame
-    lsp_path_frame = LabelFrame(lsp_tab,
-                                text="LSP Path Info (ordered from source to destination)")
-    # Position the Frame
-    lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W',
-                        padx=10, pady=10)
+    if selected_lsp.get() != '':
+        demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
-    try:
-        lsp_object = get_lsp_object_from_repr(selected_lsp.get())
-        try:
-            lsp_path = lsp_object.path
-        except AttributeError:
-            pass
+        display_demands("Demands on Selected LSP", lsp_tab,
+                        demands_on_lsp, 4, 0)
 
-    except (IndexError, UnboundLocalError):
-        pass
+        path = get_lsp_object_from_repr(selected_lsp.get()).path
+        path_ints = path['interfaces']
+        path_cost = path['path_cost']
+        path_headroom = path['path_headroom']
 
+        label = "LSP path info: cost = {}, headroom = {}".format(path_cost, path_headroom)
+        display_interfaces(label, lsp_tab, path_ints, 5, 0)
 
-
-    demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
-
-    #### Create a frame to show selected object info ####
-    display_selected_objects(lsp_tab, 0, 4)
-
-
-    demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
-
-    display_demands("Demands on Selected LSP", lsp_tab,
-                    demands_on_lsp, 4, 0)
 
 def get_demands_on_lsp(selected_lsp_get):
     """
