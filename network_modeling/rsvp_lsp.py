@@ -72,12 +72,9 @@ class RSVP_LSP(object):
             candidate_path_info = \
                 self._find_path_cost_and_headroom(candidate_paths, model)
             
-            
-
-            
             # Filter out paths that don't have enough headroom
             candidate_paths_with_enough_headroom = [path for path in \
-                candidate_path_info if path['path_headroom'] >= \
+                candidate_path_info if path['baseline_path_reservable_bw'] >= \
                 self.setup_bandwidth]
                 
             # 1.There are no viable paths with needed headroom,
@@ -99,7 +96,7 @@ class RSVP_LSP(object):
             else:
                 
                 
-                ### reservable_bandwidth is not updating - debug
+                ### TODO - reservable_bandwidth is not updating? - debug
                 
                 
                 self.reserved_bandwidth = self.setup_bandwidth
@@ -135,16 +132,15 @@ class RSVP_LSP(object):
                 path_cost += interface.cost
             # Path headroom is the max amount of traffic that the path 
             # can handle without saturating a component interface
-            path_headroom = min([interface.reservable_bandwidth for interface in path])
+            baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
             # amount of additional bw on path available for reservation
-            if self.path != 'Unrouted':
-                available_bw = int(path_headroom) - int(self.reserved_bandwidth)
-            else:
-                available_bw = 'NA'
+            # if self.path != 'Unrouted':
+            #     available_bw = int(path_headroom) - int(self.reserved_bandwidth)
+            # else:
+            #     available_bw = 'NA'
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
-                         'path_headroom': path_headroom,
-                         'available_bw': available_bw}
+                         'baseline_path_reservable_bw': baseline_path_reservable_bw}
             
             candidate_path_info.append(path_info)
 #            path_counter += 1

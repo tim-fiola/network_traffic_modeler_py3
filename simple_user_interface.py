@@ -623,7 +623,7 @@ def examine_selected_demand():
 
     #### Display the selected demand's path(s) ####
     demand_path_frame = LabelFrame(demand_tab,
-                    text="Demand Path Info (Ordered hops from source to destination); Displays all paths for ECMP demands.")
+                    text="Demand Path Info; displays all ECMP paths.")
     demand_path_frame.grid(row=3, column=0, columnspan=10, sticky='W', 
                             padx=10, pady=10)
     
@@ -631,6 +631,7 @@ def examine_selected_demand():
         demand_object = get_demand_object_from_repr(selected_demand.get())
         try:
             dmd_paths = demand_object.path
+        # TODO - get rid of this catch by testing for path != 'Unrouted'
         except AttributeError:
             pass
         
@@ -640,22 +641,22 @@ def examine_selected_demand():
             row_num = 0
             if isinstance(path, RSVP_LSP):
                 label_info = "LSPs that carry demand"
-                lsp_info = path
                 display_lsp_list(label_info, demand_path_frame,
                                  dmd_paths, row_num, 0)
                 break
 
             else:
-                label_info = "Demand hops ordered from source to dest"
+                label_info = "Int util% | Ordered int hops"
                 column_num = 0
-                interface_info = [str(round((interface.utilization * 100),1))\
-                        +'%   '+ interface.__repr__() for interface in path]
+
+                interface_info = ["{}%\t{}".format(str(round((interface.utilization * 100),1)),
+                                                     interface.__repr__()) for interface in path]
+
                 display_interfaces(label_info, demand_path_frame,
                                         interface_info, 0, column_num)
                 column_num += 3
 
-
-        
+    # TODO - get rid of this catch by testing for selected_demand.get() != ''
     except (IndexError, UnboundLocalError):
         pass
         
@@ -769,7 +770,7 @@ def examine_paths():
             cost = shortest_path['cost']
 
             # Create a frame to hold the shortest path(s)
-            shortest_path_frame = LabelFrame(path_tab, text="Shortest Paths")
+            shortest_path_frame = LabelFrame(path_tab, text="Shortest Paths ({})".format(len(paths)))
             shortest_path_frame.grid(row = 2, column = 0, sticky='W', padx=10)
 
             column_counter = 0
@@ -792,13 +793,12 @@ def examine_paths():
         #### Display all paths ####
         # Note - python, wtf?! Getting the horizontal scrollbar to work with
         # multiple listboxes was WAY more difficult than it should have been
-        # TODO - path cost value is coming up too high; look at it again
         try:
             all_paths = model.get_feasible_paths(source_node.get(),
                                                             dest_node.get())
 
             # Create label frame to hold the feasible path(s) # frame_canvas
-            feasible_path_frame = LabelFrame(path_tab, text="All Paths")
+            feasible_path_frame = LabelFrame(path_tab, text="All Paths ({})".format(len(all_paths)))
             feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
 
             feasible_path_frame.grid_rowconfigure(0, weight=1)
@@ -1011,22 +1011,23 @@ def examine_selected_lsp():
     #
 
     if selected_lsp.get() != '':
+
+        lsp_object = get_lsp_object_from_repr(selected_lsp.get())
+        lsp_reserved_bw = lsp_object.reserved_bandwidth
+
         demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
-        display_demands("Demands on Selected LSP", lsp_tab,
+        display_demands("Demands on Selected LSP (reserved bandwidth = {})"
+                        .format(lsp_reserved_bw), lsp_tab,
                         demands_on_lsp, 4, 0)
 
         path = get_lsp_object_from_repr(selected_lsp.get()).path
         path_ints = path['interfaces']
         path_cost = path['path_cost']
-        path_headroom = path['path_headroom']
-        available_bw = path['available_bw'] # amount of additional bw on path available for reservation
-
-        # TODO - fix available bw calculation
-        label = "LSP path info: cost = {}, headroom = {}, available bandwidth = {}".format(path_cost,
-                                                                                           path_headroom,
-                                                                                           available_bw)
+        baseline_path_reservable_bw = path['baseline_path_reservable_bw']
+        label = "LSP path info: cost = {}, baseline_path_reservable_bw = {}".format(path_cost, baseline_path_reservable_bw)
         display_interfaces(label, lsp_tab, path_ints, 5, 0)
+
 
 
 def get_demands_on_lsp(selected_lsp_get):
