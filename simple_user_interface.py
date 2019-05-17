@@ -602,7 +602,8 @@ def examine_selected_demand():
     Displays demands on selected_lsp on demand_tab
     :return:
     """
-    
+
+    # TODO - fix the spacing/layout here
     # Label for choosing interface
     choose_demand_label = Label(demand_tab, 
         text="Choose a demand:").grid(row=0, column=0, sticky='W', pady=10)
@@ -622,10 +623,13 @@ def examine_selected_demand():
     display_selected_objects(demand_tab, 0, 3)
 
     #### Display the selected demand's path(s) ####
+#    demand_path_parent_frame = Frame(demand_tab)
+#    demand_path_parent_frame.grid(row=3, column=0, columnspan=3, sticky='W')
     demand_path_frame = LabelFrame(demand_tab,
                     text="Demand Path Info; displays all ECMP paths.")
-    demand_path_frame.grid(row=3, column=0, columnspan=10, sticky='W', 
+    demand_path_frame.grid(row=3, column=0, sticky='W',
                             padx=10, pady=10)
+    demand_path_frame.config(width=600, height=150)
     
     try:
         demand_object = get_demand_object_from_repr(selected_demand.get())
@@ -634,27 +638,14 @@ def examine_selected_demand():
         # TODO - get rid of this catch by testing for path != 'Unrouted'
         except AttributeError:
             pass
-        
 
-        
-        for path in dmd_paths:
+        if isinstance(dmd_paths[0], RSVP_LSP):
             row_num = 0
-            if isinstance(path, RSVP_LSP):
-                label_info = "LSPs that carry demand"
-                display_lsp_list(label_info, demand_path_frame,
-                                 dmd_paths, row_num, 0)
-                break
-
-            else:
-                label_info = "Int util% | Ordered int hops"
-                column_num = 0
-
-                interface_info = ["{}%\t{}".format(str(round((interface.utilization * 100),1)),
-                                                     interface.__repr__()) for interface in path]
-
-                display_interfaces(label_info, demand_path_frame,
-                                        interface_info, 0, column_num)
-                column_num += 3
+            label_info = "LSPs that carry demand"
+            display_lsp_list(label_info, demand_path_frame,
+                             dmd_paths, row_num, 0)
+        else:
+            display_multiple_paths(dmd_paths, demand_path_frame)
 
     # TODO - get rid of this catch by testing for selected_demand.get() != ''
     except (IndexError, UnboundLocalError):
@@ -671,8 +662,8 @@ def examine_selected_demand():
     display_demands("Demands on Selected LSP", demand_tab,
                     demands_on_lsp, 4, 3)
 
-    display_demands("Demands on Selected LSP", lsp_tab,
-                    demands_on_lsp, 4, 0)
+    # display_demands("Demands on Selected LSP", lsp_tab,
+    #                 demands_on_lsp, 4, 0)
 
 
 def examine_selected_interface():
@@ -744,14 +735,12 @@ def examine_paths():
             node_choices, dest_node, 1, 0, node_select_and_lsp_frame)
     dest_node_select.grid(sticky='W')
 
-
-
     if source_node.get() != '' and dest_node.get() != '':
         # Display all LSPs between source/dest nodes
         # Create a frame to hold the LSPs
         shortest_path = model.get_shortest_path(source_node.get(), dest_node.get())
         lsp_frame = LabelFrame(node_select_and_lsp_frame, text="LSPs between source/dest nodes; "
-                               "cost = {}".format(shortest_path['cost']))
+                               "shortest path cost = {}".format(shortest_path['cost']))
         lsp_frame.grid(row=0, column=1, sticky='W', padx=30, pady=10, rowspan=2)
 
         # Get LSPs
@@ -801,50 +790,62 @@ def examine_paths():
             feasible_path_frame = LabelFrame(path_tab, text="All Paths ({})".format(len(all_paths)))
             feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
 
+            feasible_path_frame.config(width=1200, height=150)
+
             feasible_path_frame.grid_rowconfigure(0, weight=1)
             feasible_path_frame.grid_columnconfigure(0, weight=1)
             feasible_path_frame.grid_propagate(False)
 
-            # canvas
-            feasible_path_canvas = Canvas(feasible_path_frame)
-            feasible_path_canvas.grid(row=0, column=0, sticky='news')
-
-            # Horizontal Scrollbar
-            horizontal_scrollbar = Scrollbar(feasible_path_frame, orient=HORIZONTAL,
-                        command=feasible_path_canvas.xview)
-            horizontal_scrollbar.grid(row=4, column=0, sticky='ew')
-            feasible_path_canvas.configure(xscrollcommand=horizontal_scrollbar.set)
-
-            # Create a frame to house the path(s)
-            path_frame = Frame(feasible_path_canvas) # frame_buttons
-            feasible_path_canvas.create_window((0,0), window=path_frame,
-                                                            anchor='nw')
-
-            column_counter = 0
-            path_counter = 0
-
-            for path in all_paths:
-                cost = 0
-                for intf in path:
-                    cost += intf.cost
-                list_of_interfaces = path
-                label = "Feasible Path {}, cost = {}".format(str(path_counter), cost)
-                display_interfaces(label, path_frame, list_of_interfaces,
-                    1, column_counter)
-                column_counter += 2
-                path_counter += 1
-
-            # These next 3 things need to be in this order or the horizontal
-            # scrollbar for the multiple listboxes doesn't work; holy cow, python,
-            # it shouldn't be this difficult
-            path_frame.update_idletasks()
-            feasible_path_frame.config(width=1200, height=300)
-            feasible_path_canvas.config(scrollregion=feasible_path_canvas.bbox("all"))
+            display_multiple_paths(all_paths, feasible_path_frame)
 
         # TODO - this catch may not be necessary given the if statement it's nested in
         except ModelException as e:
             print('e2 is {}'.format(e))
             pass
+
+
+def display_multiple_paths(paths, frame):
+    """
+    Displays multiple paths horizontally, each path within its own Frame,
+    which will have a horizontal scrollbar for the path.
+    Path Frames will be arranged horizontally within a Canvas object; the
+    Canvas object will have a horizontal scrollbar to view all Path Frames.
+    :param paths: list of paths to display
+    :param frame: Frame that supports the scrollbar and Canvas to display paths
+    :return: None
+    """
+
+    # Canvas within frame object; this canvas can hold multiple path_frames.
+    # This Canvas will have a horizontal scrollbar
+    canvas = Canvas(frame)
+    canvas.grid(row=0, column=0, sticky='news')
+
+    # Horizontal Scrollbar
+    horizontal_scrollbar = Scrollbar(frame, orient=HORIZONTAL,
+                                     command=canvas.xview)
+    horizontal_scrollbar.grid(row=4, column=0, sticky='ew')
+    canvas.configure(xscrollcommand=horizontal_scrollbar.set)
+    # Create a frame to house the path(s)
+    path_frame = Frame(canvas)  # frame_buttons
+    canvas.create_window((0, 0), window=path_frame,
+                                       anchor='nw')
+    column_counter = 0
+    path_counter = 0
+    for path in paths:
+        cost = 0
+        for intf in path:
+            cost += intf.cost
+        list_of_interfaces = path
+        label = "Feasible Path {}, cost = {}".format(str(path_counter), cost)
+        display_interfaces(label, path_frame, list_of_interfaces,
+                           1, column_counter)
+        column_counter += 2
+        path_counter += 1
+    # These next 3 things need to be in this order or the horizontal
+    # scrollbar for the multiple listboxes doesn't work; holy cow, python,
+    # it shouldn't be this difficult
+    path_frame.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all"))
 
 
 def node_dropdown_select(label, node_choices, target_variable, row_, column_, canvas_object):
@@ -1026,6 +1027,8 @@ def examine_selected_lsp():
         path_cost = path['path_cost']
         baseline_path_reservable_bw = path['baseline_path_reservable_bw']
         label = "LSP path info: cost = {}, baseline_path_reservable_bw = {}".format(path_cost, baseline_path_reservable_bw)
+
+        # TODO - specify dimensions of display_interfaces box; right here it looks weird
         display_interfaces(label, lsp_tab, path_ints, 5, 0)
 
 
