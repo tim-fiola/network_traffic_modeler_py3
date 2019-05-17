@@ -585,7 +585,7 @@ def examine_selected_node():
         interface_object=None
         demands_on_interface=[]
     
-    display_demands("Demands Egressing Selected Interface", intf_demands_frame, 
+    display_demands("Demands Egressing Selected Interface {}".format(selected_interface.get()), intf_demands_frame,
                         demands_on_interface, 0, 1)
   
     #### Create a frame to show selected object info ####
@@ -724,7 +724,7 @@ def examine_selected_interface():
     
     demands_on_interface = get_demands_on_interface(selected_interface.get())               
 
-    display_demands("Demands Egressing Selected Interface", interface_tab,
+    display_demands("Demands Egressing Selected Interface {}".format(selected_interface.get()), interface_tab,
                         demands_on_interface, 6, 0)
 
 
