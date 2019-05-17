@@ -27,6 +27,7 @@ def update_tabs():
     Updates the info displayed on each tab
     :return: None
     """
+
     # Update the Node Explorer tab
     examine_selected_node()
     # Update the Demand Explorer tab
@@ -144,7 +145,7 @@ def set_active_interface_from_listbox(event):
     # examine_selected_interface()
     # examine_selected_lsp()
     # examine_paths()
-    update_tabs()()
+    update_tabs()
 
 
 def set_active_demand_from_listbox(event):
@@ -160,6 +161,10 @@ def set_active_demand_from_listbox(event):
     for thing in node_tab.grid_slaves():
         thing.destroy()
     for thing in interface_tab.grid_slaves():
+        thing.destroy()
+    for thing in path_tab.grid_slaves():
+        thing.destroy()
+    for thing in lsp_tab.grid_slaves():
         thing.destroy()
         
     # Refresh the info on tabs
@@ -236,7 +241,6 @@ def display_selected_objects(canvas_object, row_, column_):
     """Displays the selected objects"""
  
     node_status = 'Unknown'
-    interface_status = 'Unknown'
     demand_status = 'Unknown'
     interface_status = 'Unknown'
     lsp_status = 'Unknown'
@@ -255,13 +259,11 @@ def display_selected_objects(canvas_object, row_, column_):
         selected_interface_node = selected_interface.get().split("'")[3]
      
         interface_object = model.get_interface_object(selected_interface_name,
-                                                    selected_interface_node)
+                                                      selected_interface_node)
                                           
         interface_failed = interface_object.failed
                                                     
         interface_util = str(round((interface_object.utilization*100),1))
-       
-        interface_info = interface_object
        
         if interface_failed == True:
             interface_status = 'Failed'
@@ -379,6 +381,7 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
         
     demand_listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
     demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox) 
+
 
 
 def display_interfaces(label_info, canvas_object, list_of_interfaces,
@@ -505,7 +508,10 @@ def display_lsp(label_info, canvas_object, lsp, row_, column_):
 
 def examine_selected_node():
     """Controls information displayed on node_tab"""
-    
+
+    for thing in node_tab.grid_slaves():
+        thing.destroy()
+
     #### Frame to choose a node ####
     choose_node_frame = LabelFrame(node_tab)
     choose_node_frame.grid(row=0, column=0, padx=10, pady=10)
@@ -603,10 +609,14 @@ def examine_selected_demand():
     :return:
     """
 
+    for thing in demand_tab.grid_slaves():
+        thing.destroy()
+
     # TODO - fix the spacing/layout here
     # Label for choosing interface
-    choose_demand_label = Label(demand_tab, 
-        text="Choose a demand:").grid(row=0, column=0, sticky='W', pady=10)
+    top_row_frame = Frame(demand_tab)
+    top_row_frame.grid(row=0, column=0, sticky='EW')
+    Label(top_row_frame, text="Choose a demand:").grid(row=0, column=0, sticky='W', pady=10)
 
     # Dropdown menu to choose a demand
     demand_choices_list = [demand for demand in model.demand_objects]
@@ -614,23 +624,26 @@ def examine_selected_demand():
     demand_choices_list_sorted = sorted(demand_choices_list, 
                                 key=lambda demand: demand.source_node_object.name)
 
-    demand_dropdown_select = OptionMenu(demand_tab, selected_demand, 
-                                    *demand_choices_list_sorted,
-                                    command=set_active_object_from_option_menu)
-    demand_dropdown_select.grid(row=0, column=1, sticky='EW')
+    demand_dropdown_select = OptionMenu(top_row_frame, selected_demand,
+                                        *demand_choices_list_sorted,
+                                        command=set_active_object_from_option_menu)
+    demand_dropdown_select.grid(row=0, column=1, sticky='W')
+#    demand_dropdown_select.config(width=70) # hard codes the width
  
     # Display the selected objects
-    display_selected_objects(demand_tab, 0, 3)
+    display_selected_objects(top_row_frame, 0, 2)
 
     #### Display the selected demand's path(s) ####
 #    demand_path_parent_frame = Frame(demand_tab)
 #    demand_path_parent_frame.grid(row=3, column=0, columnspan=3, sticky='W')
-    demand_path_frame = LabelFrame(demand_tab,
-                    text="Demand Path Info; displays all ECMP paths.")
-    demand_path_frame.grid(row=3, column=0, sticky='W',
-                            padx=10, pady=10)
-    demand_path_frame.config(width=600, height=150)
-    
+    demand_path_frame = LabelFrame(demand_tab, text="Demand Path Info; displays all ECMP paths.")
+    demand_path_frame.grid(row=3, column=0, sticky='NSEW', padx=10, pady=10) # Sticky NSEW keeps window from resizing
+    demand_path_frame.config(width=1200, height=300)
+    # These keep the demand_path_frame size consistent
+    demand_path_frame.grid_rowconfigure(0, weight=1)
+    demand_path_frame.grid_columnconfigure(0, weight=1)
+    demand_path_frame.grid_propagate(False)
+
     try:
         demand_object = get_demand_object_from_repr(selected_demand.get())
         try:
@@ -654,13 +667,14 @@ def examine_selected_demand():
     demands_on_interface = get_demands_on_interface(selected_interface.get())               
 
     display_demands("Demands Egressing Selected Interface", demand_tab,
-                        demands_on_interface, 4, 1)
+                        demands_on_interface, 4, 0)
+
 
     # Get/display demands on selected_lsp on demand_tab
     demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
     display_demands("Demands on Selected LSP", demand_tab,
-                    demands_on_lsp, 4, 3)
+                    demands_on_lsp, 4, 1)
 
     # display_demands("Demands on Selected LSP", lsp_tab,
     #                 demands_on_lsp, 4, 0)
@@ -672,6 +686,9 @@ def examine_selected_interface():
     ## TODO - add reserved bandwidth to display
     ## TODO - add reservable bandwidth to display
     ## TODO - add LSPs on interface
+
+    for thing in interface_tab.grid_slaves():
+        thing.destroy()
 
     #### Filter to interfaces above a certain utilization ####
     utilization_frame = LabelFrame(interface_tab)
@@ -719,6 +736,9 @@ def examine_paths():
     """Controls display of information on path_tab"""
 
     # TODO - define all frames on path_tab in one area to keep track better
+
+    for thing in path_tab.grid_slaves():
+        thing.destroy()
 
     node_select_and_lsp_frame = LabelFrame(path_tab)
     node_select_and_lsp_frame.grid(row=0, column=0, sticky='W', padx=10, pady=10, rowspan=2, columnspan=3)
@@ -776,7 +796,6 @@ def examine_paths():
 
         # TODO - this catch may not be necessary given the if statement it's nested in
         except ModelException as e:
-            print('e1 is {}'.format(e))
             pass
 
         #### Display all paths ####
@@ -790,7 +809,7 @@ def examine_paths():
             feasible_path_frame = LabelFrame(path_tab, text="All Paths ({})".format(len(all_paths)))
             feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
 
-            feasible_path_frame.config(width=1200, height=150)
+            feasible_path_frame.config(width=1200, height=220)
 
             feasible_path_frame.grid_rowconfigure(0, weight=1)
             feasible_path_frame.grid_columnconfigure(0, weight=1)
@@ -800,7 +819,6 @@ def examine_paths():
 
         # TODO - this catch may not be necessary given the if statement it's nested in
         except ModelException as e:
-            print('e2 is {}'.format(e))
             pass
 
 
@@ -929,7 +947,6 @@ def lsp_dropdown_select(label, lsp_choices, target_variable, row_, column_):
     return choose_lsp_frame
 
 
-
 def set_active_lsp_from_listbox(event):
     """
     Sets the selected lsp value from a listbox to the active_lsp
@@ -957,11 +974,15 @@ def set_active_lsp_from_listbox(event):
     # examine_paths()
     update_tabs()
 
+
 def examine_selected_lsp():
     """
     Controls the display of information on the lsp_tab
     :return:
     """
+
+    for thing in lsp_tab.grid_slaves():
+        thing.destroy()
 
     display_selected_objects(lsp_tab, 0, 1)
 
@@ -979,8 +1000,7 @@ def examine_selected_lsp():
     lsp_choices_list_sorted = sorted(lsp_choices_list, key=lambda lsp: lsp.source_node_object.name)
 
     # Display menu to select LSP
-    lsp_dropdown_select = OptionMenu(choose_lsp_frame, selected_lsp,
-                                     *lsp_choices_list_sorted,
+    lsp_dropdown_select = OptionMenu(choose_lsp_frame, *lsp_choices_list_sorted,
                                      command=set_active_object_from_option_menu)
 
     # Specify position of menu to select LSP
@@ -1032,7 +1052,6 @@ def examine_selected_lsp():
         display_interfaces(label, lsp_tab, path_ints, 5, 0)
 
 
-
 def get_demands_on_lsp(selected_lsp_get):
     """
     Returns a list of demands on selected_lsp
@@ -1057,6 +1076,7 @@ def get_demands_on_lsp(selected_lsp_get):
         demands_on_lsp = []
 
     return demands_on_lsp
+
 
 def get_lsp_object_from_repr(lsp_repr):
     """

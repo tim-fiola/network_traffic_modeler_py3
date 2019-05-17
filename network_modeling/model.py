@@ -1325,8 +1325,7 @@ does not exist in model"%(source_node_name, dest_node_name,
         
         # Define the demands info
         demands_info_begin_index = nodes_info_end_index + 3
-        demands_info_end_index = find_end_index(demands_info_begin_index, 
-                                                                    lines)
+        demands_info_end_index = find_end_index(demands_info_begin_index, lines)
         # There may or may not be LSPs in the model, so if there are not,
         # set the demands_info_end_index as the last line in the file
         if not(demands_info_end_index):
@@ -1345,8 +1344,7 @@ does not exist in model"%(source_node_name, dest_node_name,
             else: 
                 demand_name = name 
             model.add_demand(source, dest, traffic, demand_name)
-            
-        # Define th LSP info
+        # Define the LSP info
         # If the demands_info_end_index is the same as the length of the
         # lines list, then there is no LSP section
         if demands_info_end_index != len(lines):
