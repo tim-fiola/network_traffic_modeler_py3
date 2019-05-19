@@ -27,7 +27,6 @@ def update_tabs():
     Updates the info displayed on each tab
     :return: None
     """
-
     # Update the Node Explorer tab
     examine_selected_node()
     # Update the Demand Explorer tab
@@ -36,13 +35,15 @@ def update_tabs():
     examine_selected_interface()
     # Update the Path Explorer tab
     examine_paths()
-    # Update the RSVP LSP Explorer tab
-    examine_selected_lsp()
+
+    if len(model.rsvp_lsp_objects) > 0:
+        # Update the RSVP LSP Explorer tab
+        examine_selected_lsp()
+        print("selected_lsp set to {}".format(selected_lsp.get()))
 
     print("selected_node set to {}".format(selected_node.get()))
     print("selected_demand set to {}".format(selected_demand.get()))
     print("selected_interface set to {}".format(selected_interface.get()))
-    print("selected_lsp set to {}".format(selected_lsp.get()))
 
 def open_file():
     """Opens the file that describes the Model and allows user to save
@@ -52,17 +53,17 @@ def open_file():
                             title = "Select file",
                             filetypes = (("csv files","*.csv"),
                                             ("all files","*.*"))))
-    
+
     global model
 
-    selected_file_label = ttk.Label(label_frame, 
+    selected_file_label = ttk.Label(label_frame,
                                     text ="Network Model file is:")
     selected_file_label.grid(row=1, column=0, sticky='W')
-    selected_file_display = ttk.Label(label_frame, text=' '*30)   
-    selected_file_display = ttk.Label(label_frame, 
+    selected_file_display = ttk.Label(label_frame, text=' '*30)
+    selected_file_display = ttk.Label(label_frame,
                     text=selected_model_file.get())
     selected_file_display.grid(row=6, column=0)
-    
+
     if selected_model_file.get() != '':
         model = Model.load_model_file(selected_model_file.get())
         model.update_simulation()
@@ -70,7 +71,7 @@ def open_file():
         model_status_label = ttk.Label(label_frame, text="Model is:")
         model_status_label.grid(row = 8, column=0, sticky='W')
         model_file_display = ttk.Label(label_frame, text=model)
-        model_file_display.grid(row=9, column=0, sticky='W')  
+        model_file_display.grid(row=9, column=0, sticky='W')
 
         # # Update the Node Explorer tab
         # examine_selected_node()
@@ -90,8 +91,8 @@ def open_file():
     graph_network_button["text"] = "Push to create network graph"
     # Don't add the trailing () or this will execute immediately/automatically
 
-    graph_network_button["command"] = create_interactive_network_graph_and_refresh 
-    
+    graph_network_button["command"] = create_interactive_network_graph_and_refresh
+
     if network_graph_file.get() != '':
         graph_label_text = "Graph file saved at: "+network_graph_file.get()
         graph_file_label = Label(label_frame, text=graph_label_text)
@@ -105,7 +106,7 @@ def create_network_graph():
                         title = "Select or Create file:"))
     graph_network.make_utilization_graph_neat(model, network_graph_file.get(),
                         display_plot=False)
-    
+
 def create_network_graph_and_refresh():
     """Makes a network graph and refreshes open_file_tab"""
 
@@ -117,25 +118,25 @@ def create_network_graph_and_refresh():
 
 
 def create_interactive_network_graph_and_refresh():
-    """Makes an interactive network graph and refreshes open_file_tab"""  
+    """Makes an interactive network graph and refreshes open_file_tab"""
     graph_network_interactive.make_interactive_network_graph(model)
 
 
 def set_active_interface_from_listbox(event):
-    """Sets the selected interface value from a listbox to the 
+    """Sets the selected interface value from a listbox to the
     active_interface"""
     w = event.widget
 #    value = (w.curselection())
     value_position = (w.curselection())
-    
-    # This next part takes the first value in case the listbox has 
+
+    # This next part takes the first value in case the listbox has
     # extra info trailing the interface
     value_in_position = w.get(value_position)
-    
+
     # Use interface repr, so splitting that using split() yields interface
     # name in position 2
     selected_interface_value = value_in_position
-    
+
     selected_interface.set(selected_interface_value)
 
     # Refresh the tabs
@@ -154,7 +155,7 @@ def set_active_demand_from_listbox(event):
 #    value = (w.curselection()) # get the current selection
     value_position = (w.curselection()) # get the position of the current selection
     selected_demand.set(w.get(value_position)) # set selected_demand to the current selection
-    
+
     # Try to delete the Node Demand Info labelframe to clear the demand paths
     for thing in demand_tab.grid_slaves():
         thing.destroy()
@@ -166,7 +167,7 @@ def set_active_demand_from_listbox(event):
         thing.destroy()
     for thing in lsp_tab.grid_slaves():
         thing.destroy()
-        
+
     # Refresh the info on tabs
     # examine_selected_node()
     # examine_selected_demand()
@@ -177,7 +178,7 @@ def set_active_demand_from_listbox(event):
 
 
 def set_active_object_from_option_menu(event):
-    """Refreshes the tabs with the new active object info and displays 
+    """Refreshes the tabs with the new active object info and displays
     the info based on the new active object"""
 
     # Try to delete the Node Demand Info labelframe to clear the demand paths
@@ -193,7 +194,7 @@ def set_active_object_from_option_menu(event):
 
     for thing in lsp_tab.grid_slaves():
         thing.destroy()
-    
+
     # Refresh the Node Info and Demand Info tabs
     # examine_selected_node()
     # examine_selected_demand()
@@ -204,7 +205,7 @@ def set_active_object_from_option_menu(event):
 
 
 def get_demand_object_from_repr(demand_repr):
-    """Returns demand object with an input of the demand's repr"""  
+    """Returns demand object with an input of the demand's repr"""
 
     try:
         demand_info = re.split(', | |\)', demand_repr)
@@ -213,7 +214,7 @@ def get_demand_object_from_repr(demand_repr):
         demand_name = demand_info[11][1:-1]
         demand_object = model.get_demand_object(demand_source, demand_dest,
                                                         demand_name=demand_name)
-        return demand_object                                            
+        return demand_object
     except IndexError:
         pass
 
@@ -226,20 +227,20 @@ def get_demands_on_interface(selected_interface):
         interface_data = selected_interface.split("'")
         interface_name = interface_data[1]
         node_name = interface_data[3]
-        
-        interface_object = model.get_interface_object(interface_name, 
+
+        interface_object = model.get_interface_object(interface_name,
                                                         node_name)
         demands_on_interface = interface_object.demands(model)
     except (ModelException, IndexError):
         interface_object=None
         demands_on_interface=[]
-        
+
     return demands_on_interface
 
 
 def display_selected_objects(canvas_object, row_, column_):
     """Displays the selected objects"""
- 
+
     node_status = 'Unknown'
     demand_status = 'Unknown'
     interface_status = 'Unknown'
@@ -252,19 +253,19 @@ def display_selected_objects(canvas_object, row_, column_):
         else:
             node_status = 'Not Failed'
     except ModelException:
-        pass    
-    
+        pass
+
     try:
         selected_interface_name = selected_interface.get().split("'")[1]
         selected_interface_node = selected_interface.get().split("'")[3]
-     
+
         interface_object = model.get_interface_object(selected_interface_name,
                                                       selected_interface_node)
-                                          
+
         interface_failed = interface_object.failed
-                                                    
+
         interface_util = str(round((interface_object.utilization*100),1))
-       
+
         if interface_failed == True:
             interface_status = 'Failed'
         else:
@@ -272,11 +273,11 @@ def display_selected_objects(canvas_object, row_, column_):
     # These exceptions are necessary so the menu does not error out
     # before all the key objects are defined
     except (ModelException, AttributeError, IndexError) as e:
-        pass    
-        
+        pass
+
     try:
         demand_object = get_demand_object_from_repr(selected_demand.get())
-        demand_routed = demand_object.path 
+        demand_routed = demand_object.path
 
         if demand_routed == 'Unrouted':
             demand_status = 'Unrouted'
@@ -305,32 +306,32 @@ def display_selected_objects(canvas_object, row_, column_):
     selected_object_frame.columnconfigure(0, weight=1)
     selected_object_frame.columnconfigure(1, weight=2)
     selected_object_frame.columnconfigure(2, weight=1)
-    
-    Label(selected_object_frame, text='Name', 
+
+    Label(selected_object_frame, text='Name',
             background=background_color).grid(row=row_+1, column=1)
-    Label(selected_object_frame, text='Status', 
+    Label(selected_object_frame, text='Status',
             background=background_color).grid(row=row_+1, column=2)
-            
-    Label(selected_object_frame, text="Selected Node:", 
+
+    Label(selected_object_frame, text="Selected Node:",
             background=background_color).grid(row=row_+2, column=0, sticky='W')
-    Label(selected_object_frame, text=selected_node.get(), width=52, 
+    Label(selected_object_frame, text=selected_node.get(), width=52,
             borderwidth=1, relief="solid").grid(row=row_+2, column=1)
-    Label(selected_object_frame, text=node_status, 
+    Label(selected_object_frame, text=node_status,
             background=background_color).grid(row=row_+2, column=2, sticky='E')
-            
-    Label(selected_object_frame, text="Selected Interface:", 
+
+    Label(selected_object_frame, text="Selected Interface:",
             background=background_color).grid(row=row_+3, column=0, sticky='W')
-    Label(selected_object_frame, text=selected_interface.get(), 
-            width=52, justify=LEFT, wraplength=450, 
+    Label(selected_object_frame, text=selected_interface.get(),
+            width=52, justify=LEFT, wraplength=450,
             borderwidth=1, relief="solid").grid(row=row_+3, column=1)
-    Label(selected_object_frame, text=interface_status, 
+    Label(selected_object_frame, text=interface_status,
             background=background_color).grid(row=row_+3, column=2, sticky='E')
-            
-    Label(selected_object_frame, text="Selected Demand:", 
+
+    Label(selected_object_frame, text="Selected Demand:",
             background=background_color).grid(row=row_+4, column=0, sticky='W')
-    Label(selected_object_frame, text=selected_demand.get(), width=52, 
-        borderwidth=1, wraplength=450, relief="solid").grid(row=row_+4, column=1)   
-    Label(selected_object_frame, text=demand_status, 
+    Label(selected_object_frame, text=selected_demand.get(), width=52,
+        borderwidth=1, wraplength=450, relief="solid").grid(row=row_+4, column=1)
+    Label(selected_object_frame, text=demand_status,
         background=background_color).grid(row=row_+4, column=2, sticky='E')
 
     Label(selected_object_frame, text="Selected LSP:",
@@ -340,17 +341,17 @@ def display_selected_objects(canvas_object, row_, column_):
     Label(selected_object_frame, text=lsp_status,
         background=background_color).grid(row=row_+5, column=2, sticky='E')
 
-    
-def display_demands(label_info, canvas_object, list_of_demands, row_, 
+
+def display_demands(label_info, canvas_object, list_of_demands, row_,
                 column_,):
-    """Displays a label for demands and a single-select listbox of the 
+    """Displays a label for demands and a single-select listbox of the
     demands below the label_info on a given canvas_object.  A horizontal
     scrollbar is included """
 
     demands_frame = LabelFrame(canvas_object)
     demands_frame.grid(row=row_, column=column_, pady=10)
 
-    Label(demands_frame, text=label_info).grid(row = 0, 
+    Label(demands_frame, text=label_info).grid(row = 0,
                     column=0, sticky='W', padx=10)
 
     # Horizontal scrollbar - TODO create decorator for the scrollbar?
@@ -360,16 +361,16 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     # Vertical scrollbar
     vertical_scrollbar = Scrollbar(demands_frame, orient=VERTICAL)
     vertical_scrollbar.grid(row=1, column=1, sticky=N+S)
-  
+
     demand_listbox = Listbox(demands_frame, selectmode='single', height=10,
                             width=40, xscrollcommand=horizontal_scrollbar.set,
                             yscrollcommand=vertical_scrollbar.set)
     demand_listbox.grid(row = 1, column=0, sticky='W', padx=10)
 
-    vertical_scrollbar.config(command=demand_listbox.yview)    
-    
+    vertical_scrollbar.config(command=demand_listbox.yview)
+
     horizontal_scrollbar.config(command=demand_listbox.xview)
-    
+
     demand_counter = 1
 
     if list_of_demands != None:
@@ -378,9 +379,9 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
             demand_counter += 1
     else:
         pass
-        
+
     demand_listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
-    demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox) 
+    demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
 
 
 
@@ -389,27 +390,27 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     """Displays interfaces from list of interfaces in single selectable listbox.
     A label with label_info will appear above the listbox."""
     # Display Node's Interfaces Label
-    Label(canvas_object, text=label_info).grid(row=row_, column=column_, 
+    Label(canvas_object, text=label_info).grid(row=row_, column=column_,
                                                 sticky='W', padx=10)
 
     # Vertical scrollbar
     vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
     vertical_scrollbar.grid(row=row_+1, column=column_+2, sticky=N+S)
-    
+
     horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
     horizontal_scrollbar.grid(row=(row_+2), column=column_, sticky=E+W,
                             columnspan=2)
-                                                        
+
     # Create a listbox with the available interfaces
-    interfaces_listbox = Listbox(canvas_object, selectmode='single', 
+    interfaces_listbox = Listbox(canvas_object, selectmode='single',
                 height = 8, width=40, xscrollcommand=horizontal_scrollbar.set,
                 yscrollcommand=vertical_scrollbar.set)
-    interfaces_listbox.grid(row=row_+1, column=column_, columnspan=2, 
+    interfaces_listbox.grid(row=row_+1, column=column_, columnspan=2,
                                 sticky='W', padx=10)
 
     horizontal_scrollbar.config(command=interfaces_listbox.xview)
     vertical_scrollbar.config(command=interfaces_listbox.yview)
-    
+
     intf_counter = 1
 
     for intf_name in list_of_interfaces:
@@ -417,7 +418,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
         intf_counter += 1
 
     interfaces_listbox.bind("<<ListBoxSelect>>", set_active_interface_from_listbox)
-    interfaces_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox) 
+    interfaces_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox)
 
     return interfaces_listbox
 
@@ -516,22 +517,22 @@ def examine_selected_node():
     choose_node_frame = LabelFrame(node_tab)
     choose_node_frame.grid(row=0, column=0, padx=10, pady=10)
     # Label for choosing node
-    Label(choose_node_frame, text="Choose a node:").grid(row=0, column=0, sticky='W', 
+    Label(choose_node_frame, text="Choose a node:").grid(row=0, column=0, sticky='W',
                                                 pady=10)
 
     # Dropdown menu to choose a node
     node_choices_list = [node.name for node in model.node_objects]
     node_choices_list.sort()
-    
+
     # Put the node selection button on the node_tab.
     # This option menu will call examine_selected_node when the choice is made.
-    node_dropdown_select = OptionMenu(choose_node_frame, selected_node, 
+    node_dropdown_select = OptionMenu(choose_node_frame, selected_node,
                                     *node_choices_list,
                                     command=set_active_object_from_option_menu)
     node_dropdown_select.grid(row=0, column=1, sticky='E')
-    
+
     # Label to confirm selected Node
-    Label(choose_node_frame, text="Selected node is:").grid(row=1, column=0, sticky='W')    
+    Label(choose_node_frame, text="Selected node is:").grid(row=1, column=0, sticky='W')
 
     # Display the selected Node
     Label(choose_node_frame, text='-----------------------------------').\
@@ -549,54 +550,54 @@ def examine_selected_node():
     #### Frame to display node's interfaces ####
     node_intf_frame = LabelFrame(node_tab)
     node_intf_frame.grid(row=0, column=1)
-    
+
     interface_info = [str(round((interface.utilization * 100),1))+'%   '+ interface.__repr__() for \
                     interface in interface_choices]
 
     display_interfaces("Node's Interfaces", node_intf_frame,
                             interface_info, 0, 2)
-                            
+
     #### Create a frame to node show demand info ####
     demands_frame = LabelFrame(node_tab, text="Node Demand Info")
     demands_frame.grid(column=0, row=4, columnspan=4, sticky='W', pady=15)
 
-    # Display Demands Sourced From Node 
+    # Display Demands Sourced From Node
     source_demand_choices = \
         model.get_demand_objects_source_node(selected_node.get())
-        
+
     display_demands("Demands sourced from node", demands_frame,
                     source_demand_choices, 0,0)
 
-    # Display Demands Destined To Node 
+    # Display Demands Destined To Node
     dest_demand_choices = model.get_demand_objects_dest_node(selected_node.get())
-    
-    display_demands("Demands destined to node", demands_frame, 
+
+    display_demands("Demands destined to node", demands_frame,
                     dest_demand_choices, 0, 1)
 
     #### Create a frame to show interface demand info ####
     intf_demands_frame = LabelFrame(node_tab, text="Interface Demand Info")
-    intf_demands_frame.grid(column=5, row=4, columnspan=2, sticky='W', 
+    intf_demands_frame.grid(column=5, row=4, columnspan=2, sticky='W',
                             padx=15, pady=15)
-    
+
     # Display demands on interface
     try:
-        demands_on_interface = get_demands_on_interface(selected_interface.get())       
+        demands_on_interface = get_demands_on_interface(selected_interface.get())
     except (ModelException, IndexError):
         interface_object=None
         demands_on_interface=[]
-    
-    display_demands("Demands Egressing Selected Interface {}".format(selected_interface.get()), intf_demands_frame,
+
+    display_demands("Demands Egressing Selected Interface", intf_demands_frame,
                         demands_on_interface, 0, 1)
-  
+
     #### Create a frame to show selected object info ####
     display_selected_objects(node_tab, 0, 4)
-    
+
 
     # TODO - add frame for LSPs that source on node
     # TODO - add frame for LSPs that terminate on node
 
     # TODO - fail selected node
-    
+
 
 def examine_selected_demand():
     """
@@ -621,7 +622,7 @@ def examine_selected_demand():
     # Dropdown menu to choose a demand
     demand_choices_list = [demand for demand in model.demand_objects]
 
-    demand_choices_list_sorted = sorted(demand_choices_list, 
+    demand_choices_list_sorted = sorted(demand_choices_list,
                                 key=lambda demand: demand.source_node_object.name)
 
     demand_dropdown_select = OptionMenu(top_row_frame, selected_demand,
@@ -629,7 +630,7 @@ def examine_selected_demand():
                                         command=set_active_object_from_option_menu)
     demand_dropdown_select.grid(row=0, column=1, sticky='W')
 #    demand_dropdown_select.config(width=70) # hard codes the width
- 
+
     # Display the selected objects
     display_selected_objects(top_row_frame, 0, 2)
 
@@ -663,8 +664,8 @@ def examine_selected_demand():
     # TODO - get rid of this catch by testing for selected_demand.get() != ''
     except (IndexError, UnboundLocalError):
         pass
-        
-    demands_on_interface = get_demands_on_interface(selected_interface.get())               
+
+    demands_on_interface = get_demands_on_interface(selected_interface.get())
 
     display_demands("Demands Egressing Selected Interface", demand_tab,
                         demands_on_interface, 4, 0)
@@ -694,37 +695,37 @@ def examine_selected_interface():
     utilization_frame = LabelFrame(interface_tab)
     utilization_frame.grid(row=0, column=0)
     utilization_pct = [x for x in range(0,100)]
-    
+
     # Label for pct util selection
     pct_label = Label(utilization_frame, text=("Display interfaces with "
                                                "utilization % greater than:"))
     pct_label.grid(row=0, column=0, columnspan=2, sticky='W')
     pct_label.config(width=50)
-    
+
     # Dropdown menu for pct util
-    pct_dropdown_select = OptionMenu(utilization_frame, min_pct, 
+    pct_dropdown_select = OptionMenu(utilization_frame, min_pct,
         *utilization_pct, command=set_active_object_from_option_menu)
     pct_dropdown_select.grid(row=0, column=4, sticky='W' )
-      
+
     msg = "Interfaces above "+str(min_pct.get())+"% utilization"
-    
+
     interface_list = [str(round((interface.utilization * 100),1))+'%   '\
 + interface.__repr__() for interface in model.interface_objects if \
 ((interface.utilization*100) >= min_pct.get())]
 
     interface_list.sort(key=lambda x: float(x.split('%')[0]))
-    
+
     int_util = display_interfaces(msg, utilization_frame, interface_list, 2, 1)
     int_util.grid(sticky='W')
-                        
+
     selected_objects_int_tab = LabelFrame(interface_tab)
     selected_objects_int_tab.grid(row=0, column=6, padx=10, sticky='W')
-    
-    display_selected_objects(selected_objects_int_tab, 0, 8)     
-    
-    demands_on_interface = get_demands_on_interface(selected_interface.get())               
 
-    display_demands("Demands Egressing Selected Interface {}".format(selected_interface.get()), interface_tab,
+    display_selected_objects(selected_objects_int_tab, 0, 8)
+
+    demands_on_interface = get_demands_on_interface(selected_interface.get())
+
+    display_demands("Demands Egressing Selected Interface", interface_tab,
                         demands_on_interface, 6, 0)
 
 
@@ -746,12 +747,12 @@ def examine_paths():
     #### Select source and dest nodes ####
     node_choices = [node.name for node in model.node_objects]
     node_choices.sort()
-    
+
     src_node_select_frame = node_dropdown_select("Select a source node",
             node_choices, source_node, 0, 0, node_select_and_lsp_frame)
     src_node_select_frame.grid(sticky='W')
-            
-    dest_node_select = node_dropdown_select("Select a dest node", 
+
+    dest_node_select = node_dropdown_select("Select a dest node",
             node_choices, dest_node, 1, 0, node_select_and_lsp_frame)
     dest_node_select.grid(sticky='W')
 
@@ -881,7 +882,7 @@ def node_dropdown_select(label, node_choices, target_variable, row_, column_, ca
     choose_node_frame = LabelFrame(canvas_object)
     choose_node_frame.grid(row=row_, column=column_, padx=10, pady=10)
     # Label for choosing node
-    Label(choose_node_frame, text=label).grid(row=0, column=0, sticky='W', 
+    Label(choose_node_frame, text=label).grid(row=0, column=0, sticky='W',
                                               pady=10)
 
     # Dropdown menu to choose a node
@@ -889,11 +890,11 @@ def node_dropdown_select(label, node_choices, target_variable, row_, column_, ca
 
     # Put the node selection button on the node_tab.
     # This option menu will call examine_selected_node when the choice is made.
-    node_dropdown_select = OptionMenu(choose_node_frame, target_variable, 
+    node_dropdown_select = OptionMenu(choose_node_frame, target_variable,
                                     *node_choices,
                                     command=set_active_object_from_option_menu)
     node_dropdown_select.grid(row=0, column=1, sticky='E')
-    
+
     # Label to confirm selected Node
     Label(choose_node_frame, text="Selected node is:").grid(row=1, column=0, sticky='W')
 
@@ -901,7 +902,7 @@ def node_dropdown_select(label, node_choices, target_variable, row_, column_, ca
     Label(choose_node_frame, text='-----------------------------------').\
                 grid(row=1, column=1, sticky='E')
     Label(choose_node_frame, text=target_variable.get()).grid(row=1, column=1, sticky='E')
-    
+
     return choose_node_frame
 
 
@@ -981,9 +982,6 @@ def examine_selected_lsp():
     :return:
     """
 
-    for thing in lsp_tab.grid_slaves():
-        thing.destroy()
-
     display_selected_objects(lsp_tab, 0, 1)
 
     #### Frame to choose an LSP ####
@@ -991,7 +989,7 @@ def examine_selected_lsp():
     choose_lsp_frame.grid(row=0, column=0, padx=10, pady=10)
     # Label for choosing LSP
     Label(choose_lsp_frame, text="Choose an LSP:").grid(row=0, column=0, sticky='W',
-                                                pady=10)
+                                                        pady=10)
 
     # Dropdown menu to choose LSP
     lsp_choices_list = [lsp for lsp in model.rsvp_lsp_objects]
@@ -1000,39 +998,14 @@ def examine_selected_lsp():
     lsp_choices_list_sorted = sorted(lsp_choices_list, key=lambda lsp: lsp.source_node_object.name)
 
     # Display menu to select LSP
-    lsp_dropdown_select = OptionMenu(choose_lsp_frame, *lsp_choices_list_sorted,
+    lsp_dropdown_select = OptionMenu(choose_lsp_frame, selected_lsp,
+                                     *lsp_choices_list_sorted,
                                      command=set_active_object_from_option_menu)
 
     # Specify position of menu to select LSP
     lsp_dropdown_select.grid(row=0, column=1, sticky='NW')
 
-    # # Display_selected LSPs
-    # display_selected_objects(lsp_tab, 0, 3)
-    #
-    # # Display the selected LSP's path in a Frame
-    # lsp_path_frame = LabelFrame(lsp_tab,
-    #                             text="LSP Path Info (ordered from source to destination)")
-    # # Position the Frame
-    # lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W',
-    #                     padx=10, pady=10)
-    #
-    # try:
-    #     lsp_object = get_lsp_object_from_repr(selected_lsp.get())
-    #     try:
-    #         lsp_path = lsp_object.path
-    #     except AttributeError:
-    #         pass
-    #
-    # except (IndexError, UnboundLocalError):
-    #     pass
-    #
-    #
-    # #### Create a frame to show selected object info ####
-    # display_selected_objects(lsp_tab, 0, 4)
-    #
-
     if selected_lsp.get() != '':
-
         lsp_object = get_lsp_object_from_repr(selected_lsp.get())
         lsp_reserved_bw = lsp_object.reserved_bandwidth
 
@@ -1046,7 +1019,8 @@ def examine_selected_lsp():
         path_ints = path['interfaces']
         path_cost = path['path_cost']
         baseline_path_reservable_bw = path['baseline_path_reservable_bw']
-        label = "LSP path info: cost = {}, baseline_path_reservable_bw = {}".format(path_cost, baseline_path_reservable_bw)
+        label = "LSP path info: cost = {}, baseline_path_reservable_bw = {}".format(path_cost,
+                                                                                    baseline_path_reservable_bw)
 
         # TODO - specify dimensions of display_interfaces box; right here it looks weird
         display_interfaces(label, lsp_tab, path_ints, 5, 0)
