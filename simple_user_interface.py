@@ -1137,9 +1137,7 @@ nb.add(interface_tab, text="Interface Explorer")
 path_tab = ttk.Frame(nb)
 nb.add(path_tab, text="Path Explorer")
 
-
-
-ui_window.mainloop()   
+ui_window.mainloop()
     
     
     
