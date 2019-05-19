@@ -687,9 +687,11 @@ def examine_selected_interface():
     ## TODO - add reservable bandwidth to display
     ## TODO - add LSPs on interface
 
+    # TODO - is this necessary since we are also destroying in update_tabs??
     for thing in interface_tab.grid_slaves():
         thing.destroy()
 
+    # TODO - make top row labelframe to hold interface select/utilization and selected objects frames
     #### Filter to interfaces above a certain utilization ####
     utilization_frame = LabelFrame(interface_tab)
     utilization_frame.grid(row=0, column=0)
@@ -1000,56 +1002,57 @@ def examine_selected_lsp():
     lsp_choices_list_sorted = sorted(lsp_choices_list, key=lambda lsp: lsp.source_node_object.name)
 
     # Display menu to select LSP
-    lsp_dropdown_select = OptionMenu(choose_lsp_frame, *lsp_choices_list_sorted,
-                                     command=set_active_object_from_option_menu)
+    if lsp_choices_list_sorted != []:
+        lsp_dropdown_select = OptionMenu(choose_lsp_frame, *lsp_choices_list_sorted,
+                                         command=set_active_object_from_option_menu)
 
-    # Specify position of menu to select LSP
-    lsp_dropdown_select.grid(row=0, column=1, sticky='NW')
+        # Specify position of menu to select LSP
+        lsp_dropdown_select.grid(row=0, column=1, sticky='NW')
 
-    # # Display_selected LSPs
-    # display_selected_objects(lsp_tab, 0, 3)
-    #
-    # # Display the selected LSP's path in a Frame
-    # lsp_path_frame = LabelFrame(lsp_tab,
-    #                             text="LSP Path Info (ordered from source to destination)")
-    # # Position the Frame
-    # lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W',
-    #                     padx=10, pady=10)
-    #
-    # try:
-    #     lsp_object = get_lsp_object_from_repr(selected_lsp.get())
-    #     try:
-    #         lsp_path = lsp_object.path
-    #     except AttributeError:
-    #         pass
-    #
-    # except (IndexError, UnboundLocalError):
-    #     pass
-    #
-    #
-    # #### Create a frame to show selected object info ####
-    # display_selected_objects(lsp_tab, 0, 4)
-    #
+        # # Display_selected LSPs
+        # display_selected_objects(lsp_tab, 0, 3)
+        #
+        # # Display the selected LSP's path in a Frame
+        # lsp_path_frame = LabelFrame(lsp_tab,
+        #                             text="LSP Path Info (ordered from source to destination)")
+        # # Position the Frame
+        # lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W',
+        #                     padx=10, pady=10)
+        #
+        # try:
+        #     lsp_object = get_lsp_object_from_repr(selected_lsp.get())
+        #     try:
+        #         lsp_path = lsp_object.path
+        #     except AttributeError:
+        #         pass
+        #
+        # except (IndexError, UnboundLocalError):
+        #     pass
+        #
+        #
+        # #### Create a frame to show selected object info ####
+        # display_selected_objects(lsp_tab, 0, 4)
+        #
 
-    if selected_lsp.get() != '':
+        if selected_lsp.get() != '':
 
-        lsp_object = get_lsp_object_from_repr(selected_lsp.get())
-        lsp_reserved_bw = lsp_object.reserved_bandwidth
+            lsp_object = get_lsp_object_from_repr(selected_lsp.get())
+            lsp_reserved_bw = lsp_object.reserved_bandwidth
 
-        demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
+            demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
-        display_demands("Demands on Selected LSP (reserved bandwidth = {})"
-                        .format(lsp_reserved_bw), lsp_tab,
-                        demands_on_lsp, 4, 0)
+            display_demands("Demands on Selected LSP (reserved bandwidth = {})"
+                            .format(lsp_reserved_bw), lsp_tab,
+                            demands_on_lsp, 4, 0)
 
-        path = get_lsp_object_from_repr(selected_lsp.get()).path
-        path_ints = path['interfaces']
-        path_cost = path['path_cost']
-        baseline_path_reservable_bw = path['baseline_path_reservable_bw']
-        label = "LSP path info: cost = {}, baseline_path_reservable_bw = {}".format(path_cost, baseline_path_reservable_bw)
+            path = get_lsp_object_from_repr(selected_lsp.get()).path
+            path_ints = path['interfaces']
+            path_cost = path['path_cost']
+            baseline_path_reservable_bw = path['baseline_path_reservable_bw']
+            label = "LSP path info: cost = {}, baseline_path_reservable_bw = {}".format(path_cost, baseline_path_reservable_bw)
 
-        # TODO - specify dimensions of display_interfaces box; right here it looks weird
-        display_interfaces(label, lsp_tab, path_ints, 5, 0)
+            # TODO - specify dimensions of display_interfaces box; right here it looks weird
+            display_interfaces(label, lsp_tab, path_ints, 5, 0)
 
 
 def get_demands_on_lsp(selected_lsp_get):
