@@ -341,6 +341,8 @@ def display_selected_objects(canvas_object, row_, column_):
     Label(selected_object_frame, text=lsp_status,
         background=background_color).grid(row=row_+5, column=2, sticky='E')
 
+    return selected_object_frame
+
 
 def display_demands(label_info, canvas_object, list_of_demands, row_,
                 column_,):
@@ -385,6 +387,57 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
 
     return demand_listbox
 
+
+def display_list_of_things(label_info, canvas_object, list_of_things,
+                           row_, column_,):
+    """
+    Displays a label for list and a single-select listbox of the
+    list items below the label_info on a given canvas_object.  A horizontal
+    scrollbar is included
+    :param label_info: string label for displayed list
+    :param canvas_object: object to display listbox in
+    :param list_of_things: a list object
+    :param row_: row number in canvas_object
+    :param column_: column number in canvas_object
+    :return: Listbox object with label_info above it at row_, column_ in canvas_object
+    """
+
+    demands_frame = LabelFrame(canvas_object)
+    demands_frame.grid(row=row_, column=column_, pady=10)
+
+    Label(demands_frame, text=label_info).grid(row = 0,
+                    column=0, sticky='W', padx=10)
+
+    # Horizontal scrollbar - TODO create decorator for the scrollbar?
+    horizontal_scrollbar = Scrollbar(demands_frame, orient=HORIZONTAL)
+    horizontal_scrollbar.grid(row=3, column=0, sticky=E+W)
+
+    # Vertical scrollbar
+    vertical_scrollbar = Scrollbar(demands_frame, orient=VERTICAL)
+    vertical_scrollbar.grid(row=1, column=1, sticky=N+S)
+
+    listbox = Listbox(demands_frame, selectmode='single', height=10,
+                            width=40, xscrollcommand=horizontal_scrollbar.set,
+                            yscrollcommand=vertical_scrollbar.set)
+    listbox.grid(row = 1, column=0, sticky='W', padx=10)
+
+    vertical_scrollbar.config(command=listbox.yview)
+
+    horizontal_scrollbar.config(command=listbox.xview)
+
+    item_counter = 1
+
+    if list_of_things != None:
+        for item in list_of_things:
+            listbox.insert(item_counter, item)
+            item_counter += 1
+    else:
+        pass
+
+    listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
+    listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
+
+    return listbox
 
 
 def display_interfaces(label_info, canvas_object, list_of_interfaces,
@@ -513,19 +566,26 @@ def display_lsp(label_info, canvas_object, lsp, row_, column_):
 def examine_selected_node():
     """Controls information displayed on node_tab"""
 
+    # TODO - is this destroy needed?
     for thing in node_tab.grid_slaves():
         thing.destroy()
 
+    # ### Display info in row 0 ######################################
+    row1_frame = Frame(node_tab)
+    row1_frame.grid(column=0, row=0, sticky='W',
+                    padx=10, pady=10)
+
 
     #### Create a frame to show selected object info ####
-    display_selected_objects(node_tab, 0, 4)
+    display_selected_items = display_selected_objects(row1_frame, 0, 4)
+    display_selected_items.grid(padx=10, pady=10)
 
     #### Frame to choose a node ####
-    choose_node_frame = LabelFrame(node_tab)
+    choose_node_frame = LabelFrame(row1_frame)
     choose_node_frame.grid(row=0, column=0, padx=10, pady=10)
     # Label for choosing node
-    Label(choose_node_frame, text="Choose a node:").grid(row=0, column=0, sticky='W',
-                                                pady=10)
+    Label(choose_node_frame, text="Choose a node:").grid(row=0, column=0,
+                                                         sticky='W', pady=10)
 
     # Dropdown menu to choose a node
     node_choices_list = [node.name for node in model.node_objects]
@@ -555,7 +615,7 @@ def examine_selected_node():
         pass
 
     #### Frame to display node's interfaces ####
-    node_intf_frame = LabelFrame(node_tab)
+    node_intf_frame = LabelFrame(row1_frame)
     node_intf_frame.grid(row=0, column=1)
 
     interface_info = [str(round((interface.utilization * 100),1))+'%   '+ interface.__repr__() for \
@@ -564,57 +624,51 @@ def examine_selected_node():
     display_interfaces("Node's Interfaces", node_intf_frame,
                             interface_info, 0, 2)
 
-    #### Create a frame to node show demand info ####
-    demands_frame = LabelFrame(node_tab, text="Node Demand Info")
-    demands_frame.grid(column=0, row=4, columnspan=4, sticky='W', pady=10)
+    # #####################################################
 
-    # Display Demands Sourced From Node
-    source_demand_choices = \
-        model.get_demand_objects_source_node(selected_node.get())
+    if selected_node.get() != '':
+        #### Create a frame to node show demand info ####
+        demands_frame = LabelFrame(node_tab, text="Node Demand Info")
+        demands_frame.grid(column=0, row=4, columnspan=4, sticky='W', pady=10)
 
-    display_demands("Demands sourced from node", demands_frame,
-                    source_demand_choices, 0,0)
+        # Display Demands Sourced From Node
+        source_demand_choices = \
+            model.get_demand_objects_source_node(selected_node.get())
 
-    # Display Demands Destined To Node
-    dest_demand_choices = model.get_demand_objects_dest_node(selected_node.get())
+        display_demands("Demands sourced from node", demands_frame,
+                        source_demand_choices, 0,0)
 
-    display_demands("Demands destined to node", demands_frame,
-                    dest_demand_choices, 0, 1)
+        # Display Demands Destined To Node
+        dest_demand_choices = model.get_demand_objects_dest_node(selected_node.get())
 
-    #### Create a frame to show interface demand info ####
-    row5_frame = LabelFrame(node_tab, text="Interface Demand Info")
-    row5_frame.grid(column=0, row=5, columnspan=2, sticky='W',
-                            padx=15, pady=10)
+        display_demands("Demands destined to node", demands_frame,
+                        dest_demand_choices, 0, 1)
+
+        # #### Create a frame to show LSP info ####
+        row5_frame = LabelFrame(node_tab, text="Node LSP Info")
+        row5_frame.grid(column=0, row=5, columnspan=2, sticky='W',
+                                padx=15, pady=10)
 
     # Display demands on interface
-    try:
-        demands_on_interface = get_demands_on_interface(selected_interface.get())
-    except (ModelException, IndexError):
-        interface_object=None
-        demands_on_interface=[]
+    # try:
+    #     demands_on_interface = get_demands_on_interface(selected_interface.get())
+    # except (ModelException, IndexError):
+    #     interface_object=None
+    #     demands_on_interface=[]
+    # display_demands("Demands Egressing Selected Interface", row5_frame,
+    #                     demands_on_interface, 0, 1)
 
-    display_demands("Demands Egressing Selected Interface", row5_frame,
-                        demands_on_interface, 0, 1)
-
-    # TODO - add frame for LSPs that source on node
-    # TODO - add frame for LSPs that terminate on node
     if selected_node.get() != '':
         node_name = selected_node.get()
         lsps_to_selected_node = [lsp for lsp in model.rsvp_lsp_objects
                                  if lsp.dest_node_object.name == node_name]
         lsps_from_selected_node = [lsp for lsp in model.rsvp_lsp_objects
                                    if lsp.source_node_object.name == node_name]
-        # to_node_lsps = display_lsp_list("LSPs to selected node", row5_frame,
-        #                  lsps_to_selected_node, 0, 2)
 
-
-        # from_node_lsps = display_lsp_list("LSPs from selected node", row5_frame,
-        #                  lsps_from_selected_node, 0, 4)
-
-        to_node_lsps = display_demands("LSPs to selected node", row5_frame,
+        from_node_lsps = display_list_of_things("LSPs from selected node", row5_frame,
+                                         lsps_from_selected_node, 0, 0)
+        to_node_lsps = display_list_of_things("LSPs to selected node", row5_frame,
                                        lsps_to_selected_node, 0, 2)
-        from_node_lsps = display_demands("LSPs from selected node", row5_frame,
-                                         lsps_from_selected_node, 0, 4)
         to_node_lsps.grid(sticky="NEWS")
         from_node_lsps.grid(sticky="NEWS")
 
