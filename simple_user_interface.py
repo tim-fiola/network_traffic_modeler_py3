@@ -604,12 +604,18 @@ def examine_selected_node():
                                  if lsp.dest_node_object.name == node_name]
         lsps_from_selected_node = [lsp for lsp in model.rsvp_lsp_objects
                                    if lsp.source_node_object.name == node_name]
-        to_node_lsps = display_lsp_list("LSPs to selected node", row5_frame,
-                         lsps_to_selected_node, 0, 2)
-        to_node_lsps.grid(sticky="NEWS")
+        # to_node_lsps = display_lsp_list("LSPs to selected node", row5_frame,
+        #                  lsps_to_selected_node, 0, 2)
 
-        from_node_lsps = display_lsp_list("LSPs from selected node", row5_frame,
-                         lsps_from_selected_node, 0, 4)
+
+        # from_node_lsps = display_lsp_list("LSPs from selected node", row5_frame,
+        #                  lsps_from_selected_node, 0, 4)
+
+        to_node_lsps = display_demands("LSPs to selected node", row5_frame,
+                                       lsps_to_selected_node, 0, 2)
+        from_node_lsps = display_demands("LSPs from selected node", row5_frame,
+                                         lsps_from_selected_node, 0, 4)
+        to_node_lsps.grid(sticky="NEWS")
         from_node_lsps.grid(sticky="NEWS")
 
     # TODO - fail selected node
