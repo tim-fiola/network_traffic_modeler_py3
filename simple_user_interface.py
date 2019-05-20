@@ -383,6 +383,8 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     demand_listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
     demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
 
+    return demand_listbox
+
 
 
 def display_interfaces(label_info, canvas_object, list_of_interfaces,
@@ -468,6 +470,7 @@ def display_lsp_list(label_info, canvas_object, list_of_lsps,
 
     return lsps_listbox
 
+
 def display_lsp(label_info, canvas_object, lsp, row_, column_):
     """
 
@@ -512,6 +515,10 @@ def examine_selected_node():
 
     for thing in node_tab.grid_slaves():
         thing.destroy()
+
+
+    #### Create a frame to show selected object info ####
+    display_selected_objects(node_tab, 0, 4)
 
     #### Frame to choose a node ####
     choose_node_frame = LabelFrame(node_tab)
@@ -559,7 +566,7 @@ def examine_selected_node():
 
     #### Create a frame to node show demand info ####
     demands_frame = LabelFrame(node_tab, text="Node Demand Info")
-    demands_frame.grid(column=0, row=4, columnspan=4, sticky='W', pady=15)
+    demands_frame.grid(column=0, row=4, columnspan=4, sticky='W', pady=10)
 
     # Display Demands Sourced From Node
     source_demand_choices = \
@@ -575,9 +582,9 @@ def examine_selected_node():
                     dest_demand_choices, 0, 1)
 
     #### Create a frame to show interface demand info ####
-    intf_demands_frame = LabelFrame(node_tab, text="Interface Demand Info")
-    intf_demands_frame.grid(column=5, row=4, columnspan=2, sticky='W',
-                            padx=15, pady=15)
+    row5_frame = LabelFrame(node_tab, text="Interface Demand Info")
+    row5_frame.grid(column=0, row=5, columnspan=2, sticky='W',
+                            padx=15, pady=10)
 
     # Display demands on interface
     try:
@@ -586,15 +593,24 @@ def examine_selected_node():
         interface_object=None
         demands_on_interface=[]
 
-    display_demands("Demands Egressing Selected Interface", intf_demands_frame,
+    display_demands("Demands Egressing Selected Interface", row5_frame,
                         demands_on_interface, 0, 1)
-
-    #### Create a frame to show selected object info ####
-    display_selected_objects(node_tab, 0, 4)
-
 
     # TODO - add frame for LSPs that source on node
     # TODO - add frame for LSPs that terminate on node
+    if selected_node.get() != '':
+        node_name = selected_node.get()
+        lsps_to_selected_node = [lsp for lsp in model.rsvp_lsp_objects
+                                 if lsp.dest_node_object.name == node_name]
+        lsps_from_selected_node = [lsp for lsp in model.rsvp_lsp_objects
+                                   if lsp.source_node_object.name == node_name]
+        to_node_lsps = display_lsp_list("LSPs to selected node", row5_frame,
+                         lsps_to_selected_node, 0, 2)
+        to_node_lsps.grid(sticky="NEWS")
+
+        from_node_lsps = display_lsp_list("LSPs from selected node", row5_frame,
+                         lsps_from_selected_node, 0, 4)
+        from_node_lsps.grid(sticky="NEWS")
 
     # TODO - fail selected node
 
@@ -613,7 +629,6 @@ def examine_selected_demand():
     for thing in demand_tab.grid_slaves():
         thing.destroy()
 
-    # TODO - fix the spacing/layout here
     # Label for choosing interface
     top_row_frame = Frame(demand_tab)
     top_row_frame.grid(row=0, column=0, sticky='EW')
@@ -639,7 +654,7 @@ def examine_selected_demand():
 #    demand_path_parent_frame.grid(row=3, column=0, columnspan=3, sticky='W')
     demand_path_frame = LabelFrame(demand_tab, text="Demand Path Info; displays all ECMP paths.")
     demand_path_frame.grid(row=3, column=0, sticky='NSEW', padx=10, pady=10) # Sticky NSEW keeps window from resizing
-    demand_path_frame.config(width=1200, height=300)
+    demand_path_frame.config(width=1200, height=200)
     # These keep the demand_path_frame size consistent
     demand_path_frame.grid_rowconfigure(0, weight=1)
     demand_path_frame.grid_columnconfigure(0, weight=1)
@@ -665,21 +680,27 @@ def examine_selected_demand():
     except (IndexError, UnboundLocalError):
         pass
 
+    # Get demands on selected interface
     demands_on_interface = get_demands_on_interface(selected_interface.get())
-
-    display_demands("Demands Egressing Selected Interface", demand_tab,
-                        demands_on_interface, 4, 0)
-
-
-    # Get/display demands on selected_lsp on demand_tab
+    # Get demands on selected_lsp on demand_tab
     demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
-    display_demands("Demands on Selected LSP", demand_tab,
-                    demands_on_lsp, 4, 1)
+    # display_demands("Demands Egressing Selected Interface", demand_tab,
+    #                     demands_on_interface, 4, 0)
+    #
+    # display_demands("Demands on Selected LSP", demand_tab,
+    #                 demands_on_lsp, 4, 1)
 
-    # display_demands("Demands on Selected LSP", lsp_tab,
-    #                 demands_on_lsp, 4, 0)
 
+    row_4_frame = Frame(demand_tab)
+    row_4_frame.grid(row=4, column=0, padx=10, pady=10)
+    int_demands = display_demands("Demands Egressing Selected Interface", row_4_frame,
+                        demands_on_interface, 0, 0)
+    int_demands.grid(padx=10, pady=10)
+
+    lsp_demands = display_demands("Demands on Selected LSP", row_4_frame,
+                    demands_on_lsp, 0, 1)
+    lsp_demands.grid(padx=10, pady=10)
 
 def examine_selected_interface():
     """Controls display of information on interface_tab"""
@@ -722,6 +743,8 @@ def examine_selected_interface():
     selected_objects_int_tab.grid(row=0, column=6, padx=10, sticky='W')
 
     display_selected_objects(selected_objects_int_tab, 0, 8)
+
+
 
     demands_on_interface = get_demands_on_interface(selected_interface.get())
 
@@ -807,7 +830,7 @@ def examine_paths():
                                                             dest_node.get())
 
             # Create label frame to hold the feasible path(s) # frame_canvas
-            feasible_path_frame = LabelFrame(path_tab, text="All Paths ({})".format(len(all_paths)))
+            feasible_path_frame = LabelFrame(path_tab, text="All Feasible Paths ({})".format(len(all_paths)))
             feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
 
             feasible_path_frame.config(width=1200, height=220)
@@ -846,8 +869,7 @@ def display_multiple_paths(paths, frame):
     canvas.configure(xscrollcommand=horizontal_scrollbar.set)
     # Create a frame to house the path(s)
     path_frame = Frame(canvas)  # frame_buttons
-    canvas.create_window((0, 0), window=path_frame,
-                                       anchor='nw')
+    canvas.create_window((0, 0), window=path_frame, anchor='nw')
     column_counter = 0
     path_counter = 0
     for path in paths:
@@ -855,7 +877,7 @@ def display_multiple_paths(paths, frame):
         for intf in path:
             cost += intf.cost
         list_of_interfaces = path
-        label = "Feasible Path {}, cost = {}".format(str(path_counter), cost)
+        label = "Path {}, cost = {}".format(str(path_counter), cost)
         display_interfaces(label, path_frame, list_of_interfaces,
                            1, column_counter)
         column_counter += 2
@@ -1094,7 +1116,7 @@ min_pct = IntVar(nb) # Min percent utilization to search over interfaces for
 
 # Notebook grid spans 70 columns and 69 rows and spreads out the notebook
 # in all directions
-nb.grid(row=1, column=0, columnspan=70, rowspan=69, sticky='NESW') 
+nb.grid(row=1, column=0, columnspan=80, rowspan=69, sticky='NESW')
 
 rows = 0
 while rows < 70:
