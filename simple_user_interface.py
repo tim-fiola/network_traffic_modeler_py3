@@ -737,7 +737,11 @@ def examine_selected_demand():
 
     #### Display the selected demand's path(s) ####
     demand_path_parent_frame = Frame(demand_tab)
-    demand_path_parent_frame.grid(row=3, column=0, columnspan=3, sticky='W')
+    demand_path_parent_frame.grid(row=3, column=0, padx=10, pady=10)
+    demand_path_parent_frame.config(width=1200, height=255)
+    demand_path_parent_frame.grid_rowconfigure(0, weight=1)
+    demand_path_parent_frame.grid_columnconfigure(0, weight=1)
+    demand_path_parent_frame.grid_propagate(False)
 
     # demand_path_frame = LabelFrame(demand_path_parent_frame, text="Demand Path Info; displays all ECMP paths.")
     #
@@ -929,7 +933,7 @@ def examine_paths():
             feasible_path_frame = LabelFrame(path_tab, text="All Feasible Paths ({})".format(len(all_paths)))
             feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
 
-            feasible_path_frame.config(width=1200, height=220)
+            feasible_path_frame.config(width=1200, height=255)
 
             feasible_path_frame.grid_rowconfigure(0, weight=1)
             feasible_path_frame.grid_columnconfigure(0, weight=1)
