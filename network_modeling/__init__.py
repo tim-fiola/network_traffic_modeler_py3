@@ -54,6 +54,14 @@ KNOWN ISSUES:
     the user clicks on the marker.  The root cause is under investigation
     still, but it looks like this happens more often when there is a mixture
     of positive and negative x,y (lon, lat) coordinates.
+- when calling graph_network_interactive.make_interactive_network_graph(model)
+     if you hit an error, you must update mpld3 manually to overcome this
+    mpld3 bug: https://github.com/mpld3/mpld3/issues/434
+
+    run:
+    python3 -m pip install --user "git+https://github.com/javadba/mpld3@display_fix"
+    - UPDATE - I'm not sure if this fix is still necessary as it looks like the mpld3
+        code has been updated by the new maintainers.
 
 ======== TO DO ===========
 simple_user_interface.py TO DO:

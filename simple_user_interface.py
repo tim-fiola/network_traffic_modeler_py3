@@ -682,8 +682,7 @@ def examine_selected_demand():
     :return:
     """
 
-    # for thing in demand_tab.grid_slaves():
-    #     thing.destroy()
+    # TODO - add whether demand takes LSP or IGP routing
 
     # Label for choosing interface
     top_row_frame = Frame(demand_tab)
@@ -1157,6 +1156,7 @@ ui_window = Tk()
 ui_window.title('Network modeler UI')
 ui_window.geometry('1625x850')
 ui_window.resizable(1,1) ###
+# TODO - scroll bars on the canvas or notebook (nb)
 
 # Create a tabbed notebook in the canvas ui_window
 nb = ttk.Notebook(ui_window) # Creates ttk notebook in ui window

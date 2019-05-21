@@ -178,15 +178,15 @@ print()
 
 
 # Fail a node and interface and display a utilization graph
-print("Failing node E and interface B-to-D on node B and displaying \
-a network graph:")
+print("Failing node E and interface B-to-D on node B and displaying "
+       "a network graph:")
 model1.fail_node('E')
 model1.fail_interface('B-to-D', 'B')
 model1.update_simulation()
 
 # Get a demand and view its path
 print("Get a demand and view its path.")
-dmd_A_D = model1.get_demand_object('A', 'D')
+dmd_A_D = model1.get_demand_object('A', 'D', "''")
 print("Demand from A to D is")
 print(dmd_A_D)
 print()

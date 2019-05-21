@@ -1,7 +1,7 @@
 """Facilitates network Model visualization"""
 
 
-### NOTE - for interactive visualization, must update mpld3 manually
+### NOTE - for interactive visualization, if you hit an error, you must update mpld3 manually
 # to overcome this mpld3 bug: https://github.com/mpld3/mpld3/issues/434
 #
 # run:
