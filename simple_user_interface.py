@@ -412,7 +412,7 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
 
 
 def display_list_of_things(label_info, canvas_object, list_of_things,
-                           row_, column_,):
+                           row_, column_, command_to_activate):
     """
     Displays a label for list and a single-select listbox of the
     list items below the label_info on a given canvas_object.  A horizontal
@@ -422,6 +422,7 @@ def display_list_of_things(label_info, canvas_object, list_of_things,
     :param list_of_things: a list object
     :param row_: row number in canvas_object
     :param column_: column number in canvas_object
+    :param command_to_activate: command to set selected object as active
     :return: Listbox object with label_info above it at row_, column_ in canvas_object
     """
 
@@ -457,8 +458,8 @@ def display_list_of_things(label_info, canvas_object, list_of_things,
     else:
         pass
 
-    listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
-    listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
+    listbox.bind("<<ListBoxSelect>>", command_to_activate)
+    listbox.bind("<Double-Button-1>", command_to_activate)
 
     return listbox
 
@@ -500,7 +501,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
 
     return interfaces_listbox
 
-
+# TODO - use display_list_of_things_instead
 def display_lsp_list(label_info, canvas_object, list_of_lsps,
                        row_, column_):
     """
@@ -689,9 +690,11 @@ def examine_selected_node():
                                    if lsp.source_node_object.name == node_name]
 
         from_node_lsps = display_list_of_things("LSPs from selected node", row5_frame,
-                                         lsps_from_selected_node, 0, 0)
+                                                lsps_from_selected_node, 0, 0,
+                                                set_active_lsp_from_listbox)
         to_node_lsps = display_list_of_things("LSPs to selected node", row5_frame,
-                                       lsps_to_selected_node, 0, 2)
+                                              lsps_to_selected_node, 0, 2,
+                                              set_active_lsp_from_listbox)
         to_node_lsps.grid(sticky="NEWS")
         from_node_lsps.grid(sticky="NEWS")
 
@@ -736,12 +739,17 @@ def examine_selected_demand():
 #    demand_path_parent_frame = Frame(demand_tab)
 #    demand_path_parent_frame.grid(row=3, column=0, columnspan=3, sticky='W')
     demand_path_frame = LabelFrame(demand_tab, text="Demand Path Info; displays all ECMP paths.")
-    demand_path_frame.grid(row=3, column=0, sticky='NSEW', padx=10, pady=10) # Sticky NSEW keeps window from resizing
-    demand_path_frame.config(width=1200, height=200)
+
+#    demand_path_frame.grid(row=3, column=0, sticky='NSEW', padx=10, pady=10) # Sticky NSEW keeps window from resizing
+#    demand_path_frame.config(width=1200, height=225)
     # These keep the demand_path_frame size consistent
-    demand_path_frame.grid_rowconfigure(0, weight=1)
-    demand_path_frame.grid_columnconfigure(0, weight=1)
-    demand_path_frame.grid_propagate(False)
+#    demand_path_frame.grid_rowconfigure(0, weight=1)
+#    demand_path_frame.grid_columnconfigure(0, weight=1)
+#    demand_path_frame.grid_propagate(False)
+
+    demand_path_frame.grid(row=3, column=0, padx=10, pady=10)
+
+
 
     try:
         demand_object = get_demand_object_from_repr(selected_demand.get())
@@ -754,8 +762,9 @@ def examine_selected_demand():
         if isinstance(dmd_paths[0], RSVP_LSP):
             row_num = 0
             label_info = "LSPs that carry demand"
-            display_lsp_list(label_info, demand_path_frame,
-                             dmd_paths, row_num, 0)
+            display_list_of_things(label_info, demand_path_frame,
+                                   dmd_paths, row_num, 0,
+                                   set_active_lsp_from_listbox)
         else:
             display_multiple_paths(dmd_paths, demand_path_frame)
 
@@ -768,13 +777,6 @@ def examine_selected_demand():
     # Get demands on selected_lsp on demand_tab
     demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
-    # display_demands("Demands Egressing Selected Interface", demand_tab,
-    #                     demands_on_interface, 4, 0)
-    #
-    # display_demands("Demands on Selected LSP", demand_tab,
-    #                 demands_on_lsp, 4, 1)
-
-
     row_4_frame = Frame(demand_tab)
     row_4_frame.grid(row=4, column=0, padx=10, pady=10)
     int_demands = display_demands("Demands Egressing Selected Interface", row_4_frame,
@@ -784,6 +786,7 @@ def examine_selected_demand():
     lsp_demands = display_demands("Demands on Selected LSP", row_4_frame,
                     demands_on_lsp, 0, 1)
     lsp_demands.grid(padx=10, pady=10)
+
 
 def examine_selected_interface():
     """Controls display of information on interface_tab"""
@@ -837,13 +840,14 @@ def examine_selected_interface():
 
     demand_list = display_list_of_things("Demands Egressing Selected Interface",
                                          lsp_and_demand_egress_frame,
-                                         demands_on_interface, 0, 0)
+                                         demands_on_interface, 0, 0,
+                                         set_active_demand_from_listbox)
     demand_list.grid(padx=10, pady=10)
 
     lsps_on_interface = get_lsps_on_interface(selected_interface.get())
 
     lsp_list = display_list_of_things("LSPs Egressing Selected Interface", lsp_and_demand_egress_frame,
-                                      lsps_on_interface, 0, 1)
+                                      lsps_on_interface, 0, 1, set_active_lsp_from_listbox)
     lsp_list.grid(padx=10, pady=10)
 
     # TODO - fail selected interface
@@ -884,7 +888,7 @@ def examine_paths():
         lsps = (lsp for lsp in model.rsvp_lsp_objects if (lsp.source_node_object.name == source_node.get() and
                                                           lsp.dest_node_object.name == dest_node.get()))
 
-        display_lsp_list('', lsp_frame, lsps, 0, 0)
+        display_list_of_things('', lsp_frame, lsps, 0, 0, set_active_lsp_from_listbox)
 
 
         #### Display shortest path(s) ####
@@ -1134,11 +1138,13 @@ def examine_selected_lsp():
         path_ints = path['interfaces']
         path_cost = path['path_cost']
         baseline_path_reservable_bw = path['baseline_path_reservable_bw']
-        label = "LSP path info: cost = {}, baseline_path_reservable_bw = {}".format(path_cost,
-                                                                                    baseline_path_reservable_bw)
+        label = ("LSP path info: cost = {}, baseline_path_reservable_bw = "
+                 "{}".format(path_cost, baseline_path_reservable_bw))
 
         # TODO - specify dimensions of display_interfaces box; right here it looks weird
-        display_interfaces(label, lsp_tab, path_ints, 5, 0)
+#        display_interfaces(label, lsp_tab, path_ints, 5, 0)
+        display_list_of_things(label, lsp_tab, path_ints, 5, 0,
+                               set_active_interface_from_listbox)
 
 
 def get_demands_on_lsp(selected_lsp_get):
