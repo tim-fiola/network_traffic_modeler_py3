@@ -100,7 +100,6 @@ def open_file():
 
 def create_network_graph():
     """Makes a network graph"""
-    # TODO - deprecated?
 
     network_graph_file.set(filedialog.asksaveasfilename(initialdir="/",
                         title = "Select or Create file:"))
@@ -140,12 +139,6 @@ def set_active_interface_from_listbox(event):
     selected_interface.set(selected_interface_value)
 
     # Refresh the tabs
-    # TODO - add the destroy() function?
-    # examine_selected_node()
-    # examine_selected_demand()
-    # examine_selected_interface()
-    # examine_selected_lsp()
-    # examine_paths()
     update_tabs()
 
 
@@ -188,19 +181,9 @@ def set_active_object_from_option_menu(event):
         thing.destroy()
     for thing in interface_tab.grid_slaves():
         thing.destroy()
-    # TODO - this below was commented out; i enabled it
-#    for thing in path_tab.grid_slaves():
-#        thing.destroy()
-
     for thing in lsp_tab.grid_slaves():
         thing.destroy()
 
-    # Refresh the Node Info and Demand Info tabs
-    # examine_selected_node()
-    # examine_selected_demand()
-    # examine_selected_interface()
-    # examine_paths()
-    # examine_selected_lsp()
     update_tabs()
 
 
@@ -262,7 +245,13 @@ def get_lsps_on_interface(selected_interface):
 
 
 def display_selected_objects(canvas_object, row_, column_):
-    """Displays the selected objects"""
+    """
+    Displays the selected objects in a table
+    :param canvas_object: object to place table in
+    :param row_: row number in canvas_object
+    :param column_: column number in canvas object
+    :return: object frame displaying the selected object
+    """
 
     node_status = 'Unknown'
     demand_status = 'Unknown'
@@ -289,7 +278,7 @@ def display_selected_objects(canvas_object, row_, column_):
 
         interface_util = str(round((interface_object.utilization*100),1))
 
-        if interface_failed == True:
+        if interface_failed:
             interface_status = 'Failed'
         else:
             interface_status = interface_util+"% utilized"
@@ -367,48 +356,48 @@ def display_selected_objects(canvas_object, row_, column_):
     return selected_object_frame
 
 
-def display_demands(label_info, canvas_object, list_of_demands, row_,
-                column_,):
-    """Displays a label for demands and a single-select listbox of the
-    demands below the label_info on a given canvas_object.  A horizontal
-    scrollbar is included """
-
-    demands_frame = LabelFrame(canvas_object)
-    demands_frame.grid(row=row_, column=column_, pady=10)
-
-    Label(demands_frame, text=label_info).grid(row = 0,
-                    column=0, sticky='W', padx=10)
-
-    # Horizontal scrollbar - TODO create decorator for the scrollbar?
-    horizontal_scrollbar = Scrollbar(demands_frame, orient=HORIZONTAL)
-    horizontal_scrollbar.grid(row=3, column=0, sticky=E+W)
-
-    # Vertical scrollbar
-    vertical_scrollbar = Scrollbar(demands_frame, orient=VERTICAL)
-    vertical_scrollbar.grid(row=1, column=1, sticky=N+S)
-
-    demand_listbox = Listbox(demands_frame, selectmode='single', height=10,
-                            width=40, xscrollcommand=horizontal_scrollbar.set,
-                            yscrollcommand=vertical_scrollbar.set)
-    demand_listbox.grid(row = 1, column=0, sticky='W', padx=10)
-
-    vertical_scrollbar.config(command=demand_listbox.yview)
-
-    horizontal_scrollbar.config(command=demand_listbox.xview)
-
-    demand_counter = 1
-
-    if list_of_demands != None:
-        for demand in list_of_demands:
-            demand_listbox.insert(demand_counter, demand)
-            demand_counter += 1
-    else:
-        pass
-
-    demand_listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
-    demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
-
-    return demand_listbox
+# def display_demands(label_info, canvas_object, list_of_demands, row_,
+#                 column_,):
+#     """Displays a label for demands and a single-select listbox of the
+#     demands below the label_info on a given canvas_object.  A horizontal
+#     scrollbar is included """
+#
+#     demands_frame = LabelFrame(canvas_object)
+#     demands_frame.grid(row=row_, column=column_, pady=10)
+#
+#     Label(demands_frame, text=label_info).grid(row = 0,
+#                     column=0, sticky='W', padx=10)
+#
+#     # Horizontal scrollbar - TODO create decorator for the scrollbar?
+#     horizontal_scrollbar = Scrollbar(demands_frame, orient=HORIZONTAL)
+#     horizontal_scrollbar.grid(row=3, column=0, sticky=E+W)
+#
+#     # Vertical scrollbar
+#     vertical_scrollbar = Scrollbar(demands_frame, orient=VERTICAL)
+#     vertical_scrollbar.grid(row=1, column=1, sticky=N+S)
+#
+#     demand_listbox = Listbox(demands_frame, selectmode='single', height=10,
+#                             width=40, xscrollcommand=horizontal_scrollbar.set,
+#                             yscrollcommand=vertical_scrollbar.set)
+#     demand_listbox.grid(row = 1, column=0, sticky='W', padx=10)
+#
+#     vertical_scrollbar.config(command=demand_listbox.yview)
+#
+#     horizontal_scrollbar.config(command=demand_listbox.xview)
+#
+#     demand_counter = 1
+#
+#     if list_of_demands != None:
+#         for demand in list_of_demands:
+#             demand_listbox.insert(demand_counter, demand)
+#             demand_counter += 1
+#     else:
+#         pass
+#
+#     demand_listbox.bind("<<ListBoxSelect>>", set_active_demand_from_listbox)
+#     demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
+#
+#     return demand_listbox
 
 
 def display_list_of_things(label_info, canvas_object, list_of_things,
@@ -464,42 +453,42 @@ def display_list_of_things(label_info, canvas_object, list_of_things,
     return listbox
 
 
-def display_interfaces(label_info, canvas_object, list_of_interfaces,
-                        row_, column_):
-    """Displays interfaces from list of interfaces in single selectable listbox.
-    A label with label_info will appear above the listbox."""
-    # Display Node's Interfaces Label
-    Label(canvas_object, text=label_info).grid(row=row_, column=column_,
-                                                sticky='W', padx=10)
-
-    # Vertical scrollbar
-    vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
-    vertical_scrollbar.grid(row=row_+1, column=column_+2, sticky=N+S)
-
-    horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
-    horizontal_scrollbar.grid(row=(row_+2), column=column_, sticky=E+W,
-                            columnspan=2)
-
-    # Create a listbox with the available interfaces
-    interfaces_listbox = Listbox(canvas_object, selectmode='single',
-                height = 8, width=40, xscrollcommand=horizontal_scrollbar.set,
-                yscrollcommand=vertical_scrollbar.set)
-    interfaces_listbox.grid(row=row_+1, column=column_, columnspan=2,
-                                sticky='W', padx=10)
-
-    horizontal_scrollbar.config(command=interfaces_listbox.xview)
-    vertical_scrollbar.config(command=interfaces_listbox.yview)
-
-    intf_counter = 1
-
-    for intf_name in list_of_interfaces:
-        interfaces_listbox.insert(intf_counter, intf_name)
-        intf_counter += 1
-
-    interfaces_listbox.bind("<<ListBoxSelect>>", set_active_interface_from_listbox)
-    interfaces_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox)
-
-    return interfaces_listbox
+# def display_interfaces(label_info, canvas_object, list_of_interfaces,
+#                         row_, column_):
+#     """Displays interfaces from list of interfaces in single selectable listbox.
+#     A label with label_info will appear above the listbox."""
+#     # Display Node's Interfaces Label
+#     Label(canvas_object, text=label_info).grid(row=row_, column=column_,
+#                                                 sticky='W', padx=10)
+#
+#     # Vertical scrollbar
+#     vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
+#     vertical_scrollbar.grid(row=row_+1, column=column_+2, sticky=N+S)
+#
+#     horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
+#     horizontal_scrollbar.grid(row=(row_+2), column=column_, sticky=E+W,
+#                             columnspan=2)
+#
+#     # Create a listbox with the available interfaces
+#     interfaces_listbox = Listbox(canvas_object, selectmode='single',
+#                 height = 8, width=40, xscrollcommand=horizontal_scrollbar.set,
+#                 yscrollcommand=vertical_scrollbar.set)
+#     interfaces_listbox.grid(row=row_+1, column=column_, columnspan=2,
+#                                 sticky='W', padx=10)
+#
+#     horizontal_scrollbar.config(command=interfaces_listbox.xview)
+#     vertical_scrollbar.config(command=interfaces_listbox.yview)
+#
+#     intf_counter = 1
+#
+#     for intf_name in list_of_interfaces:
+#         interfaces_listbox.insert(intf_counter, intf_name)
+#         intf_counter += 1
+#
+#     interfaces_listbox.bind("<<ListBoxSelect>>", set_active_interface_from_listbox)
+#     interfaces_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox)
+#
+#     return interfaces_listbox
 
 
 # def display_lsp_list(label_info, canvas_object, list_of_lsps,
@@ -645,8 +634,8 @@ def examine_selected_node():
     interface_info = [str(round((interface.utilization * 100),1))+'%   '+ interface.__repr__() for \
                     interface in interface_choices]
 
-    display_interfaces("Selected Node's Interfaces", node_intf_frame,
-                            interface_info, 0, 2)
+    display_list_of_things("Selected Node's Interfaces", node_intf_frame,
+                            interface_info, 0, 2, set_active_interface_from_listbox)
 
     # #####################################################
 
@@ -658,29 +647,18 @@ def examine_selected_node():
         # Display Demands Sourced From Node
         source_demand_choices = \
             model.get_demand_objects_source_node(selected_node.get())
-
-        display_demands("Demands sourced from node", demands_frame,
-                        source_demand_choices, 0,0)
+        display_list_of_things("Demands sourced from node", demands_frame,
+                        source_demand_choices, 0,0, set_active_demand_from_listbox)
 
         # Display Demands Destined To Node
         dest_demand_choices = model.get_demand_objects_dest_node(selected_node.get())
-
-        display_demands("Demands destined to node", demands_frame,
-                        dest_demand_choices, 0, 1)
+        display_list_of_things("Demands destined to node", demands_frame,
+                        dest_demand_choices, 0, 1, set_active_demand_from_listbox)
 
         # #### Create a frame to show LSP info ####
         row5_frame = LabelFrame(node_tab, text="Node LSP Info")
         row5_frame.grid(column=0, row=5, columnspan=2, sticky='W',
                                 padx=15, pady=10)
-
-    # Display demands on interface
-    # try:
-    #     demands_on_interface = get_demands_on_interface(selected_interface.get())
-    # except (ModelException, IndexError):
-    #     interface_object=None
-    #     demands_on_interface=[]
-    # display_demands("Demands Egressing Selected Interface", row5_frame,
-    #                     demands_on_interface, 0, 1)
 
     if selected_node.get() != '':
         node_name = selected_node.get()
@@ -771,12 +749,12 @@ def examine_selected_demand():
 
     row_4_frame = Frame(demand_tab)
     row_4_frame.grid(row=4, column=0, padx=10, pady=10)
-    int_demands = display_demands("Demands Egressing Selected Interface", row_4_frame,
-                        demands_on_interface, 0, 0)
+    int_demands = display_list_of_things("Demands Egressing Selected Interface", row_4_frame,
+                        demands_on_interface, 0, 0, set_active_demand_from_listbox)
     int_demands.grid(padx=10, pady=10)
 
-    lsp_demands = display_demands("Demands on Selected LSP", row_4_frame,
-                    demands_on_lsp, 0, 1)
+    lsp_demands = display_list_of_things("Demands on Selected LSP", row_4_frame,
+                    demands_on_lsp, 0, 1, set_active_demand_from_listbox)
     lsp_demands.grid(padx=10, pady=10)
 
 
@@ -813,7 +791,8 @@ def examine_selected_interface():
 
     interface_list.sort(key=lambda x: float(x.split('%')[0]))
 
-    int_util = display_interfaces(msg, utilization_frame, interface_list, 2, 1)
+    int_util = display_list_of_things(msg, utilization_frame, interface_list,
+                                      2, 1, set_active_interface_from_listbox)
     int_util.grid(sticky='W')
 
     selected_objects_int_tab = LabelFrame(interface_tab)
@@ -846,8 +825,6 @@ def examine_selected_interface():
 
 def examine_paths():
     """Controls display of information on path_tab"""
-
-    # TODO - define all frames on path_tab in one area to keep track better
 
     for thing in path_tab.grid_slaves():
         thing.destroy()
@@ -901,8 +878,9 @@ def examine_paths():
                 list_of_interfaces = path
                 label = "Shortest Path %s, cost = %s"%(str(path_counter),
                                                                 str(cost))
-                display_interfaces(label, shortest_path_frame, list_of_interfaces,
-                    1, column_counter)
+                display_list_of_things(label, shortest_path_frame,
+                                       list_of_interfaces, 1, column_counter,
+                                       set_active_interface_from_listbox)
                 column_counter += 2
                 path_counter += 1
 
@@ -967,8 +945,6 @@ def display_multiple_paths(paths, frame):
         list_of_interfaces = path
         label = "Path {}, cost = {}".format(str(path_counter), cost)
 
-        # display_interfaces(label, path_frame, list_of_interfaces,
-        #                    1, column_counter)
         display_list_of_things(label, path_frame, list_of_interfaces,
                                1, column_counter, set_active_interface_from_listbox)
 
@@ -1125,9 +1101,9 @@ def examine_selected_lsp():
 
         demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
-        display_demands("Demands on Selected LSP (reserved bandwidth = {})"
+        display_list_of_things("Demands on Selected LSP (reserved bandwidth = {})"
                         .format(lsp_reserved_bw), lsp_tab,
-                        demands_on_lsp, 4, 0)
+                        demands_on_lsp, 4, 0, set_active_demand_from_listbox)
 
         path = get_lsp_object_from_repr(selected_lsp.get()).path
         path_ints = path['interfaces']

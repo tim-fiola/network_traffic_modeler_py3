@@ -48,6 +48,12 @@ NOTES:
 - interface addresses are only used to match interfaces into circuits and do
   not have any practical bearing on the simulation results
 
+KNOWN ISSUES:
+- graph_network_interactive.make_interactive_network_graph(model) call will
+    sometimes render the red node/midpoint markers in the wrong place after
+    the user clicks on the marker.  The root cause is under investigation
+    still, but it looks like this happens more often when there is a mixture
+    of positive and negative x,y (lon, lat) coordinates.
 
 ======== TO DO ===========
 simple_user_interface.py TO DO:
@@ -75,7 +81,6 @@ API TO DO:
     - add node tags
     - for network graph plot, have option to only show nodes with 
       certain user specified tags
-- modify __dir__ to not show internal methods
 - increasing/decreasing the magnitude of an existing demand in the traffic matrix failover       
 
 
