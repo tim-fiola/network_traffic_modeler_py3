@@ -125,7 +125,6 @@ def set_active_interface_from_listbox(event):
     """Sets the selected interface value from a listbox to the
     active_interface"""
     w = event.widget
-#    value = (w.curselection())
     value_position = (w.curselection())
 
     # This next part takes the first value in case the listbox has
@@ -156,17 +155,10 @@ def set_active_demand_from_listbox(event):
         thing.destroy()
     for thing in interface_tab.grid_slaves():
         thing.destroy()
-    for thing in path_tab.grid_slaves():
-        thing.destroy()
     for thing in lsp_tab.grid_slaves():
         thing.destroy()
 
     # Refresh the info on tabs
-    # examine_selected_node()
-    # examine_selected_demand()
-    # examine_selected_interface()
-    # examine_paths()
-    # examine_selected_lsp()
     update_tabs()
 
 
@@ -580,8 +572,8 @@ def examine_selected_node():
     """Controls information displayed on node_tab"""
 
     # TODO - is this destroy needed?
-    for thing in node_tab.grid_slaves():
-        thing.destroy()
+    # for thing in node_tab.grid_slaves():
+    #     thing.destroy()
 
     # ### Display info in row 0 ######################################
     row1_frame = Frame(node_tab)
@@ -690,8 +682,8 @@ def examine_selected_demand():
     :return:
     """
 
-    for thing in demand_tab.grid_slaves():
-        thing.destroy()
+    # for thing in demand_tab.grid_slaves():
+    #     thing.destroy()
 
     # Label for choosing interface
     top_row_frame = Frame(demand_tab)
@@ -764,8 +756,8 @@ def examine_selected_interface():
     ## TODO - add reserved bandwidth to display
     ## TODO - add reservable bandwidth to display
 
-    for thing in interface_tab.grid_slaves():
-        thing.destroy()
+    # for thing in interface_tab.grid_slaves():
+    #     thing.destroy()
 
     #### Filter to interfaces above a certain utilization ####
     utilization_frame = LabelFrame(interface_tab)
@@ -826,8 +818,8 @@ def examine_selected_interface():
 def examine_paths():
     """Controls display of information on path_tab"""
 
-    for thing in path_tab.grid_slaves():
-        thing.destroy()
+    # for thing in path_tab.grid_slaves():
+    #     thing.destroy()
 
     node_select_and_lsp_frame = LabelFrame(path_tab)
     node_select_and_lsp_frame.grid(row=0, column=0, sticky='W', padx=10, pady=10, rowspan=2, columnspan=3)
@@ -1163,7 +1155,7 @@ def get_lsp_object_from_repr(lsp_repr):
 # Establish the canvas
 ui_window = Tk()
 ui_window.title('Network modeler UI')
-ui_window.geometry('1600x850')
+ui_window.geometry('1625x850')
 ui_window.resizable(1,1) ###
 
 # Create a tabbed notebook in the canvas ui_window
