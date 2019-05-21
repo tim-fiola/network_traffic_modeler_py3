@@ -238,6 +238,29 @@ def get_demands_on_interface(selected_interface):
     return demands_on_interface
 
 
+def get_lsps_on_interface(selected_interface):
+    """
+    Returns a list of LSPs on the selected_interface
+    :param selected_interface: selected interface in ui
+    :return: list of lsps on selected_interface
+    """
+
+    # Get list of LSPs on interface
+    try:
+        interface_data = selected_interface.split("'")
+        interface_name = interface_data[1]
+        node_name = interface_data[3]
+
+        interface_object = model.get_interface_object(interface_name,
+                                                        node_name)
+        lsps_on_interface = interface_object.lsps(model)
+    except (ModelException, IndexError):
+        interface_object=None
+        lsps_on_interface=[]
+
+    return lsps_on_interface
+
+
 def display_selected_objects(canvas_object, row_, column_):
     """Displays the selected objects"""
 
@@ -621,7 +644,7 @@ def examine_selected_node():
     interface_info = [str(round((interface.utilization * 100),1))+'%   '+ interface.__repr__() for \
                     interface in interface_choices]
 
-    display_interfaces("Node's Interfaces", node_intf_frame,
+    display_interfaces("Selected Node's Interfaces", node_intf_frame,
                             interface_info, 0, 2)
 
     # #####################################################
@@ -805,13 +828,23 @@ def examine_selected_interface():
     display_selected_objects(selected_objects_int_tab, 0, 8)
 
 
+    # ##### Display demands and LSPs on selected_interface ##### #
+
+    lsp_and_demand_egress_frame = Frame(interface_tab)
+    lsp_and_demand_egress_frame.grid(row=2, column=0, padx=10, pady=10)
 
     demands_on_interface = get_demands_on_interface(selected_interface.get())
 
-    display_demands("Demands Egressing Selected Interface", interface_tab,
-                        demands_on_interface, 6, 0)
+    demand_list = display_list_of_things("Demands Egressing Selected Interface",
+                                         lsp_and_demand_egress_frame,
+                                         demands_on_interface, 0, 0)
+    demand_list.grid(padx=10, pady=10)
 
+    lsps_on_interface = get_lsps_on_interface(selected_interface.get())
 
+    lsp_list = display_list_of_things("LSPs Egressing Selected Interface", lsp_and_demand_egress_frame,
+                                      lsps_on_interface, 0, 1)
+    lsp_list.grid(padx=10, pady=10)
 
     # TODO - fail selected interface
 
