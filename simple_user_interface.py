@@ -736,20 +736,19 @@ def examine_selected_demand():
     display_selected_objects(top_row_frame, 0, 2)
 
     #### Display the selected demand's path(s) ####
-#    demand_path_parent_frame = Frame(demand_tab)
-#    demand_path_parent_frame.grid(row=3, column=0, columnspan=3, sticky='W')
-    demand_path_frame = LabelFrame(demand_tab, text="Demand Path Info; displays all ECMP paths.")
+    demand_path_parent_frame = Frame(demand_tab)
+    demand_path_parent_frame.grid(row=3, column=0, columnspan=3, sticky='W')
 
-#    demand_path_frame.grid(row=3, column=0, sticky='NSEW', padx=10, pady=10) # Sticky NSEW keeps window from resizing
-#    demand_path_frame.config(width=1200, height=225)
-    # These keep the demand_path_frame size consistent
-#    demand_path_frame.grid_rowconfigure(0, weight=1)
-#    demand_path_frame.grid_columnconfigure(0, weight=1)
-#    demand_path_frame.grid_propagate(False)
-
-    demand_path_frame.grid(row=3, column=0, padx=10, pady=10)
-
-
+    # demand_path_frame = LabelFrame(demand_path_parent_frame, text="Demand Path Info; displays all ECMP paths.")
+    #
+    # demand_path_frame.grid(row=3, column=0, sticky='NSEW', padx=10, pady=10) # Sticky NSEW keeps window from resizing
+    # demand_path_frame.config(width=1200, height=225)
+    # # These keep the demand_path_frame size consistent
+    # demand_path_frame.grid_rowconfigure(0, weight=1)
+    # demand_path_frame.grid_columnconfigure(0, weight=1)
+    # demand_path_frame.grid_propagate(False)
+    #
+    # demand_path_frame.grid(row=3, column=0, padx=10, pady=10)
 
     try:
         demand_object = get_demand_object_from_repr(selected_demand.get())
@@ -762,11 +761,11 @@ def examine_selected_demand():
         if isinstance(dmd_paths[0], RSVP_LSP):
             row_num = 0
             label_info = "LSPs that carry demand"
-            display_list_of_things(label_info, demand_path_frame,
+            display_list_of_things(label_info, demand_path_parent_frame,
                                    dmd_paths, row_num, 0,
                                    set_active_lsp_from_listbox)
         else:
-            display_multiple_paths(dmd_paths, demand_path_frame)
+            display_multiple_paths(dmd_paths, demand_path_parent_frame)
 
     # TODO - get rid of this catch by testing for selected_demand.get() != ''
     except (IndexError, UnboundLocalError):
@@ -957,7 +956,7 @@ def display_multiple_paths(paths, frame):
     # Canvas within frame object; this canvas can hold multiple path_frames.
     # This Canvas will have a horizontal scrollbar
     canvas = Canvas(frame)
-    canvas.grid(row=0, column=0, sticky='news')
+    canvas.grid(row=0, column=0, sticky='NEWS')
 
     # Horizontal Scrollbar
     horizontal_scrollbar = Scrollbar(frame, orient=HORIZONTAL,
@@ -975,8 +974,12 @@ def display_multiple_paths(paths, frame):
             cost += intf.cost
         list_of_interfaces = path
         label = "Path {}, cost = {}".format(str(path_counter), cost)
-        display_interfaces(label, path_frame, list_of_interfaces,
-                           1, column_counter)
+
+        # display_interfaces(label, path_frame, list_of_interfaces,
+        #                    1, column_counter)
+        display_list_of_things(label, path_frame, list_of_interfaces,
+                               1, column_counter, set_active_interface_from_listbox)
+
         column_counter += 2
         path_counter += 1
     # These next 3 things need to be in this order or the horizontal
