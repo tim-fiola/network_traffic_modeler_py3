@@ -501,51 +501,51 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
 
     return interfaces_listbox
 
-# TODO - use display_list_of_things_instead
-def display_lsp_list(label_info, canvas_object, list_of_lsps,
-                       row_, column_):
-    """
-    Displays interfaces from list of lsps in single selectable listbox.
-    A label with label_info will appear above the listbox.
-    :param label_info: Label for displayed list
-    :param canvas_object: object where list will be displayed
-    :param list_of_lsps: list of RSVP_LSP objects
-    :param row_: row position
-    :param column_: column position
-    :return:
-    """
-    # Display LSP list's Label
-    Label(canvas_object, text=label_info).grid(row=row_, column=column_,
-                                               sticky='W', padx=5)
 
-    # Vertical scrollbar
-    vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
-    vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
-
-    horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
-    horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
-                              columnspan=2)
-
-    # Create a listbox with the available interfaces
-    lsps_listbox = Listbox(canvas_object, selectmode='single',
-                                 height=8, width=40, xscrollcommand=horizontal_scrollbar.set,
-                                 yscrollcommand=vertical_scrollbar.set)
-    lsps_listbox.grid(row=row_ + 1, column=column_, columnspan=2,
-                            sticky='W', padx=5)
-
-    horizontal_scrollbar.config(command=lsps_listbox.xview)
-    vertical_scrollbar.config(command=lsps_listbox.yview)
-
-    lsp_counter = 1
-
-    for intf_name in list_of_lsps:
-        lsps_listbox.insert(lsp_counter, intf_name)
-        lsp_counter += 1
-
-    lsps_listbox.bind("<<ListBoxSelect>>", set_active_lsp_from_listbox)
-    lsps_listbox.bind("<Double-Button-1>", set_active_lsp_from_listbox)
-
-    return lsps_listbox
+# def display_lsp_list(label_info, canvas_object, list_of_lsps,
+#                        row_, column_):
+#     """
+#     Displays interfaces from list of lsps in single selectable listbox.
+#     A label with label_info will appear above the listbox.
+#     :param label_info: Label for displayed list
+#     :param canvas_object: object where list will be displayed
+#     :param list_of_lsps: list of RSVP_LSP objects
+#     :param row_: row position
+#     :param column_: column position
+#     :return:
+#     """
+#     # Display LSP list's Label
+#     Label(canvas_object, text=label_info).grid(row=row_, column=column_,
+#                                                sticky='W', padx=5)
+#
+#     # Vertical scrollbar
+#     vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
+#     vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
+#
+#     horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
+#     horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
+#                               columnspan=2)
+#
+#     # Create a listbox with the available interfaces
+#     lsps_listbox = Listbox(canvas_object, selectmode='single',
+#                                  height=8, width=40, xscrollcommand=horizontal_scrollbar.set,
+#                                  yscrollcommand=vertical_scrollbar.set)
+#     lsps_listbox.grid(row=row_ + 1, column=column_, columnspan=2,
+#                             sticky='W', padx=5)
+#
+#     horizontal_scrollbar.config(command=lsps_listbox.xview)
+#     vertical_scrollbar.config(command=lsps_listbox.yview)
+#
+#     lsp_counter = 1
+#
+#     for intf_name in list_of_lsps:
+#         lsps_listbox.insert(lsp_counter, intf_name)
+#         lsp_counter += 1
+#
+#     lsps_listbox.bind("<<ListBoxSelect>>", set_active_lsp_from_listbox)
+#     lsps_listbox.bind("<Double-Button-1>", set_active_lsp_from_listbox)
+#
+#     return lsps_listbox
 
 
 def display_lsp(label_info, canvas_object, lsp, row_, column_):
@@ -743,17 +743,6 @@ def examine_selected_demand():
     demand_path_parent_frame.grid_columnconfigure(0, weight=1)
     demand_path_parent_frame.grid_propagate(False)
 
-    # demand_path_frame = LabelFrame(demand_path_parent_frame, text="Demand Path Info; displays all ECMP paths.")
-    #
-    # demand_path_frame.grid(row=3, column=0, sticky='NSEW', padx=10, pady=10) # Sticky NSEW keeps window from resizing
-    # demand_path_frame.config(width=1200, height=225)
-    # # These keep the demand_path_frame size consistent
-    # demand_path_frame.grid_rowconfigure(0, weight=1)
-    # demand_path_frame.grid_columnconfigure(0, weight=1)
-    # demand_path_frame.grid_propagate(False)
-    #
-    # demand_path_frame.grid(row=3, column=0, padx=10, pady=10)
-
     try:
         demand_object = get_demand_object_from_repr(selected_demand.get())
         try:
@@ -796,7 +785,6 @@ def examine_selected_interface():
 
     ## TODO - add reserved bandwidth to display
     ## TODO - add reservable bandwidth to display
-    ## TODO - add LSPs on interface
 
     for thing in interface_tab.grid_slaves():
         thing.destroy()
@@ -1148,8 +1136,6 @@ def examine_selected_lsp():
         label = ("LSP path info: cost = {}, baseline_path_reservable_bw = "
                  "{}".format(path_cost, baseline_path_reservable_bw))
 
-        # TODO - specify dimensions of display_interfaces box; right here it looks weird
-#        display_interfaces(label, lsp_tab, path_ints, 5, 0)
         display_list_of_things(label, lsp_tab, path_ints, 5, 0,
                                set_active_interface_from_listbox)
 
@@ -1201,7 +1187,7 @@ def get_lsp_object_from_repr(lsp_repr):
 # Establish the canvas
 ui_window = Tk()
 ui_window.title('Network modeler UI')
-ui_window.geometry('1600x750')
+ui_window.geometry('1600x850')
 ui_window.resizable(1,1) ###
 
 # Create a tabbed notebook in the canvas ui_window
