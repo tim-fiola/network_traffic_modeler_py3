@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/dm/pyntm.svg)](https://pypi.python.org/pypi/pyNTM)
 [![Build Status](https://travis-ci.org/fooelisa/pyiosxr.svg?branch=master)](https://travis-ci.org/fooelisa/pyntm)
 [![Coverage Status](https://coveralls.io/repos/github/fooelisa/pyntm/badge.svg?branch=master)](https://coveralls.io/github/fooelisa/pyntm?branch=master)
-[![Documentation Status](http://sphinx-rtd-theme.readthedocs.io/en/latest/?badge=latest)](https://readthedocs.org/projects/pyNTM/badge/?version=latest)
+[![Documentation Status](https://readthedocs.org/projects/pyNTM/badge/?version=latest)](http://pyntm.readthedocs.io/en/latest/?badge=latest)
 
 
 pyNTM: network_traffic_modeler_py3
