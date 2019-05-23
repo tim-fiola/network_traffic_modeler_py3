@@ -1,8 +1,10 @@
 
 [![PyPI](https://img.shields.io/pypi/v/pyntm.svg)](https://pypi.python.org/pypi/pyNTM)
 [![PyPI](https://img.shields.io/pypi/dm/pyntm.svg)](https://pypi.python.org/pypi/pyNTM)
-[![Build Status](https://travis-ci.org/fooelisa/pyiosxr.svg?branch=master)](https://travis-ci.org/fooelisa/pyntm)
-[![Coverage Status](https://coveralls.io/repos/github/fooelisa/pyntm/badge.svg?branch=master)](https://coveralls.io/github/fooelisa/pyntm?branch=master)
+[![Build Status](https://travis-ci.org/fooelisa/network_traffic_modeler_py3.svg?branch=master)](https://travis-ci.org/fooelisa/network_traffic_modeler_py3)
+<!-- [![Build Status](https://travis-ci.org/tim-fiola/network_traffic_modeler_py3.svg?branch=master)](https://travis-ci.org/tim-fiola/network_traffic_modeler_py3) -->
+[![Coverage Status](https://coveralls.io/repos/github/fooelisa/network_traffic_modeler_py3/badge.svg?branch=master)](https://coveralls.io/github/fooelisa/network_traffic_modeler_py3?branch=master)
+<!-- [![Coverage Status](https://coveralls.io/repos/github/tim-fiola/network_traffic_modeler_py3/badge.svg?branch=master)](https://coveralls.io/github/tim-fiola/network_traffic_modeler_py3?branch=master) -->
 [![Documentation Status](https://readthedocs.org/projects/pyNTM/badge/?version=latest)](http://pyntm.readthedocs.io/en/latest/?badge=latest)
 
 
