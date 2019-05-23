@@ -1,6 +1,6 @@
 sphinx
 sphinx_rtd_theme
-pytest
+pytest>=4.5.0
 pytest-cov
 pytest-flake8
 pytest-mccabe
