@@ -11,7 +11,7 @@ install:
 - pip install .
 
 script:
-- pytest --flake8 --cov=network_modeling/ test/ network_modeling/ -v
+- pytest --flake8 --cov-report term-missing --cov-report xml --cov=network_modeling/ test/ network_modeling/ -v
 
 after_success: coveralls
 
