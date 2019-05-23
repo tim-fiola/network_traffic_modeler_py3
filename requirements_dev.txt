@@ -1,0 +1,6 @@
+sphinx
+sphinx_rtd_theme
+pytest
+pytest-cov
+pytest-flake8
+pytest-mccabe

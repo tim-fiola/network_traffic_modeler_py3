@@ -1,0 +1,25 @@
+language: python
+
+python:
+- 3.4
+- 3.5
+- 3.6
+
+install:
+- pip install -r requirements.txt
+- pip install -r requirements_dev.txt
+- pip install .
+
+script:
+- py.test --flake8 --cov-report term-missing --cov-report xml network_modeling/ test/ -v
+
+after_success: coveralls
+
+deploy:
+  provider: pypi
+  user: fooelisa
+  password:
+    secure: kai0vLh1/J8Ekg8nFS2qNi9wr8YnOL25A2YyStAdgU4BDV3oR8s5eRQRJB0oL//twDkmRtpLwp5J1OUAjOPeanNqItS3wJ1RCLwOYGhjqQP0aPRkvGJnky1klqsMxABaRr8ahI2WZKmM4eYr2/Z9J7VYLPq1u1sbNItmpVSAp5nUvhaxlxgl11mo+4it+/5z+LKQ15ivOTYwRI7FB0R3ZdqW6WgUC+GLt9+j3msFK/bXIQca85eye3sJlWZjIKMbdeUo3+n6af34D3IwkhlEdps2UCoGtjbB8FRnWOZPNIOi89nRgPFgjsCXhn4B1Gk8ncdLhfB2KnQwRE1pl8Q+iKkNku2x3XjxiSU7Lnym1cyd+J7LBcCHnX1UA90zDueFPkkP+hZr+PGdvacF1dFkspiggSNQ8trCEV3uDbly1+seZMWWInRmOYDDwvWIuEMiUwrMpFj7yY0h+eCv3lD2WVTeJwHAJmIzv/drr4/BZQaQlcZy9C2D3A8PY3ccSSJHwWTvOFHzrUXdiGuqGWmof5an/q5uaUFTA3UgzcHVRFXUKjKYGwtonwGbbv9tfDKU5fyXWr00I+b04Qvd4LAsZP1PM6pK50H6B3HKOqkif6O5MWXQW3pMsYDbSDIRbkFw0iYw2dX6XkAoHu8VKnDNKWTVXffGAP679XaEftI/U4I=
+  on:
+    tags: true
+    branch: master
