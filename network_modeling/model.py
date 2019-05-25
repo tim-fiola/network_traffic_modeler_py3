@@ -362,11 +362,11 @@ class Model(object):
 
         return self
 
-    def _route_non_lsp_demands(self, demands, input_model):
+
+    def _route_demands(self, demands, input_model):
         """Routes demands that don't take LSPs"""
         for demand_object in demands:
-            demand_object = demand_object.\
-                _add_demand_path(input_model)
+            demand_object = demand_object._add_demand_path(input_model)
                 
         return self._update_interface_utilization()
 
@@ -395,25 +395,15 @@ class Model(object):
                 #print()
                 #print()
                 #pdb.set_trace()
-            
-
-
 
 
     def _route_lsps(self, input_model):
         """Route the LSPs in the model"""
         for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-            lsp = lsp.route_lsp(input_model) ###### This needs to account for reservable_bandwidth
+            lsp = lsp.route_lsp(input_model) # This needs to account for reservable_bandwidth
             self._update_interface_reserved_bandwidth(lsp)
             
         return self
-
-
-
-
-
-
-
 
 
     def _route_lsp_demands(self, demands, input_model):
@@ -424,28 +414,27 @@ class Model(object):
             
         return self
 
-    # TODO - model convergence order
-    #  1. route demands that don't take LSPs
-    #  2. route LSPs
-    #  3. route demands over LSPs
+
     def update_simulation(self):
         """Updates the simulation state"""
 
-        # This list of interfaces can be used to route traffic
+        # This set of interfaces can be used to route traffic
         non_failed_interfaces = set()
+        # This set of nodes can be used to route traffic
         available_nodes = set()
 
         # Find all the non-failed interfaces in the model and
-        # add them to non_failed_interfaces; also find all the nodes
-        # associated with the non-failed interfaces       
-        for interface_object in self.interface_objects:
+        # add them to non_failed_interfaces.
+        # If the interface is not failed, then by definition, the nodes are
+        # not failed
+        for interface_object in (interface_object for interface_object in self.interface_objects):
             if interface_object.failed == False:
                 non_failed_interfaces.add(interface_object)
                 available_nodes.add(interface_object.node_object)
                 available_nodes.add(interface_object.remote_node_object)
 
         # Create a model consisting only of the non-failed interfaces and
-        # corresponding nodes
+        # corresponding non-failed (available) nodes
         non_failed_interfaces_model = Model(non_failed_interfaces, 
                                     available_nodes, self.demand_objects,
                                     self.rsvp_lsp_objects)
@@ -454,28 +443,35 @@ class Model(object):
         for interface in self.interface_objects:
             interface.reserved_bandwidth = 0
 
+        # # Determine demands that will ride an LSP
+        # lsp_demands = set([])
+        # for demand in (demand for demand in self.demand_objects):
+        #     for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+        #         if lsp.path != 'Unrouted':
+        #             if demand.source_node_object == lsp.source_node_object and \
+        #             demand.dest_node_object == lsp.dest_node_object:
+        #                 lsp_demands.add(demand)
+        #
+        # # Find all demands that don't match up source/dest with an LSP's
+        # # source/dest and so don't ride an LSP
+        # non_lsp_demands = set([])
+        # for demand in (demand for demand in self.demand_objects):
+        #     if demand not in lsp_demands:
+        #         non_lsp_demands.add(demand)
+
+
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
-        
-        # Route the demands - change the name of the call if you use this
-        self = self._route_non_lsp_demands(self.demand_objects, 
+
+        # Route the demands
+        self = self._route_demands(self.demand_objects,
                                             non_failed_interfaces_model)
 
-        ## Determine demands that will ride an LSP
-        #lsp_demands = set([])
-        #for demand in (demand for demand in self.demand_objects):
-            #for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-                #if lsp.path != 'Unrouted':
-                    #if demand.source_node_object == lsp.source_node_object and \
-                    #demand.dest_node_object == lsp.dest_node_object:
-                        #lsp_demands.add(demand)  
 
-        ## Find all demands that don't match up source/dest with an LSP's
-        ## source/dest and so don't ride an LSP
-        #non_lsp_demands = set([])
-        #for demand in (demand for demand in self.demand_objects):
-            #if demand not in lsp_demands:
-                #non_lsp_demands.add(demand)
+
+        # Route the demands that take RSVP LSPs
+
+
 
         #self = self._route_non_lsp_demands(non_lsp_demands, 
                                 #non_failed_interfaces_model)

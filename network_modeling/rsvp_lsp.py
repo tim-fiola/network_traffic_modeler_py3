@@ -73,6 +73,7 @@ class RSVP_LSP(object):
                 self._find_path_cost_and_headroom(candidate_paths, model)
             
             # Filter out paths that don't have enough headroom
+            # TODO - rsvp_lsp.py - figure out how/if to use baseline_path_reservable_bw; right now this messed up; see lsp_practice_code last test where test2 LSP increases its reserved_bandwidth
             candidate_paths_with_enough_headroom = [path for path in \
                 candidate_path_info if path['baseline_path_reservable_bw'] >= \
                 self.setup_bandwidth]
