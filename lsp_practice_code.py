@@ -72,7 +72,7 @@ print("Here are the LSPs on {} and their reserved_bandwidth".format(a_to_c))
 for lsp in a_to_c.lsps(model):
     print([lsp.lsp_name, lsp.reserved_bandwidth])
 print("{} reserved_bandwidth is {}".format(a_to_c, a_to_c.reserved_bandwidth))
-
+print()
 # Fail interface a_to_b; expected behavior is
 # -- lsp that was on a_to_b reroute to path with interface a_to_c
 # -- interface a_to_c reservable_bandwidth drops to 0
@@ -92,9 +92,9 @@ print("{} reserved_bandwidth is {}".format(a_to_c, a_to_c.reserved_bandwidth))
 print()
 
 # Add additional demand from A to D of 100; expected behavior is
-# -- both LSPs from A to D take 50 traffic units each
+# -- both LSPs from A to D take 50 traffic units each since each is signaled for 75 units
 # -- both LSPs from A to D don't increase their reserved bandwidth
-#    because interface a_to_c only has capacity of 150 TODO - this is failing
+#    because interface a_to_c only has capacity of 150
 print("Adding additional demand of 100 from A to D")
 model.add_demand('A', 'D', 100, 'demand_a_to_d_3')
 model.update_simulation()
@@ -103,4 +103,9 @@ print("After adding demand, here are the LSPs and their "
 for lsp in a_to_c.lsps(model):
     print([lsp.lsp_name, lsp.reserved_bandwidth])
 print("{} reserved_bandwidth is {}".format(a_to_c, a_to_c.reserved_bandwidth))
+print()
+print("Here are the LSPs and their reserved_bandwidth, baseline_path_reservable_bw, "
+      "and reservable_bandwidth for each interface in path:")
+for lsp in model.rsvp_lsp_objects:
+    print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.path])
 

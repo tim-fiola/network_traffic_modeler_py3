@@ -20,6 +20,7 @@ class Interface(object):
         self.traffic = 0.0
         self._failed = False
         self.reserved_bandwidth = 0
+        # TODO - implement reserved_bandwidth getter/setter with self._reserved_bandwidth
 #        self._reservable_bandwidth = self.capacity - self.reserved_bandwidth
 
         validation_info = []
@@ -61,26 +62,35 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
                                             self.remote_node_object,
                                             self.address)
 
-    ###### TODO - is this call necessary?! ####
-    #@staticmethod
-    #def get_interface(interface_name, node_name, model):
-        #"""Returns an interface object for specified node name and interface name"""
-
-        #for interface in (interface for interface in model.interface_objects):
-            #if interface.node_object.name == node_name and \
-               #interface.name == interface_name:
-                #needed_interface = interface
-                #break
-
-        #return needed_interface
 
     @property
     def reservable_bandwidth(self):
         """Amount of bandwidth available for rsvp lsp reservation"""
         return self.capacity - self.reserved_bandwidth
-        
+
+    # @property
+    # def reserved_bandwidth(self):
+    #     """
+    #     Amount of bandwidth reserved by RSVP LSPs
+    #     :return: reserved bandwidth
+    #     """
+    #     return self._reserved_bandwidth
+    #
+    # @reserved_bandwidth.setter
+    # def reserved_bandwidth(self):
+    #     """
+    #     Setter for reserved_bandwidth property
+    #     :return:
+    #     """
+
+
+
     @property
     def failed(self):
+        """
+        Is Interface failed
+        :return: True|False
+        """
         return self._failed
 
     @failed.setter
@@ -100,6 +110,7 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
             
         else:
             self._failed = True
+
 
     def fail_interface(self, model):
         """Returns an updated model with the specified

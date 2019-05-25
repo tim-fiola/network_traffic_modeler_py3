@@ -1,7 +1,10 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
+from pprint import pprint
+
 import random
 import pdb
+
 
 # For when the model has both LSPs but not a full LSP mesh, 
 # - create the LSP model first
@@ -69,87 +72,111 @@ class RSVP_LSP(object):
             self.reserved_bandwidth = 'Unrouted'
         else:
             # Find the path cost and path headroom for each path candidate
-            candidate_path_info = \
-                self._find_path_cost_and_headroom(candidate_paths, model)
-            
+            candidate_path_info = self._find_path_cost_and_headroom(candidate_paths, model)
+
             # Filter out paths that don't have enough headroom
-            # TODO - rsvp_lsp.py - figure out how/if to use baseline_path_reservable_bw; right now this messed up; see lsp_practice_code last test where test2 LSP increases its reserved_bandwidth
-            candidate_paths_with_enough_headroom = [path for path in \
-                candidate_path_info if path['baseline_path_reservable_bw'] >= \
-                self.setup_bandwidth]
-                
+            candidate_paths_with_enough_headroom = [path for path in candidate_path_info
+                                                    if path['baseline_path_reservable_bw'] >=
+                                                    self.setup_bandwidth]
+            # LSP scenarios:
             # 1.There are no viable paths with needed headroom,
             #   LSP is not routed and trying to initially signal
-            if len(candidate_paths_with_enough_headroom) == 0 and \
-                        self.path == 'Unrouted':
+            # 2. There are no viable paths with needed headroom,
+            #    LSP is already signaled and looking for more
+            #    reserved bandwidth; LSP current path is valid so keep it
+            #    on the same path with current reserved_bandwidth:
+            # 3. LSP was routed but that path failed.  There are
+            #    no other paths to route on with the required
+            #    reservable_bandwidth; don't route the LSP
+            # 4.
+            # 5. There are viable paths with enough headroom
+
+            # 1.There are no viable paths with needed headroom,
+            #   LSP is not routed and trying to initially signal
+            if (len(candidate_paths_with_enough_headroom) == 0 and
+                                        self.path == 'Unrouted'):
                 self.reserved_bandwidth = 'Unrouted'
                 self.path = 'Unrouted'
-                
-            # 2. There are no viable paths with needed headroom,                
-            #    LSP is already signaled and looking for more 
-            #    reserved bandwidth:
+                print([self, "scenario 1"])
+
+            # 2. There are no viable paths with needed headroom,
+            #    LSP is already signaled and looking for more
+            #    reserved bandwidth; LSP current path is valid so keep it
+            #    on the same path with current reserved_bandwidth:
+            # TODO - this is not working; see sample_lsp in lsp_practice_code where it signals
+            # for 125 traffic units when the extra demand is added instead of keeping the current
+            # 75 traffic units
             elif len(candidate_paths_with_enough_headroom) == 0 and \
-                    self.path != 'Unrouted':
+                    self.path in candidate_paths:
                 # Keep the current setup bandwidth and path
                 self.reserved_bandwidth = self.reserved_bandwidth
                 self.path = self.path
-            # 3. There are viable paths with enough headroom
+                print([self, "scenario 2"])
+
+            # 3. LSP was routed but that path is not valid anymore.  There are
+            #    no other paths to route on with the required reservable_bandwidth
+            elif len(candidate_paths_with_enough_headroom) == 0:
+                self.reserved_bandwidth = 'Unrouted'
+                self.path = 'Unrouted'
+                print([self, "scenario 3"])
+
+            # 4. There are viable paths with enough headroom
             else:
-                
-                
-                ### TODO - reservable_bandwidth is not updating? - debug
-                
-                
                 self.reserved_bandwidth = self.setup_bandwidth
                 # Find the lowest available path metric
                 
-                lowest_available_metric = min([path['path_cost'] for path in \
-                    candidate_paths_with_enough_headroom])
+                lowest_available_metric = min([path['path_cost'] for path in
+                                              candidate_paths_with_enough_headroom])
                     
                 # Finally, find all paths with the lowest cost and enough headroom
-                best_paths = [ path for path in candidate_paths_with_enough_headroom \
-                                if path['path_cost'] == lowest_available_metric ]
+                best_paths = [ path for path in candidate_paths_with_enough_headroom
+                               if path['path_cost'] == lowest_available_metric ]
                 
                 # If multiple paths, pick a best path at random
                 if len(best_paths)> 1:
                     self.path = random.choice(best_paths)
                 else:
                     self.path = best_paths[0]
+                print([self, "scenario 4"])
          
         return self  
         
     def _find_path_cost_and_headroom(self, candidate_paths, model):
-        """Returns a list of dictionaries containing the path interfaces as
-        well as the path cost and headroom available on the path."""
+        """
+        Returns a list of dictionaries containing the path interfaces as
+        well as the path cost and headroom available on the path.
+        :param candidate_paths: list of lists of Interface objects
+        :param model: Model
+        :return: list of dictionaries of paths: {'interfaces': path,
+                                                 'path_cost': path_cost,
+                                                 'baseline_path_reservable_bw': baseline_path_reservable_bw}
+        """
 
         # List to hold info on each candidate path
         candidate_path_info = []
-#        path_counter = 0
+
+        # TODO - need to update reservable_bandwidth for each interface
 
         # Find the path cost and path headroom for each path candidate
         for path in candidate_paths:
             path_cost = 0
             for interface in path:
                 path_cost += interface.cost
-            # Path headroom is the max amount of traffic that the path 
+            # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
             baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
-            # amount of additional bw on path available for reservation
-            # if self.path != 'Unrouted':
-            #     available_bw = int(path_headroom) - int(self.reserved_bandwidth)
-            # else:
-            #     available_bw = 'NA'
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
                          'baseline_path_reservable_bw': baseline_path_reservable_bw}
             
             candidate_path_info.append(path_info)
-#            path_counter += 1
-            
+
         return candidate_path_info
 
+
     def lsp_can_route(self, model):
-        """ """
+        """Can this LSP route?"""
+        # TODO - what is lsp_can_route for?  I don't recall
         pass
 
     def demands_on_lsp(self, model):
@@ -181,7 +208,7 @@ class RSVP_LSP(object):
         
         return metric
 
-    def route_lsp(self, model):
+    def route_lsp(self, model): # TODO - rsvp_lsp.py - make this call into _route_lsp
         
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)

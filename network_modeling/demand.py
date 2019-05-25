@@ -36,33 +36,20 @@ class Demand(object):
         :return: list of paths the demand takes or 'Unrouted' string
         """
 
-
-
-        # Find if there is an LSP with source/dest same as demand source/dest
-        #if len(model.rsvp_lsp_objects) > 0:
-            #demand_path = []
-            #for lsp in (lsp for lsp in model.rsvp_lsp_objects):
-                #if (lsp.source_node_object == self.source_node_object and \
-                    #lsp.dest_node_object == self.dest_node_object):
-                    #demand_path.append(lsp)
-                #else: # no LSP matches demand source/dest pair
- 
         # Find if there is an LSP with source/dest same as demand source/dest                
         demand_path = []
 
         # Find all LSPs that can carry the demand:
         for lsp in (lsp for lsp in model.rsvp_lsp_objects):
-         #   pdb.set_trace()
             if (lsp.source_node_object == self.source_node_object and \
                     lsp.dest_node_object == self.dest_node_object and \
                     lsp.path != 'Unrouted'):
-             #   print("LSP/demand match {}".format(lsp, self))
                 demand_path.append(lsp)
             
         # If demand can't be carried by LSP, do shortest path routing
         if demand_path == []:
             demand_path = model.get_shortest_path(self.source_node_object.name,
-                                            self.dest_node_object.name)['path']
+                                                  self.dest_node_object.name)['path']
 
         if demand_path == []:
             demand_path = 'Unrouted'
