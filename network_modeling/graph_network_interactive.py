@@ -118,6 +118,7 @@ def _set_graph_node_name_and_position(model, G):
         nx.set_node_attributes(G, {node_name: node.failed}, 'failed')
     return G
 
+
 def _prep_network_model_for_graph(model):
     """Prepares Model data for interactive graphing.  Returns json data
     from networkx DiGraph."""

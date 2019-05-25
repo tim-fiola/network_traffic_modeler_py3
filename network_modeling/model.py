@@ -450,6 +450,10 @@ class Model(object):
                                     available_nodes, self.demand_objects,
                                     self.rsvp_lsp_objects)
 
+        # Reset the reserved_bandwidth on each interface
+        for interface in self.interface_objects:
+            interface.reserved_bandwidth = 0
+
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
         
