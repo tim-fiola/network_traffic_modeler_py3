@@ -40,7 +40,7 @@ class RSVP_LSP(object):
 
     def _calculate_setup_bandwidth(self, model):
         """Find amount of bandwidth to reserve for LSP"""
-        
+
         # Find all demands that would ride the LSP
         demand_list = []
         for demand in model.demand_objects:
@@ -63,7 +63,11 @@ class RSVP_LSP(object):
         
     def _add_rsvp_lsp_path(self, model):
         """Determines the LSP's path"""
-        
+
+        # TODO - left off here; this causes a loop tho
+        # Need a step that recalculates the setup_bandwidth 
+        self.route_lsp(model)
+
         # Get candidate paths
         candidate_paths = model.get_feasible_paths(self.source_node_object.name, 
                                     self.dest_node_object.name)
@@ -111,14 +115,15 @@ class RSVP_LSP(object):
                 # Keep the current setup bandwidth and path
                 self.reserved_bandwidth = self.reserved_bandwidth
                 self.path = self.path
-                print([self, "scenario 2"])
+                print([self, "scenario 2", candidate_paths])
 
             # 3. LSP was routed but that path is not valid anymore.  There are
             #    no other paths to route on with the required reservable_bandwidth
             elif len(candidate_paths_with_enough_headroom) == 0:
                 self.reserved_bandwidth = 'Unrouted'
                 self.path = 'Unrouted'
-                print([self, "scenario 3"])
+                pprint([self, "scenario 3", self.reserved_bandwidth, self.setup_bandwidth,
+                        candidate_paths_with_enough_headroom])
 
             # 4. There are viable paths with enough headroom
             else:
@@ -137,7 +142,8 @@ class RSVP_LSP(object):
                     self.path = random.choice(best_paths)
                 else:
                     self.path = best_paths[0]
-                print([self, "scenario 4"])
+                pprint([self, "scenario 4", self.reserved_bandwidth, self.setup_bandwidth,
+                        candidate_paths_with_enough_headroom])
          
         return self  
         
