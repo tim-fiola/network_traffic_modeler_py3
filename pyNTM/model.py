@@ -661,6 +661,7 @@ class Model(object):
                                             self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth on each interface
+        # TODO - should we reset this here???
         for interface in self.interface_objects:
             interface.reserved_bandwidth = 0
 
