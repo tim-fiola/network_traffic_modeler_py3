@@ -3,12 +3,9 @@ Client code to demonstrate how to use the pyNTM network_modeling classes
 """
 
 from pyNTM import Model
-from pyNTM import Circuit
-from pyNTM import Demand
-from pyNTM import graph_network_interactive
-from pyNTM import Interface
-from pyNTM import ModelException
 from pyNTM import Node
+
+from graph_network import graph_network_interactive
 
 from pprint import pprint
 import time
@@ -139,7 +136,7 @@ print("There are %i unique paths between %s and %s" % (len(good_paths),
 print()
 
 # create demand objects from list of demands
-##demand_objects = Demand.create_demand_objects(demands)
+# demand_objects = Demand.create_demand_objects(demands)
 for demand in demands:
     model1.add_demand(demand['source'], demand['dest'],
                       demand['traffic'])
