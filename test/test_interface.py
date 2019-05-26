@@ -1,6 +1,6 @@
 import unittest
 
-from network_modeling import Interface
+from pyNTM import Interface
 
 
 class TestInterface(unittest.TestCase):

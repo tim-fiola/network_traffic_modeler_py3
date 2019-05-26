@@ -1,9 +1,9 @@
 import unittest
 
-from network_modeling import Node
-from network_modeling import Model
-from network_modeling import Circuit
-from network_modeling import Interface
+from pyNTM import Node
+from pyNTM import Model
+from pyNTM import Circuit
+from pyNTM import Interface
 
 
 class TestCircuit(unittest.TestCase):

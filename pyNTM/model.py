@@ -1348,8 +1348,7 @@ does not exist in model" % (source_node_name, dest_node_name,
     def display_interface_status(self):
         """Returns failed = True/False for each interface"""
 
-        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12),
-              end=' ')
+        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), end=' ')
         print('Failed'.ljust(12))
 
         interface_iterator = (interface for interface in self.interface_objects)

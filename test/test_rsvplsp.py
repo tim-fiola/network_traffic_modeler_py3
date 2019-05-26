@@ -1,7 +1,7 @@
 import unittest
 
-from network_modeling import Node
-from network_modeling import RSVP_LSP
+from pyNTM import Node
+from pyNTM import RSVP_LSP
 
 
 class TestRSVPLSP(unittest.TestCase):

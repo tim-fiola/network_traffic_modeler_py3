@@ -1,6 +1,6 @@
 import unittest
 
-from network_modeling import Node
+from pyNTM import Node
 
 
 class TestNode(unittest.TestCase):
