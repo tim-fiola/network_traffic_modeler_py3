@@ -113,26 +113,20 @@ class RSVP_LSP(object):
 
             # 1.There are no viable paths with needed headroom,
             #   LSP is not routed and trying to initially signal
-            pdb.set_trace()
             if (len(candidate_paths_with_enough_headroom) == 0 and
                                         self.path == 'Unrouted'):
                 self.reserved_bandwidth = 'Unrouted'
                 self.path = 'Unrouted'
-                print([self, "scenario 1"])
 
             # 2. There are no viable paths with needed headroom,
             #    LSP is already signaled and looking for more
             #    reserved bandwidth; LSP current path is valid so keep it
             #    on the same path with current reserved_bandwidth:
-            # TODO - this is not working; see sample_lsp in lsp_practice_code where it signals
-            # for 125 traffic units when the extra demand is added instead of keeping the current
-            # 75 traffic units
             elif len(candidate_paths_with_enough_headroom) == 0 and \
                     self.path['interfaces'] in candidate_paths:
                 # Keep the current setup bandwidth and path
                 self.reserved_bandwidth = self.reserved_bandwidth
                 self.path = self.path
-                print([self, "scenario 2", candidate_paths])
                 # Update reserved bandwidth on each interface
                 for interface in self.path['interfaces']:
                     interface.reserved_bandwidth = interface.reserved_bandwidth + self.reserved_bandwidth
@@ -143,8 +137,6 @@ class RSVP_LSP(object):
             elif len(candidate_paths_with_enough_headroom) == 0:
                 self.reserved_bandwidth = 'Unrouted'
                 self.path = 'Unrouted'
-                pprint([self, "scenario 3", self.reserved_bandwidth, self.setup_bandwidth,
-                        candidate_paths_with_enough_headroom])
 
             # 4. There are viable paths with enough headroom
             else:
@@ -159,12 +151,10 @@ class RSVP_LSP(object):
                                if path['path_cost'] == lowest_available_metric ]
                 
                 # If multiple paths, pick a best path at random
-                if len(best_paths)> 1:
+                if len(best_paths) > 1:
                     self.path = random.choice(best_paths)
                 else:
                     self.path = best_paths[0]
-                pprint([self, "scenario 4", self.reserved_bandwidth, self.setup_bandwidth,
-                        candidate_paths_with_enough_headroom])
                 # Update the reserved_bandwidth on each interface
                 for interface in self.path['interfaces']:
                     interface.reserved_bandwidth = interface.reserved_bandwidth + self.reserved_bandwidth
@@ -186,8 +176,6 @@ class RSVP_LSP(object):
 
         # List to hold info on each candidate path
         candidate_path_info = []
-
-        # TODO - need to update reservable_bandwidth for each interface
 
         # Find the path cost and path headroom for each path candidate
         for path in candidate_paths:
