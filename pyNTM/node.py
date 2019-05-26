@@ -10,7 +10,6 @@ class Node(object):
 
     def __init__(self, name, lat=0, lon=0):
         self.name = name
-
         self._failed = False
         self.lat = lat
         self.lon = lon
@@ -53,6 +52,9 @@ class Node(object):
     def interfaces(self, model):
         """
         Returns interfaces for a given node
+
+        :param model: model structure
+        :return adjacency_list: (list) list of interfaces on the given node
         """
         adjacency_list = []
 
