@@ -8,6 +8,6 @@ class TestDemand(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        node_a = Node(name='nodeA', lat=0, lon=0)
-        node_b = Node(name='nodeB', lat=0, lon=0)
-        self.demand = Demand(source_node_object=node_a, dest_node_object=node_b, traffic=10, name='A-to-B')
+        self.node_a = Node(name='nodeA', lat=0, lon=0)
+        self.node_b = Node(name='nodeB', lat=0, lon=0)
+        self.demand = Demand(source_node_object=self.node_a, dest_node_object=self.node_b, traffic=10, name='A-to-B')
