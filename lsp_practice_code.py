@@ -77,7 +77,7 @@ print()
 # -- lsp that was on a_to_b reroute to path with interface a_to_c
 # -- interface a_to_c reservable_bandwidth drops to 0
 # -- interface a_to_c reserved_bandwidth goes up to 150
-print("Fail interface {}".format(a_to_b))
+print("*************** Fail interface {} ***************".format(a_to_b))
 model.fail_interface('A-to-B', 'A')
 model.update_simulation()
 print()
@@ -95,7 +95,7 @@ print()
 # -- both LSPs from A to D take 50 traffic units each since each is signaled for 75 units
 # -- both LSPs from A to D don't increase their reserved bandwidth
 #    because interface a_to_c only has capacity of 150
-print("Adding additional demand of 100 from A to D")
+print("******** Adding additional demand of 100 from A to D *********")
 model.add_demand('A', 'D', 100, 'demand_a_to_d_3')
 model.update_simulation()
 print("After adding demand, here are the LSPs and their "

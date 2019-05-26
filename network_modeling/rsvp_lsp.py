@@ -64,14 +64,30 @@ class RSVP_LSP(object):
     def _add_rsvp_lsp_path(self, model):
         """Determines the LSP's path"""
 
-        # TODO - left off here; this causes a loop tho
-        # Need a step that recalculates the setup_bandwidth 
-        self.route_lsp(model)
+        # Find all demands that would take the LSP
+        demands_for_lsp = []
+        for demand in (demand for demand in model.demand_objects):
+            if (demand.source_node_object == self.source_node_object and
+                        demand.dest_node_object == self.dest_node_object):
+                demands_for_lsp.append(demand)
+
+        # Find sum of all traffic for demands_for_lsp
+        demands_for_lsp_traffic = sum((demand.traffic for demand in demands_for_lsp))
+
+        # Find # of LSPs that have same source/dest as self
+        num_matching_lsps = len([lsp for lsp in model.rsvp_lsp_objects if
+             lsp.source_node_object == self.source_node_object and
+             lsp.dest_node_object == self.dest_node_object])
+
+        # Determine ECMP split of traffic across LSPs
+        self.setup_bandwidth = demands_for_lsp_traffic/num_matching_lsps
 
         # Get candidate paths
         candidate_paths = model.get_feasible_paths(self.source_node_object.name, 
                                     self.dest_node_object.name)
+
         if candidate_paths == []:
+            # If there are no possible paths, then LSP is Unrouted
             self.path = 'Unrouted'
             self.reserved_bandwidth = 'Unrouted'
         else:
@@ -97,6 +113,7 @@ class RSVP_LSP(object):
 
             # 1.There are no viable paths with needed headroom,
             #   LSP is not routed and trying to initially signal
+            pdb.set_trace()
             if (len(candidate_paths_with_enough_headroom) == 0 and
                                         self.path == 'Unrouted'):
                 self.reserved_bandwidth = 'Unrouted'
@@ -111,14 +128,18 @@ class RSVP_LSP(object):
             # for 125 traffic units when the extra demand is added instead of keeping the current
             # 75 traffic units
             elif len(candidate_paths_with_enough_headroom) == 0 and \
-                    self.path in candidate_paths:
+                    self.path['interfaces'] in candidate_paths:
                 # Keep the current setup bandwidth and path
                 self.reserved_bandwidth = self.reserved_bandwidth
                 self.path = self.path
                 print([self, "scenario 2", candidate_paths])
+                # Update reserved bandwidth on each interface
+                for interface in self.path['interfaces']:
+                    interface.reserved_bandwidth = interface.reserved_bandwidth + self.reserved_bandwidth
 
             # 3. LSP was routed but that path is not valid anymore.  There are
-            #    no other paths to route on with the required reservable_bandwidth
+            #    no other paths to route on with the required reservable_bandwidth.
+            #    LSP will be unrouted
             elif len(candidate_paths_with_enough_headroom) == 0:
                 self.reserved_bandwidth = 'Unrouted'
                 self.path = 'Unrouted'
@@ -144,7 +165,12 @@ class RSVP_LSP(object):
                     self.path = best_paths[0]
                 pprint([self, "scenario 4", self.reserved_bandwidth, self.setup_bandwidth,
                         candidate_paths_with_enough_headroom])
-         
+                # Update the reserved_bandwidth on each interface
+                for interface in self.path['interfaces']:
+                    interface.reserved_bandwidth = interface.reserved_bandwidth + self.reserved_bandwidth
+
+
+
         return self  
         
     def _find_path_cost_and_headroom(self, candidate_paths, model):

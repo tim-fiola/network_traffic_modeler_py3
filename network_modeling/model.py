@@ -465,7 +465,7 @@ class Model(object):
 
         # Route the demands
         self = self._route_demands(self.demand_objects,
-                                            non_failed_interfaces_model)
+                                   non_failed_interfaces_model)
 
 
 
