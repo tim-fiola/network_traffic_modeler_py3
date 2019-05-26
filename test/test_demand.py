@@ -1,7 +1,7 @@
 import unittest
 
-from network_modeling import Node
-from network_modeling import Demand
+from pyNTM import Node
+from pyNTM import Demand
 
 
 class TestDemand(unittest.TestCase):

@@ -1,8 +1,8 @@
 import unittest
 
-from network_modeling import Node
-from network_modeling import Interface
-from network_modeling import Model
+from pyNTM import Node
+from pyNTM import Interface
+from pyNTM import Model
 
 
 class TestModel(unittest.TestCase):
