@@ -111,6 +111,7 @@ class RSVP_LSP(object):
             # 4.
             # 5. There are viable paths with enough headroom
 
+            # TODO - interface reserved bandwidth is incremented in scenarios 2 and 4
             # 1.There are no viable paths with needed headroom,
             #   LSP is not routed and trying to initially signal
             if (len(candidate_paths_with_enough_headroom) == 0 and
@@ -127,9 +128,9 @@ class RSVP_LSP(object):
                 # Keep the current setup bandwidth and path
                 self.reserved_bandwidth = self.reserved_bandwidth
                 self.path = self.path
-                # Update reserved bandwidth on each interface
-                for interface in self.path['interfaces']:
-                    interface.reserved_bandwidth = interface.reserved_bandwidth + self.reserved_bandwidth
+                # Don't update res bw on the interface as the path did not change
+                # nor did the reservable_bandwidth
+
 
             # 3. LSP was routed but that path is not valid anymore.  There are
             #    no other paths to route on with the required reservable_bandwidth.
@@ -159,9 +160,8 @@ class RSVP_LSP(object):
                 for interface in self.path['interfaces']:
                     interface.reserved_bandwidth = interface.reserved_bandwidth + self.reserved_bandwidth
 
+        return self
 
-
-        return self  
         
     def _find_path_cost_and_headroom(self, candidate_paths, model):
         """

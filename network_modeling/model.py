@@ -51,33 +51,33 @@ class Model(object):
                                 len(self.demand_objects),
                                 len(self.rsvp_lsp_objects))
 
-    # TODO - not sure if this method is needed; can't recall what the use case is
-    # TODO - I don't see this call anywhere in the code
-    @classmethod
-    def create_network_model(cls, network_interfaces):
-        """
-        A tool that reads network interface info and returns a new model.
-        Interface info must be in format like below example:
 
-        network_interfaces = [
-        {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
-         'remote_node': 'B', 'address': 1, 'failed': False},
-        {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
-         'remote_node': 'B', 'address': 2, 'failed': False},
-        {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
-         'remote_node': 'C', 'address': 3, 'failed': False},]
-        """
-
-        interface_objects, node_objects = \
-                           Model._make_network_interfaces(network_interfaces)
-        
-        model = Model(interface_objects, node_objects) 
-        
-        model._make_circuits()
-        
-        validated_network_model = model.validate_model()
-
-        return validated_network_model
+    # TODO - I don't see this call anywhere in the code - i commented it out
+    # @classmethod
+    # def create_network_model(cls, network_interfaces):
+    #     """
+    #     A tool that reads network interface info and returns a new model.
+    #     Interface info must be in format like below example:
+    #
+    #     network_interfaces = [
+    #     {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
+    #      'remote_node': 'B', 'address': 1, 'failed': False},
+    #     {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
+    #      'remote_node': 'B', 'address': 2, 'failed': False},
+    #     {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
+    #      'remote_node': 'C', 'address': 3, 'failed': False},]
+    #     """
+    #
+    #     interface_objects, node_objects = \
+    #                        Model._make_network_interfaces(network_interfaces)
+    #
+    #     model = Model(interface_objects, node_objects)
+    #
+    #     model._make_circuits()
+    #
+    #     validated_network_model = model.validate_model()
+    #
+    #     return validated_network_model
 
     def add_network_interfaces_from_list(self, network_interfaces):
         """
@@ -375,9 +375,9 @@ class Model(object):
 
 
 
-
+    # TODO - not needed if we incremented reserved_bandwidth in RSVP_LSP._add_rsvp_lsp_path
     def _update_interface_reserved_bandwidth(self, lsp):
-        """Updates bandwidth reserved by RSVP LSPs on each interface"""
+        """Updates bandwidth reserved by RSVP LSP(s) on each interface"""
         # 
         # path = {'interfaces':path, 'path_cost':path_cost,
         #                            'path_headroom': path_headroom} 
@@ -386,22 +386,25 @@ class Model(object):
             pass
         else:
             for interface in lsp.path['interfaces']:
-                #print()
-                #print()
-                #print("before", lsp, interface, interface.reserved_bandwidth)
+                # TODO -- interface reserved_bandwidth is incremented here
+                print()
+                print()
+                print("before", lsp, interface, interface.reserved_bandwidth)
                 interface.reserved_bandwidth += lsp.reserved_bandwidth
-                #print()
-                #print("after", lsp, interface, interface.reserved_bandwidth)
-                #print()
-                #print()
-                #pdb.set_trace()
+                print()
+                print("after", lsp, interface, interface.reserved_bandwidth)
+                print()
+                print()
+                pdb.set_trace()
 
 
     def _route_lsps(self, input_model):
         """Route the LSPs in the model"""
+
+        # Route each LSP one at a time
         for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-            lsp = lsp.route_lsp(input_model) # This needs to account for reservable_bandwidth
-            self._update_interface_reserved_bandwidth(lsp)
+            lsp = lsp.route_lsp(input_model)
+            # self._update_interface_reserved_bandwidth(lsp)
             
         return self
 
@@ -440,26 +443,9 @@ class Model(object):
                                     self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth on each interface
-        # TODO - should we reset this here???
-        for interface in self.interface_objects:
-            interface.reserved_bandwidth = 0
-
-        # # Determine demands that will ride an LSP
-        # lsp_demands = set([])
-        # for demand in (demand for demand in self.demand_objects):
-        #     for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-        #         if lsp.path != 'Unrouted':
-        #             if demand.source_node_object == lsp.source_node_object and \
-        #             demand.dest_node_object == lsp.dest_node_object:
-        #                 lsp_demands.add(demand)
-        #
-        # # Find all demands that don't match up source/dest with an LSP's
-        # # source/dest and so don't ride an LSP
-        # non_lsp_demands = set([])
-        # for demand in (demand for demand in self.demand_objects):
-        #     if demand not in lsp_demands:
-        #         non_lsp_demands.add(demand)
-
+        # TODO - should we reset this here??? likely no.  I commented it out
+        # for interface in self.interface_objects:
+        #     interface.reserved_bandwidth = 0
 
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
@@ -467,17 +453,6 @@ class Model(object):
         # Route the demands
         self = self._route_demands(self.demand_objects,
                                    non_failed_interfaces_model)
-
-
-
-        # Route the demands that take RSVP LSPs
-
-
-
-        #self = self._route_non_lsp_demands(non_lsp_demands, 
-                                #non_failed_interfaces_model)
-        #self = self._route_lsp_demands(lsp_demands, 
-                                #non_failed_interfaces_model)
 
 
     def _unique_interface_per_node(self):
