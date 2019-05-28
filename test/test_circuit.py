@@ -25,16 +25,8 @@ class TestCircuit(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(repr(self.circuit), "Circuit(Interface(name = 'inerfaceA-to-B', cost = 4, capacity = 100, node_object = Node('nodeA'), remote_node_object = Node('nodeB'), address = 1), Interface(name = 'inerfaceB-to-A', cost = 4, capacity = 100, node_object = Node('nodeB'), remote_node_object = Node('nodeA'), address = 1))")  # noqa E501
 
-    # something it not good here in the interface class when calling _key
-    #
-    #     def _key(self):
-    # >       return (self.interface_a._key(), self.interface_b._key())
-    # E       TypeError: 'tuple' object is not callable
-    #
-    # pyNTM/circuit.py:17: TypeError
-    #
-    # def test_key(self):
-    #     self.assertEqual(self.circuit._key(), "('inerfaceA-to-B', 'inerfaceB-to-A')")
+    def test_key(self):
+        self.assertEqual(self.circuit._key(), (('inerfaceA-to-B', 'nodeA'), ('inerfaceB-to-A', 'nodeB')))
 
     def test_get_circuit_interfaces(self):
         (interface_a, interface_b) = self.circuit.get_circuit_interfaces(self.model)

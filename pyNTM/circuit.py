@@ -14,7 +14,7 @@ class Circuit(object):
                   self.interface_b,)
 
     def _key(self):
-        return (self.interface_a._key(), self.interface_b._key())
+        return (self.interface_a._key, self.interface_b._key)
 
     def get_circuit_interfaces(self, model):
         """

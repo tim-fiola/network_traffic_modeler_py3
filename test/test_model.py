@@ -9,6 +9,7 @@ class TestModel(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        self.maxDiff = None
         self.node_a = Node(name='nodeA', lat=0, lon=0)
         self.node_b = Node(name='nodeB', lat=0, lon=0)
         self.interface_a = Interface(name='inerfaceA-to-B', cost=4, capacity=100,

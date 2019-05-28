@@ -31,7 +31,12 @@ class Demand(object):
              self.name)
 
     def _add_demand_path(self, model):
-        """Adds a path to a demand"""
+        """
+        Adds a path to a demand
+
+        :param model: model structure
+        :return self: (obj) demand object
+        """
 
         # Find if there is an LSP with source/dest same as demand source/dest
         # if len(model.rsvp_lsp_objects) > 0:

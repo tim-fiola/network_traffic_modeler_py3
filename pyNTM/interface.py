@@ -21,9 +21,9 @@ class Interface(object):
 #        self._reservable_bandwidth = self.capacity - self.reserved_bandwidth
 
         # Validate cost and capacity values
-        if not(isinstance(cost, (int, float))):
+        if not(isinstance(cost, (int, float))) or cost < 0:
             raise ValueError('Cost must be positive integer or float')
-        if not(isinstance(capacity, (int, float))):
+        if not(isinstance(capacity, (int, float))) or capacity < 0:
             raise ValueError('Capacity must be positive integer or float')
 
     @property
