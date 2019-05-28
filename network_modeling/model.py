@@ -82,7 +82,8 @@ class Model(object):
     def add_network_interfaces_from_list(self, network_interfaces):
         """
         A tool that reads network interface info and updates an existing model.
-        Interface info must be in format like below example:
+        Intended to be used from CLI/interactive environment
+        Interface info must be a list of dicts and in format like below example:
 
         network_interfaces = [
         {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
@@ -91,16 +92,14 @@ class Model(object):
          'remote_node': 'B', 'address': 2, 'failed': False},
         {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
          'remote_node': 'C', 'address': 3, 'failed': False},]
-        """        
+        """
+        # TODO - look at removing requirement that address be specified
         new_interface_objects, new_node_objects = \
                            self._make_network_interfaces(network_interfaces)
-#        print("new_node_objects =", new_node_objects)
         self.node_objects = self.node_objects.union(new_node_objects)
         self.interface_objects = \
                         self.interface_objects.union(new_interface_objects)
 
-        #print("validating model") # Debug
-        
         self.validate_model()        
 
     def validate_model(self):
@@ -113,9 +112,16 @@ class Model(object):
 
         # Find objects in interface_objects that are not Interface objects
         non_interface_objects = set()
-        non_bool_failed = set() # ints with non-boolean failed attribute
-        metrics_not_ints = set() # ints with non-integer cost value
-        capacity_not_number = set() # ints with non-numerical capacity value
+        # Ints with non-boolean failed attribute
+        non_bool_failed = set()
+        # Ints with non-integer cost value
+        metrics_not_ints = set()
+        # Ints with non-numerical capacity value
+        capacity_not_number = set()
+        # Ints with reservable_bandwidth > capacity
+        int_res_bw_too_high = set()
+        # Sum of reserved_bandwidth of LSPs != interface.reserved_bandwidth
+        int_res_bw_sum_error = set()
 
         error_data = [] # list of all errored checks
 
@@ -133,11 +139,21 @@ class Model(object):
             # Make sure 'metric' values are integers
             if isinstance(interface.cost, int) == False:
                 metrics_not_ints.add(interface)
-                #print("metric not integer for interface", interface) # Debug
 
             # Make sure 'capacity' values are numbers
             if isinstance(interface.capacity, (float, int)) == False:
                 capacity_not_number.add(interface)
+
+            # Verify that interface.reserved_bandwidth is not gt interface.capacity
+            if interface.reserved_bandwidth > interface.capacity:
+                int_res_bw_too_high.add(interface)
+
+            # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
+            if interface.reserved_bandwidth != sum([lsp.reserved_bandwidth
+                                                    for lsp in interface.lsps(self)]):
+                print(interface.lsps(self))
+                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
+                                          tuple(interface.lsps(self))))
 
         # If creation of circuits returns a dict, there are problems        
         if isinstance(circuits, dict):
@@ -155,6 +171,12 @@ class Model(object):
 
         if len(capacity_not_number) > 0:
             error_data.append({'invalid_capacity': capacity_not_number})
+
+        if len(int_res_bw_too_high) > 0:
+            error_data.append({'int_res_bw_too_high': int_res_bw_too_high})
+
+        if len(int_res_bw_sum_error) > 0:
+            error_data.append({'int_res_bw_sum_error': int_res_bw_sum_error})
 
         # Validate there are no duplicate interfaces              
         unique_interfaces_per_node = self._unique_interface_per_node()

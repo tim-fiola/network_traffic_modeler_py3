@@ -20,11 +20,7 @@ class Interface(object):
         self.traffic = 0.0
         self._failed = False
         self.reserved_bandwidth = 0
-        # TODO - implement reserved_bandwidth getter/setter with self._reserved_bandwidth
-#        self._reservable_bandwidth = self.capacity - self.reserved_bandwidth
 
-        validation_info = []
-        
         # Validate cost and capacity values
         if not(isinstance(cost, (int, float))):
             raise ValueError('Cost must be positive integer or float')
@@ -97,6 +93,11 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
 
     @failed.setter
     def failed(self, status):
+        """
+        Puts logical guardrails on conditions of interface failure status
+        :param status: boolean; input by user
+        :return: self._failed; boolean
+        """
         if not(isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
@@ -109,9 +110,11 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
 
             else:
                 self._failed = True
+                self.reserved_bandwidth = 0
             
         else:
             self._failed = True
+            self.reserved_bandwidth = 0
 
 
     def fail_interface(self, model):
