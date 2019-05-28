@@ -40,6 +40,7 @@ class RSVP_LSP(object):
 
     def _calculate_setup_bandwidth(self, model):
         """Find amount of bandwidth to reserve for LSP"""
+        # TODO - this is not optimal because it will do this math for each LSP in group with same source/dest
 
         # Find all demands that would ride the LSP
         demand_list = []
@@ -52,13 +53,13 @@ class RSVP_LSP(object):
         
         # Calculate the amount of bandwidth for each demand
         all_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if \
-            (lsp.source_node_object == self.source_node_object and \
-            lsp.dest_node_object == self.dest_node_object)]
+            (lsp.source_node_object == self.source_node_object and
+             lsp.dest_node_object == self.dest_node_object)]
            
         needed_bw = sum_demand_traffic/len(all_lsps_src_to_dest)
         
         self.setup_bandwidth = needed_bw
-        
+
         return self
         
     def _add_rsvp_lsp_path(self, model):
@@ -108,10 +109,8 @@ class RSVP_LSP(object):
             # 3. LSP was routed but that path failed.  There are
             #    no other paths to route on with the required
             #    reservable_bandwidth; don't route the LSP
-            # 4.
-            # 5. There are viable paths with enough headroom
+            # 4. There are viable paths with enough headroom
 
-            # TODO - interface reserved bandwidth is incremented in scenarios 2 and 4
             # 1.There are no viable paths with needed headroom,
             #   LSP is not routed and trying to initially signal
             if (len(candidate_paths_with_enough_headroom) == 0 and
@@ -228,7 +227,7 @@ class RSVP_LSP(object):
         
         return metric
 
-    def route_lsp(self, model): # TODO - rsvp_lsp.py - make this call into _route_lsp
+    def route_lsp(self, model):
         
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)
