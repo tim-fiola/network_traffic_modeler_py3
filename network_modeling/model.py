@@ -52,36 +52,35 @@ class Model(object):
                                 len(self.rsvp_lsp_objects))
 
 
-    # TODO - I don't see this call anywhere in the code - i commented it out
-    # @classmethod
-    # def create_network_model(cls, network_interfaces):
-    #     """
-    #     A tool that reads network interface info and returns a new model.
-    #     Interface info must be in format like below example:
-    #
-    #     network_interfaces = [
-    #     {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
-    #      'remote_node': 'B', 'address': 1, 'failed': False},
-    #     {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
-    #      'remote_node': 'B', 'address': 2, 'failed': False},
-    #     {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
-    #      'remote_node': 'C', 'address': 3, 'failed': False},]
-    #     """
-    #
-    #     interface_objects, node_objects = \
-    #                        Model._make_network_interfaces(network_interfaces)
-    #
-    #     model = Model(interface_objects, node_objects)
-    #
-    #     model._make_circuits()
-    #
-    #     validated_network_model = model.validate_model()
-    #
-    #     return validated_network_model
+    @classmethod
+    def create_network_model(cls, network_interfaces):
+        """
+        A tool that reads network interface info and returns a *new* model.
+        Interface info must be in format like below example:
+
+        network_interfaces = [
+        {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
+         'remote_node': 'B', 'address': 1, 'failed': False},
+        {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
+         'remote_node': 'B', 'address': 2, 'failed': False},
+        {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
+         'remote_node': 'C', 'address': 3, 'failed': False},]
+        """
+
+        interface_objects, node_objects = \
+                           Model._make_network_interfaces(network_interfaces)
+
+        model = Model(interface_objects, node_objects)
+
+        model._make_circuits()
+
+        validated_network_model = model.validate_model()
+
+        return validated_network_model
 
     def add_network_interfaces_from_list(self, network_interfaces):
         """
-        A tool that reads network interface info and updates an existing model.
+        A tool that reads network interface info and updates an *existing* model.
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example:
 
@@ -100,7 +99,8 @@ class Model(object):
         self.interface_objects = \
                         self.interface_objects.union(new_interface_objects)
 
-        self.validate_model()        
+        self.validate_model()
+
 
     def validate_model(self):
         """
