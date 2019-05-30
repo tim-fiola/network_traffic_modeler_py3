@@ -145,13 +145,17 @@ class Model(object):
                 capacity_not_number.add(interface)
 
             # Verify that interface.reserved_bandwidth is not gt interface.capacity
-            if interface.reserved_bandwidth > interface.capacity:
-                int_res_bw_too_high.add(interface)
+            # TODO - commenting this out for now
+            # if interface.reserved_bandwidth > interface.capacity:
+            #     int_res_bw_too_high.add(interface)
 
             # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
             if interface.reserved_bandwidth != sum([lsp.reserved_bandwidth
                                                     for lsp in interface.lsps(self)]):
-                print(interface.lsps(self))
+                # TODO - remove this debug output
+                for lsp in interface.lsps(self):
+                    print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth])
+
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
                                           tuple(interface.lsps(self))))
 
@@ -256,9 +260,7 @@ class Model(object):
 
  
         ## Find all demands that match up with source/dest for an LSP
-        ## TODO - here and in the rsvp_lsp, both separate out which demands
-        ## ride an LSP - it only need be done once I think.  Look at this.
-        
+
         ## Determine demands that will ride an LSP
         #lsp_demands = set([])
         #for demand in (demand for demand in self.demand_objects):
@@ -439,11 +441,11 @@ class Model(object):
                 interface.reserved_bandwidth = 0
             # Set interface.reserved_bandwidth to sum of all the lsp setup_bandwidths
             # or to interface.capacity if the interface is oversubscribed
-            # TODO -- left off here!!!
             if interface in ints_with_lsps:
                 reserved_bw = 0
                 for lsp in interface.lsps(self):
                     reserved_bw += lsp.setup_bandwidth
+                    # TODO - look at reactivating this code . . .
                     if reserved_bw > interface.capacity:
                         reserved_bw = interface.capacity
                         break
@@ -497,6 +499,10 @@ class Model(object):
         non_failed_interfaces_model = Model(non_failed_interfaces, 
                                     available_nodes, self.demand_objects,
                                     self.rsvp_lsp_objects)
+
+        # TODO - experimental - reset reserved_bandwidth on all ints to 0
+        # for interface in (interface for interface in self.interface_objects):
+        #     interface.reserved_bandwidth = 0
 
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
@@ -1058,7 +1064,8 @@ does not exist in model"%(source_node_name, dest_node_name,
                                                             dest_node_name, weight='cost')
             return converted_path
         except:
-            return converted_path  
+            return converted_path
+
       
     def validate_rsvp_lsps(self):
         """Validates RSVP LSPs in model"""
@@ -1066,8 +1073,7 @@ does not exist in model"%(source_node_name, dest_node_name,
         # possible to have duplicate LSPs, which is what I was going to 
         # check for
         #
-        # TODO - Actually, maybe add this to warn the user they added an LSP 
-        # that already exists
+        # TODO - Actually, maybe add this to warn the user they added an LSP that already exists
         pass
 
 
