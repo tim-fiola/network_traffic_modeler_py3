@@ -83,6 +83,7 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
 
 
 
+
     @property
     def failed(self):
         """

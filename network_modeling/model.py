@@ -201,8 +201,8 @@ class Model(object):
                 circuits_with_mismatched_interface_capacity.append(ckt)                
 
         if len(circuits_with_mismatched_interface_capacity) > 0:
-            int_status_error_dict = {\
-                'circuits_with_mismatched_interface_capacity':\
+            int_status_error_dict = {
+                'circuits_with_mismatched_interface_capacity':
                 circuits_with_mismatched_interface_capacity}
             error_data.append(int_status_error_dict)
 
@@ -398,26 +398,41 @@ class Model(object):
 
 
     # TODO - not needed if we incremented reserved_bandwidth in RSVP_LSP._add_rsvp_lsp_path
-    def _update_interface_reserved_bandwidth(self, lsp):
-        """Updates bandwidth reserved by RSVP LSP(s) on each interface"""
+#    def _update_interface_reserved_bandwidth(self, lsp):
+#        """Updates bandwidth reserved by RSVP LSP(s) on each interface"""
         # 
         # path = {'interfaces':path, 'path_cost':path_cost,
         #                            'path_headroom': path_headroom} 
 #        pdb.set_trace()
-        if lsp.path == 'Unrouted':
-            pass
-        else:
+#         if lsp.path == 'Unrouted':
+#             pass
+#         else:
+#             for interface in lsp.path['interfaces']:
+#                 # TODO -- interface reserved_bandwidth is incremented here
+#                 print()
+#                 print()
+#                 print("before", lsp, interface, interface.reserved_bandwidth)
+#                 interface.reserved_bandwidth += lsp.reserved_bandwidth
+#                 print()
+#                 print("after", lsp, interface, interface.reserved_bandwidth)
+#                 print()
+#                 print()
+#                 pdb.set_trace()
+
+    def _set_res_bw_on_ints_w_no_lsps_zero(self):
+        # TODO - Find all ints with no LSPs and set reserved_bandwidth to 0 for each interface
+
+        # Find all ints with LSPs
+        routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if lsp.path != 'Unrouted')
+        ints_with_lsps = set()
+        for lsp in routed_lsps:
             for interface in lsp.path['interfaces']:
-                # TODO -- interface reserved_bandwidth is incremented here
-                print()
-                print()
-                print("before", lsp, interface, interface.reserved_bandwidth)
-                interface.reserved_bandwidth += lsp.reserved_bandwidth
-                print()
-                print("after", lsp, interface, interface.reserved_bandwidth)
-                print()
-                print()
-                pdb.set_trace()
+                ints_with_lsps.add(interface)
+
+        # For every interface not in ints_with_lsps, set reserved_bandwidth to zero
+        for interface in (interface for interface in self.interface_objects):
+            if interface not in ints_with_lsps:
+                interface.reserved_bandwidth = 0
 
 
     def _route_lsps(self, input_model):
@@ -471,10 +486,14 @@ class Model(object):
 
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
+        # Set reserved_bandwidth on all ints with no LSPs to zero
+        self._set_res_bw_on_ints_w_no_lsps_zero()
 
         # Route the demands
         self = self._route_demands(self.demand_objects,
                                    non_failed_interfaces_model)
+
+        self.validate_model()
 
 
     def _unique_interface_per_node(self):
@@ -835,7 +854,8 @@ does not exist in model"%(source_node_name, dest_node_name,
         interface_to_edit.name = new_interface_name
 
         return interface_to_edit
-    
+
+
     def fail_interface(self, interface_name, node_name):
         """Fails the interface object for the node_name/interface_name pair"""
 
@@ -846,13 +866,13 @@ does not exist in model"%(source_node_name, dest_node_name,
         if interface_object not in set(self.interface_objects):
             ModelException('specified interface does not exist')
 
-        
         # find the remote interface
         remote_interface_object = interface_object.get_remote_interface(self)
 
         remote_interface_object.failed = True
         interface_object.failed = True
-        self.validate_model()
+        # self.validate_model()
+
 
     def unfail_interface(self, interface_name, node_name, raise_exception=False):
         """Fails the interface object for the interface_name, node_object,
@@ -1032,7 +1052,8 @@ does not exist in model"%(source_node_name, dest_node_name,
         # TODO - Actually, maybe add this to warn the user they added an LSP 
         # that already exists
         pass
-      
+
+
     def get_shortest_path_lsps(self, source_node_name, dest_node_name):
         """New shortest path def for use in LSP full mesh network"""
         
