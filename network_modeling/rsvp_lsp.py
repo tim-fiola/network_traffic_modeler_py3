@@ -96,9 +96,11 @@ class RSVP_LSP(object):
             candidate_path_info = self._find_path_cost_and_headroom(candidate_paths, model)
 
             # Filter out paths that don't have enough headroom
+            # TODO - this should be forcing one of the LSPs on a_to_c to fail back over to a_to_b in lsp_practice_code
             candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                     if path['baseline_path_reservable_bw'] >=
                                                     self.setup_bandwidth]
+            pdb.set_trace()
             # LSP scenarios:
             # 1.There are no viable paths with needed headroom,
             #   LSP is not routed and trying to initially signal

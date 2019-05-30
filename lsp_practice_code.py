@@ -108,4 +108,17 @@ print("Here are the LSPs and their reserved_bandwidth, baseline_path_reservable_
       "and reservable_bandwidth for each interface in path:")
 for lsp in model.rsvp_lsp_objects:
     print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.path])
+print()
 
+# TODO - this part does not work
+# Unfail interface a_to_b; expected_behavior is
+# -- one of the LSPs on a_to_c should move to a_to_b since a_to_c is oversubscribed
+#   and each one of the two LSPs on a_to_c has a setup bandwidth of 125 (250/150)
+print("******* Unfailing a_to_b *******")
+model.unfail_interface('A-to-B', 'A')
+model.update_simulation()
+print("There are {} LSPs on {}".format(len(a_to_b.lsps(model)), a_to_b))
+print("Here are the LSPs on {}".format(a_to_b))
+for lsp in a_to_b.lsps(model):
+    print(lsp)
+print("End of LSPs on {}".format(a_to_b))

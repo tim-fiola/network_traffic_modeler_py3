@@ -420,7 +420,10 @@ class Model(object):
 #                 pdb.set_trace()
 
     def _set_res_bw_on_ints_w_no_lsps_zero(self):
-        # TODO - Find all ints with no LSPs and set reserved_bandwidth to 0 for each interface
+        """
+
+        :return:
+        """
 
         # Find all ints with LSPs
         routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if lsp.path != 'Unrouted')
@@ -431,8 +434,24 @@ class Model(object):
 
         # For every interface not in ints_with_lsps, set reserved_bandwidth to zero
         for interface in (interface for interface in self.interface_objects):
+            # Set interface.reserved_bandwidth to zero if it has no LSPs
             if interface not in ints_with_lsps:
                 interface.reserved_bandwidth = 0
+            # Set interface.reserved_bandwidth to sum of all the lsp setup_bandwidths
+            # or to interface.capacity if the interface is oversubscribed
+            # TODO -- left off here!!!
+            if interface in ints_with_lsps:
+                reserved_bw = 0
+                for lsp in interface.lsps(self):
+                    reserved_bw += lsp.setup_bandwidth
+                    if reserved_bw > interface.capacity:
+                        reserved_bw = interface.capacity
+                        break
+                interface.reserved_bandwidth = reserved_bw
+
+
+
+
 
 
     def _route_lsps(self, input_model):
@@ -440,7 +459,7 @@ class Model(object):
 
         # Route each LSP one at a time
         for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-            lsp = lsp.route_lsp(input_model)
+            lsp.route_lsp(input_model)
             # self._update_interface_reserved_bandwidth(lsp)
             
         return self
@@ -870,7 +889,7 @@ does not exist in model"%(source_node_name, dest_node_name,
 
 
     def unfail_interface(self, interface_name, node_name, raise_exception=False):
-        """Fails the interface object for the interface_name, node_object,
+        """Unfails the interface object for the interface_name, node_object,
         remote_node_object tuple.
         
         If raise_excecption=True, an exception
@@ -892,12 +911,15 @@ does not exist in model"%(source_node_name, dest_node_name,
         # Find the remote interface
         remote_interface = interface_object.get_remote_interface(self)
 
-        # Ensure local and remote nodes are failed = False
+        # Ensure local and remote nodes are failed = False and set reservable
+        # bandwidth on each interface to interface.capacity
         if self.get_node_object(interface_object.node_object.name).failed == False and \
            self.get_node_object(remote_interface.node_object.name).failed == False:
 
             remote_interface.failed = False
+            remote_interface.reserved_bandwidth = 0
             interface_object.failed = False
+            interface_object.reserved_bandwith = 0
             self.validate_model()
         else:
 
