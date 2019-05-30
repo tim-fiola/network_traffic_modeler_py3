@@ -507,8 +507,8 @@ class Model(object):
                 checked_interfaces.add(interface)
 
         if len(exception_interfaces)>0:
-            message = "Interface names must be unique per node.  The following \
-nodes have duplicate interface names %s"%exception_interfaces
+            message = ("Interface names must be unique per node.  The following"
+                       " nodes have duplicate interface names {}".format(exception_interfaces))
             return message
         else:
             return True
