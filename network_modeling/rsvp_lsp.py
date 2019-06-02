@@ -222,14 +222,14 @@ class RSVP_LSP(object):
                 path_cost += interface.cost
             # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
-            if self.lsp_name == 'test2':
-                pdb.set_trace()
             baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
                          'baseline_path_reservable_bw': baseline_path_reservable_bw}
-            
+
             candidate_path_info.append(path_info)
+            if self.lsp_name == 'test2':
+                pdb.set_trace()
 
         return candidate_path_info
 

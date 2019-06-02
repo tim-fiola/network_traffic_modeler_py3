@@ -925,7 +925,7 @@ does not exist in model"%(source_node_name, dest_node_name,
             remote_interface.failed = False
             remote_interface.reserved_bandwidth = 0
             interface_object.failed = False
-            interface_object.reserved_bandwith = 0
+            interface_object.reserved_bandwidth = 0
             self.validate_model()
         else:
 
