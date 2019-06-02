@@ -444,7 +444,7 @@ class Model(object):
             if interface in ints_with_lsps:
                 reserved_bw = 0
                 for lsp in interface.lsps(self):
-                    reserved_bw += lsp.setup_bandwidth
+                    reserved_bw += lsp.reserved_bandwidth
                     # TODO - look at reactivating this code . . .
                     if reserved_bw > interface.capacity:
                         reserved_bw = interface.capacity
