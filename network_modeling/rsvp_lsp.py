@@ -138,55 +138,65 @@ class RSVP_LSP(object):
                 #    looking for more reserved bandwidth but none is available;
                 #    keep the setup_bandwidth the same
                 elif self.path != 'Unrouted' and \
-                     self.path['interfaces'] in candidate_paths and \
-                     self.setup_bandwidth > self.path['baseline_path_reservable_bw']:
+                     self.path['interfaces'] in candidate_paths: # and \
+                     # self.setup_bandwidth > self.path['baseline_path_reservable_bw']:
                     print('{}; scenario 2'.format(self.lsp_name))
                     pdb.set_trace()
                     self.reserved_bandwidth = self.reserved_bandwidth
 
-            # There are valid candidate_paths with enough headroom
-            else:
-                # 5. There are viable paths with enough headroom
-                if len(candidate_paths_with_enough_headroom) > 0:
-                    print('{}; scenario 5'.format(self.lsp_name))
-                    pdb.set_trace()
-                    self.reserved_bandwidth = self.setup_bandwidth
-                    # Find the lowest available path metric
-
-                    lowest_available_metric = min([path['path_cost'] for path in
-                                                   candidate_paths_with_enough_headroom])
-
-                    # Finally, find all paths with the lowest cost and enough headroom
-                    best_paths = [path for path in candidate_paths_with_enough_headroom
-                                  if path['path_cost'] == lowest_available_metric]
-
-                    # If multiple paths, pick a best path at random
-                    if len(best_paths) > 1:
-                        self.path = random.choice(best_paths)
-                    else:
-                        self.path = best_paths[0]
-                    # Update the reserved_bandwidth on each interface
-                    for interface in self.path['interfaces']:
-                        # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
-                        # signal for the entire amount
-                        self.reserved_bandwidth = self.setup_bandwidth
-                        interface.reserved_bandwidth += self.reserved_bandwidth
-
-                # 4. LSP was routed and did not change path, but something else may have happened
-                #    that will allow it to signal for its full setup bandwidth if it was not able
-                #    to before
-
-                elif self.path != 'Unrouted' and \
-                     self.setup_bandwidth < self.path['baseline_path_reservable_bw']:
-                    print('scenario 4')
-
-                    pdb.set_trace()
-                    self.reserved_bandwidth = self.setup_bandwidth
-
-                # 6.  Notify of unaccounted for scenario and error out
                 else:
                     msg = "new LSP routing scenario unaccounted for on lsp {}; exiting".format(self)
+                    print(candidate_paths_with_enough_headroom)
+                    print(msg)  # TODO - remove debug output
+                    pdb.set_trace()
                     raise ModelException(msg)
+
+            # There are valid candidate_paths with enough headroom
+            elif len(candidate_paths_with_enough_headroom) > 0:
+                self.reserved_bandwidth = self.setup_bandwidth
+                # Find the lowest available path metric
+                lowest_available_metric = min([path['path_cost'] for path in
+                                               candidate_paths_with_enough_headroom])
+
+                # Finally, find all paths with the lowest cost and enough headroom
+                best_paths = [path for path in candidate_paths_with_enough_headroom
+                              if path['path_cost'] == lowest_available_metric]
+
+                # If multiple paths, pick a best path at random
+                if len(best_paths) > 1:
+                    new_path = random.choice(best_paths)
+                else:
+                    new_path = best_paths[0]
+
+                # Decrement the LSP's reserved_bandwidth on
+                # the existing path interfaces if LSP is routed
+                if self.path != 'Unrouted':
+                    for interface in self.path['interfaces']:
+                        interface.reserved_bandwidth -= self.reserved_bandwidth
+
+                self.path = new_path
+
+                # Update the reserved_bandwidth on each interface on the new path
+                for interface in self.path['interfaces']:
+                    # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
+                    # signal for the entire amount
+#                    self.reserved_bandwidth = self.setup_bandwidth
+                    interface.reserved_bandwidth += self.reserved_bandwidth
+
+#                 # 4. LSP was routed and did not change path, but something else may have happened
+#                 #    that will allow it to signal for its full setup bandwidth if it was not able
+#                 #    to before
+#                 if self.path != 'Unrouted' and \
+#                      self.setup_bandwidth < self.path['baseline_path_reservable_bw']:
+#                     print('{}; scenario 4'.format(self.lsp_name))
+#
+# #                    pdb.set_trace()
+#                     self.reserved_bandwidth = self.setup_bandwidth
+
+            # 6.  Notify of unaccounted for scenario and error out
+            else:
+                msg = "new LSP routing scenario unaccounted for on lsp {} second catch; exiting".format(self)
+                raise ModelException(msg)
 
         return self
 
@@ -212,6 +222,8 @@ class RSVP_LSP(object):
                 path_cost += interface.cost
             # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
+            if self.lsp_name == 'test2':
+                pdb.set_trace()
             baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
