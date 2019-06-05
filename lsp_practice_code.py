@@ -43,6 +43,9 @@ print("sample_lsp actual metric is:")
 print(sample_lsp.actual_metric(model))
 print()
 
+c_to_d = model.get_interface_object('C-to-D', 'C')
+
+
 print("Here are the paths for the LSPs in the model")
 for lsp in model.rsvp_lsp_objects:
     pprint((lsp.lsp_name, lsp.path))

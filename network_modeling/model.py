@@ -146,8 +146,8 @@ class Model(object):
 
             # Verify that interface.reserved_bandwidth is not gt interface.capacity
             # TODO - commenting this out for now
-            # if interface.reserved_bandwidth > interface.capacity:
-            #     int_res_bw_too_high.add(interface)
+            if interface.reserved_bandwidth > interface.capacity:
+                int_res_bw_too_high.add(interface)
 
             # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
             if interface.reserved_bandwidth != sum([lsp.reserved_bandwidth

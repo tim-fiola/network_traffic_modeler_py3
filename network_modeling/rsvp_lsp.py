@@ -34,7 +34,7 @@ class RSVP_LSP(object):
         return (self.source_node_object, self.dest_node_object, self.lsp_name)
 
     def __repr__(self):
-        return 'RSVP_LSP(source = %s, dest = %s, name = %r)'%\
+        return 'RSVP_LSP(source = %s, dest = %s, lsp_name = %r)'%\
                                                 (self.source_node_object.name,
                                                 self.dest_node_object.name,
                                                 self.lsp_name)
@@ -96,6 +96,7 @@ class RSVP_LSP(object):
             # Find the path cost and path headroom for each path candidate
             candidate_path_info = self._find_path_cost_and_headroom(candidate_paths, model)
 
+
             # Filter out paths that don't have enough headroom
             candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                     if path['baseline_path_reservable_bw'] >=
@@ -116,7 +117,7 @@ class RSVP_LSP(object):
             #    was not able to before
             # 5. There are viable paths with enough headroom
 
-
+            # TODO - remove debug 'scenario' output
             # There are no valid candidate paths with enough headroom
             if (len(candidate_paths_with_enough_headroom)) == 0:
                 # 3. There are no paths to route;
@@ -141,19 +142,17 @@ class RSVP_LSP(object):
                      self.path['interfaces'] in candidate_paths: # and \
                      # self.setup_bandwidth > self.path['baseline_path_reservable_bw']:
                     print('{}; scenario 2'.format(self.lsp_name))
-                    pdb.set_trace()
                     self.reserved_bandwidth = self.reserved_bandwidth
 
                 else:
                     msg = "new LSP routing scenario unaccounted for on lsp {}; exiting".format(self)
                     print(candidate_paths_with_enough_headroom)
                     print(msg)  # TODO - remove debug output
-                    pdb.set_trace()
                     raise ModelException(msg)
 
             # There are valid candidate_paths with enough headroom
             elif len(candidate_paths_with_enough_headroom) > 0:
-                self.reserved_bandwidth = self.setup_bandwidth
+
                 # Find the lowest available path metric
                 lowest_available_metric = min([path['path_cost'] for path in
                                                candidate_paths_with_enough_headroom])
@@ -170,17 +169,29 @@ class RSVP_LSP(object):
 
                 # Decrement the LSP's reserved_bandwidth on
                 # the existing path interfaces if LSP is routed
+                # since LSP is changing path
                 if self.path != 'Unrouted':
                     for interface in self.path['interfaces']:
+                        # print("subtracting bandwidth")
+                        # pdb.set_trace()
                         interface.reserved_bandwidth -= self.reserved_bandwidth
 
                 self.path = new_path
+
+                # Since there is enough headroom, set LSP reserved_bandwidth
+                # to setup_bandwidth
+                self.reserved_bandwidth = self.setup_bandwidth
 
                 # Update the reserved_bandwidth on each interface on the new path
                 for interface in self.path['interfaces']:
                     # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
                     # signal for the entire amount
-#                    self.reserved_bandwidth = self.setup_bandwidth
+                    if interface.reserved_bandwidth < 0:
+                        print("int res bw lt 0")
+                        pdb.set_trace()
+                    if interface.reserved_bandwidth == 25:
+                        print("int res bw = 25")
+                        pdb.set_trace()
                     interface.reserved_bandwidth += self.reserved_bandwidth
 
 #                 # 4. LSP was routed and did not change path, but something else may have happened
@@ -201,12 +212,11 @@ class RSVP_LSP(object):
         return self
 
         
-    def _find_path_cost_and_headroom(self, candidate_paths, model):
+    def _find_path_cost_and_headroom(self, candidate_paths, model): # TODO - remove model parameter when done debugging
         """
         Returns a list of dictionaries containing the path interfaces as
         well as the path cost and headroom available on the path.
         :param candidate_paths: list of lists of Interface objects
-        :param model: Model
         :return: list of dictionaries of paths: {'interfaces': path,
                                                  'path_cost': path_cost,
                                                  'baseline_path_reservable_bw': baseline_path_reservable_bw}
@@ -220,16 +230,28 @@ class RSVP_LSP(object):
             path_cost = 0
             for interface in path:
                 path_cost += interface.cost
+
             # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
             baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
+
+            # TODO - remove this debug output
+            # print("*" * 25)
+            # print()
+            # print()
+            # print(self.lsp_name)
+            # print([interface for interface in path])
+            # print([interface.reservable_bandwidth for interface in path])
+            # print([interface.reserved_bandwidth for interface in path])
+            # print([interface.lsps(model) for interface in path])
+            # print()
+            # print()
+            # print("*" * 25)
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
                          'baseline_path_reservable_bw': baseline_path_reservable_bw}
 
             candidate_path_info.append(path_info)
-            if self.lsp_name == 'test2':
-                pdb.set_trace()
 
         return candidate_path_info
 
