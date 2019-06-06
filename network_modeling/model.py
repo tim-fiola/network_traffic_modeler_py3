@@ -145,16 +145,12 @@ class Model(object):
                 capacity_not_number.add(interface)
 
             # Verify that interface.reserved_bandwidth is not gt interface.capacity
-            # TODO - commenting this out for now
             if interface.reserved_bandwidth > interface.capacity:
                 int_res_bw_too_high.add(interface)
 
             # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
             if interface.reserved_bandwidth != sum([lsp.reserved_bandwidth
                                                     for lsp in interface.lsps(self)]):
-                # TODO - remove this debug output
-                for lsp in interface.lsps(self):
-                    print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth])
 
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
                                           tuple(interface.lsps(self))))
@@ -395,32 +391,6 @@ class Model(object):
         return self._update_interface_utilization()
 
 
-
-
-
-
-    # TODO - not needed if we incremented reserved_bandwidth in RSVP_LSP._add_rsvp_lsp_path
-#    def _update_interface_reserved_bandwidth(self, lsp):
-#        """Updates bandwidth reserved by RSVP LSP(s) on each interface"""
-        # 
-        # path = {'interfaces':path, 'path_cost':path_cost,
-        #                            'path_headroom': path_headroom} 
-#        pdb.set_trace()
-#         if lsp.path == 'Unrouted':
-#             pass
-#         else:
-#             for interface in lsp.path['interfaces']:
-#                 # TODO -- interface reserved_bandwidth is incremented here
-#                 print()
-#                 print()
-#                 print("before", lsp, interface, interface.reserved_bandwidth)
-#                 interface.reserved_bandwidth += lsp.reserved_bandwidth
-#                 print()
-#                 print("after", lsp, interface, interface.reserved_bandwidth)
-#                 print()
-#                 print()
-#                 pdb.set_trace()
-
     def _set_res_bw_on_ints_w_no_lsps_zero(self):
         """
 
@@ -445,7 +415,7 @@ class Model(object):
                 reserved_bw = 0
                 for lsp in interface.lsps(self):
                     reserved_bw += lsp.reserved_bandwidth
-                    # TODO - look at reactivating this code . . .
+
                     if reserved_bw > interface.capacity:
                         reserved_bw = interface.capacity
                         break
@@ -499,10 +469,6 @@ class Model(object):
         non_failed_interfaces_model = Model(non_failed_interfaces, 
                                     available_nodes, self.demand_objects,
                                     self.rsvp_lsp_objects)
-
-        # TODO - experimental - reset reserved_bandwidth on all ints to 0
-        # for interface in (interface for interface in self.interface_objects):
-        #     interface.reserved_bandwidth = 0
 
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)

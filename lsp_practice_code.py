@@ -114,7 +114,6 @@ for lsp in model.rsvp_lsp_objects:
     print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.path])
 print()
 
-# TODO - this part does not work
 # Unfail interface a_to_b; expected_behavior is
 # -- one of the LSPs on a_to_c should move to a_to_b since a_to_c is oversubscribed
 #   and each one of the two LSPs on a_to_c has a setup bandwidth of 125 (250/150)

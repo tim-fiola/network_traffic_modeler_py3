@@ -94,7 +94,7 @@ class RSVP_LSP(object):
             self.reserved_bandwidth = 'Unrouted'
         else:
             # Find the path cost and path headroom for each path candidate
-            candidate_path_info = self._find_path_cost_and_headroom(candidate_paths, model)
+            candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
 
 
             # Filter out paths that don't have enough headroom
@@ -102,55 +102,64 @@ class RSVP_LSP(object):
                                                     if path['baseline_path_reservable_bw'] >=
                                                     self.setup_bandwidth]
 
-            # Scenarios for each LSP:
-            # 1.There are no viable paths with needed headroom,
-            #    LSP is not routed and trying to initially signal
-            # 2. There are no viable paths with needed headroom,
-            #    LSP is already signaled and looking for more
-            #    reserved bandwidth; LSP current path is valid so keep it
-            #    on the same path with current reserved_bandwidth:
-            # 3. LSP was routed but that path failed.  There are
-            #    no other paths to route on with the required
-            #    reservable_bandwidth; don't route the LSP
-            # 4. LSP did not change path, but something else happened that
-            #    will allow it to signal for its full setup bandwidth if it
-            #    was not able to before
-            # 5. There are viable paths with enough headroom
+            # TODO - lsp_practice_code.py - both LSPs are not updating reserved bandwidth to 125
+            # Possible scenarios for each LSP:
+            # There are no valid candidate paths with enough headroom:
+            #    1. There are no viable paths to route LSP; LSP will be unrouted
+            #    2. There are no viable paths with needed headroom,
+            #       LSP is not routed and trying to initially signal
+            #    3. There are no viable paths with needed headroom,
+            #       LSP is already signaled on a still valid path and
+            #       looking for more reserved bandwidth but none is available;
+            #       keep the setup_bandwidth the same
+            # 4. There ARE valid candidate paths with enough headroom
 
-            # TODO - remove debug 'scenario' output
             # There are no valid candidate paths with enough headroom
             if (len(candidate_paths_with_enough_headroom)) == 0:
-                # 3. There are no paths to route;
+                # 1. There are no paths to route;
                 #    LSP will be unrouted
                 if len(candidate_paths) == 0:
                     self.reserved_bandwidth = 'Unrouted'
                     self.path = 'Unrouted'
-                    print('{}; scenario 3'.format(self.lsp_name))
 
-                # 1.There are no viable paths with needed headroom,
+                # 2.There are no viable paths with needed headroom,
                 #   LSP is not routed and trying to initially signal
                 elif self.path == 'Unrouted':
                     self.reserved_bandwidth = 'Unrouted'
                     self.path = 'Unrouted'
-                    print('{}; scenario 1'.format(self.lsp_name))
 
-                # 2. There are no viable paths with needed headroom,
+                # 3. There are no viable paths with needed headroom,
                 #    LSP is already signaled on a still valid path and
                 #    looking for more reserved bandwidth but none is available;
                 #    keep the setup_bandwidth the same
                 elif self.path != 'Unrouted' and \
-                     self.path['interfaces'] in candidate_paths: # and \
-                     # self.setup_bandwidth > self.path['baseline_path_reservable_bw']:
-                    print('{}; scenario 2'.format(self.lsp_name))
-                    self.reserved_bandwidth = self.reserved_bandwidth
+                     self.path['interfaces'] in candidate_paths: #
+
+                    # Current path has enough 'baseline_path_reservable_bw' to
+                    # allow LSP to signal entire setup_bandwidth
+                    if self.path['baseline_path_reservable_bw'] > self.setup_bandwidth:
+                        # removed reserved_bandwidth from current path
+
+                        # set new reserved_bandwidth to setup_bandwidth
+                        self.reserved_bandwidth = self.setup_bandwidth
+
+                        # reserve new reserved_bandwidth on current path
+
+
+                    else: # current path does not have enough 'baseline_path_reservable_bw'
+                        self.reserved_bandwidth = self.reserved_bandwidth
+                        print("scenario 3")  # TODO -- remove this debug output
+                        print(self.lsp_name)
+                        pdb.set_trace()
 
                 else:
+                    # New scenario; raise exception
                     msg = "new LSP routing scenario unaccounted for on lsp {}; exiting".format(self)
                     print(candidate_paths_with_enough_headroom)
-                    print(msg)  # TODO - remove debug output
+                    print(msg)
                     raise ModelException(msg)
 
-            # There are valid candidate_paths with enough headroom
+            # 4. There are valid candidate_paths with enough headroom
             elif len(candidate_paths_with_enough_headroom) > 0:
 
                 # Find the lowest available path metric
@@ -194,16 +203,6 @@ class RSVP_LSP(object):
                         pdb.set_trace()
                     interface.reserved_bandwidth += self.reserved_bandwidth
 
-#                 # 4. LSP was routed and did not change path, but something else may have happened
-#                 #    that will allow it to signal for its full setup bandwidth if it was not able
-#                 #    to before
-#                 if self.path != 'Unrouted' and \
-#                      self.setup_bandwidth < self.path['baseline_path_reservable_bw']:
-#                     print('{}; scenario 4'.format(self.lsp_name))
-#
-# #                    pdb.set_trace()
-#                     self.reserved_bandwidth = self.setup_bandwidth
-
             # 6.  Notify of unaccounted for scenario and error out
             else:
                 msg = "new LSP routing scenario unaccounted for on lsp {} second catch; exiting".format(self)
@@ -212,7 +211,7 @@ class RSVP_LSP(object):
         return self
 
         
-    def _find_path_cost_and_headroom(self, candidate_paths, model): # TODO - remove model parameter when done debugging
+    def _find_path_cost_and_headroom(self, candidate_paths):
         """
         Returns a list of dictionaries containing the path interfaces as
         well as the path cost and headroom available on the path.
@@ -235,19 +234,6 @@ class RSVP_LSP(object):
             # can handle without saturating a component interface
             baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
 
-            # TODO - remove this debug output
-            # print("*" * 25)
-            # print()
-            # print()
-            # print(self.lsp_name)
-            # print([interface for interface in path])
-            # print([interface.reservable_bandwidth for interface in path])
-            # print([interface.reserved_bandwidth for interface in path])
-            # print([interface.lsps(model) for interface in path])
-            # print()
-            # print()
-            # print("*" * 25)
-
             path_info = {'interfaces': path, 'path_cost': path_cost,
                          'baseline_path_reservable_bw': baseline_path_reservable_bw}
 
@@ -255,11 +241,6 @@ class RSVP_LSP(object):
 
         return candidate_path_info
 
-
-    def lsp_can_route(self, model):
-        """Can this LSP route?"""
-        # TODO - what is lsp_can_route for?  I don't recall
-        pass
 
     def demands_on_lsp(self, model):
         """Returns demands that LSP is transporting."""
