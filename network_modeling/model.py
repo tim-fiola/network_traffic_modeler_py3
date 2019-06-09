@@ -216,6 +216,9 @@ class Model(object):
         # Read error_data
         if len(error_data) > 0:
             message = 'network interface validation failed, see returned data'
+            pprint(message)
+            pprint(error_data)
+#            pdb.set_trace()
             raise ModelException(message, error_data)
         else:
             return self
@@ -225,9 +228,7 @@ class Model(object):
         return self.circuit_objects
 
 
-
-
-
+    # TODO - delete this when everything is working with RSVP
     #def update_simulation_old(self):
         #"""Returns model with updated interface traffic.
         #Must be called to update the model whenever there is a topology change.
@@ -251,10 +252,6 @@ class Model(object):
         #non_failed_interfaces_model = Model(non_failed_interfaces, 
                                             #available_nodes)
 
-
-
-
- 
         ## Find all demands that match up with source/dest for an LSP
 
         ## Determine demands that will ride an LSP

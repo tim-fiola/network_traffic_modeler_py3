@@ -96,7 +96,6 @@ class RSVP_LSP(object):
             # Find the path cost and path headroom for each path candidate
             candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
 
-
             # Filter out paths that don't have enough headroom
             candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                     if path['baseline_path_reservable_bw'] >=
@@ -128,27 +127,40 @@ class RSVP_LSP(object):
                     self.reserved_bandwidth = 'Unrouted'
                     self.path = 'Unrouted'
 
-                # 3. There are no viable paths with needed headroom,
-                #    LSP is already signaled on a still valid path and
-                #    looking for more reserved bandwidth but none is available;
-                #    keep the setup_bandwidth the same
+                # 3. LSP is signaled on a still valid path
+
                 elif self.path != 'Unrouted' and \
-                     self.path['interfaces'] in candidate_paths: #
+                     self.path['interfaces'] in candidate_paths:
 
                     # Current path has enough 'baseline_path_reservable_bw' to
                     # allow LSP to signal entire setup_bandwidth
+
+                    # TODO --- Find the LSP path headroom again
+                    self.path['baseline_path_reservable_bw'] = (min([interface.reservable_bandwidth
+                                                                    for interface in self.path['interfaces']])
+                                                                + self.reserved_bandwidth)
+
+
                     if self.path['baseline_path_reservable_bw'] > self.setup_bandwidth:
+
+                        # TODO --- remove debug output
+                        print("scenario 3a {}".format(self.lsp_name))
+                        pdb.set_trace()
+
                         # removed reserved_bandwidth from current path
+                        for interface in self.path['interfaces']:
+                            interface.reserved_bandwidth -= self.reserved_bandwidth
 
                         # set new reserved_bandwidth to setup_bandwidth
                         self.reserved_bandwidth = self.setup_bandwidth
 
                         # reserve new reserved_bandwidth on current path
+                        for interface in self.path['interfaces']:
+                            interface.reserved_bandwidth += self.reserved_bandwidth
 
-
-                    else: # current path does not have enough 'baseline_path_reservable_bw'
+                    else:  # current path does not have enough 'baseline_path_reservable_bw'
                         self.reserved_bandwidth = self.reserved_bandwidth
-                        print("scenario 3")  # TODO -- remove this debug output
+                        print("scenario 3b")  # TODO -- remove this debug output
                         print(self.lsp_name)
                         pdb.set_trace()
 
@@ -181,7 +193,7 @@ class RSVP_LSP(object):
                 # since LSP is changing path
                 if self.path != 'Unrouted':
                     for interface in self.path['interfaces']:
-                        # print("subtracting bandwidth")
+                        # print("subtracting bandwidth") # TODO remove this debug output
                         # pdb.set_trace()
                         interface.reserved_bandwidth -= self.reserved_bandwidth
 
@@ -195,13 +207,10 @@ class RSVP_LSP(object):
                 for interface in self.path['interfaces']:
                     # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
                     # signal for the entire amount
-                    if interface.reserved_bandwidth < 0:
-                        print("int res bw lt 0")
-                        pdb.set_trace()
-                    if interface.reserved_bandwidth == 25:
-                        print("int res bw = 25")
-                        pdb.set_trace()
                     interface.reserved_bandwidth += self.reserved_bandwidth
+
+                # TODO - remove debug output
+                print('scenario 4 {}'.format(self.lsp_name))
 
             # 6.  Notify of unaccounted for scenario and error out
             else:
@@ -271,7 +280,7 @@ class RSVP_LSP(object):
         
         return metric
 
-    def route_lsp(self, model):
+    def route_lsp(self, model): # TODO - is this call used anywhere?
         
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)
