@@ -135,17 +135,14 @@ class RSVP_LSP(object):
                     # Current path has enough 'baseline_path_reservable_bw' to
                     # allow LSP to signal entire setup_bandwidth
 
-                    # TODO --- Find the LSP path headroom again
+                    # Find the LSP path headroom; do not count the bandwidth
+                    # reserved for self on that current path
                     self.path['baseline_path_reservable_bw'] = (min([interface.reservable_bandwidth
                                                                     for interface in self.path['interfaces']])
                                                                 + self.reserved_bandwidth)
 
 
                     if self.path['baseline_path_reservable_bw'] > self.setup_bandwidth:
-
-                        # TODO --- remove debug output
-                        print("scenario 3a {}".format(self.lsp_name))
-                        pdb.set_trace()
 
                         # removed reserved_bandwidth from current path
                         for interface in self.path['interfaces']:
@@ -160,9 +157,6 @@ class RSVP_LSP(object):
 
                     else:  # current path does not have enough 'baseline_path_reservable_bw'
                         self.reserved_bandwidth = self.reserved_bandwidth
-                        print("scenario 3b")  # TODO -- remove this debug output
-                        print(self.lsp_name)
-                        pdb.set_trace()
 
                 else:
                     # New scenario; raise exception
@@ -193,8 +187,6 @@ class RSVP_LSP(object):
                 # since LSP is changing path
                 if self.path != 'Unrouted':
                     for interface in self.path['interfaces']:
-                        # print("subtracting bandwidth") # TODO remove this debug output
-                        # pdb.set_trace()
                         interface.reserved_bandwidth -= self.reserved_bandwidth
 
                 self.path = new_path
