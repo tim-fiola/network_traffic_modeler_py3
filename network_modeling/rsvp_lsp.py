@@ -13,7 +13,27 @@ import pdb
 #    in a model made up of just interfaces
 
 class RSVP_LSP(object):
-    """A class to represent an RSVP label-switched-path in the network model """
+    """A class to represent an RSVP label-switched-path in the network model
+
+    source_node_object: Node where LSP ingresses the network (LSP starts here)
+
+    dest_node_object: Node where LSP egresses the network (LSP ends here)
+
+    lsp_name: name of LSP
+
+    path: will either be 'Unrouted' or be a dict containing the following -
+        - interfaces: list of interfaces that LSP egresses in the order it
+            egresses them
+        - path_cost: sum of costs of the interfaces (same as self.actual_metric) # TODO - make these the same name
+        - baseline_path_reservable_bw: the amount of reservable bandwidth
+            available on the LSP's path when the LSP was signaled, not inclusive
+            of the bandwidth already reserved by this LSP on that path (if any)
+
+    reserved_bandwidth: amount of bandwidth reserved by this LSP
+
+    setup_bandwidth: amount of bandwidth this LSP wants to signal for
+
+    """
     
     def __init__(self, source_node_object, dest_node_object, 
                                     lsp_name = 'none'):
@@ -24,8 +44,7 @@ class RSVP_LSP(object):
         self.path = 'Unrouted'
         self.reserved_bandwidth = 'Unrouted'
         self.setup_bandwidth = 'Unrouted'
-#        self.demands = []
-        
+
         
     @property
     def _key(self):
@@ -101,7 +120,6 @@ class RSVP_LSP(object):
                                                     if path['baseline_path_reservable_bw'] >=
                                                     self.setup_bandwidth]
 
-            # TODO - lsp_practice_code.py - both LSPs are not updating reserved bandwidth to 125
             # Possible scenarios for each LSP:
             # There are no valid candidate paths with enough headroom:
             #    1. There are no viable paths to route LSP; LSP will be unrouted
@@ -115,7 +133,7 @@ class RSVP_LSP(object):
 
             # There are no valid candidate paths with enough headroom
             if (len(candidate_paths_with_enough_headroom)) == 0:
-                # 1. There are no paths to route;
+                # 1. There are no valid paths at all;
                 #    LSP will be unrouted
                 if len(candidate_paths) == 0:
                     self.reserved_bandwidth = 'Unrouted'
@@ -132,16 +150,15 @@ class RSVP_LSP(object):
                 elif self.path != 'Unrouted' and \
                      self.path['interfaces'] in candidate_paths:
 
-                    # Current path has enough 'baseline_path_reservable_bw' to
-                    # allow LSP to signal entire setup_bandwidth
 
-                    # Find the LSP path headroom; do not count the bandwidth
+                    # Find the LSP path's headroom; do not count the bandwidth
                     # reserved for self on that current path
                     self.path['baseline_path_reservable_bw'] = (min([interface.reservable_bandwidth
                                                                     for interface in self.path['interfaces']])
                                                                 + self.reserved_bandwidth)
 
-
+                    # Current path has enough 'baseline_path_reservable_bw' to
+                    # allow LSP to signal entire setup_bandwidth
                     if self.path['baseline_path_reservable_bw'] > self.setup_bandwidth:
 
                         # removed reserved_bandwidth from current path
@@ -155,7 +172,9 @@ class RSVP_LSP(object):
                         for interface in self.path['interfaces']:
                             interface.reserved_bandwidth += self.reserved_bandwidth
 
-                    else:  # current path does not have enough 'baseline_path_reservable_bw'
+                    # current path does not have enough 'baseline_path_reservable_bw' so
+                    # stay on current path with current reserved_bandwidth
+                    else:
                         self.reserved_bandwidth = self.reserved_bandwidth
 
                 else:
@@ -200,9 +219,6 @@ class RSVP_LSP(object):
                     # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
                     # signal for the entire amount
                     interface.reserved_bandwidth += self.reserved_bandwidth
-
-                # TODO - remove debug output
-                print('scenario 4 {}'.format(self.lsp_name))
 
             # 6.  Notify of unaccounted for scenario and error out
             else:
