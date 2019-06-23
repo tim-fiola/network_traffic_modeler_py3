@@ -23,45 +23,47 @@ model = Model.load_model_file('lsp_model_test_file.csv')
 # Test 1
 print("model is", model)
 print()
-sample_lsp = model.get_rsvp_lsp('A', 'D', 'test1')
+print("model demands are:")
+pprint(model.demand_objects)
+print()
+test1_lsp = model.get_rsvp_lsp('A', 'D', 'test1')
 test2_lsp = model.get_rsvp_lsp('A', 'D', 'test2')
-print("one of the LSPs is", sample_lsp)
+print("model LSPs are:")
+pprint(model.rsvp_lsp_objects)
+print()
 model.update_simulation()
-print("sample_lsp has effective metric of:")
-print(sample_lsp.effective_metric(model))
+print("Here are the LSPs are their effective and actual metrics")
+for lsp in model.rsvp_lsp_objects:
+    print(lsp, lsp.effective_metric(model), lsp.actual_metric(model))
 print()
-print("sample_lsp.path is:")
-print(sample_lsp.path)
-print()
-print("sample_lsp has reserved_bandwidth of:")
-print(sample_lsp.reserved_bandwidth)
-print()
-print("sample_lsp has these demands:")
-print(sample_lsp.demands_on_lsp(model))
-print()
-print("sample_lsp actual metric is:")
-print(sample_lsp.actual_metric(model))
-print()
-
-c_to_d = model.get_interface_object('C-to-D', 'C')
-
-
 print("Here are the paths for the LSPs in the model")
 for lsp in model.rsvp_lsp_objects:
     pprint((lsp.lsp_name, lsp.path))
     print()
 print()
+print("Here are the LSP reserved_bandwidth values:")
+for lsp in model.rsvp_lsp_objects:
+    print(lsp, lsp.reserved_bandwidth)
+print()
+print("Here are the LSPs and their demands:")
+for lsp in model.rsvp_lsp_objects:
+    print(lsp)
+    for demand in lsp.demands_on_lsp(model):
+        print(demand)
+    print()
+print()
+
+c_to_d = model.get_interface_object('C-to-D', 'C')
 
 
 sample_demand = model.get_demand_object('A', 'D', 'test1')
-print("sample_demand is ", sample_demand)
-print()
-print("sample_demand has path of:")
-print(sample_demand.path)
-print()
+
+print("Here are the demands and their paths:")
+for demand in model.demand_objects:
+    print(demand)
+    pprint(demand.path)
+    print()
 dmd2 = model.get_demand_object('E', 'F', 'test2')
-print("dmd2 does not take an LSP; it has path of:")
-pprint(dmd2.path)
 print()
 print("Here is the interface utilization:")
 model.display_interfaces_traffic()
@@ -72,11 +74,24 @@ print()
 print("Here are the LSPs on {}:".format(a_to_b))
 pprint(a_to_b.lsps(model))
 print()
+print("Here are the LSPs on {}".format(a_to_c))
+pprint(a_to_c.lsps(model))
+print()
+
 print("Here are the LSPs on {} and their reserved_bandwidth".format(a_to_c))
 for lsp in a_to_c.lsps(model):
     print([lsp.lsp_name, lsp.reserved_bandwidth])
 print("{} reserved_bandwidth is {}".format(a_to_c, a_to_c.reserved_bandwidth))
 print()
+
+print("Here are the LSPs on {} and their reserved_bandwidth".format(a_to_b))
+for lsp in a_to_b.lsps(model):
+    print([lsp.lsp_name, lsp.reserved_bandwidth])
+print("{} reserved_bandwidth is {}".format(a_to_b, a_to_b.reserved_bandwidth))
+print()
+print()
+print()
+
 # Fail interface a_to_b; expected behavior is
 # -- lsp that was on a_to_b reroute to path with interface a_to_c
 # -- interface a_to_c reservable_bandwidth drops to 0
@@ -103,15 +118,15 @@ print("******** Adding additional demand of 100 from A to D *********")
 model.add_demand('A', 'D', 100, 'demand_a_to_d_3')
 model.update_simulation()
 print("After adding demand, here are the LSPs and their "
-      "reserved_bandwidth on {}".format(a_to_c))
+      "reserved_bandwidths and setup_bandwidths on {}".format(a_to_c))
 for lsp in a_to_c.lsps(model):
-    print([lsp.lsp_name, lsp.reserved_bandwidth])
+    print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth])
 print("{} reserved_bandwidth is {}".format(a_to_c, a_to_c.reserved_bandwidth))
 print()
-print("Here are the LSPs and their reserved_bandwidth, baseline_path_reservable_bw, "
-      "and reservable_bandwidth for each interface in path:")
+print("Here are the routed LSPs and their reserved_bandwidth and baseline_path_reservable_bw values ")
 for lsp in model.rsvp_lsp_objects:
-    print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.path])
+    if lsp.path != 'Unrouted':
+        print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.path['baseline_path_reservable_bw']])
 print()
 
 # Unfail interface a_to_b; expected_behavior is
@@ -120,8 +135,15 @@ print()
 print("******* Unfailing a_to_b *******")
 model.unfail_interface('A-to-B', 'A')
 model.update_simulation()
-print("There are {} LSPs on {}".format(len(a_to_b.lsps(model)), a_to_b))
-print("Here are the LSPs on {}".format(a_to_b))
+
+print("Here are the LSPs on {} and their reserved and setup bandwidths:".format(a_to_b))
 for lsp in a_to_b.lsps(model):
-    print(lsp)
-print("End of LSPs on {}".format(a_to_b))
+    print(lsp, lsp.reserved_bandwidth, lsp.setup_bandwidth)
+print()
+
+print("Here are the LSPs on {} and their reserved and setup bandwidths:".format(a_to_c))
+for lsp in a_to_c.lsps(model):
+    print(lsp, lsp.reserved_bandwidth, lsp.setup_bandwidth)
+print()
+
+
