@@ -8,6 +8,7 @@ from network_modeling import Node
 from network_modeling import RSVP_LSP
 
 from pprint import pprint
+import pdb
 
 
 # Test cases:
@@ -145,5 +146,44 @@ print("Here are the LSPs on {} and their reserved and setup bandwidths:".format(
 for lsp in a_to_c.lsps(model):
     print(lsp, lsp.reserved_bandwidth, lsp.setup_bandwidth)
 print()
+
+print("*************** Adding 3rd LSP from A to D ****************")
+model.add_rsvp_lsp('A', 'D', 'test3')
+model.update_simulation()
+print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values ")
+for lsp in model.rsvp_lsp_objects:
+    if lsp.path != 'Unrouted':
+        print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
+print()
+print("Traffic on interface {} is {}".format(a_to_c, a_to_c.traffic))
+print("Demands on interface {} are:".format(a_to_c))
+pprint(a_to_c.demands(model))
+print()
+print("Traffic on interface {} is {}".format(a_to_b, a_to_b.traffic))
+print("Demands on interface {} are:".format(a_to_b))
+pprint(a_to_b.demands(model))
+print()
+demand_a_f = model.get_demand_object('A', 'F', 'test5')
+demand_e_f = model.get_demand_object('E', 'F', 'test2')
+print("Path for {} is:".format(demand_a_f))
+pprint(demand_a_f.path)
+print()
+print("Path for {} is:".format(demand_e_f))
+pprint(demand_e_f.path)
+# TODO - this 3rd LSP above is not routing, but the demand load is being split 3 ways . . . is this the right behavior?
+# TODO - verify in lab if above LSP behavior is correct
+
+b_to_g = model.get_interface_object('B-to-G', 'B')
+# TODO - b_to_g has traffic that should be on LSPs (A to D demands)
+
+
+# print("*************** Adding 4th LSP from A to D ****************")
+# model.add_rsvp_lsp('A', 'D', 'test4')
+# model.update_simulation()
+# print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values ")
+# for lsp in model.rsvp_lsp_objects:
+#     if lsp.path != 'Unrouted':
+#         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
+# print()
 
 

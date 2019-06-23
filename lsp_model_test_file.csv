@@ -14,6 +14,10 @@ D	F	D-to-F	10	300
 F	D	F-to-D	10	300
 A	D	A-to-D	40	20
 D	A	D-to-A	40	20
+B	G	B-to-G	10	100
+G	D	G-to-D	10	100
+G	B	G-to-D	10	100
+D	G	D-to-G	10	100
 
 NODES_TABLE
 name	lon	lat
@@ -23,6 +27,7 @@ C	0	50
 D	-50	0
 E	75	0
 F	-75	0
+G	30	30
 
 DEMANDS_TABLE
 source	dest	traffic	name

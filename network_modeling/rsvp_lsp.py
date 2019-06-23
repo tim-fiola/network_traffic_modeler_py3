@@ -6,6 +6,7 @@ from .model_exception import ModelException
 import random
 import pdb
 
+# TODO - add call to return traffic on LSP
 
 # For when the model has both LSPs but not a full LSP mesh, 
 # - create the LSP model first
