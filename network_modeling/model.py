@@ -227,7 +227,6 @@ class Model(object):
         """Returns a set of circuit objects in the Model"""
         return self.circuit_objects
 
-
     # TODO - delete this when everything is working with RSVP
     #def update_simulation_old(self):
         #"""Returns model with updated interface traffic.
@@ -347,7 +346,7 @@ class Model(object):
                 # find the traffic per path
                 demand_object_paths = demand_object.path
                 num_demand_paths = float(len(demand_object_paths))
-                ecmp_split = 1/num_demand_paths
+                ecmp_split = 1/num_demand_paths # TODO - FIX THIS FIRST!!!! need to modify this to account for per-hop splits, not end-to-end split; recursive . . .
                 traffic_per_demand_path = traffic * ecmp_split
 
                 # Add the traffic per path to each interface the demand touches.
@@ -795,6 +794,8 @@ does not exist in model"%(source_node_name, dest_node_name,
 
         return failed_interfaces
 
+
+    # TODO - is this redundant with get_unfailed_interface_objects(self) call??
     def get_non_failed_interface_objects(self):
         """Returns a list of all operational interfaces"""
         non_failed_interfaces = []
@@ -1016,15 +1017,15 @@ does not exist in model"%(source_node_name, dest_node_name,
         
         # Find the shortest paths in G between source and dest
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                                dest_node_name,
-                                                weight = 'cost')
+                                                       dest_node_name,
+                                                       weight = 'cost')
 
         try:
             for path in digraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path)
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, 
-                                                            dest_node_name, weight='cost')
+                                                                 dest_node_name, weight='cost')
             return converted_path
         except:
             return converted_path
@@ -1284,7 +1285,6 @@ does not exist in model"%(source_node_name, dest_node_name,
         interface_lines = lines[int_info_begin_index:int_info_end_index]
         interface_set = set([]) 
         node_list = []
-        # TODO - fix this so it can load from model file
         for interface_line in interface_lines:
             # Initialize interface characteristics
             node_name, remote_node_name, name, cost, capacity = ['','','','','']

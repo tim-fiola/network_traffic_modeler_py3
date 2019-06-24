@@ -80,10 +80,6 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
     #     """
 
 
-
-
-
-
     @property
     def failed(self):
         """
@@ -149,6 +145,7 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
             message = ("Local and/or remote node are failed; cannot have "
                        "unfailed interface on failed node")
             raise ModelException(message)
+
 
     def get_remote_interface(self, model):
         """Searches the model and returns the remote interface"""
