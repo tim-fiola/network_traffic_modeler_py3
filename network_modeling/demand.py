@@ -53,7 +53,7 @@ class Demand(object):
 
         if demand_path == []:
             demand_path = 'Unrouted'
-        
+
         self.path = demand_path
 
         return self 

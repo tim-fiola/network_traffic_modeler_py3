@@ -46,7 +46,6 @@ class RSVP_LSP(object):
         self.reserved_bandwidth = 'Unrouted'
         self.setup_bandwidth = 'Unrouted'
 
-        
     @property
     def _key(self):
         """Unique identifier for the rsvp lsp: (Node('source'), 

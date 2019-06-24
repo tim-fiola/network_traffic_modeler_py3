@@ -146,8 +146,8 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
             self.failed = False
             remote_interface.failed = False
         else:
-            message = "Local and/or remote node are failed; cannot have \
-unfailed interface on failed node"
+            message = ("Local and/or remote node are failed; cannot have "
+                       "unfailed interface on failed node")
             raise ModelException(message)
 
     def get_remote_interface(self, model):
@@ -183,20 +183,29 @@ unfailed interface on failed node"
     def demands(self, model):
         """Returns list of demands that egress the interface"""
         dmd_set = set()
-        demands = model.demand_objects
+        demands = (demand for demand in model.demand_objects)
         for demand in demands:
-            for path in demand.path:
-                # If demand_path is an RSVP LSP, look at the LSP path and
-                # get demands on the LSP and add them to dmd_set
-                if isinstance(path, RSVP_LSP):
-                    for dmd in path.demands_on_lsp(model):
-                        dmd_set.add(dmd)
+
+            # Counter for total number of paths for each demand
+            #num_paths = 0
+
+            for dmd_path in demand.path:
+                # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
+                # look at the LSP path and get demands on the LSP and add them to dmd_set
+                if isinstance(dmd_path, RSVP_LSP):
+                    if self in dmd_path.path['interfaces']:
+                        dmd_set.add(demand)
+
                 # If path is not an LSP, then it's a list of Interface
-                # objects; look for self in demand_path
-                elif self in path:
+                # objects; look for self in dmd_path
+                elif self in dmd_path:
+                    #num_paths += 1
                     dmd_set.add(demand)
 
         dmd_list = list(dmd_set)
+
+        # TODO - add % of each demand that is on the interface next to the demand
+        # TODO - verify ECMP working right for non-lsp demands with multiple branches off a midpoint node
 
         return dmd_list
 
