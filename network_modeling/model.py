@@ -320,10 +320,92 @@ class Model(object):
                         #demand_path_interface.traffic = existing_traffic
 
 
+    def _demand_traffic_per_int(self, demand):
+        """
+        Given a Demand object, return key, value pairs for how much traffic each
+        interface gets from the routing of the traffic load over Model interfaces.
+
+        :demand: Demand object
+        :return: dict of ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
+
+        Example: The interface from node G to node D has 2.5 units of traffic from 'demand'
+        {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
+
+        """
+
+        # Find node names
+        source_node_name = demand.source_node_object.name
+        dest_node_name = demand.dest_node_object.name
+
+        # Find the demand traffic
+        demand_traffic = demand.traffic
+
+        # Define a networkx DiGraph to find the path
+        G = self._make_weighted_network_graph(include_failed_circuits = False)
+
+        # Get networkx shortest paths from source_node to dest_node
+        shortest_paths = nx.all_shortest_paths(G, source_node_name,
+                                               dest_node_name, weight='cost')
+
+        # Create shortest path list with node to node connections
+        shortest_path_list = []
+        for path in shortest_paths:
+            int_path = []
+            for x in range(0, len(path) - 1):
+                int_path.append(path[x] + '-' + path[x + 1])
+            shortest_path_list.append(int_path)
+
+        # All interfaces in shortest_path_list
+        shortest_path_int_list = []
+        for path in shortest_path_list:
+            shortest_path_int_list += path
+
+        shortest_path_int_set = set(shortest_path_int_list)
+
+        # How many unique next hops from node?  That is the 'split'.
+        # Divide the demand by the split to see how much traffic goes on each
+        # interface from the source node to get traffic_on_each_int for that hop.
+
+        # Dict to store how many unique next hops each node has in the shortest paths
+        unique_next_hops = {}
+        for interface in shortest_path_int_set:
+            unique_next_hops[interface[0]] = [intf for intf in shortest_path_int_set if
+                                              intf[0] == interface[0]]
+
+        # How many paths are on each interface from the node?
+        # That is the num_paths_on_int.
+        # Divide the traffic_on_each_int by num_path_on_int to get traffic_per_path
+        num_paths_each_int = {}
+        for interface in shortest_path_int_set:
+            num_paths_each_int[interface] = shortest_path_int_list.count(interface)
+
+        # Compute the amount of traffic on each interface on each path.
+        # For each path, do the following:
+        # - for each interface, sum up the total number of unique next hops up to that point
+        # Need to create:
+        # shortest_path_splits = {path1: {int1: cumulative_splits, int2:cumulative_splits}, path2: {}}
+        shortest_path_splits = {}
+        path_counter = 0
+        for path in shortest_path_list:
+            total_splits = 1
+            path_counter_key = 'path' + str(path_counter)
+            path_split_dict = {}
+            for interface in path:
+                total_splits = total_splits * len(unique_next_hops[interface[0]])
+                path_split_dict[interface] = total_splits
+            path_counter += 1
+            shortest_path_splits[path_counter_key] = path_split_dict
+
+        # Calculate demand's cumulative load on each interface
+        traffic_per_int = dict.fromkeys(shortest_path_int_set, 0)
+        for path, ints in shortest_path_splits.items():
+            for interface, splits in ints.items():
+                traffic_per_int[interface] += demand_traffic / splits
+
+        return traffic_per_int
 
 
-
-    def _update_interface_utilization(self):
+    def _update_interface_utilization_new(self):
         """Updates each interface's utilization; returns Model object with 
         updated interface utilization."""
 
@@ -335,11 +417,14 @@ class Model(object):
             else:
                 interface_object.traffic = 0.0
 
+
+        demand_object_generator = (demand_object for demand_object in self.demand_objects)
+
         # For each demand that is not Unrouted, add its traffic value to each
         # interface object in the path
-        for demand_object in self.demand_objects:
+        for demand_object in demand_object_generator:
             traffic = demand_object.traffic
-            
+
             if demand_object.path != 'Unrouted':
 
                 # Find each demands path list, determine the ECMP split, and 
@@ -347,23 +432,79 @@ class Model(object):
                 demand_object_paths = demand_object.path
                 num_demand_paths = float(len(demand_object_paths))
 
+                traffic_per_demand_path = demand_object.traffic/num_demand_paths
 
+                for demand_object_path in demand_object_paths:
+                    # If demand_object_path is a single component and an LSP, expand
+                    # the LSP into its path interfaces
+                    if isinstance(demand_object_path, RSVP_LSP):
+                        demand_object_path_interfaces = demand_object_path.path['interfaces']
+
+                        # Now that all interfaces are known,
+                        # update traffic on interfaces demand touches
+                        for demand_path_interface in demand_object_path_interfaces:
+                            # Get the interface's existing traffic and add the
+                            # portion of the demand's traffic
+                            existing_traffic = demand_path_interface.traffic
+                            existing_traffic = existing_traffic + traffic_per_demand_path
+                            demand_path_interface.traffic = existing_traffic
+
+                    # If demand_object is not taking LSPs, IGP route it, using hop by hop ECMP
+                    else:
+
+                        # demand_traffic_per_int will be dict of
+                        # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
+                        #
+                        # Example: The interface from node G to node D has 2.5 units of traffic from 'demand'
+                        # {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
+
+                        demand_traffic_per_int = self._demand_traffic_per_int(demand_object)
+
+                        # Get the interface objects and update them with the traffic
+                        for interface, traffic_from_demand in demand_traffic_per_int.items():
+                            from_node = interface[0]
+                            to_node = interface[2]
+                            interface_to_update = self.get_interface_object_from_nodes(from_node, to_node)
+                            interface_to_update.traffic += traffic_from_demand
+
+
+        return self
+
+    def _update_interface_utilization(self):
+        """Updates each interface's utilization; returns Model object with
+        updated interface utilization."""
+
+        # In the model, in an interface is failed, set the traffic attribute
+        # to 'Down', otherwise, initialize the traffic to zero
+        for interface_object in self.interface_objects:
+            if interface_object.failed == True:
+                interface_object.traffic = 'Down'
+            else:
+                interface_object.traffic = 0.0
+
+        # For each demand that is not Unrouted, add its traffic value to each
+        # interface object in the path
+        for demand_object in self.demand_objects:
+            traffic = demand_object.traffic
+
+            if demand_object.path != 'Unrouted':
+
+                # Find each demands path list, determine the ECMP split, and
+                # find the traffic per path
+                demand_object_paths = demand_object.path
+                num_demand_paths = float(len(demand_object_paths))
 
                 # TODO - FIX THIS FIRST!!!! need to modify this to account for per-hop splits, not end-to-end split;
-                ecmp_split = 1/num_demand_paths
+                ecmp_split = 1 / num_demand_paths
                 traffic_per_demand_path = traffic * ecmp_split
 
-
-
                 # Add the traffic per path to each interface the demand touches.
-                # TODO - Not sure if there's a way to optimize this since
-                # we have to do a lookup to modify the traffic attribute
+                # TODO - Check if there's a way to optimize this
                 for demand_object_path in demand_object_paths:
                     # If the path is a single component and an LSP, expand
                     # the LSP into its path interfaces
                     if isinstance(demand_object_path, RSVP_LSP):
-                        demand_object_path = \
-                            demand_object_path.path['interfaces']
+                        demand_object_path = demand_object_path.path['interfaces']
 
                     # TODO - this 'elif' part below not necessary until support for LSPs in IGP is needed
                     # If the path has multiple components, check if each
@@ -377,7 +518,7 @@ class Model(object):
                     # Now that all interfaces are known,
                     # update traffic on interfaces demand touches
                     for demand_path_interface in demand_object_path:
-                        # Get the interface's existing traffic and add the 
+                        # Get the interface's existing traffic and add the
                         # portion of the demand's traffic
                         existing_traffic = demand_path_interface.traffic
                         existing_traffic = existing_traffic + traffic_per_demand_path
@@ -1006,6 +1147,7 @@ does not exist in model"%(source_node_name, dest_node_name,
         
         # Return the paths
         return model_feasible_paths
+
         
     def get_shortest_path(self, source_node_name, dest_node_name):
         """For a source and dest node name pair, find the shortest path.
@@ -1078,7 +1220,21 @@ does not exist in model"%(source_node_name, dest_node_name,
 
     def _convert_nx_path_to_model_path(self, nx_graph_path):
         """Given a path from an networkx DiGraph, converts that 
-        path to a Model style path and returns that Model style path"""
+        path to a Model style path and returns that Model style path
+
+        A networkx path is a list of nodes in order of transit.
+        ex: ['A', 'B', 'G', 'D', 'F']
+
+        The corresponding model style path would be:
+        [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+            remote_node_object = Node('B'), address = 9),
+        Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+            remote_node_object = Node('G'), address = 6),
+        Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+            remote_node_object = Node('D'), address = 2),
+        Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
+            remote_node_object = Node('F'), address = 1)]
+        """
         
         # Define a model-style path to build
         model_path = []
@@ -1086,15 +1242,13 @@ does not exist in model"%(source_node_name, dest_node_name,
         for hop in nx_graph_path:
             current_hop_index = nx_graph_path.index(hop)
             next_hop_index = current_hop_index+1
-            if current_hop_index + 1 < len(nx_graph_path):
-                #current_node = model1.get_node_object(hop)
+            if current_hop_index + 1 < len(nx_graph_path): # TODO - use next_hop_index here
                 next_hop = nx_graph_path[next_hop_index]
-                #next_hop_node = model1.get_node_object(next_hop)
                 interface = self.get_interface_object_from_nodes(hop,next_hop)
                 model_path.append(interface)
         
         return model_path
-        
+
     ###### NODE CALLS ######
     def get_node_interfaces(self, node_name):
         """Returns list of interfaces on specified node name"""
