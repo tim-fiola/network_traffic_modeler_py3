@@ -346,34 +346,41 @@ class Model(object):
                 # find the traffic per path
                 demand_object_paths = demand_object.path
                 num_demand_paths = float(len(demand_object_paths))
-                ecmp_split = 1/num_demand_paths # TODO - FIX THIS FIRST!!!! need to modify this to account for per-hop splits, not end-to-end split; recursive . . .
+
+
+
+                # TODO - FIX THIS FIRST!!!! need to modify this to account for per-hop splits, not end-to-end split;
+                ecmp_split = 1/num_demand_paths
                 traffic_per_demand_path = traffic * ecmp_split
 
+
+
                 # Add the traffic per path to each interface the demand touches.
-                # Not sure if there's a way to optimize this since
+                # TODO - Not sure if there's a way to optimize this since
                 # we have to do a lookup to modify the traffic attribute
                 for demand_object_path in demand_object_paths:
-
-                    
                     # If the path is a single component and an LSP, expand
                     # the LSP into its path interfaces
                     if isinstance(demand_object_path, RSVP_LSP):
                         demand_object_path = \
                             demand_object_path.path['interfaces']
-                    # If the path has multiple components, check if each 
+
+                    # TODO - this 'elif' part below not necessary until support for LSPs in IGP is needed
+                    # If the path has multiple components, check if each
                     # component is an LSP and if it is, expand the component
                     # into its path interfaces
                     elif len(demand_object_path) > 1:
                         for component in demand_object_path:
                             if isinstance(component, RSVP_LSP):
                                 component = component.path['interfaces']
-                            
+
+                    # Now that all interfaces are known,
+                    # update traffic on interfaces demand touches
                     for demand_path_interface in demand_object_path:
                         # Get the interface's existing traffic and add the 
                         # portion of the demand's traffic
                         existing_traffic = demand_path_interface.traffic
-                        existing_traffic = existing_traffic + \
-                                                    traffic_per_demand_path
+                        existing_traffic = existing_traffic + traffic_per_demand_path
                         demand_path_interface.traffic = existing_traffic
 
         return self
@@ -1225,10 +1232,9 @@ does not exist in model"%(source_node_name, dest_node_name,
         elif include_failed_circuits == True:
             # Get all edge names 
             edge_names = ((interface.node_object.name, 
-                            interface.remote_node_object.name, interface.cost) \
-                for interface in self.interface_objects)                
+                           interface.remote_node_object.name, interface.cost) \
+                          for interface in self.interface_objects)
         
-            
         # Add edges to networkx DiGraph
         G.add_weighted_edges_from(edge_names, weight = 'cost')
         
