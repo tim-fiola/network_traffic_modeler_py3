@@ -425,7 +425,7 @@ class Model(object):
         return traff_per_int
 
 
-    def _update_interface_utilization_new(self):
+    def _update_interface_utilization(self):
         """Updates each interface's utilization; returns Model object with 
         updated interface utilization."""
 
@@ -454,11 +454,36 @@ class Model(object):
                     # Find each demands path list, determine the ECMP split across the LSPs,
                     # and find the traffic per path (LSP)
                     num_demand_paths = float(len(demand_object.path))
+
+
+                    # TODO - determine if LSP can route, if it cannot, remove it from num_demand_paths
+                    # In lsp_practice_code, when we add 3rd LSP over 2 paths, 3rd LSP does not signal
+                    # but the other 2 LSPs lower their reserved bandwidth to 1/3 total demand
+                    # instead of keeping it at 1/2
+                    # Decrement num_demand_paths
+                    # TODO - OR, check to see if demand load is still the same, don't lower setup/res bw
+
                     traffic_per_demand_path = demand_object.traffic / num_demand_paths
 
                     # Get the interfaces for each LSP in the demand's path
                     for lsp in demand_object.path:
                         lsp_path_interfaces = lsp.path['interfaces']
+
+
+
+                        # TODO - do this
+                        # This will catch unrouted LSPs and adjust any routed, parallel LSPs
+                        # to adjust their bandwidth if necessary.
+                        # If the LSP's setup bandwidth is less than than the amount of
+                        # the LSP's traffic and if the LSP's traffic is less than tha
+                        # amount of the LSP path's reservable bandwidth, adjust the
+                        # LSP's setup bandwidth and reserved bandwidth to LSP's traffic
+                        if lsp.setup_bandwidth <= lsp.traffic_on_lsp(self) and \
+                           lsp.traffic_on_lsp(self) <= lsp.path['baseline_path_reservable_bw']:
+                            lsp.setup_bandwidth = lsp.traffic_on_lsp(self)
+                            lsp.reserved_bandwidth = lsp.traffic_on_lsp(self)
+
+
 
                         # Now that all interfaces are known,
                         # update traffic on interfaces demand touches
@@ -487,7 +512,9 @@ class Model(object):
 
         return self
 
-    def _update_interface_utilization(self):
+
+    # TODO - delete this as it uses end to end load balancing, not per-hop load balancing
+    def _update_interface_utilization_old(self):
         """Updates each interface's utilization; returns Model object with
         updated interface utilization."""
 
@@ -511,19 +538,17 @@ class Model(object):
                 demand_object_paths = demand_object.path
                 num_demand_paths = float(len(demand_object_paths))
 
-                # TODO - FIX THIS FIRST!!!! need to modify this to account for per-hop splits, not end-to-end split;
                 ecmp_split = 1 / num_demand_paths
                 traffic_per_demand_path = traffic * ecmp_split
 
                 # Add the traffic per path to each interface the demand touches.
-                # TODO - Check if there's a way to optimize this
                 for demand_object_path in demand_object_paths:
                     # If the path is a single component and an LSP, expand
                     # the LSP into its path interfaces
                     if isinstance(demand_object_path, RSVP_LSP):
                         demand_object_path = demand_object_path.path['interfaces']
 
-                    # TODO - this 'elif' part below not necessary until support for LSPs in IGP is needed
+                    # This 'elif' part below not necessary until support for LSPs in IGP is needed
                     # If the path has multiple components, check if each
                     # component is an LSP and if it is, expand the component
                     # into its path interfaces
@@ -581,11 +606,6 @@ class Model(object):
                         reserved_bw = interface.capacity
                         break
                 interface.reserved_bandwidth = reserved_bw
-
-
-
-
-
 
     def _route_lsps(self, input_model):
         """Route the LSPs in the model"""

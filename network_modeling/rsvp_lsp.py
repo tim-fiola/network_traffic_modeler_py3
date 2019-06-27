@@ -45,6 +45,7 @@ class RSVP_LSP(object):
         self.path = 'Unrouted'
         self.reserved_bandwidth = 'Unrouted'
         self.setup_bandwidth = 'Unrouted'
+        self.traffic = 0
 
     @property
     def _key(self):
@@ -66,22 +67,35 @@ class RSVP_LSP(object):
         demand_list = []
         for demand in model.demand_objects:
             if demand.source_node_object == self.source_node_object and \
-                demand.dest_node_object == self.dest_node_object:
-                    demand_list.append(demand)            
+                    demand.dest_node_object == self.dest_node_object:
+                demand_list.append(demand)
 
         sum_demand_traffic = sum([demand.traffic for demand in demand_list])
-        
-        # Calculate the amount of bandwidth for each demand
-        all_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if \
-            (lsp.source_node_object == self.source_node_object and
-             lsp.dest_node_object == self.dest_node_object)]
-           
+
+        all_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if
+                                lsp.source_node_object == self.source_node_object and
+                                lsp.dest_node_object == self.dest_node_object]
+
         needed_bw = sum_demand_traffic/len(all_lsps_src_to_dest)
         
         self.setup_bandwidth = needed_bw
 
         return self
-        
+
+    # TODO - experimental
+    def routed_parallel_lsp_group(self, model):
+        """
+        Finds all routed LSPs whose source node and destination node match that of self
+        :param model: Model object
+        :return:  list of all LSPs from self.source_node_object to self.dest_node_object
+        """
+        # Calculate the amount of bandwidth for each LSP
+        routed_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if \
+                                (lsp.source_node_object == self.source_node_object and
+                                 lsp.dest_node_object == self.dest_node_object and
+                                 lsp.path != 'Unrouted')]
+        return routed_lsps_src_to_dest
+
     def _add_rsvp_lsp_path(self, model):
         """Determines the LSP's path"""
 
@@ -267,8 +281,24 @@ class RSVP_LSP(object):
                 demand_list.append(demand)
                 
         return demand_list
-            
-                            
+
+    # TODO - experimental
+    def traffic_on_lsp(self, model): # TODO - do getter/setter for this?
+        """
+        Returns the amount of traffic on the LSP
+        :param model: Model object for LSP
+        :return: Units of traffic on the LSP
+        """
+
+        # Find all LSPs with same source and dest as self
+        parallel_routed_lsps = self.routed_parallel_lsp_group(model)
+        total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
+
+        traffic_on_lsp = total_traffic/len(parallel_routed_lsps)
+
+        return traffic_on_lsp
+
+
     def effective_metric(self, model):
         """Returns the metric for the best path. This value will be the 
         shortest possible path from LSP's source to dest, regardless of 
@@ -288,7 +318,12 @@ class RSVP_LSP(object):
         
         return metric
 
-    def route_lsp(self, model): # TODO - is this call used anywhere?
+    def route_lsp(self, model):
+        """
+        Used in Model object to route each LSP
+        :param model:
+        :return:
+        """
         
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)
