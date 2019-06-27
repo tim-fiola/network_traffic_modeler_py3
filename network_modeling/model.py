@@ -337,9 +337,6 @@ class Model(object):
         source_node_name = demand.source_node_object.name
         dest_node_name = demand.dest_node_object.name
 
-        # Find the demand traffic
-        demand_traffic = demand.traffic
-
         # Define a networkx DiGraph to find the path
         G = self._make_weighted_network_graph(include_failed_circuits = False)
 
@@ -347,7 +344,7 @@ class Model(object):
         shortest_paths = nx.all_shortest_paths(G, source_node_name,
                                                dest_node_name, weight='cost')
 
-        # Create shortest path list with node to node connections
+        # Create shortest path list showing node to node connections
         shortest_path_list = []
         for path in shortest_paths:
             int_path = []
@@ -360,11 +357,8 @@ class Model(object):
         for path in shortest_path_list:
             shortest_path_int_list += path
 
+        # Unique interfaces across all shortest paths
         shortest_path_int_set = set(shortest_path_int_list)
-
-        # How many unique next hops from node?  That is the 'split'.
-        # Divide the demand by the split to see how much traffic goes on each
-        # interface from the source node to get traffic_on_each_int for that hop.
 
         # Dict to store how many unique next hops each node has in the shortest paths
         unique_next_hops = {}
@@ -372,54 +366,63 @@ class Model(object):
             unique_next_hops[interface[0]] = [intf for intf in shortest_path_int_set if
                                               intf[0] == interface[0]]
 
-        # How many paths are on each interface from the node?
-        # That is the num_paths_on_int.
-        # Divide the traffic_on_each_int by num_path_on_int to get traffic_per_path
-        num_paths_each_int = {}
-        for interface in shortest_path_int_set:
-            num_paths_each_int[interface] = shortest_path_int_list.count(interface)
+        # shortest_path_info will be a dict with the following info for each path:
+        # - an ordered list of interfaces in the path
+        # - a dict of cumulative splits for each interface at that point in the path
+        # - the amount of traffic on the path
+        # Example:
+        # shortest_path_info =
+        # {'path_0': {'interfaces': ['E-A', 'A-D', 'D-F'],
+        #            'path_traffic': 20.0,
+        #            'splits': {'A-D': 2, 'D-F': 2, 'E-A': 1}},
+        # 'path_1': {'interfaces': ['E-A', 'A-B', 'B-D', 'D-F'],
+        #            'path_traffic': 10.0,
+        #            'splits': {'A-B': 2, 'B-D': 4, 'D-F': 4, 'E-A': 1}},
+        # 'path_2': {'interfaces': ['E-A', 'A-B', 'B-G', 'G-D', 'D-F'],
+        #            'path_traffic': 10.0,
+        #            'splits': {'A-B': 2, 'B-G': 4, 'D-F': 4, 'E-A': 1, 'G-D': 4}}}
 
-        # # Compute the amount of traffic on each interface on each path.
-        # # For each path, do the following:
-        # # - for each interface, sum up the total number of unique next hops up to that point
-        # # Need to create:
-        # # shortest_path_splits = {path1: {int1: cumulative_splits, int2:cumulative_splits}, path2: {}}
-        # shortest_path_splits = {}
-        # path_counter = 0
-        # for path in shortest_path_list:
-        #     total_splits = 1
-        #     path_counter_key = 'path' + str(path_counter)
-        #     path_split_dict = {}
-        #     for interface in path:
-        #         total_splits = total_splits * len(unique_next_hops[interface[0]])
-        #         path_split_dict[interface] = total_splits
-        #     path_counter += 1
-        #     shortest_path_splits[path_counter_key] = path_split_dict
-
-        shortest_path_splits_per_int = {}
+        shortest_path_info = {}
+        path_counter = 0
         for path in shortest_path_list:
+            interfaces_list = []  # List of path interfaces
+            traffic_splits_per_interface = {}  # Dict of cumulative splits per interface
+            path_traffic = 0  # Amount of traffic for the path
+
+            path_key = 'path_' + str(path_counter)
+
+            shortest_path_info[path_key] = {}
+
+            # Create interfaces list
+            interfaces_list = path
+
+            # Create cumulative path splits for each interface
             total_splits = 1
             for interface in path:
                 total_splits = total_splits * len(unique_next_hops[interface[0]])
-                shortest_path_splits_per_int[interface] = total_splits
+                traffic_splits_per_interface[interface] = total_splits
 
-        # Calculate demand's cumulative load on each interface
-        # traffic_per_int = dict.fromkeys(shortest_path_int_set, 0)
-        # for path, ints in shortest_path_splits.items():
-        #     for interface, splits in ints.items():
-        #         traffic_per_int[interface] += demand_traffic / splits # / num_paths_each_int[interface]
+            # Find path traffic
+            max_split = max([split for split in traffic_splits_per_interface.values()])
+            path_traffic = float(demand.traffic) / float(max_split)
 
-        # Calculate demand's cumulative load on each interface
-        traffic_per_int = dict.fromkeys(shortest_path_int_set, 0)
-        # Smallest traffic per path
-        smallest_traff_per_path = demand.traffic/max([value for value in shortest_path_splits_per_int.values()])
-        for interface in shortest_path_int_set:
-            traffic_per_int[interface] = smallest_traff_per_path * num_paths_each_int[interface]
+            shortest_path_info[path_key]['interfaces'] = interfaces_list
+            shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
+            shortest_path_info[path_key]['path_traffic'] = path_traffic
+            path_counter += 1
 
+        # pprint(shortest_path_info)
 
-        pdb.set_trace()
+        # For each path, determine which interfaces it transits and add
+        # that path's traffic to the interface
 
-        return traffic_per_int
+        # Create dict to hold cumulative traffic for each interface for demand
+        traff_per_int = dict.fromkeys(shortest_path_int_set, 0)
+        for path, info in shortest_path_info.items():
+            for interface in info['interfaces']:
+                traff_per_int[interface] += info['path_traffic']
+
+        return traff_per_int
 
 
     def _update_interface_utilization_new(self):
@@ -429,7 +432,7 @@ class Model(object):
         # In the model, in an interface is failed, set the traffic attribute 
         # to 'Down', otherwise, initialize the traffic to zero
         for interface_object in self.interface_objects:
-            if interface_object.failed == True:
+            if interface_object.failed:
                 interface_object.traffic = 'Down'
             else:
                 interface_object.traffic = 0.0
@@ -439,48 +442,48 @@ class Model(object):
         # For each demand that is not Unrouted, add its traffic value to each
         # interface object in the path
         for demand_object in demand_object_generator:
-            traffic = demand_object.traffic
 
             if demand_object.path != 'Unrouted':
+                # This model only allows demands to take RSVP LSPs if
+                # the demand's source/dest nodes match the LSP's source/dest nodes.
+                # If demand_object.path[0] is an LSP, then all the demand's paths
+                # will be LSP's.
+                # Expand each LSP into its interfaces and add that the traffic per LSP
+                # to the LSP's path interfaces.
+                if isinstance(demand_object.path[0], RSVP_LSP):
+                    # Find each demands path list, determine the ECMP split across the LSPs,
+                    # and find the traffic per path (LSP)
+                    num_demand_paths = float(len(demand_object.path))
+                    traffic_per_demand_path = demand_object.traffic / num_demand_paths
 
-                # Find each demands path list, determine the ECMP split, and 
-                # find the traffic per path
-                demand_object_paths = demand_object.path
-                num_demand_paths = float(len(demand_object_paths))
-
-                traffic_per_demand_path = demand_object.traffic/num_demand_paths
-
-                for demand_object_path in demand_object_paths:
-                    # If demand_object_path is a single component and an LSP, expand
-                    # the LSP into its path interfaces
-                    if isinstance(demand_object_path, RSVP_LSP):
-                        demand_object_path_interfaces = demand_object_path.path['interfaces']
+                    # Get the interfaces for each LSP in the demand's path
+                    for lsp in demand_object.path:
+                        lsp_path_interfaces = lsp.path['interfaces']
 
                         # Now that all interfaces are known,
                         # update traffic on interfaces demand touches
-                        for demand_path_interface in demand_object_path_interfaces:
+                        for interface in lsp_path_interfaces:
                             # Get the interface's existing traffic and add the
                             # portion of the demand's traffic
-                            existing_traffic = demand_path_interface.traffic
+                            existing_traffic = interface.traffic
                             existing_traffic = existing_traffic + traffic_per_demand_path
-                            demand_path_interface.traffic = existing_traffic
+                            interface.traffic = existing_traffic
 
-                    # If demand_object is not taking LSPs, IGP route it, using hop by hop ECMP
-                    else:
-                        # demand_traffic_per_int will be dict of
-                        # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
-                        #
-                        # Example: The interface from node G to node D has 2.5 units of traffic from 'demand'
-                        # {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
-                        demand_traffic_per_int = self._demand_traffic_per_int(demand_object)
+                # If demand_object is not taking LSPs, IGP route it, using hop by hop ECMP
+                else:
+                    # demand_traffic_per_int will be dict of
+                    # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
+                    #
+                    # Example: The interface from node G to node D has 2.5 units of traffic from 'demand'
+                    # {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
+                    demand_traffic_per_int = self._demand_traffic_per_int(demand_object)
 
-                        # Get the interface objects and update them with the traffic
-                        for interface, traffic_from_demand in demand_traffic_per_int.items():
-                            from_node = interface[0]
-                            to_node = interface[2]
-                            interface_to_update = self.get_interface_object_from_nodes(from_node, to_node)
-                            interface_to_update.traffic += traffic_from_demand
-
+                    # Get the interface objects and update them with the traffic
+                    for interface, traffic_from_demand in demand_traffic_per_int.items():
+                        from_node = interface[0]
+                        to_node = interface[2]
+                        interface_to_update = self.get_interface_object_from_nodes(from_node, to_node)
+                        interface_to_update.traffic += traffic_from_demand
 
         return self
 
