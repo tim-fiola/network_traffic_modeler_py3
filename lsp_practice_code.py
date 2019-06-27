@@ -171,13 +171,13 @@ pprint(demand_a_f.path)
 print()
 #print("Path for {} is:".format(demand_e_f))
 #pprint(demand_e_f.path)
-# TODO - this 3rd LSP above is not routing, but the demand load is being split 3 ways . . . is this the right behavior?
-# TODO - verify in lab if above LSP behavior is correct
 
 # TODO - b_to_g has traffic that should be on LSPs (A to D demands)
 print("Here are demands on {}".format(b_to_g))
 for demand in b_to_g.demands(model):
     print(demand)
+
+demand_f_e = model.get_demand_object('F', 'E', 'test4')
 
 
 # print("*************** Adding 4th LSP from A to D ****************")
