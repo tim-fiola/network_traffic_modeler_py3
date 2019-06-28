@@ -451,37 +451,50 @@ class Model(object):
                 # Expand each LSP into its interfaces and add that the traffic per LSP
                 # to the LSP's path interfaces.
                 if isinstance(demand_object.path[0], RSVP_LSP):
-                    # Find each demands path list, determine the ECMP split across the LSPs,
-                    # and find the traffic per path (LSP)
-                    num_demand_paths = float(len(demand_object.path))
+                    # Find each demands path list, determine the ECMP split across the
+                    # routed LSPs, and find the traffic per path (LSP)
+                    num_routed_lsps_for_demand = float(len(demand_object.path))
 
-
-                    # TODO - determine if LSP can route, if it cannot, remove it from num_demand_paths
                     # In lsp_practice_code, when we add 3rd LSP over 2 paths, 3rd LSP does not signal
                     # but the other 2 LSPs lower their reserved bandwidth to 1/3 total demand
                     # instead of keeping it at 1/2
                     # Decrement num_demand_paths
-                    # TODO - OR, check to see if demand load is still the same, don't lower setup/res bw
 
-                    traffic_per_demand_path = demand_object.traffic / num_demand_paths
+                    traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
 
                     # Get the interfaces for each LSP in the demand's path
                     for lsp in demand_object.path:
                         lsp_path_interfaces = lsp.path['interfaces']
 
-
-
-                        # TODO - do this
-                        # This will catch unrouted LSPs and adjust any routed, parallel LSPs
-                        # to adjust their bandwidth if necessary.
-                        # If the LSP's setup bandwidth is less than than the amount of
-                        # the LSP's traffic and if the LSP's traffic is less than tha
+                        # This will catch unrouted LSPs that have the same source and
+                        # dest node as the demand but may not have been able to signal.
+                        # It will modify the reserved and setup bandwidth for any routed,
+                        # parallel LSPs if necessary.
+                        # If the LSP's current setup bandwidth is less than than the amount of
+                        # the LSP's traffic and if the LSP's traffic is less than than
                         # amount of the LSP path's reservable bandwidth, adjust the
-                        # LSP's setup bandwidth and reserved bandwidth to LSP's traffic
-                        if lsp.setup_bandwidth <= lsp.traffic_on_lsp(self) and \
-                           lsp.traffic_on_lsp(self) <= lsp.path['baseline_path_reservable_bw']:
+                        # LSP's setup bandwidth and reserved bandwidth match the LSP's traffic
+                        if (lsp.setup_bandwidth <= lsp.traffic_on_lsp(self) <=
+                                lsp.path['baseline_path_reservable_bw']):
+
+                            # Update the reserved_bandwidth on each interface for the modified LSPs
+                            # Remove the current reserved_bw
+                            for interface in lsp.path['interfaces']:
+                                # Remove the current reserved_bw
+                                interface.reserved_bandwidth -= lsp.reserved_bandwidth
+
+                            # Change the setup/reserved bandwidth
                             lsp.setup_bandwidth = lsp.traffic_on_lsp(self)
                             lsp.reserved_bandwidth = lsp.traffic_on_lsp(self)
+
+                            # Add the new reserved_bw for the lsp interfaces
+                            for interface in lsp.path['interfaces']:
+                                interface.reserved_bandwidth += lsp.reserved_bandwidth
+
+                        # TODO - or try this for LSP routing instead of the above:
+                        # look at the max baseline_path_reservable_bw for each LSP
+                        # and figure out how many LSPs can fit thru it with what reserved_bw
+                        # given the amount of traffic - this may be a better approach
 
 
 
@@ -511,6 +524,17 @@ class Model(object):
                         interface_to_update.traffic += traffic_from_demand
 
         return self
+
+
+    def determine_bw_parallel_lsps(self, source_node, dest_node):
+        """
+        For a group of parallel LSPs, determine how many can route and
+        with what reserved and setup BW
+        :return: setup_bw, reserved_bw
+        """
+        # TODO - do this
+        pass
+
 
 
     # TODO - delete this as it uses end to end load balancing, not per-hop load balancing

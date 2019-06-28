@@ -283,7 +283,7 @@ class RSVP_LSP(object):
         return demand_list
 
     # TODO - experimental
-    def traffic_on_lsp(self, model): # TODO - do getter/setter for this?
+    def traffic_on_lsp(self, model): # TODO - do getter/setter for this? experimental
         """
         Returns the amount of traffic on the LSP
         :param model: Model object for LSP
