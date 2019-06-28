@@ -6,7 +6,6 @@ from .model_exception import ModelException
 import random
 import pdb
 
-# TODO - add call to return traffic on LSP
 
 # For when the model has both LSPs but not a full LSP mesh, 
 # - create the LSP model first
@@ -82,7 +81,6 @@ class RSVP_LSP(object):
 
         return self
 
-    # TODO - experimental
     def routed_parallel_lsp_group(self, model):
         """
         Finds all routed LSPs whose source node and destination node match that of self
@@ -282,7 +280,6 @@ class RSVP_LSP(object):
                 
         return demand_list
 
-    # TODO - experimental
     def traffic_on_lsp(self, model): # TODO - do getter/setter for this? experimental
         """
         Returns the amount of traffic on the LSP
@@ -297,7 +294,6 @@ class RSVP_LSP(object):
         traffic_on_lsp = total_traffic/len(parallel_routed_lsps)
 
         return traffic_on_lsp
-
 
     def effective_metric(self, model):
         """Returns the metric for the best path. This value will be the 
@@ -332,4 +328,4 @@ class RSVP_LSP(object):
         self._add_rsvp_lsp_path(model)
         
         return self
-        
+
