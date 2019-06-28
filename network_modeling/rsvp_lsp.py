@@ -24,7 +24,7 @@ class RSVP_LSP(object):
     path: will either be 'Unrouted' or be a dict containing the following -
         - interfaces: list of interfaces that LSP egresses in the order it
             egresses them
-        - path_cost: sum of costs of the interfaces (same as self.actual_metric) # TODO - make these the same name
+        - path_cost: sum of costs of the interfaces
         - baseline_path_reservable_bw: the amount of reservable bandwidth
             available on the LSP's path when the LSP was signaled, not inclusive
             of the bandwidth already reserved by this LSP on that path (if any)

@@ -202,7 +202,6 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
         dmd_list = list(dmd_set)
 
         # TODO - add % of each demand that is on the interface next to the demand
-        # TODO - verify ECMP working right for non-lsp demands with multiple branches off a midpoint node
 
         return dmd_list
 
