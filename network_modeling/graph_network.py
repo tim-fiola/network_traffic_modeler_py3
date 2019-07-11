@@ -13,15 +13,9 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import networkx as nx
 
-from networkx.readwrite import json_graph
-import json
-
 # import network_modeling.http_server
 
-import pdb
-
-from matplotlib.patches import FancyArrowPatch, Circle
-from .model import Model
+from matplotlib.patches import FancyArrowPatch
 
 # Util ranges mapped to colors
 util_ranges_2 = [('darkviolet', 100),

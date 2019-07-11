@@ -1,9 +1,7 @@
 """An object representing a Node interface"""
 
-from .circuit import Circuit
-from .rsvp_lsp import RSVP_LSP
 from .model_exception import ModelException
-import pdb
+from .rsvp_lsp import RSVP_LSP
 
 
 class Interface(object):

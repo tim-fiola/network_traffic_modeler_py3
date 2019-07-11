@@ -1,6 +1,6 @@
 """A class to represent a router in the Model"""
 
-import pdb
+from network_modeling import ModelException
 
 
 class Node(object):

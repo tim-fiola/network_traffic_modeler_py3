@@ -1,10 +1,8 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
-from pprint import pprint
-from .model_exception import ModelException
-
 import random
-import pdb
+
+from .model_exception import ModelException
 
 
 # For when the model has both LSPs but not a full LSP mesh, 

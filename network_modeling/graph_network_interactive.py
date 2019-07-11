@@ -16,10 +16,7 @@ import matplotlib as mpl
 mpl.use("TkAgg")
 ########################################
 
-import json
-
 import matplotlib.lines as mlines
-from matplotlib.patches import FancyArrowPatch, Circle
 import matplotlib.pyplot as plt
 import mpld3
 from mpld3 import plugins, utils
@@ -27,9 +24,6 @@ import networkx as nx
 from networkx.readwrite import json_graph
 import threading
 import time
-import pdb
-
-from .model import Model
 
 
 class LinkedDragPlugin(plugins.PluginBase):

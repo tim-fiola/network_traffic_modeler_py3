@@ -1,8 +1,6 @@
 """A Demand is a traffic load that traverses the network from a source Node
 to a destination Node"""
 
-import pdb
-
 
 class Demand(object):
     """A representation of traffic load on the modeled network"""
