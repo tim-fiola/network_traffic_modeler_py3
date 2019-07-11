@@ -10,7 +10,7 @@ class Interface(object):
     """An object representing a Node interface"""
 
     def __init__(self, name, cost, capacity, node_object, remote_node_object,
-                 address = 0):
+                 address=0):
         self.name = name
         self.cost = cost
         self.capacity = capacity
@@ -22,10 +22,10 @@ class Interface(object):
         self.reserved_bandwidth = 0
 
         # Validate cost and capacity values
-        if not(isinstance(cost, (int, float))):
+        if not (isinstance(cost, (int, float))):
             raise ValueError('Cost must be positive integer or float')
-        if not(isinstance(capacity, (int, float))):
-            raise ValueError('Capacity must be positive integer or float')        
+        if not (isinstance(capacity, (int, float))):
+            raise ValueError('Capacity must be positive integer or float')
 
     @property
     def _key(self):
@@ -37,27 +37,24 @@ class Interface(object):
         if not isinstance(other_object, Interface):
             return NotImplemented
 
-        return [self.node_object, self.remote_node_object, self.name, 
-            self.capacity, self.address] == [other_object.node_object, 
-                other_object.remote_node_object, other_object.name, 
-                other_object.capacity, other_object.address]
-        #return self.__dict__ == other_object.__dict__
+        return [self.node_object, self.remote_node_object, self.name,
+                self.capacity, self.address] == [other_object.node_object,
+                                                 other_object.remote_node_object, other_object.name,
+                                                 other_object.capacity, other_object.address]
+        # return self.__dict__ == other_object.__dict__
 
-    
     def __hash__(self):
         return hash(tuple(sorted(self.__dict__.items())))
 
-
     def __repr__(self):
         return '%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
-remote_node_object = %r, address = %r)'%(self.__class__.__name__,
+remote_node_object = %r, address = %r)' % (self.__class__.__name__,
                                            self.name,
-                                            self.cost,
-                                            self.capacity,
-                                            self.node_object,
-                                            self.remote_node_object,
-                                            self.address)
-
+                                           self.cost,
+                                           self.capacity,
+                                           self.node_object,
+                                           self.remote_node_object,
+                                           self.address)
 
     @property
     def reservable_bandwidth(self):
@@ -79,7 +76,6 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
     #     :return:
     #     """
 
-
     @property
     def failed(self):
         """
@@ -95,24 +91,23 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
         :param status: boolean; input by user
         :return: self._failed; boolean
         """
-        if not(isinstance(status, bool)):
+        if not (isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
         if status == False:
 
-            #Check to see if both nodes are failed = False
+            # Check to see if both nodes are failed = False
             if self.node_object.failed == False and \
-               self.remote_node_object.failed == False:
+                    self.remote_node_object.failed == False:
                 self._failed = False
 
             else:
                 self._failed = True
                 self.reserved_bandwidth = 0
-            
+
         else:
             self._failed = True
             self.reserved_bandwidth = 0
-
 
     def fail_interface(self, model):
         """Returns an updated model with the specified
@@ -125,7 +120,7 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
         # set the 2 interfaces to failed = True
         self.failed = True
         remote_interface.failed = True
-    
+
     def unfail_interface(self, model):
         """Returns an updated network_interfaces table with the specified
         interface and the remote interface in the 'failed': False state
@@ -136,7 +131,7 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
 
         # check to see if the local and remote node are failed
         if self.node_object.failed == False and \
-           self.remote_node_object.failed == False:
+                self.remote_node_object.failed == False:
 
             # set the 2 interfaces to failed = False
             self.failed = False
@@ -146,19 +141,18 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
                        "unfailed interface on failed node")
             raise ModelException(message)
 
-
     def get_remote_interface(self, model):
         """Searches the model and returns the remote interface"""
-        
+
         for interface in (interface for interface in model.interface_objects):
             if interface.node_object.name == self.remote_node_object.name and \
-               interface.address == self.address:
+                    interface.address == self.address:
                 remote_interface = interface
                 break
 
         # sanity check
         if remote_interface.remote_node_object.interfaces(model) == \
-           self.node_object.interfaces(model):
+                self.node_object.interfaces(model):
             return remote_interface
         else:
             message = 'Internal Validation Error', remote_interface, \
@@ -171,12 +165,12 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
     def get_circuit_object(self, model):
         """Returns the circuit object from the model that an 
         interface is associated with."""
-        
-        ckt = model.get_circuit_object_from_interface(self.name, 
-                                                        self.node_object.name)
-        
+
+        ckt = model.get_circuit_object_from_interface(self.name,
+                                                      self.node_object.name)
+
         return ckt
-        
+
     def demands(self, model):
         """Returns list of demands that egress the interface"""
         dmd_set = set()
@@ -184,7 +178,7 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
         for demand in demands:
 
             # Counter for total number of paths for each demand
-            #num_paths = 0
+            # num_paths = 0
 
             for dmd_path in demand.path:
                 # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
@@ -196,7 +190,7 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
                 # If path is not an LSP, then it's a list of Interface
                 # objects; look for self in dmd_path
                 elif self in dmd_path:
-                    #num_paths += 1
+                    # num_paths += 1
                     dmd_set.add(demand)
 
         dmd_list = list(dmd_set)
@@ -204,7 +198,6 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
         # TODO - add % of each demand that is on the interface next to the demand
 
         return dmd_list
-
 
     def lsps(self, model):
         """
@@ -222,13 +215,10 @@ remote_node_object = %r, address = %r)'%(self.__class__.__name__,
         lsp_list = list(lsp_set)
         return lsp_list
 
-
     @property
     def utilization(self):
         """Returns utilization = (self.traffic/self.capacity)*100% """
         if self.traffic == 'Down':
             return 'Int is down'
         else:
-            return self.traffic/self.capacity
-        
-    
+            return self.traffic / self.capacity

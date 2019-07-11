@@ -16,7 +16,7 @@ A	D	A-to-D	40	20
 D	A	D-to-A	40	20
 B	G	B-to-G	10	100
 G	D	G-to-D	10	100
-G	B	G-to-D	10	100
+G	B	G-to-B	10	100
 D	G	D-to-G	10	100
 
 NODES_TABLE

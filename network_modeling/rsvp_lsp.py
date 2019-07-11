@@ -34,9 +34,9 @@ class RSVP_LSP(object):
     setup_bandwidth: amount of bandwidth this LSP wants to signal for
 
     """
-    
-    def __init__(self, source_node_object, dest_node_object, 
-                                    lsp_name = 'none'):
+
+    def __init__(self, source_node_object, dest_node_object,
+                 lsp_name='none'):
 
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
@@ -53,10 +53,10 @@ class RSVP_LSP(object):
         return (self.source_node_object, self.dest_node_object, self.lsp_name)
 
     def __repr__(self):
-        return 'RSVP_LSP(source = %s, dest = %s, lsp_name = %r)'%\
-                                                (self.source_node_object.name,
-                                                self.dest_node_object.name,
-                                                self.lsp_name)
+        return 'RSVP_LSP(source = %s, dest = %s, lsp_name = %r)' % \
+               (self.source_node_object.name,
+                self.dest_node_object.name,
+                self.lsp_name)
 
     def _calculate_setup_bandwidth(self, model):
         """Find amount of bandwidth to reserve for LSP"""
@@ -75,8 +75,8 @@ class RSVP_LSP(object):
                                 lsp.source_node_object == self.source_node_object and
                                 lsp.dest_node_object == self.dest_node_object]
 
-        needed_bw = sum_demand_traffic/len(all_lsps_src_to_dest)
-        
+        needed_bw = sum_demand_traffic / len(all_lsps_src_to_dest)
+
         self.setup_bandwidth = needed_bw
 
         return self
@@ -89,9 +89,9 @@ class RSVP_LSP(object):
         """
         # Calculate the amount of bandwidth for each LSP
         routed_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if \
-                                (lsp.source_node_object == self.source_node_object and
-                                 lsp.dest_node_object == self.dest_node_object and
-                                 lsp.path != 'Unrouted')]
+                                   (lsp.source_node_object == self.source_node_object and
+                                    lsp.dest_node_object == self.dest_node_object and
+                                    lsp.path != 'Unrouted')]
         return routed_lsps_src_to_dest
 
     def _add_rsvp_lsp_path(self, model):
@@ -101,7 +101,7 @@ class RSVP_LSP(object):
         demands_for_lsp = []
         for demand in (demand for demand in model.demand_objects):
             if (demand.source_node_object == self.source_node_object and
-                        demand.dest_node_object == self.dest_node_object):
+                    demand.dest_node_object == self.dest_node_object):
                 demands_for_lsp.append(demand)
 
         # Find sum of all traffic for demands_for_lsp
@@ -109,15 +109,15 @@ class RSVP_LSP(object):
 
         # Find # of LSPs that have same source/dest as self
         num_matching_lsps = len([lsp for lsp in model.rsvp_lsp_objects if
-             lsp.source_node_object == self.source_node_object and
-             lsp.dest_node_object == self.dest_node_object])
+                                 lsp.source_node_object == self.source_node_object and
+                                 lsp.dest_node_object == self.dest_node_object])
 
         # Determine ECMP split of traffic across LSPs
-        self.setup_bandwidth = demands_for_lsp_traffic/num_matching_lsps
+        self.setup_bandwidth = demands_for_lsp_traffic / num_matching_lsps
 
         # Get candidate paths
-        candidate_paths = model.get_feasible_paths(self.source_node_object.name, 
-                                    self.dest_node_object.name)
+        candidate_paths = model.get_feasible_paths(self.source_node_object.name,
+                                                   self.dest_node_object.name)
 
         if candidate_paths == []:
             # If there are no possible paths, then LSP is Unrouted
@@ -160,13 +160,12 @@ class RSVP_LSP(object):
                 # 3. LSP is signaled on a still valid path
 
                 elif self.path != 'Unrouted' and \
-                     self.path['interfaces'] in candidate_paths:
-
+                        self.path['interfaces'] in candidate_paths:
 
                     # Find the LSP path's headroom; do not count the bandwidth
                     # reserved for self on that current path
                     self.path['baseline_path_reservable_bw'] = (min([interface.reservable_bandwidth
-                                                                    for interface in self.path['interfaces']])
+                                                                     for interface in self.path['interfaces']])
                                                                 + self.reserved_bandwidth)
 
                     # Current path has enough 'baseline_path_reservable_bw' to
@@ -239,7 +238,6 @@ class RSVP_LSP(object):
 
         return self
 
-        
     def _find_path_cost_and_headroom(self, candidate_paths):
         """
         Returns a list of dictionaries containing the path interfaces as
@@ -270,17 +268,16 @@ class RSVP_LSP(object):
 
         return candidate_path_info
 
-
     def demands_on_lsp(self, model):
         """Returns demands that LSP is transporting."""
         demand_list = []
         for demand in (demand for demand in model.demand_objects):
             if self in demand.path:
                 demand_list.append(demand)
-                
+
         return demand_list
 
-    def traffic_on_lsp(self, model): # TODO - do getter/setter for this? experimental
+    def traffic_on_lsp(self, model):  # TODO - do getter/setter for this? experimental
         """
         Returns the amount of traffic on the LSP
         :param model: Model object for LSP
@@ -291,7 +288,7 @@ class RSVP_LSP(object):
         parallel_routed_lsps = self.routed_parallel_lsp_group(model)
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
-        traffic_on_lsp = total_traffic/len(parallel_routed_lsps)
+        traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
 
         return traffic_on_lsp
 
@@ -299,19 +296,18 @@ class RSVP_LSP(object):
         """Returns the metric for the best path. This value will be the 
         shortest possible path from LSP's source to dest, regardless of 
         whether the LSP takes that shortest path or not."""
-        
-        return model.get_shortest_path(self.source_node_object.name,
-            self.dest_node_object.name)['cost']
 
-      
+        return model.get_shortest_path(self.source_node_object.name,
+                                       self.dest_node_object.name)['cost']
+
     def actual_metric(self, model):
         """Returns the metric sum of the interfaces that the LSP actually
         transits."""
         if self.path == 'Unrouted':
             metric = 'Unrouted'
-        else:            
+        else:
             metric = sum([interface.cost for interface in self.path['interfaces']])
-        
+
         return metric
 
     def route_lsp(self, model):
@@ -320,12 +316,11 @@ class RSVP_LSP(object):
         :param model:
         :return:
         """
-        
+
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)
-        
+
         # Route the LSP
         self._add_rsvp_lsp_path(model)
-        
-        return self
 
+        return self

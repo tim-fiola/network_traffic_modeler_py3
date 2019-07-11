@@ -38,6 +38,18 @@ model.update_simulation()
 print("Here are the LSPs are their effective and actual metrics")
 for lsp in model.rsvp_lsp_objects:
     print(lsp, lsp.effective_metric(model), lsp.actual_metric(model))
+
+# Check/validate metrics for LSPs
+if test1_lsp.effective_metric(model) != 40:
+    msg = "test1_lsp effective_metric should be 40"
+    raise Exception(msg)
+if test2_lsp.effective_metric(model) != 40:
+    msg = "test2_lsp effective_metric should be 40"
+    raise Exception(msg)
+if test1_lsp.actual_metric == test2_lsp.actual_metric:
+    msg = "test1_lsp and test2_lsp should have different actual_metrics"
+    raise Exception(msg)
+
 print()
 print("Here are the paths for the LSPs in the model")
 for lsp in model.rsvp_lsp_objects:
@@ -47,6 +59,15 @@ print()
 print("Here are the LSP reserved_bandwidth values:")
 for lsp in model.rsvp_lsp_objects:
     print(lsp, lsp.reserved_bandwidth)
+# Validate 75 reserved bandwidth on the A-D LSPs
+if test1_lsp.reserved_bandwidth != test2_lsp.reserved_bandwidth != 75:
+    msg = "test1_lsp and test2_lsp should have reserved_bandwidth of 75"
+    raise Exception(msg)
+# test3 lsp should be unrouted
+if model.get_rsvp_lsp('F', 'E', 'test3').path != 'Unrouted':
+    msg = "{} should be Unrouted".format(model.get_rsvp_lsp('F', 'E', 'test3'))
+    raise Exception(msg)
+
 print()
 print("Here are the LSPs and their demands:")
 for lsp in model.rsvp_lsp_objects:
@@ -69,6 +90,14 @@ for demand in model.demand_objects:
 print()
 print("Here is the interface utilization:")
 model.display_interfaces_traffic()
+# Validate utilization
+traffic_values = [interface.traffic for interface in model.interface_objects]
+expected_traffic = [40.0, 266.6666666666667, 0.0, 20.0, 133.33333333333334,
+                    400.0, 133.33333333333334, 0.0, 75.0, 85.0, 95.0, 0.0,
+                    400.0, 75.0, 10.0, 133.33333333333334, 133.33333333333334, 10.0]
+if traffic_values.sort() != expected_traffic.sort():
+    msg = "error in traffic engine"
+    raise Exception(msg)
 print()
 a_to_b = model.get_interface_object('A-to-B', 'A')
 a_to_c = model.get_interface_object('A-to-C', 'A')

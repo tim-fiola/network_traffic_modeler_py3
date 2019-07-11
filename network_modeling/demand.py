@@ -3,18 +3,19 @@ to a destination Node"""
 
 import pdb
 
+
 class Demand(object):
     """A representation of traffic load on the modeled network"""
 
-    def __init__(self, source_node_object, dest_node_object, traffic = 0, name = 'none'):
+    def __init__(self, source_node_object, dest_node_object, traffic=0, name='none'):
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.traffic = traffic
         self.name = name
         self.path = 'Unrouted'
-        
+
         # Validate traffic value
-        if not(isinstance(traffic, (int, float))) or traffic < 0:
+        if not (isinstance(traffic, (int, float))) or traffic < 0:
             raise ValueError('Must be a positive int or float')
 
     @property
@@ -23,11 +24,11 @@ class Demand(object):
         return (self.source_node_object, self.dest_node_object, self.name)
 
     def __repr__(self):
-        return 'Demand(source = %s, dest = %s, traffic = %s, name = %r)'%\
-                                                (self.source_node_object.name,
-                                                self.dest_node_object.name,
-                                                self.traffic,
-                                                self.name)
+        return 'Demand(source = %s, dest = %s, traffic = %s, name = %r)' % \
+               (self.source_node_object.name,
+                self.dest_node_object.name,
+                self.traffic,
+                self.name)
 
     def _add_demand_path(self, model):
         """
@@ -45,7 +46,7 @@ class Demand(object):
                     lsp.dest_node_object == self.dest_node_object and \
                     lsp.path != 'Unrouted'):
                 demand_path.append(lsp)
-            
+
         # If demand can't be carried by LSP, do shortest path routing
         if demand_path == []:
             demand_path = model.get_shortest_path(self.source_node_object.name,
@@ -56,6 +57,4 @@ class Demand(object):
 
         self.path = demand_path
 
-        return self 
-
-
+        return self
