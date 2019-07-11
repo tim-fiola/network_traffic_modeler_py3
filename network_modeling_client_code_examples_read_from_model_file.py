@@ -5,16 +5,12 @@ Requires sample_network_model_file.csv to be in same directory.
 
 """
 
-from network_modeling import Model
-from network_modeling import Circuit
-from network_modeling import Demand
-from network_modeling import graph_network_interactive
-from network_modeling import Interface
-from network_modeling import ModelException
-from network_modeling import Node
-
-from pprint import pprint
 import time
+from pprint import pprint
+
+from network_modeling import Model
+from network_modeling import Node
+from network_modeling import graph_network_interactive
 
 t1 = time.time()
 
@@ -30,8 +26,8 @@ dest = 'B'
 # Find all paths between source and destination nodes
 print("Find the number of loop free, unique paths from Node A to Node B:")
 good_paths = model1.get_feasible_paths(source, dest)
-print("There are %i unique paths between %s and %s"%(len(good_paths),
-                                                     source, dest))
+print("There are %i unique paths between %s and %s" % (len(good_paths),
+                                                       source, dest))
 print()
 
 # find the best path from node A to B
@@ -55,7 +51,7 @@ print()
 
 # Fail interface on node A, interface A-to-B
 print('Failing interface A-to-B on node A')
-int_to_fail = model1.get_interface_object('A-to-B','A')
+int_to_fail = model1.get_interface_object('A-to-B', 'A')
 int_to_fail.fail_interface(model1)
 
 # Calculate new traffic on interfaces and display
@@ -83,7 +79,6 @@ print("Add a circuit between Node('A') and Node('Z')")
 model1.add_circuit(Node('A'), Node('Z'), 'a-to-z', 'z-to-a')
 print()
 
-
 # Add traffic to the model
 shortest_paths_B_D = model1.get_shortest_path('B', 'D')
 print('The shortest paths between nodes B and D are:')
@@ -101,7 +96,6 @@ print('Each path has 50 additional traffic: B-to-D and (B-to-E and E-to-D)')
 model1.display_interfaces_traffic()
 print()
 print()
-
 
 # Return an interface object
 print("Get an interface object via interface name and node name:")
@@ -144,14 +138,13 @@ model1.unfail_node('D')
 print()
 model1.update_simulation()
 
-
 print("Here is the interface traffic after Node('D') is restored:")
 print(model1.display_interfaces_traffic())
 print()
 
 # Unfail the B-to-A interface and display traffic
 print('Unfail the interface from Node B to Node A')
-model1.unfail_interface('B-to-A', 'B', True )
+model1.unfail_interface('B-to-A', 'B', True)
 model1.update_simulation()
 model1.display_interfaces_traffic()
 print()
@@ -159,7 +152,7 @@ print()
 # test get_circuit call from Interface object
 int1 = model1.get_interface_object('A-to-B', 'A')
 ckt1 = int1.get_circuit_object(model1)
-print("The circuit associated with %s is %s"%(int1, ckt1))
+print("The circuit associated with %s is %s" % (int1, ckt1))
 print()
 
 # test a demand path before and after an interface it traverses fails;
@@ -176,10 +169,9 @@ print("dmd_B_D path after failing interface B-to-D is")
 pprint(dmd_B_D.path)
 print()
 
-
 # Fail a node and interface and display a utilization graph
 print("Failing node E and interface B-to-D on node B and displaying "
-       "a network graph:")
+      "a network graph:")
 model1.fail_node('E')
 model1.fail_interface('B-to-D', 'B')
 model1.update_simulation()
@@ -195,18 +187,10 @@ for hop in dmd_A_D.path:
     pprint(hop)
 print()
 
-
-
 t2 = time.time()
-tot_time = t2-t1
+tot_time = t2 - t1
 print('tot_time = ', tot_time)
 print()
 
 print("Making interactive network graph in browser.")
 graph_network_interactive.make_interactive_network_graph(model1)
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 """A class to represent a router in the Model"""
 
-from network_modeling import ModelException
+from .model_exception import ModelException
 
 
 class Node(object):
