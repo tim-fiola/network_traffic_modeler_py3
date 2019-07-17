@@ -420,7 +420,7 @@ def make_utilization_graph_curves(model, graph_file_name):
         # <do this>
 
     # Draw node labels and nodes
-    draw_node_labels(G)
+    _draw_node_labels(G)
     non_failed_node_names = [node.name for node in model.node_objects \
                              if node.failed == False]
     nx.draw_networkx_nodes(G, pos=nx.get_node_attributes(G, 'pos'),

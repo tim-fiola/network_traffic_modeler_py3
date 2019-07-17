@@ -127,13 +127,12 @@ import collections
 
 from .circuit import Circuit
 from .demand import Demand
-from .graph_network import *
 from .interface import Interface
 from .model import Model
-from .model_exception import ModelException
-from .modeling_utilities import *
+from .exceptions import ModelException
+from .utilities import *
 from .node import Node
-from .rsvp_lsp import RSVP_LSP
+from .rsvp import RSVP_LSP
 
 Version = collections.namedtuple('Version', ['major', 'minor'])
 

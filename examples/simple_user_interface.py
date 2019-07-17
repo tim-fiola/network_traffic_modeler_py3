@@ -5,8 +5,8 @@ demands, interfaces, and nodes."""
 from pyNTM import Model
 from pyNTM import ModelException
 
-from graph_network import graph_network
-from graph_network import graph_network_interactive
+from .graph_network import graph_network
+from .graph_network import graph_network_interactive
 
 
 from tkinter import ttk as ttk

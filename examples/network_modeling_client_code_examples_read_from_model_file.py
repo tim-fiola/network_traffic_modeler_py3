@@ -8,7 +8,7 @@ Requires sample_network_model_file.csv to be in same directory.
 from pyNTM import Model
 from pyNTM import Node
 
-from graph_network import graph_network_interactive
+from .graph_network import graph_network_interactive
 
 from pprint import pprint
 import time
