@@ -3,6 +3,7 @@
 from .model_exception import ModelException
 
 
+
 class Node(object):
     """A class to represent a router in the model"""
 
