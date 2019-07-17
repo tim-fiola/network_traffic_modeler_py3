@@ -4,12 +4,10 @@ demands, interfaces, and nodes."""
 
 from pyNTM import Model
 from pyNTM import ModelException
-from pyNTM import Interface
-from pyNTM import Demand
-from pyNTM import Node
 
 from graph_network import graph_network
 from graph_network import graph_network_interactive
+
 
 from tkinter import ttk as ttk
 from tkinter import *

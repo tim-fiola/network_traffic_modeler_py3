@@ -21,7 +21,7 @@ if sys.version_info[0] == 2:
     import webbrowser
 
     handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-    input = raw_input
+#    input = raw_input
     server = "python -m SimpleHTTPServer 8000"
 
 

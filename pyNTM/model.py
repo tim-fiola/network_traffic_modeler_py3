@@ -9,10 +9,10 @@ import networkx as nx
 from .circuit import Circuit
 from .demand import Demand
 from .interface import Interface
-from .model_exception import ModelException
-from .modeling_utilities import find_end_index
+from .exceptions import ModelException
+from .utilities import find_end_index
 from .node import Node
-from .rsvp_lsp import RSVP_LSP
+from .rsvp import RSVP_LSP
 
 
 class Model(object):

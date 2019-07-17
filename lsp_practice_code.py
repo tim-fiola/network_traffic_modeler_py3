@@ -1,6 +1,6 @@
 from pprint import pprint
 
-from network_modeling import Model
+from pyNTM import Model
 
 # Test cases:
 # 1. LSP routes on path with available bandwidth

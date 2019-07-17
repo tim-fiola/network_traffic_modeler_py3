@@ -2,7 +2,7 @@
 
 import random
 
-from .model_exception import ModelException
+from .exceptions import ModelException
 
 # TODO - add call to return traffic on LSP
 
