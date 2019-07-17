@@ -264,8 +264,6 @@ class RSVP_LSP(object):
                          'baseline_path_reservable_bw': baseline_path_reservable_bw}
 
             candidate_path_info.append(path_info)
-            if self.lsp_name == 'test2':
-                pdb.set_trace()
 
         return candidate_path_info
 

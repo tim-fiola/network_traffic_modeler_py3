@@ -791,7 +791,7 @@ class Model(object):
 
     def is_node_an_orphan(self, node_object):
         """Determines if a node is in orphan_nodes"""
-        if node_object in self.orphan_nodes:
+        if node_object in self._orphan_nodes:
             return True
         else:
             return False

@@ -1,6 +1,6 @@
 """A class to represent a router in the Model"""
 
-from .model_exception import ModelException
+from .exceptions import ModelException
 
 
 
