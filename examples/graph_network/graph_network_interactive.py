@@ -1,25 +1,13 @@
+#!/usr/bin/python3
 """Facilitates network Model visualization"""
 
 
-### NOTE - for interactive visualization, must update mpld3 manually
+# NOTE - for interactive visualization, must update mpld3 manually
 # to overcome this mpld3 bug: https://github.com/mpld3/mpld3/issues/434
 #
 # run:
 # python3 -m pip install --user "git+https://github.com/javadba/mpld3@display_fix"
 
-
-#######################################
-## These 2 lines are needed to avoid the user interface crashing due to some
-## problem with Tkinter interaction with matplotlib when importing Model
-## into the ui code
-import matplotlib as mpl
-mpl.use("TkAgg")
-########################################
-
-import json
-
-import matplotlib.lines as mlines
-from matplotlib.patches import FancyArrowPatch, Circle
 import matplotlib.pyplot as plt
 import mpld3
 from mpld3 import plugins, utils
@@ -27,10 +15,15 @@ import networkx as nx
 from networkx.readwrite import json_graph
 import threading
 import time
-import pdb
 
-from .model import Model
 
+#######################################
+# These 2 lines are needed to avoid the user interface crashing due to some
+# problem with Tkinter interaction with matplotlib when importing Model
+# into the ui code
+import matplotlib as mpl
+mpl.use("TkAgg")
+########################################
 
 
 class LinkedDragPlugin(plugins.PluginBase):
@@ -99,12 +92,13 @@ class LinkedDragPlugin(plugins.PluginBase):
 
 
 # Util ranges mapped to colors
-util_ranges = [ ('darkviolet', 100),
-                  ('darkred', 90),
-                  ('orangered', 75),
-                  ('yellow', 50),
-                  ('green', 25),
-                  ('royalblue', 0)]
+util_ranges = [('darkviolet', 100),
+               ('darkred', 90),
+               ('orangered', 75),
+               ('yellow', 50),
+               ('green', 25),
+               ('royalblue', 0)]
+
 
 def _set_graph_node_name_and_position(model, G):
     """Sets lat/lon and node names for each node in nx Graph based on
@@ -118,16 +112,17 @@ def _set_graph_node_name_and_position(model, G):
         nx.set_node_attributes(G, {node_name: node.failed}, 'failed')
     return G
 
+
 def _prep_network_model_for_graph(model):
     """Prepares Model data for interactive graphing.  Returns json data
     from networkx DiGraph."""
 
     # Define a networkx directed graph
     G = nx.DiGraph()
- 
+
     # Set each graph node's name and position values
-    G = _set_graph_node_name_and_position(model, G)   
- 
+    G = _set_graph_node_name_and_position(model, G)
+
     ######################
     # Get utilization for each interface and match it up with a color
     ckt_generator = (ckt for ckt in model.get_circuit_objects())
@@ -136,30 +131,30 @@ def _prep_network_model_for_graph(model):
         int1, int2 = ckt.get_circuit_interfaces(model)
 
         edge_1_name = (int1.node_object.name,
-                    int1.remote_node_object.name)
+                       int1.remote_node_object.name)
         edge_2_name = (int2.node_object.name,
-                    int2.remote_node_object.name)
-                    
+                       int2.remote_node_object.name)
+
         int_colors = {}
         int_util = {}
         # Assign colors to each interface in the ckt based on utilization
-        if int1.failed == True:
+        if int1.failed is True:
             int_colors[edge_1_name] = 'grey'
             int_colors[edge_2_name] = 'grey'
         else:
             for color, util in util_ranges:
-                if int1.utilization*100 >= util:
+                if int1.utilization * 100 >= util:
                     int_colors[edge_1_name] = color
-                    int_util[edge_1_name] = int1.utilization*100
+                    int_util[edge_1_name] = int1.utilization * 100
                     break
             for color1, util1 in util_ranges:
-                if int2.utilization*100 >= util1:
+                if int2.utilization * 100 >= util1:
                     int_colors[edge_2_name] = color1
-                    int_util[edge_2_name] = int2.utilization*100
+                    int_util[edge_2_name] = int2.utilization * 100
                     break
 
         # Get all the existing node positions
-        #### Find midpoint between edge nodes ####
+        # Find midpoint between edge nodes
         # Get 1st node coordinates
         node_A_pos = G.node[edge_1_name[0]]['pos']
         # Get 2nd node coordinates
@@ -170,76 +165,77 @@ def _prep_network_model_for_graph(model):
         y_offset = node_B_pos[1] - node_A_pos[1]
 
         # Find the coordinates of midpoint
-        midpoint_offset_from_node_B = ((x_offset/2.0), (y_offset/2.0))
+        midpoint_offset_from_node_B = ((x_offset / 2.0), (y_offset / 2.0))
         midpoint_coordinates = (node_B_pos[0] - midpoint_offset_from_node_B[0],
                                 node_B_pos[1] - midpoint_offset_from_node_B[1])
 
         # Add new midpoint and associated edges to Graph G
         node_A = edge_1_name[0]
         node_B = edge_1_name[1]
-        midpoint_node = 'midpoint '+edge_1_name[0]+'-'+edge_1_name[1]
+        midpoint_node = 'midpoint ' + edge_1_name[0] + '-' + edge_1_name[1]
         midpoint_node_failed = model.get_node_object(node_A).failed
         G.add_node(midpoint_node)
         nx.set_node_attributes(G, {midpoint_node: midpoint_coordinates}, 'pos')
         nx.set_node_attributes(G, {midpoint_node: midpoint_node}, 'name')
         nx.set_node_attributes(G, {midpoint_node: midpoint_node_failed}, 'failed')
 
-
         new_midpoint_edges = [(midpoint_node, node_A), (midpoint_node, node_B)]
-        
-         # Find the color and utilization for each edge and add edge to G      
+
+        # Find the color and utilization for each edge and add edge to G
         for edge in new_midpoint_edges:
             # Find the utilization color
             points = edge[0].split()[1].split('-')
-            interface_source = edge[1] # formerly source point
-            interface_dest = [point for point in points if point != interface_source][0] # formerly source
-            
+            interface_source = edge[1]  # formerly source point
+            interface_dest = [point for point in points if point != interface_source][0]  # formerly source
+
             int_color = int_colors[interface_source, interface_dest]
-            
+
             # Find the utilization
-            if int_color != 'grey': # int is not failed, get utilization
+            if int_color != 'grey':  # int is not failed, get utilization
                 int_utilization = int(int_util[interface_source, interface_dest])
-            else: # int is failed
+            else:  # int is failed
                 int_utilization = 'failed - 0'
-                
-            G.add_edge(edge[0], edge[1], color=int_color, 
-                                utilization = (str(int_utilization)+'%'))
-       
-        ##################    
+
+            G.add_edge(edge[0], edge[1], color=int_color,
+                       utilization=(str(int_utilization) + '%'))
+
+        ##################
 
     # Convert graph to json
     data = json_graph.node_link_data(G)
-    
+
     return data
+
 
 def _find_link_source_node(link):
     """Given a link, finds the actual source node from the link['source'] and
     link['target'].  Returns the name of the source node."""
 
     parts = link['source'].split()[1].split('-')
-    
+
     if link['target'] == parts[0]:
-        link_source = parts[1] 
+        link_source = parts[1]
     else:
         link_source = parts[0]
 
     return link_source
+
 
 def _create_legend_line_collections(ax):
     """Create the line collections and labels for the interactive legend.
     Returns a list of lists of line object handles and a list of line ."""
 
     # Create interactive legend
-    handles, labels = ax.get_legend_handles_labels() # return lines and labels
+    handles, labels = ax.get_legend_handles_labels()  # return lines and labels
 
-    # Lists to hold the lines of each color                    
+    # Lists to hold the lines of each color
     grey_lines = []
     royalblue_lines = []
     green_lines = []
     yellow_lines = []
     orangered_lines = []
     darkred_lines = []
-    darkviolet_lines = [] 
+    darkviolet_lines = []
 
     # Use the label position in labels to assign the line from handles
     # to the right list
@@ -247,9 +243,9 @@ def _create_legend_line_collections(ax):
         if labels[x] == 'grey':
             grey_lines.append(handles[x])
         elif labels[x] == 'royalblue':
-            royalblue_lines.append(handles[x])            
+            royalblue_lines.append(handles[x])
         elif labels[x] == 'green':
-            green_lines.append(handles[x])                       
+            green_lines.append(handles[x])
         elif labels[x] == 'yellow':
             yellow_lines.append(handles[x])
         elif labels[x] == 'orangered':
@@ -258,14 +254,13 @@ def _create_legend_line_collections(ax):
             darkred_lines.append(handles[x])
         elif labels[x] == 'darkviolet':
             darkviolet_lines.append(handles[x])
-            
 
-    line_group_labels = ['failed', '0-24% utilization', '25-49% utilization', 
-                        '50-74% utilization', '75-89% utilization', 
-                        '90-99% utilization', '>100% utilization']
+    line_group_labels = ['failed', '0-24% utilization', '25-49% utilization',
+                         '50-74% utilization', '75-89% utilization',
+                         '90-99% utilization', '>100% utilization']
 
     line_collections = [grey_lines, royalblue_lines, green_lines, yellow_lines,
-                        orangered_lines, darkred_lines, darkviolet_lines]  
+                        orangered_lines, darkred_lines, darkviolet_lines]
 
     # Make sure all line lists have at least one entry, or else
     # interactive legend breaks.  If a line list has no members,
@@ -275,21 +270,22 @@ def _create_legend_line_collections(ax):
                       'orangered', 'darkred', 'darkviolet']
         if len(line_collections[x]) == 0:
             # Create a dummy line
-            line = ax.plot([0,0.01], [0,0.01], color=color_list[x], 
-                        linewidth=1.0, label='dummy')
+            line = ax.plot([0, 0.01], [0, 0.01], color=color_list[x],
+                           linewidth=1.0, label='dummy')
             line_collections[x].append(line[0])
 
     return line_collections, line_group_labels
 
 
 def _create_interactive_network_graph(json_data):
-    """Creates a network graph with draggable nodes.  Interface
-    colors represent utilization.  Tooltips show node name 
+    """
+    Creates a network graph with draggable nodes Interface
+    colors represent utilization. Tooltips show node name
     and interface info.
-    
-    This graph cannot show multiple parallel circuits 
-    between the same nodes. 
-    
+
+    This graph cannot show multiple parallel circuits
+    between the same nodes.
+
     lightgray = circuit/node is down
 
     Interface utilization coloring (colors from named_colors.py):
@@ -298,8 +294,7 @@ def _create_interactive_network_graph(json_data):
     50-75%  = yellow
     75-90%  = orangered
     90-100% = red
-    > 100%  = darkviolet    
-    
+    > 100%  = darkviolet
     """
     # Prepare the plot
     fig, ax = plt.subplots(figsize=(15, 15))
@@ -308,32 +303,30 @@ def _create_interactive_network_graph(json_data):
 
     # Plot the lines on ax
     links_iterator = (link for link in json_data['links'])
-    for link in links_iterator: 
+    for link in links_iterator:
 
-        # Edge x,y coordinates 
+        # Edge x,y coordinates
         x_coordinates = []
         y_coordinates = []
 
-        # Get the utilization
-        util = None
-        if 'failed' in link['utilization']:
-            util_split = link['utilization'].split('%')
-            util = util_split[0].split()[-1]
-        else:
-            util = link['utilization'].split('%')[0]
+        # # Get the utilization
+        # util = None
+        # if 'failed' in link['utilization']:
+        #     util_split = link['utilization'].split('%')
+        #     util = util_split[0].split()[-1]
+        # else:
+        #     util = link['utilization'].split('%')[0]
 
-        util_int = int(util)
-
-        #### Node plot stuff ####
+        # Node plot stuff
 
         node_tool_tip_labels = []
-        
+
         # Get the source node
         src = link['source']
 
         # Get the target node
         target = link['target']
-        
+
         # Get source node position and label
         for node in json_data['nodes']:
             if node['name'] == src:
@@ -345,10 +338,10 @@ def _create_interactive_network_graph(json_data):
         for node in json_data['nodes']:
             if node['name'] == target:
                 target_y, target_x = node['pos']
-                if node['failed'] == False:
+                if node['failed'] is False:
                     node_tool_tip_labels.append(node['name'])
                 else:
-                    node_tool_tip_labels.append((node['name']+' (failed)'))
+                    node_tool_tip_labels.append((node['name'] + ' (failed)'))
                 break
 
         # Get the coordinates of the nodes for the line
@@ -372,59 +365,57 @@ def _create_interactive_network_graph(json_data):
         y_coordinates = [src_y, dest_y]
 
         # Plot only the relevant nodes to the line
-        nodes_on_plot = ax.plot(x_coordinates, y_coordinates, 'o', 
-                                color='r', alpha=0.7, markersize=15, 
+        nodes_on_plot = ax.plot(x_coordinates, y_coordinates, 'o',
+                                color='r', alpha=0.7, markersize=15,
                                 markeredgewidth=1)
 
-        # Plot the line     
-        line = ax.plot(x_coordinates, y_coordinates, color=link['color'], 
-                        linewidth=5.0, label=link['color'])
+        # Plot the line
+        line = ax.plot(x_coordinates, y_coordinates, color=link['color'],
+                       linewidth=5.0, label=link['color'])
 
         # Need to normalize some stuff for the line labels for the line tooltips
         link_source = _find_link_source_node(link)
-        
-        line_labels = ['from-'+link['target']+'-to-'+link_source+'; \
-                            utilization = '+link['utilization']]
-        
+
+        line_labels = ['from-' + link['target'] + '-to-' + link_source + '; \
+                            utilization = ' + link['utilization']]
+
         # Add the tooltip labels to lines.
         # Notice we use the *LineLabelTooltip
         mpld3.plugins.connect(fig, mpld3.plugins.LineLabelTooltip(line[0],
-                                                label = line_labels))
-
+                                                                  label=line_labels))
 
         # Drag plugin for nodes
         mpld3.plugins.connect(fig, LinkedDragPlugin(nodes_on_plot[0], line[0]))
-        
+
         # Add the tooltip node labels
         # Notice we use the *PointLabelTooltip
         mpld3.plugins.connect(fig, mpld3.plugins.PointLabelTooltip(nodes_on_plot[0],
-                                labels = node_tool_tip_labels ))
-
+                                                                   labels=node_tool_tip_labels))
 
     # Plot the midpoint node labels
     for node in (node for node in json_data['nodes'] if 'midpoint' in node['id']):
         x, y = node['pos'][1], node['pos'][0]
         text = node['name']
-        ax.text(x, y, text, fontsize=10, color='k', fontname='monospace')  
+        ax.text(x, y, text, fontsize=10, color='k', fontname='monospace')
 
     # Plot the router node labels
     for node in (node for node in json_data['nodes'] if 'midpoint' not in node['id']):
 
         x, y = node['pos'][1], node['pos'][0]
-        if node['failed'] == False:
+        if node['failed'] is False:
             text = node['name']
         else:
-            text = node['name']+' (failed)'
+            text = node['name'] + ' (failed)'
         ax.text(x, y, text, fontsize=15, color='k', fontname='monospace')
 
-    ### Create interactive legend
+    # Create interactive legend
     line_collections, line_group_labels = _create_legend_line_collections(ax)
 
     interactive_legend = plugins.InteractiveLegendPlugin(line_collections,
                                                          line_group_labels,
                                                          alpha_unsel=0.2,
-                                                         alpha_over=1.8, 
-                                                         start_visible=True)    
+                                                         alpha_over=1.8,
+                                                         start_visible=True)
     fig.subplots_adjust(right=0.85)
     plugins.connect(fig, interactive_legend)
 
@@ -433,7 +424,8 @@ def _create_interactive_network_graph(json_data):
 
     plot_thread = threading.Thread(target=_run_plot)
     plot_thread.start()
-    
+
+
 def _run_plot():
     try:
         mpld3.show()
@@ -449,9 +441,9 @@ def _run_plot():
         print('python3 -m pip install --user "git+https://github.com/javadba/mpld3@display_fix"')
         print()
 
+
 def make_interactive_network_graph(model):
     """Takes a Model object as argument and returns an interactive
     network plot."""
     json_data = _prep_network_model_for_graph(model)
     _create_interactive_network_graph(json_data)
-

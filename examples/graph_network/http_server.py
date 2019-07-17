@@ -2,18 +2,20 @@
 # runs webserver and loads url with webbrowswer module
 import sys
 
+
 def load_url(path):
     PORT = 8000
-    httpd = StoppableHTTPServer(("127.0.0.1",PORT), handler)
+    httpd = StoppableHTTPServer(("127.0.0.1", PORT), handler)
     thread.start_new_thread(httpd.serve, ())
-    webbrowser.open_new('http://localhost:%s/%s'%(PORT,path))
+    webbrowser.open_new('http://localhost:%s/%s' % (PORT, path))
     input("Press <RETURN> to stop server\n")
     httpd.stop()
-    print("To restart server run: \n%s"%server)
+    print("To restart server run: \n%s" % server)
 
 
 if sys.version_info[0] == 2:
-    import SimpleHTTPServer, BaseHTTPServer
+    import SimpleHTTPServer
+    import BaseHTTPServer
     import socket
     import thread
     import webbrowser
@@ -46,7 +48,8 @@ if sys.version_info[0] == 2:
 
 
 else:
-    import http.server, http.server
+    import http.server
+    import http.server
     import socket
     import _thread as thread
     import webbrowser

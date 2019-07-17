@@ -1,5 +1,4 @@
-"""A Circuit object in a Model.  Circuit is comprised of two Interface objects"""
-
+"""A Circuit object in a Model. Circuit is comprised of two Interface objects"""
 
 
 class Circuit(object):
@@ -11,12 +10,14 @@ class Circuit(object):
 
     def __repr__(self):
         return 'Circuit(%r, %r)'\
-               %(self.interface_a,
-                self.interface_b,)
+               % (self.interface_a,
+                  self.interface_b,)
 
     def _key(self):
-        return (self.interface_a._key(), self.interface_b._key())
+        return (self.interface_a._key, self.interface_b._key)
 
     def get_circuit_interfaces(self, model):
-        """Return the circuit's interface objects"""
+        """
+        Return the circuit's interface objects
+        """
         return (self.interface_a, self.interface_b)

@@ -1,14 +1,11 @@
 """
-Client code to demonstrate how to use the network_modeling classes
+Client code to demonstrate how to use the pyNTM network_modeling classes
 """
 
-from network_modeling import Model
-from network_modeling import Circuit
-from network_modeling import Demand
-from network_modeling import graph_network_interactive
-from network_modeling import Interface
-from network_modeling import ModelException
-from network_modeling import Node
+from pyNTM import Model
+from pyNTM import Node
+
+from graph_network import graph_network_interactive
 
 from pprint import pprint
 import time
@@ -16,102 +13,102 @@ import time
 t1 = time.time()
 
 network_interfaces = [
-    {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
+    {'name': 'A-to-B', 'cost': 4, 'capacity': 100, 'node': 'A',
      'remote_node': 'B', 'address': 1, 'failed': False},
-    {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
+    {'name': 'A-to-C', 'cost': 1, 'capacity': 200, 'node': 'A',
      'remote_node': 'C', 'address': 3, 'failed': False},
-    {'name':'A-to-D', 'cost':8,'capacity':150, 'node':'A',
+    {'name': 'A-to-D', 'cost': 8, 'capacity': 150, 'node': 'A',
      'remote_node': 'D', 'address': 4, 'failed': False},
-    {'name':'B-to-A', 'cost':4,'capacity':100, 'node':'B',
+    {'name': 'B-to-A', 'cost': 4, 'capacity': 100, 'node': 'B',
      'remote_node': 'A', 'address': 1, 'failed': False},
-    {'name':'B-to-D', 'cost':7,'capacity':200, 'node':'B',
+    {'name': 'B-to-D', 'cost': 7, 'capacity': 200, 'node': 'B',
      'remote_node': 'D', 'address': 5, 'failed': False},
-    {'name':'B-to-E', 'cost':3,'capacity':200, 'node':'B',
+    {'name': 'B-to-E', 'cost': 3, 'capacity': 200, 'node': 'B',
      'remote_node': 'E', 'address': 8, 'failed': False},
-    {'name':'D-to-B', 'cost':7,'capacity':200, 'node':'D',
+    {'name': 'D-to-B', 'cost': 7, 'capacity': 200, 'node': 'D',
      'remote_node': 'B', 'address': 5, 'failed': False},
-    {'name':'D-to-C', 'cost':6,'capacity':150, 'node':'D',
+    {'name': 'D-to-C', 'cost': 6, 'capacity': 150, 'node': 'D',
      'remote_node': 'C', 'address': 6, 'failed': False},
-    {'name':'D-to-A', 'cost':8,'capacity':150, 'node':'D',
+    {'name': 'D-to-A', 'cost': 8, 'capacity': 150, 'node': 'D',
      'remote_node': 'A', 'address': 4, 'failed': False},
-    {'name':'D-to-E', 'cost':4,'capacity':100, 'node':'D',
+    {'name': 'D-to-E', 'cost': 4, 'capacity': 100, 'node': 'D',
      'remote_node': 'E', 'address': 9, 'failed': False},
-    {'name':'D-to-F', 'cost':3,'capacity':100, 'node':'D',
+    {'name': 'D-to-F', 'cost': 3, 'capacity': 100, 'node': 'D',
      'remote_node': 'F', 'address': 10, 'failed': False},
-    {'name':'C-to-A', 'cost':1,'capacity':200, 'node':'C',
+    {'name': 'C-to-A', 'cost': 1, 'capacity': 200, 'node': 'C',
      'remote_node': 'A', 'address': 3, 'failed': False},
-    {'name':'C-to-D', 'cost':6,'capacity':150, 'node':'C',
+    {'name': 'C-to-D', 'cost': 6, 'capacity': 150, 'node': 'C',
      'remote_node': 'D', 'address': 6, 'failed': False},
-    {'name':'E-to-B', 'cost':3,'capacity':200, 'node':'E',
+    {'name': 'E-to-B', 'cost': 3, 'capacity': 200, 'node': 'E',
      'remote_node': 'B', 'address': 8, 'failed': False},
-    {'name':'E-to-D', 'cost':4,'capacity':100, 'node':'E',
+    {'name': 'E-to-D', 'cost': 4, 'capacity': 100, 'node': 'E',
      'remote_node': 'D', 'address': 9, 'failed': False},
-    {'name':'F-to-D', 'cost':3,'capacity':100, 'node':'F',
+    {'name': 'F-to-D', 'cost': 3, 'capacity': 100, 'node': 'F',
      'remote_node': 'D', 'address': 10, 'failed': False},
 ]
 
 
 network_interfaces_w_errors = [
-    {'name':'A-to-B', 'cost':4.1,'capacity':100, 'node':'A',
-     'remote_node': 'B', 'address': 1, 'failed': 'moo'}, # bad 'failed', non int metric
-    {'name':'A-to-Bv2', 'cost':50,'capacity':150, 'node':'A',
+    {'name': 'A-to-B', 'cost': 4.1, 'capacity': 100, 'node': 'A',
+     'remote_node': 'B', 'address': 1, 'failed': 'moo'},  # bad 'failed', non int metric
+    {'name': 'A-to-Bv2', 'cost': 50, 'capacity': 150, 'node': 'A',
      'remote_node': 'B', 'address': 2, 'failed': False},
-    {'name':'A-to-C', 'cost':1,'capacity':'100', 'node':'A', # invalid capacity
+    {'name': 'A-to-C', 'cost': 1, 'capacity': '100', 'node': 'A',  # invalid capacity
      'remote_node': 'C', 'address': 3, 'failed': False},
-    {'name':'A-to-D', 'cost':8,'capacity':150, 'node':'A',
+    {'name': 'A-to-D', 'cost': 8, 'capacity': 150, 'node': 'A',
      'remote_node': 'D', 'address': 4, 'failed': False},
-    {'name':'B-to-A', 'cost':4,'capacity':100, 'node':'B',
+    {'name': 'B-to-A', 'cost': 4, 'capacity': 100, 'node': 'B',
      'remote_node': 'A', 'address': 1, 'failed': False},
-    {'name':'B-to-Av2', 'cost':40,'capacity':150, 'node':'B',
-     'remote_node': 'A', 'address': 2, 'failed': False},    
-    {'name':'B-to-D', 'cost':7,'capacity':200, 'node':'B',
+    {'name': 'B-to-Av2', 'cost': 40, 'capacity': 150, 'node': 'B',
+     'remote_node': 'A', 'address': 2, 'failed': False},
+    {'name': 'B-to-D', 'cost': 7, 'capacity': 200, 'node': 'B',
      'remote_node': 'D', 'address': 5, 'failed': False},
-    {'name':'B-to-E', 'cost':3,'capacity':200, 'node':'B',
+    {'name': 'B-to-E', 'cost': 3, 'capacity': 200, 'node': 'B',
      'remote_node': 'E', 'address': 8, 'failed': False},
-    {'name':'D-to-B', 'cost':7,'capacity':200, 'node':'D',
+    {'name': 'D-to-B', 'cost': 7, 'capacity': 200, 'node': 'D',
      'remote_node': 'B', 'address': 5, 'failed': False},
-    {'name':'D-to-C', 'cost':6,'capacity':150, 'node':'D',
+    {'name': 'D-to-C', 'cost': 6, 'capacity': 150, 'node': 'D',
      'remote_node': 'C', 'address': 6, 'failed': False},
-    {'name':'D-to-C_v2', 'cost':6,'capacity':200, 'node':'D',
+    {'name': 'D-to-C_v2', 'cost': 6, 'capacity': 200, 'node': 'D',
      'remote_node': 'C', 'address': 11, 'failed': False},
-    {'name':'D-to-A', 'cost':8,'capacity':150, 'node':'D',
+    {'name': 'D-to-A', 'cost': 8, 'capacity': 150, 'node': 'D',
      'remote_node': 'A', 'address': 4, 'failed': False},
-    {'name':'D-to-E', 'cost':4,'capacity':100, 'node':'D',
+    {'name': 'D-to-E', 'cost': 4, 'capacity': 100, 'node': 'D',
      'remote_node': 'E', 'address': 9, 'failed': False},
-    {'name':'D-to-F', 'cost':3,'capacity':100, 'node':'D',
+    {'name': 'D-to-F', 'cost': 3, 'capacity': 100, 'node': 'D',
      'remote_node': 'F', 'address': 10, 'failed': False},
-    {'name':'C-to-A', 'cost':1,'capacity':200, 'node':'C',
+    {'name': 'C-to-A', 'cost': 1, 'capacity': 200, 'node': 'C',
      'remote_node': 'A', 'address': 3, 'failed': False},
-    {'name':'C-to-D', 'cost':6,'capacity':150, 'node':'C',
+    {'name': 'C-to-D', 'cost': 6, 'capacity': 150, 'node': 'C',
      'remote_node': 'D', 'address': 6, 'failed': False},
-    {'name':'C-to-D_v2', 'cost':6,'capacity':200, 'node':'C',
+    {'name': 'C-to-D_v2', 'cost': 6, 'capacity': 200, 'node': 'C',
      'remote_node': 'D', 'address': 11, 'failed': False},
-    {'name':'E-to-B', 'cost':3,'capacity':200, 'node':'E',
+    {'name': 'E-to-B', 'cost': 3, 'capacity': 200, 'node': 'E',
      'remote_node': 'B', 'address': 8, 'failed': False},
-    {'name':'E-to-D', 'cost':4,'capacity':100, 'node':'E',
+    {'name': 'E-to-D', 'cost': 4, 'capacity': 100, 'node': 'E',
      'remote_node': 'D', 'address': 9, 'failed': False},
-    {'name':'F-to-D', 'cost':3,'capacity':100, 'node':'F', # non unique int
+    {'name': 'F-to-D', 'cost': 3, 'capacity': 100, 'node': 'F',  # non unique int
      'remote_node': 'D', 'address': 10, 'failed': False},
-    {'name':'F-to-D', 'cost':3,'capacity':120, 'node':'F', # non unique int
+    {'name': 'F-to-D', 'cost': 3, 'capacity': 120, 'node': 'F',  # non unique int
      'remote_node': 'D', 'address': 10, 'failed': False},
-    {'name':'Z-to-D', 'cost':3,'capacity':100, 'node':'Z',
-     'remote_node': 'D', 'address': 10, 'failed': False},# no remote interface   
+    {'name': 'Z-to-D', 'cost': 3, 'capacity': 100, 'node': 'Z',
+     'remote_node': 'D', 'address': 10, 'failed': False},  # no remote interface
 ]
 
 
-demands = [ {'source': 'A', 'dest': 'B', 'traffic': 50},
-            {'source': 'A', 'dest': 'F', 'traffic': 22},
-            {'source': 'A', 'dest': 'E', 'traffic': 24},
-            {'source': 'F', 'dest': 'E', 'traffic': 80},
-            {'source': 'F', 'dest': 'B', 'traffic': 50},
-            {'source': 'A', 'dest': 'D', 'traffic': 120}
-    ]
+demands = [{'source': 'A', 'dest': 'B', 'traffic': 50},
+           {'source': 'A', 'dest': 'F', 'traffic': 22},
+           {'source': 'A', 'dest': 'E', 'traffic': 24},
+           {'source': 'F', 'dest': 'E', 'traffic': 80},
+           {'source': 'F', 'dest': 'B', 'traffic': 50},
+           {'source': 'A', 'dest': 'D', 'traffic': 120}
+           ]
 
 
 source = 'A'
 dest = 'B'
 
-# Define a network model and load interfaces 
+# Define a network model and load interfaces
 model1 = Model()
 model1.add_network_interfaces_from_list(network_interfaces)
 print('model1 is type', type(model1))
@@ -134,12 +131,12 @@ print()
 
 print("Find the number of loop free, unique paths from Node A to Node B:")
 good_paths = model1.get_feasible_paths(source, dest)
-print("There are %i unique paths between %s and %s"%(len(good_paths),
-                                                     source, dest))
+print("There are %i unique paths between %s and %s" % (len(good_paths),
+                                                       source, dest))
 print()
 
 # create demand objects from list of demands
-##demand_objects = Demand.create_demand_objects(demands)
+# demand_objects = Demand.create_demand_objects(demands)
 for demand in demands:
     model1.add_demand(demand['source'], demand['dest'],
                       demand['traffic'])
@@ -165,7 +162,7 @@ print()
 
 # Fail interface on node A, interface A-to-B
 print('Failing interface A-to-B on node A')
-int_to_fail = model1.get_interface_object('A-to-B','A')
+int_to_fail = model1.get_interface_object('A-to-B', 'A')
 int_to_fail.fail_interface(model1)
 
 # Calculate new traffic on interfaces and display
@@ -182,7 +179,7 @@ model1.add_node(new_node)
 print()
 
 # Display all the nodes without interfaces
-print("Here are the nodes without any interfaces:", \
+print("Here are the nodes without any interfaces:",
       model1.get_orphan_node_objects())
 print()
 
@@ -228,7 +225,8 @@ print("Fail Node('D')")
 model1.fail_node('D')
 model1.update_simulation()
 print()
-print("Here is Node('D')'s failure status:", model1.get_node_object('D').failed)
+print("Here is Node('D')'s failure status:",
+      model1.get_node_object('D').failed)
 print()
 
 # Get Node('D')'s interfaces
@@ -259,7 +257,7 @@ print()
 
 # Unfail the B-to-A interface and display traffic
 print('Unfail the interface from Node B to Node A')
-model1.unfail_interface('B-to-A', 'B', True )
+model1.unfail_interface('B-to-A', 'B', True)
 model1.update_simulation()
 model1.display_interfaces_traffic()
 print()
@@ -267,7 +265,7 @@ print()
 # test get_circuit call from Interface object
 int1 = model1.get_interface_object('A-to-B', 'A')
 ckt1 = int1.get_circuit_object(model1)
-print("The circuit associated with %s is %s"%(int1, ckt1))
+print("The circuit associated with %s is %s" % (int1, ckt1))
 print()
 
 # test a demand path before and after an interface it traverses fails;
@@ -304,17 +302,10 @@ for hop in dmd_A_D.path:
 print()
 
 
-
 t2 = time.time()
-tot_time = t2-t1
+tot_time = t2 - t1
 print('tot_time = ', tot_time)
 print()
 
 print("Making interactive network graph in browser.")
 graph_network_interactive.make_interactive_network_graph(model1)
-
-
-
-
-
-

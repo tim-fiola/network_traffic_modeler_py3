@@ -1,17 +1,19 @@
 """A class to represent a router in the Model"""
 
-import pdb
+from .exceptions import ModelException
+
 
 class Node(object):
-    """A class to represent a router in the model"""
+    """
+    A class to represent a router in the model
+    """
 
-    def __init__(self, name,  lat=0, lon=0):
+    def __init__(self, name, lat=0, lon=0):
         self.name = name
-
         self._failed = False
         self.lat = lat
         self.lon = lon
-        
+
         # Validate lat, lon values
         if (lat > 90 or lat < -90):
             raise ValueError('lat must be in range -90 to +90')
@@ -19,7 +21,7 @@ class Node(object):
             raise ValueError('lon must be in range -180 to +180')
 
     def __repr__(self):
-        return 'Node(%r)'%self.name
+        return 'Node(%r)' % self.name
 
     # Modify __eq__ and __hash__ default behavior for Node class
     # to allow us to easily determine if a Node instance is equivalent to another.
@@ -35,7 +37,7 @@ class Node(object):
 
     def _key(self):
         return self.name
-    
+
     @property
     def failed(self):
         return self._failed
@@ -48,7 +50,12 @@ class Node(object):
             raise ModelException('must be boolean')
 
     def interfaces(self, model):
-        """Returns interfaces for a given node"""
+        """
+        Returns interfaces for a given node
+
+        :param model: model structure
+        :return adjacency_list: (list) list of interfaces on the given node
+        """
         adjacency_list = []
 
         interface_iterator = (interface for interface in model.interface_objects)
@@ -60,7 +67,9 @@ class Node(object):
         return adjacency_list
 
     def adjacent_nodes(self, model):
-        """Returns a list of adjacent nodes"""
+        """
+        Returns a list of adjacent nodes
+        """
 
         adjacencies = self.interfaces(model)
 
