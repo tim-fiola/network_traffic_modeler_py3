@@ -1,5 +1,5 @@
 """A set of native python APIs to create a network model and run
-network simulations.       
+network simulations.
 
 There are no implied or explicit warranties associated with this app.
 
@@ -8,7 +8,7 @@ There are no implied or explicit warranties associated with this app.
 user:
     - move interface endpoints for better viewing
     - filter visualization to interfaces with a certain % utilization(s)
-    - zoom and pan 
+    - zoom and pan
 
 =======
 This code allows users to define a layer 3 network topology, define a traffic
@@ -28,7 +28,7 @@ Currently this modeling code supports simple OSPF/ISIS routing and RSVP
 auto-bandwidth LSPs (new in 1.6).  See 'Completed enhancements since
 last release' section for more detail.
 
-This code should perform well at scale as it leverages path calculations 
+This code should perform well at scale as it leverages path calculations
 from the networkx module.
 
 Use cases include:
@@ -36,13 +36,13 @@ Use cases include:
   traffic matrix
   - simulating how your traffic will fail over if any link(s) or node(s) fail
   - simulating how a given network augment will affect link utilization
-  and traffic flow; possible augments include: 
+  and traffic flow; possible augments include:
     - adding a new link
     - adding a new node with links
     - changing a link's capacity
     - adding a new traffic matrix entry (demand) to the traffic matrix
-    - increasing/decreasing the magnitude of an existing demand in the 
-      traffic matrix failover       
+    - increasing/decreasing the magnitude of an existing demand in the
+      traffic matrix failover
 
 NOTES:
 - interface addresses are only used to match interfaces into circuits and do
@@ -87,9 +87,9 @@ API TO DO:
 - embed node label in interactive network graph so label drags with node point
 - Node tags
     - add node tags
-    - for network graph plot, have option to only show nodes with 
+    - for network graph plot, have option to only show nodes with
       certain user specified tags
-- increasing/decreasing the magnitude of an existing demand in the traffic matrix failover       
+- increasing/decreasing the magnitude of an existing demand in the traffic matrix failover
 
 
 Use Cases TO DO:

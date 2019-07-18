@@ -4,7 +4,6 @@ import random
 
 from .exceptions import ModelException
 
-# TODO - add call to return traffic on LSP
 
 # For when the model has both LSPs but not a full LSP mesh,
 # - create the LSP model first
@@ -43,7 +42,6 @@ class RSVP_LSP(object):
         self.path = 'Unrouted'
         self.reserved_bandwidth = 'Unrouted'
         self.setup_bandwidth = 'Unrouted'
-        self.traffic = 0
 
     @property
     def _key(self):
@@ -84,7 +82,7 @@ class RSVP_LSP(object):
         """
         Finds all routed LSPs whose source node and destination node match that of self
         :param model: Model object
-        :return:  list of all LSPs from self.source_node_object to self.dest_node_object
+        :return:  list of all routed LSPs from self.source_node_object to self.dest_node_object
         """
         # Calculate the amount of bandwidth for each LSP
         routed_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if
