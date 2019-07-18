@@ -1,6 +1,11 @@
-from pprint import pprint
+# This is a temp hack to get this to see pyNTM and let it import
+import sys
+sys.path.append('../')
 
+from pprint import pprint
 from pyNTM import Model
+
+
 
 # Test cases:
 # 1. LSP routes on path with available bandwidth
@@ -208,3 +213,5 @@ demand_f_e = model.get_demand_object('F', 'E', 'test4')
 #     if lsp.path != 'Unrouted':
 #         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
 # print()
+
+
