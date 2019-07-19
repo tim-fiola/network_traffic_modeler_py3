@@ -1,8 +1,11 @@
 import unittest
 
+from pyNTM import Interface
 from pyNTM import Model
+from pyNTM import Node
 
-class TestRSVPLSPTraffAdd(unittest.TestCase):
+
+class TestRSVPLSPAddLSP(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -23,15 +26,16 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
         self.model.add_demand('A', 'D', 100, 'demand_a_d_3')
         self.model.update_simulation()
 
-    # Validate the reserved and setup bandwidths of lsp_a_d_1, lsp_a_d_2
-    def test_reserved_bandwidth(self):
-        self.assertEqual(self.lsp_a_d_1.reserved_bandwidth, 75.0)
-        self.assertEqual(self.lsp_a_d_2.reserved_bandwidth, 75.0)
+        # Unfail interface int_a_b
+        self.model.unfail_interface('A-to-B', 'A')
+        self.model.update_simulation()
 
-        self.assertEqual(self.lsp_a_d_1.setup_bandwidth, 125.0)
-        self.assertEqual(self.lsp_a_d_2.setup_bandwidth, 125.0)
+        # Add 3rd and 4th LSPs from Node('A') to Node('D')
 
-    # Validate the reserved and reservable bandwidth on int_a_c
-    def test_int_bw(self):
-        self.assertEqual(self.int_a_c.reserved_bandwidth, 150.0)
-        self.assertEqual(self.int_a_c.reservable_bandwidth, 0.0)
+        self.model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
+        self.lsp_a_d_3 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
+        self.model.add_rsvp_lsp('A', 'D', 'lsp_a_d_4')
+        self.lsp_a_d_4 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_4')
+        self.model.update_simulation()
+
+    def validate_lsp_routing(self):

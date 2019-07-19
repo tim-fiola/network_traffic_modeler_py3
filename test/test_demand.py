@@ -36,3 +36,5 @@ class TestDemand(unittest.TestCase):
 
     def test_add_demand_path(self):
         self.demand._add_demand_path(self.model)
+
+    # TODO - set up a full model here, validate hop by hop ECMP IGP routing
