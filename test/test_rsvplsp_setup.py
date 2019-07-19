@@ -1,10 +1,8 @@
 import unittest
 
-from pyNTM import Node
 from pyNTM import RSVP_LSP
 from pyNTM import Model
 
-import pdb
 
 
 class TestRSVPLSPInitial(unittest.TestCase):
@@ -42,8 +40,6 @@ class TestRSVPLSPInitial(unittest.TestCase):
     # should not be equal; one path actual_metric is 40, the other path's
     # actual metric is 60
     def test_lsp_actual_metrics(self):
-        print(self.lsp_a_d_1.actual_metric(self.model),
-              self.lsp_a_d_2.actual_metric(self.model))
         self.assertNotEqual(self.lsp_a_d_1.actual_metric(self.model),
                             self.lsp_a_d_2.actual_metric(self.model))
         self.assertIn(self.lsp_a_d_1.actual_metric(self.model), [40, 60])
@@ -57,4 +53,10 @@ class TestRSVPLSPInitial(unittest.TestCase):
         self.assertEqual(self.lsp_f_e_1.path, 'Unrouted')
         self.assertEqual(self.lsp_f_e_1.setup_bandwidth, 400.0)
 
+    # Validate reserved and reservable bandwidth on int_a_b, int_a_c
+    def test_reserved_bandwidth(self):
+        self.assertEqual(self.int_a_b.reserved_bandwidth, 75.0)
+        self.assertEqual(self.int_a_b.reservable_bandwidth, 50.0)
 
+        self.assertEqual(self.int_a_c.reserved_bandwidth, 75.0)
+        self.assertEqual(self.int_a_c.reservable_bandwidth, 75.0)
