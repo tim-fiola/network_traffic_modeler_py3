@@ -7,8 +7,7 @@ from pyNTM import Model
 import pdb
 
 
-
-class TestRSVPLSP(unittest.TestCase):
+class TestRSVPLSPInitial(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -25,7 +24,7 @@ class TestRSVPLSP(unittest.TestCase):
         # self.rsvp_lsp = RSVP_LSP(source_node_object=self.node_a, dest_node_object=self.node_b, lsp_name='A-to-B')
 
     def test_lsp_instance(self):
-        self.assertIsInstance(self.lsp_a_d_1, RSVP_LSP)
+         self.assertIsInstance(self.lsp_a_d_1, RSVP_LSP)
 
     def test_lsp_path_instance(self):
         self.assertIsInstance(self.lsp_a_d_1.path, dict)
@@ -44,8 +43,7 @@ class TestRSVPLSP(unittest.TestCase):
     # actual metric is 60
     def test_lsp_actual_metrics(self):
         print(self.lsp_a_d_1.actual_metric(self.model),
-                            self.lsp_a_d_2.actual_metric(self.model))
-        pdb.set_trace()
+              self.lsp_a_d_2.actual_metric(self.model))
         self.assertNotEqual(self.lsp_a_d_1.actual_metric(self.model),
                             self.lsp_a_d_2.actual_metric(self.model))
         self.assertIn(self.lsp_a_d_1.actual_metric(self.model), [40, 60])
@@ -58,30 +56,5 @@ class TestRSVPLSP(unittest.TestCase):
     def test_lsp_setup_bandwidth_failure(self):
         self.assertEqual(self.lsp_f_e_1.path, 'Unrouted')
         self.assertEqual(self.lsp_f_e_1.setup_bandwidth, 400.0)
-
-    # This next section will fail an interface and see if
-    # the LSPs react as expected
-    def test_fail_interface(self):
-        self.model.fail_interface('A-to-B', 'A')
-        self.assertTrue(self.int_a_b.failed)
-        self.model.update_simulation()
-
-    # Update the simulation and make sure both LSPs are on
-    # interface int_a_c
-    def test_lsp_failover(self):
-        self.assertTrue(self.int_a_b.failed)
-
-        # int_a_b should not have any LSPs
-        lsps_on_int_a_b = [lsp for lsp in self.int_a_b.lsps(self.model)]
-        self.assertTrue(len(lsps_on_int_a_b) == 0)
-
-        # int_a_c should have lsp_a_d_1 and lsp_a_d_2
-        lsp_names_on_int_a_c = [lsp.lsp_name for lsp in self.int_a_c.lsps(self.model)]
-        self.assertIn('lsp_a_d_1', lsp_names_on_int_a_c)
-        self.assertIn('lsp_a_d_2', lsp_names_on_int_a_c)
-
-
-
-
 
 
