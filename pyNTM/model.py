@@ -486,7 +486,7 @@ class Model(object):
                                 interface.reserved_bandwidth += lsp.reserved_bandwidth
 
                         # TODO - or try this for LSP routing instead of the above:
-                        # look at the max baseline_path_reservable_bw for each LSP
+                        # Look at the max baseline_path_reservable_bw for each LSP
                         # and figure out how many LSPs can fit thru it with what reserved_bw
                         # given the amount of traffic - this may be a better approach
 

@@ -22,9 +22,9 @@ print()
 print("model demands are:")
 pprint(model.demand_objects)
 print()
-test1_lsp = model.get_rsvp_lsp('A', 'D', 'test1')
-test2_lsp = model.get_rsvp_lsp('A', 'D', 'test2')
-b_to_g = model.get_interface_object('B-to-G', 'B')
+lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
+int_b_g = model.get_interface_object('B-to-G', 'B')
 
 print("model LSPs are:")
 pprint(model.rsvp_lsp_objects)
@@ -35,14 +35,14 @@ for lsp in model.rsvp_lsp_objects:
     print(lsp, lsp.effective_metric(model), lsp.actual_metric(model))
 
 # Check/validate metrics for LSPs
-if test1_lsp.effective_metric(model) != 40:
-    msg = "test1_lsp effective_metric should be 40"
+if lsp_a_d_1.effective_metric(model) != 40:
+    msg = "lsp_a_d_1 effective_metric should be 40"
     raise Exception(msg)
-if test2_lsp.effective_metric(model) != 40:
-    msg = "test2_lsp effective_metric should be 40"
+if lsp_a_d_2.effective_metric(model) != 40:
+    msg = "lsp_a_d_2 effective_metric should be 40"
     raise Exception(msg)
-if test1_lsp.actual_metric == test2_lsp.actual_metric:
-    msg = "test1_lsp and test2_lsp should have different actual_metrics"
+if lsp_a_d_1.actual_metric == lsp_a_d_2.actual_metric:
+    msg = "lsp_a_d_1 and lsp_a_d_2 should have different actual_metrics"
     raise Exception(msg)
 
 print()
@@ -55,12 +55,12 @@ print("Here are the LSP reserved_bandwidth values:")
 for lsp in model.rsvp_lsp_objects:
     print(lsp, lsp.reserved_bandwidth)
 # Validate 75 reserved bandwidth on the A-D LSPs
-if test1_lsp.reserved_bandwidth != test2_lsp.reserved_bandwidth != 75:
-    msg = "test1_lsp and test2_lsp should have reserved_bandwidth of 75"
+if lsp_a_d_1.reserved_bandwidth != lsp_a_d_2.reserved_bandwidth != 75:
+    msg = "lsp_a_d_1 and test2_lsp should have reserved_bandwidth of 75"
     raise Exception(msg)
-# test3 lsp should be unrouted
-if model.get_rsvp_lsp('F', 'E', 'test3').path != 'Unrouted':
-    msg = "{} should be Unrouted".format(model.get_rsvp_lsp('F', 'E', 'test3'))
+# lsp_f_e_1 lsp should be unrouted
+if model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1').path != 'Unrouted':
+    msg = "{} should be Unrouted".format(model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1'))
     raise Exception(msg)
 
 print()
@@ -72,9 +72,9 @@ for lsp in model.rsvp_lsp_objects:
     print()
 print()
 
-c_to_d = model.get_interface_object('C-to-D', 'C')
+int_c_d = model.get_interface_object('C-to-D', 'C')
 
-sample_demand = model.get_demand_object('A', 'D', 'test1')
+dmd_a_d_1 = model.get_demand_object('A', 'D', 'dmd_a_d_1')
 
 print("Here are the demands and their paths:")
 for demand in model.demand_objects:
@@ -173,7 +173,7 @@ for lsp in a_to_c.lsps(model):
 print()
 
 print("*************** Adding 3rd LSP from A to D ****************")
-model.add_rsvp_lsp('A', 'D', 'test3')
+model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 model.update_simulation()
 print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values ")
 for lsp in model.rsvp_lsp_objects:
@@ -188,7 +188,7 @@ print("Traffic on interface {} is {}".format(a_to_b, a_to_b.traffic))
 print("Demands on interface {} are:".format(a_to_b))
 pprint(a_to_b.demands(model))
 print()
-demand_a_f = model.get_demand_object('A', 'F', 'test5')
+demand_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
 # demand_e_f = model.get_demand_object('E', 'F', 'test2')
 print("Path for {} is:".format(demand_a_f))
 pprint(demand_a_f.path)
@@ -197,15 +197,15 @@ print()
 # pprint(demand_e_f.path)
 
 
-print("Here are demands on {}".format(b_to_g))
-for demand in b_to_g.demands(model):
+print("Here are demands on {}".format(int_b_g))
+for demand in int_b_g.demands(model):
     print(demand)
 
-demand_f_e = model.get_demand_object('F', 'E', 'test4')
+demand_f_e = model.get_demand_object('F', 'E', 'dmd_f_e_1')
 
-# TODO - fix this!
+# TODO - fix this!  Look in rsvp class file and add scenario for when to resignal LSPs
 print("*************** Adding 4th LSP from A to D ****************")
-model.add_rsvp_lsp('A', 'D', 'test4')
+model.add_rsvp_lsp('A', 'D', 'lsp_a_d_4')
 model.update_simulation()
 print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values")
 for lsp in model.rsvp_lsp_objects:

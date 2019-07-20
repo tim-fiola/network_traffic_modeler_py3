@@ -4,6 +4,9 @@ import random
 
 from .exceptions import ModelException
 
+# debug code
+import pdb
+from pprint import pprint
 
 # For when the model has both LSPs but not a full LSP mesh,
 # - create the LSP model first
@@ -94,6 +97,11 @@ class RSVP_LSP(object):
     def _add_rsvp_lsp_path(self, model):
         """Determines the LSP's path"""
 
+        # TODO - debug output
+        print("LSP is {}".format(self))
+        print()
+
+
         # Find all demands that would take the LSP
         demands_for_lsp = []
         for demand in (demand for demand in model.demand_objects):
@@ -105,13 +113,21 @@ class RSVP_LSP(object):
         demands_for_lsp_traffic = sum((demand.traffic for demand in demands_for_lsp))
 
         # Find # of LSPs that have same source/dest as self
-        # TODO - is this duplicating _calculate_setup_bandwidth?!
         num_matching_lsps = len([lsp for lsp in model.rsvp_lsp_objects if
                                  lsp.source_node_object == self.source_node_object and
                                  lsp.dest_node_object == self.dest_node_object])
 
+        # TODO - debug output
+        print("num_matching_lsps is {}".format(num_matching_lsps))
+        print()
+
         # Determine ECMP split of traffic across LSPs
+        # TODO - is this duplicating _calculate_setup_bandwidth?!
         self.setup_bandwidth = demands_for_lsp_traffic / num_matching_lsps
+
+        # TODO - debug output
+        print("setup_bandwidth is {}".format(self.setup_bandwidth))
+        print()
 
         # Get candidate paths
         candidate_paths = model.get_feasible_paths(self.source_node_object.name,
@@ -126,6 +142,7 @@ class RSVP_LSP(object):
             candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
 
             # Filter out paths that don't have enough headroom
+            # TODO - look here for why the 4th LSP A-D fails . . .
             candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                     if path['baseline_path_reservable_bw'] >=
                                                     self.setup_bandwidth]
@@ -139,7 +156,9 @@ class RSVP_LSP(object):
             #       LSP is already signaled on a still valid path and
             #       looking for more reserved bandwidth but none is available;
             #       keep the setup_bandwidth the same
-            # 4. There ARE valid candidate paths with enough headroom
+            # There ARE valid candidate paths with enough headroom
+            #   4. LSP does not need to adjust its setup bandwidth down
+            #   5. LSP does need to adjust its setup bandwidth down
 
             # There are no valid candidate paths with enough headroom
             if (len(candidate_paths_with_enough_headroom)) == 0:
@@ -192,8 +211,12 @@ class RSVP_LSP(object):
                     print(msg)
                     raise ModelException(msg)
 
-            # 4. There are valid candidate_paths with enough headroom
+            # There are valid candidate_paths with enough headroom
             elif len(candidate_paths_with_enough_headroom) > 0:
+
+                # 4.  LSP does not need to adjust its setup bandwidth down
+
+                # 5.  LSP does need to adjust its setup bandwidth down
 
                 # Find the lowest available path metric
                 lowest_available_metric = min([path['path_cost'] for path in
@@ -202,6 +225,11 @@ class RSVP_LSP(object):
                 # Finally, find all paths with the lowest cost and enough headroom
                 best_paths = [path for path in candidate_paths_with_enough_headroom
                               if path['path_cost'] == lowest_available_metric]
+
+
+                print("best_paths:")
+                pprint(best_paths)
+                print()
 
                 # If multiple paths, pick a best path at random
                 if len(best_paths) > 1:
@@ -232,6 +260,23 @@ class RSVP_LSP(object):
             else:
                 msg = "new LSP routing scenario unaccounted for on lsp {} second catch; exiting".format(self)
                 raise ModelException(msg)
+
+            # TODO - debug code is here
+            print("candidate_path_info:")
+            pprint(candidate_path_info)
+            print()
+            print("candidate_paths_with_enough_headroom:")
+            pprint(candidate_paths_with_enough_headroom)
+            print()
+            print("setup_bandwidth is {}".format(self.setup_bandwidth))
+            print()
+            print("lsp path is")
+            pprint(self.path)
+            print()
+            print()
+
+
+
 
         return self
 

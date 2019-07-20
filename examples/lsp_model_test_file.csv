@@ -31,13 +31,13 @@ G	30	30
 
 DEMANDS_TABLE
 source	dest	traffic	name
-A	D	80	test1
-A	D	70	test3
-F	E	400	test4
-A	F	40	test5
+A	D	80	dmd_a_d_1
+A	D	70	dmd_a_d_2
+F	E	400	dmd_f_e_1
+A	F	40	dmd_a_f_1
 
 RSVP_LSP_TABLE
 source	dest	name
-A	D	test1
-A	D	test2
-F	E	test3
+A	D	lsp_a_d_1
+A	D	lsp_a_d_2
+F	E	lsp_f_e_1
