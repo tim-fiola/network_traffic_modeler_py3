@@ -662,6 +662,7 @@ class Model(object):
 
         # Reset the reserved_bandwidth on each interface
         # TODO - should we reset this here??? No, don't, it breaks stuff
+        # TODO - or maybe do reset it; will have to rewrite some code in rsvp
         # for interface in self.interface_objects:
         #    interface.reserved_bandwidth = 0
 
