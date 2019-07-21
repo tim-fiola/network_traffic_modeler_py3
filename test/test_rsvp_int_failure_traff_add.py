@@ -2,6 +2,7 @@ import unittest
 
 from pyNTM import Model
 
+
 class TestRSVPLSPTraffAdd(unittest.TestCase):
 
     @classmethod
@@ -24,14 +25,18 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
         self.model.update_simulation()
 
     # Validate the reserved and setup bandwidths of lsp_a_d_1, lsp_a_d_2
-    def test_reserved_bandwidth(self):
+    def test_reserved_bandwidth(self):  # This will not pass with the non-state LSP path routing
+        print("lsp_a_d_1.reserved_bandwidth = {}".format(self.lsp_a_d_1.reserved_bandwidth))
         self.assertEqual(self.lsp_a_d_1.reserved_bandwidth, 75.0)
         self.assertEqual(self.lsp_a_d_2.reserved_bandwidth, 75.0)
 
+    def test_setup_bandwidth(self):
         self.assertEqual(self.lsp_a_d_1.setup_bandwidth, 125.0)
         self.assertEqual(self.lsp_a_d_2.setup_bandwidth, 125.0)
 
     # Validate the reserved and reservable bandwidth on int_a_c
-    def test_int_bw(self):
+    def test_int_bw(self):  # This will not pass with the non-state LSP path routing
+        print("int_a_c reserved and reservable bw = {} and {}".format(self.int_a_c.reserved_bandwidth,
+                                                                      self.int_a_c.reservable_bandwidth))
         self.assertEqual(self.int_a_c.reserved_bandwidth, 150.0)
         self.assertEqual(self.int_a_c.reservable_bandwidth, 0.0)

@@ -94,11 +94,10 @@ class RSVP_LSP(object):
                                     lsp.path != 'Unrouted')]
         return routed_lsps_src_to_dest
 
-
-    def _add_rsvp_lsp_path_no_state(self, model):
+    def _add_rsvp_lsp_path(self, model):
         """
         Determines the LSP's path regardless of whether it was previously routed
-        or not.
+        or not (non stateful).
         If this LSP is currently routed and takes takes on additional traffic
         and there is not a path that can handle the additional traffic,
         this LSP will not signal.
@@ -186,7 +185,7 @@ class RSVP_LSP(object):
 
 
 
-    def _add_rsvp_lsp_path(self, model):
+    def _add_rsvp_lsp_path_old(self, model):
         """
         Determines the LSPs path, taking into account if it is currently routed.
         If this LSP is currently routed and takes on additional traffic and there

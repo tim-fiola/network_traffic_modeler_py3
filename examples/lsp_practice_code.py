@@ -4,6 +4,7 @@ sys.path.append('../')  # noqa
 
 from pyNTM import Model
 from pprint import pprint
+import pdb
 
 
 # Test cases:
@@ -25,7 +26,8 @@ print()
 lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
 lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
 int_b_g = model.get_interface_object('B-to-G', 'B')
-
+int_a_c = model.get_interface_object('A-to-C', 'A')
+int_a_b = model.get_interface_object('A-to-B', 'A')
 print("model LSPs are:")
 pprint(model.rsvp_lsp_objects)
 print()
@@ -135,7 +137,6 @@ for lsp in a_to_c.lsps(model):
     print([lsp.lsp_name, lsp.reserved_bandwidth])
 print("{} reserved_bandwidth is {}".format(a_to_c, a_to_c.reserved_bandwidth))
 print()
-
 # Add additional demand from A to D of 100; expected behavior is
 # -- both LSPs from A to D take 50 traffic units each since each is signaled for 75 units
 # -- both LSPs from A to D don't increase their reserved bandwidth
@@ -154,6 +155,12 @@ for lsp in model.rsvp_lsp_objects:
     if lsp.path != 'Unrouted':
         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.path['baseline_path_reservable_bw']])
 print()
+print("Here are the unrouted LSPs")
+for lsp in model.rsvp_lsp_objects:
+    if lsp.path == 'Unrouted':
+        print([lsp.lsp_name, lsp.setup_bandwidth])
+print()
+
 
 # Unfail interface a_to_b; expected_behavior is
 # -- one of the LSPs on a_to_c should move to a_to_b since a_to_c is oversubscribed
