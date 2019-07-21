@@ -94,6 +94,8 @@ class RSVP_LSP(object):
                                     lsp.path != 'Unrouted')]
         return routed_lsps_src_to_dest
 
+
+
     def _add_rsvp_lsp_path(self, model):
         """
         Determines the LSP's path regardless of whether it was previously routed
@@ -179,13 +181,111 @@ class RSVP_LSP(object):
             # signal for the entire amount
             interface.reserved_bandwidth += self.reserved_bandwidth
 
+        return self
 
 
 
 
+    def _add_rsvp_lsp_path_prototype(self, model):
+        """
+        # TODO - this will only work if you route LSPs by groups with the same source/dest node pairing.
+        # TODO - But even that won't account for other LSPs that may be bandwidth constrained
+        Determines the LSP's path.
+        :param model: Model object that the LSP is in
+        :return: self with 'path' attribute
+        """
+
+        # Find all demands that would take the LSP
+        demands_for_lsp = []
+        for demand in (demand for demand in model.demand_objects):
+            if (demand.source_node_object == self.source_node_object and
+                    demand.dest_node_object == self.dest_node_object):
+                demands_for_lsp.append(demand)
+
+        # Find sum of all traffic for demands_for_lsp
+        demands_for_lsp_traffic = sum((demand.traffic for demand in demands_for_lsp))
+
+        # Find setup bandwidth
+        self = self._calculate_setup_bandwidth(model)
+
+        # Get candidate paths
+        candidate_paths = model.get_feasible_paths(self.source_node_object.name,
+                                                   self.dest_node_object.name)
+
+        # Route LSP
+        #   Options:
+        #   a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
+        #   b.  There are viable paths, but none with enough headroom - LSP will not be routed
+        #   c.  LSP can route with current setup_bandwidth
+
+        # Option a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
+        if candidate_paths == []:
+            # If there are no possible paths, then LSP is Unrouted
+            self.path = 'Unrouted'  # TODO - make this 'Unrouted - no path'
+            self.reserved_bandwidth = 'Unrouted'  # TODO - make this 'Unrouted - no path'
+            return self
+
+        # Find the path cost and path headroom for each path candidate
+        candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
+
+        # Filter out paths that don't have enough headroom
+        candidate_paths_with_enough_headroom = [path for path in candidate_path_info
+                                                if path['baseline_path_reservable_bw'] >=
+                                                self.setup_bandwidth]
+
+        # Option b. There are viable paths, but none that can
+        # accommodate the setup_bandwidth
+        if candidate_paths_with_enough_headroom == []:
+            # Check to see if LSP is currently routed.
+            # - if routed already, keep current setup and reserved bandwidth on current path
+            # - if not routed already, LSP will be unrouted
+            if 'Unrouted' not in self.path and self.path['interfaces'] in candidate_paths:
+                # Update the reserved_bandwidth on each interface on the new path
+                for interface in self.path['interfaces']:
+                    # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
+                    # signal for the entire amount
+                    interface.reserved_bandwidth += self.reserved_bandwidth
+                pdb.set_trace()
+                return self
+            else:
+                self.path = 'Unrouted'  # TODO - make this 'Unrouted - setup_bandwidth'
+                self.reserved_bandwidth = 'Unrouted'  # TODO - make this 'Unrouted - setup_bandwidth'
+                return self
+
+        # Option c.  LSP can route with current setup_bandwidth
+
+        # Find the lowest available path metric
+        lowest_available_metric = min([path['path_cost'] for path in
+                                       candidate_paths_with_enough_headroom])
+
+        # Finally, find all paths with the lowest cost and enough headroom
+        best_paths = [path for path in candidate_paths_with_enough_headroom
+                      if path['path_cost'] == lowest_available_metric]
+
+        # If multiple paths, pick a best path at random
+        if len(best_paths) > 1:
+            new_path = random.choice(best_paths)
+        else:
+            new_path = best_paths[0]
+
+        self.path = new_path
+
+        # Since there is enough headroom, set LSP reserved_bandwidth
+        # to setup_bandwidth
+        self.reserved_bandwidth = self.setup_bandwidth
+
+        # Update the reserved_bandwidth on each interface on the new path
+        for interface in self.path['interfaces']:
+            # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
+            # signal for the entire amount
+            interface.reserved_bandwidth += self.reserved_bandwidth
+
+        return self
 
 
-    def _add_rsvp_lsp_path_old(self, model):
+
+
+    def _add_rsvp_lsp_path_stateful(self, model):
         """
         Determines the LSPs path, taking into account if it is currently routed.
         If this LSP is currently routed and takes on additional traffic and there
@@ -197,7 +297,6 @@ class RSVP_LSP(object):
         :param model: Model object that the LSP is in
         :return: self with 'path' attribute
         """
-
         # TODO - debug output
         print("LSP is {}".format(self))
         print()
