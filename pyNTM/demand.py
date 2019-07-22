@@ -42,7 +42,7 @@ class Demand(object):
         for lsp in (lsp for lsp in model.rsvp_lsp_objects):
             if (lsp.source_node_object == self.source_node_object and \
                     lsp.dest_node_object == self.dest_node_object and \
-                    lsp.path != 'Unrouted'):
+                    'Unrouted' not in lsp.path ):
                 demand_path.append(lsp)
 
         # If demand can't be carried by LSP, do shortest path routing

@@ -206,7 +206,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
 
         lsp_set = set()
 
-        for lsp in (lsp for lsp in model.rsvp_lsp_objects if lsp.path != 'Unrouted'):
+        for lsp in (lsp for lsp in model.rsvp_lsp_objects if 'Unrouted' not in lsp.path):
             if self in lsp.path['interfaces']:
                 lsp_set.add(lsp)
 

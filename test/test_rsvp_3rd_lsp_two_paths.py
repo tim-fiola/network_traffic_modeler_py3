@@ -31,23 +31,28 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
         self.model.update_simulation()
 
         # Add 3rd lsp from Node('A') to Node('D'); this LSP
-        # will be the 3rd LSP signaled over two possible paths,
-        # with the 2 existing LSPs each taking up the majority of
-        # reservable bandwidth on each path; this LSP should
-        # not signal
+        # will be the 3rd LSP signaled over two possible paths;
+        # this LSP should cause one of the 3 to not signal
         self.model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
         self.model.update_simulation()
         self.lsp_a_d_3 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 
     def test_3rd_lsp(self):
         """
-        The 3rd LSP from Node('A') to Node('D') should not signal;
-        this LSP will be the 3rd LSP signaled over two possible paths,
+        The 3rd LSP from Node('A') to Node('D') should cause one of
+        the lsp_a_d_[1-3] to not signal.
+        This LSP will be the 3rd LSP signaled over two possible paths,
         with the 2 existing LSPs each taking up the majority of
-        reservable bandwidth on each path; this LSP should
-        not signal
+        reservable bandwidth on each path.
         """
-        self.assertTrue(self.lsp_a_d_3.path == 'Unrouted')
 
+        # One of the 3 LSPs will not set up
+        self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
+                         self.lsp_a_d_2.reserved_bandwidth,
+                         self.lsp_a_d_3.reserved_bandwidth].count('Unrouted'), 1)
 
+        # The 2 LSPs that do set up will have setup_bandwidth of 125
+        self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
+                         self.lsp_a_d_2.reserved_bandwidth,
+                         self.lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
 

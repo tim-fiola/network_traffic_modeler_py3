@@ -61,7 +61,7 @@ if lsp_a_d_1.reserved_bandwidth != lsp_a_d_2.reserved_bandwidth != 75:
     msg = "lsp_a_d_1 and test2_lsp should have reserved_bandwidth of 75"
     raise Exception(msg)
 # lsp_f_e_1 lsp should be unrouted
-if model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1').path != 'Unrouted':
+if 'Unrouted' not in model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1').path:
     msg = "{} should be Unrouted".format(model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1'))
     raise Exception(msg)
 
@@ -152,12 +152,12 @@ print("{} reserved_bandwidth is {}".format(a_to_c, a_to_c.reserved_bandwidth))
 print()
 print("Here are the routed LSPs and their reserved_bandwidth and baseline_path_reservable_bw values ")
 for lsp in model.rsvp_lsp_objects:
-    if lsp.path != 'Unrouted':
+    if 'Unrouted' not in lsp.path:
         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.path['baseline_path_reservable_bw']])
 print()
 print("Here are the unrouted LSPs")
 for lsp in model.rsvp_lsp_objects:
-    if lsp.path == 'Unrouted':
+    if 'Unrouted' in lsp.path:
         print([lsp.lsp_name, lsp.setup_bandwidth])
 print()
 
@@ -184,7 +184,7 @@ model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 model.update_simulation()
 print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values ")
 for lsp in model.rsvp_lsp_objects:
-    if lsp.path != 'Unrouted':
+    if 'Unrouted' not in lsp.path:
         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
 print()
 print("Traffic on interface {} is {}".format(a_to_c, a_to_c.traffic))
@@ -216,6 +216,6 @@ model.add_rsvp_lsp('A', 'D', 'lsp_a_d_4')
 model.update_simulation()
 print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values")
 for lsp in model.rsvp_lsp_objects:
-    if lsp.path != 'Unrouted':
+    if 'Unrouted' not in lsp.path:
         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
 print()

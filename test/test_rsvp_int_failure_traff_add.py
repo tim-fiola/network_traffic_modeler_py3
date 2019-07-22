@@ -25,18 +25,25 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
         self.model.update_simulation()
 
     # Validate the reserved and setup bandwidths of lsp_a_d_1, lsp_a_d_2
-    def test_reserved_bandwidth(self):  # This will not pass with the non-state LSP path routing
+    # One of the lsp_a_d_1 or lsp_a_d_2 LSPs will not be able to signal
+    # with int_a_b failed; the one that does signal will reserved will
+    # attempt to reserve 250/2 = 125 units of bandwidth
+    def test_reserved_bandwidth(self):
         print("lsp_a_d_1.reserved_bandwidth = {}".format(self.lsp_a_d_1.reserved_bandwidth))
-        self.assertEqual(self.lsp_a_d_1.reserved_bandwidth, 75.0)
-        self.assertEqual(self.lsp_a_d_2.reserved_bandwidth, 75.0)
+        self.assertIn(self.lsp_a_d_1.reserved_bandwidth, ['Unrouted', 125.0])
+        self.assertIn(self.lsp_a_d_2.reserved_bandwidth, ['Unrouted', 125.0])
+        self.assertNotEqual(self.lsp_a_d_1.reserved_bandwidth, self.lsp_a_d_2.reserved_bandwidth)
 
+    # lsp_a_d_1/2 will each try to set up at 125.0 traffic units
     def test_setup_bandwidth(self):
         self.assertEqual(self.lsp_a_d_1.setup_bandwidth, 125.0)
         self.assertEqual(self.lsp_a_d_2.setup_bandwidth, 125.0)
 
-    # Validate the reserved and reservable bandwidth on int_a_c
-    def test_int_bw(self):  # This will not pass with the non-state LSP path routing
+    # Validate the reserved and reservable bandwidth on int_a_c.
+    # int_a_c has 150 capacity; one lsp_a_d_1/2 will take 125 of
+    # that reserved_bandwidth; there will be a 25 unit remainder
+    def test_int_bw(self):
         print("int_a_c reserved and reservable bw = {} and {}".format(self.int_a_c.reserved_bandwidth,
                                                                       self.int_a_c.reservable_bandwidth))
-        self.assertEqual(self.int_a_c.reserved_bandwidth, 150.0)
-        self.assertEqual(self.int_a_c.reservable_bandwidth, 0.0)
+        self.assertEqual(self.int_a_c.reserved_bandwidth, 125.0)
+        self.assertEqual(self.int_a_c.reservable_bandwidth, 25.0)

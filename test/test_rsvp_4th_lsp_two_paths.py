@@ -38,9 +38,14 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
         self.lsp_a_d_4 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_4')
         self.model.update_simulation()
 
-    def validate_lsp_routing(self):
+    def test_validate_lsp_routing(self):
+        """
+        Test that all 4 LSPs between A and D route
+        """
         # All the paths for each LSP from Node('A') to Node('D')
         paths = [lsp.path for lsp in self.model.rsvp_lsp_objects if lsp.source_node_object.name == 'A'
                  and lsp.dest_node_object.name == 'D']
 
+        # Ensure all LSPs route
         self.assertNotIn("Unrouted", paths)
+

@@ -42,9 +42,9 @@ class RSVP_LSP(object):
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.lsp_name = lsp_name
-        self.path = 'Unrouted'
-        self.reserved_bandwidth = 'Unrouted'
-        self.setup_bandwidth = 'Unrouted'
+        self.path = 'Unrouted - initial'
+        self.reserved_bandwidth = 'Unrouted - initial'
+        self.setup_bandwidth = 'Unrouted - initial'
 
     @property
     def _key(self):
@@ -91,7 +91,7 @@ class RSVP_LSP(object):
         routed_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if
                                    (lsp.source_node_object == self.source_node_object and
                                     lsp.dest_node_object == self.dest_node_object and
-                                    lsp.path != 'Unrouted')]
+                                    'Unrouted' not in lsp.path)]
         return routed_lsps_src_to_dest
 
 
@@ -133,8 +133,8 @@ class RSVP_LSP(object):
         # Option a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
         if candidate_paths == []:
             # If there are no possible paths, then LSP is Unrouted
-            self.path = 'Unrouted' # TODO - make this 'Unrouted - no path'
-            self.reserved_bandwidth = 'Unrouted' # TODO - make this 'Unrouted - no path'
+            self.path = 'Unrouted - no path' # TODO - make this 'Unrouted - no path'
+            self.reserved_bandwidth = 'Unrouted - no path' # TODO - make this 'Unrouted - no path'
             return self
 
 
@@ -149,8 +149,8 @@ class RSVP_LSP(object):
         # Option b. There are viable paths, but none that can
         # accommodate the setup_bandwidth
         if candidate_paths_with_enough_headroom == []:
-            self.path = 'Unrouted' # TODO - make this 'Unrouted - setup_bandwidth'
-            self.reserved_bandwidth = 'Unrouted' # TODO - make this 'Unrouted - setup_bandwidth'
+            self.path = 'Unrouted - setup_bandwidth' # TODO - make this 'Unrouted - setup_bandwidth'
+            self.reserved_bandwidth = 'Unrouted - setup_bandwidth' # TODO - make this 'Unrouted - setup_bandwidth'
             return self
 
         # Option c.  LSP can route with current setup_bandwidth
@@ -335,8 +335,8 @@ class RSVP_LSP(object):
 
         if candidate_paths == []:
             # If there are no possible paths, then LSP is Unrouted
-            self.path = 'Unrouted'
-            self.reserved_bandwidth = 'Unrouted'
+            self.path = 'Unrouted - no path'
+            self.reserved_bandwidth = 'Unrouted - no path'
             return self
         else:
             # Find the path cost and path headroom for each path candidate
@@ -366,18 +366,18 @@ class RSVP_LSP(object):
                 # 1. There are no valid paths at all;
                 #    LSP will be unrouted
                 if len(candidate_paths) == 0:
-                    self.reserved_bandwidth = 'Unrouted'
-                    self.path = 'Unrouted'
+                    self.reserved_bandwidth = 'Unrouted - setup_bandwidth'
+                    self.path = 'Unrouted - setup_bandwidth'
 
                 # 2.There are no viable paths with needed headroom,
                 #   LSP is not routed and trying to initially signal
-                elif self.path == 'Unrouted':
-                    self.reserved_bandwidth = 'Unrouted'
-                    self.path = 'Unrouted'
+                elif 'Unrouted' in self.path:
+                    self.reserved_bandwidth = 'Unrouted - setup_bandwidth'
+                    self.path = 'Unrouted - setup_bandwidth'
 
                 # 3. LSP is signaled on a still valid path
 
-                elif self.path != 'Unrouted' and self.path['interfaces'] in candidate_paths:
+                elif 'Unrouted' not in self.path and self.path['interfaces'] in candidate_paths:
 
                     # Find the LSP path's headroom; do not count the bandwidth
                     # reserved for self on that current path
@@ -441,7 +441,7 @@ class RSVP_LSP(object):
                 # Decrement the LSP's reserved_bandwidth on
                 # the existing path interfaces if LSP is routed
                 # since LSP is changing path
-                if self.path != 'Unrouted':
+                if 'Unrouted' not in self.path:
                     for interface in self.path['interfaces']:
                         interface.reserved_bandwidth -= self.reserved_bandwidth
 
@@ -546,7 +546,7 @@ class RSVP_LSP(object):
     def actual_metric(self, model):
         """Returns the metric sum of the interfaces that the LSP actually
         transits."""
-        if self.path == 'Unrouted':
+        if 'Unrouted' in self.path:
             metric = 'Unrouted'
         else:
             metric = sum([interface.cost for interface in self.path['interfaces']])

@@ -14,6 +14,7 @@ from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
 
+import pdb
 
 class Model(object):
     """A network model object consisting of the following base components:
@@ -215,7 +216,6 @@ class Model(object):
             message = 'network interface validation failed, see returned data'
             pprint(message)
             pprint(error_data)
-            #            pdb.set_trace()
             raise ModelException(message, error_data)
         else:
             return self
@@ -223,97 +223,6 @@ class Model(object):
     def get_circuit_objects(self):
         """Returns a set of circuit objects in the Model"""
         return self.circuit_objects
-
-    # TODO - delete this when everything is working with RSVP
-    # def update_simulation_old(self):
-    # """Returns model with updated interface traffic.
-    # Must be called to update the model whenever there is a topology change.
-    # """
-
-    # This list of interfaces can be used to route traffic
-    # non_failed_interfaces = set()
-    # available_nodes = set()
-
-    # Find all the non-failed interfaces in the model and
-    # add them to non_failed_interfaces; also find all the nodes
-    # associated with the non-failed interfaces
-    # for interface_object in self.interface_objects:
-    # if interface_object.failed == False:
-    # non_failed_interfaces.add(interface_object)
-    # available_nodes.add(interface_object.node_object)
-    # available_nodes.add(interface_object.remote_node_object)
-
-    # Create a model consisting only of the non-failed interfaces and
-    # corresponding nodes
-    # non_failed_interfaces_model = Model(non_failed_interfaces,
-    # available_nodes)
-
-    # Find all demands that match up with source/dest for an LSP
-
-    # Determine demands that will ride an LSP
-    # lsp_demands = set([])
-    # for demand in (demand for demand in self.demand_objects):
-    # for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-    # if demand.source_node_object == lsp.source_node_object and \
-    # demand.dest_node_object == lsp.dest_node_object:
-    # lsp_demands.add(demand)
-
-    # Find all demands that don't match up source/dest with an LSP's
-    # source/dest
-    # non_lsp_demands = set([])
-    # for demand in (demand for demand in self.demand_objects):
-    # if demand not in lsp_demands:
-    # non_lsp_demands.add(demand)
-
-    # ROUTING ORDER
-    # 1. Route demands that don't take LSPs in the
-    # non_failed_interfaces_model
-
-    # for demand_object in non_lsp_demands:
-    # demand_object = demand_object.\
-    # _add_demand_path(non_failed_interfaces_model)
-
-    # 2. Route LSPs in the non_failed_interfaces model
-    # Find the amount of bandwidth each LSP will signal for
-    # for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-    # lsp = lsp.route_lsp(non_failed_interfaces_model)
-
-    # 3. Route lsp_demands over the lsp_model
-    # for demand_object in (demand for demand in lsp_demands):
-    # demand_object._add_demand_path(non_failed_interfaces_model)
-
-    # In the model, in an interface is failed, set the traffic attribute
-    # to 'Down', otherwise, initialize the traffic to zero
-    # for interface_object in self.interface_objects:
-    # if interface_object.failed == True:
-    # interface_object.traffic = 'Down'
-    # else:
-    # interface_object.traffic = 0.0
-
-    # For each demand that is not Unrouted, add its traffic value to each
-    # interface object in the path
-    # for demand_object in self.demand_objects:
-    # traffic = demand_object.traffic
-
-    # if demand_object.path != 'Unrouted':
-
-    # Find each demands path list, determine the ECMP split, and find
-    # the traffic per path
-    # demand_object_paths = demand_object.path
-    # num_demand_paths = float(len(demand_object_paths))
-    # ecmp_split = 1/num_demand_paths
-    # traffic_per_demand_path = traffic * ecmp_split
-
-    # Add the traffic per path to each interface the demand touches.
-    # Not sure if there's a way to optimize this since
-    # we have to do a lookup to modify the traffic attribute
-    # for demand_object_path in demand_object_paths:
-    # for demand_path_interface in demand_object_path:
-    # Get the interface's existing traffic and add the portion
-    # of the demand's traffic
-    # existing_traffic = demand_path_interface.traffic
-    # existing_traffic = existing_traffic + traffic_per_demand_path
-    # demand_path_interface.traffic = existing_traffic
 
     def _demand_traffic_per_int(self, demand):
         """
@@ -436,8 +345,7 @@ class Model(object):
         # For each demand that is not Unrouted, add its traffic value to each
         # interface object in the path
         for demand_object in demand_object_generator:
-
-            if demand_object.path != 'Unrouted':
+            if 'Unrouted' not in demand_object.path:
                 # This model only allows demands to take RSVP LSPs if
                 # the demand's source/dest nodes match the LSP's source/dest nodes.
                 # If demand_object.path[0] is an LSP, then all the demand's paths
@@ -448,11 +356,6 @@ class Model(object):
                     # Find each demands path list, determine the ECMP split across the
                     # routed LSPs, and find the traffic per path (LSP)
                     num_routed_lsps_for_demand = float(len(demand_object.path))
-
-                    # In lsp_practice_code, when we add 3rd LSP over 2 paths, 3rd LSP does not signal
-                    # but the other 2 LSPs lower their reserved bandwidth to 1/3 total demand
-                    # instead of keeping it at 1/2
-                    # Decrement num_demand_paths
 
                     traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
 
@@ -544,7 +447,7 @@ class Model(object):
         for demand_object in self.demand_objects:
             traffic = demand_object.traffic
 
-            if demand_object.path != 'Unrouted':
+            if 'Unrouted' not in demand_object.path:
 
                 # Find each demands path list, determine the ECMP split, and
                 # find the traffic per path
@@ -595,7 +498,7 @@ class Model(object):
         """
 
         # Find all ints with LSPs
-        routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if lsp.path != 'Unrouted')
+        routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
         ints_with_lsps = set()
         for lsp in routed_lsps:
             for interface in lsp.path['interfaces']:
@@ -821,8 +724,6 @@ class Model(object):
         # TODO - It seems like this part could be optimized
         node_object_list = [node for node in self.node_objects]
         node_names = [node.name for node in node_object_list]
-
-        #        pdb.set_trace()
 
         if node_name in node_names:
             node_index = node_names.index(node_name)
