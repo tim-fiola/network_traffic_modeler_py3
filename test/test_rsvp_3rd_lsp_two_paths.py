@@ -37,7 +37,7 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
         self.model.update_simulation()
         self.lsp_a_d_3 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 
-    def test_3rd_lsp(self):
+    def test_reserved_bandwidth(self):
         """
         The 3rd LSP from Node('A') to Node('D') should cause one of
         the lsp_a_d_[1-3] to not signal.
@@ -56,3 +56,12 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
                          self.lsp_a_d_2.reserved_bandwidth,
                          self.lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
 
+    def test_setup_bandwidth(self):
+        """
+        Each of the 3 LSPs from A to D will try to signal
+        for (traffic/num_lsps) = 250/3 = 83.3.  The first two to signal will
+        succeed.  The last one will fail due to lack of available bandwidth.
+        When this happens, the traffic will then be split across 2 LSPs.
+        So each LSP will try to resignal to carry more traffic (125 units).
+        The LSP taking the A-to-B, B-to-D path
+        """

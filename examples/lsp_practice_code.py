@@ -142,7 +142,7 @@ print()
 # -- both LSPs from A to D don't increase their reserved bandwidth
 #    because interface a_to_c only has capacity of 150
 print("******** Adding additional demand of 100 from A to D *********")
-model.add_demand('A', 'D', 100, 'demand_a_to_d_3')
+model.add_demand('A', 'D', 100, 'dmd_a_to_d_3')
 model.update_simulation()
 print("After adding demand, here are the LSPs and their "
       "reserved_bandwidths and setup_bandwidths on {}".format(a_to_c))
@@ -182,6 +182,7 @@ print()
 print("*************** Adding 3rd LSP from A to D ****************")
 model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 model.update_simulation()
+lsp_a_d_3 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values ")
 for lsp in model.rsvp_lsp_objects:
     if 'Unrouted' not in lsp.path:
@@ -195,27 +196,27 @@ print("Traffic on interface {} is {}".format(a_to_b, a_to_b.traffic))
 print("Demands on interface {} are:".format(a_to_b))
 pprint(a_to_b.demands(model))
 print()
-demand_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
-# demand_e_f = model.get_demand_object('E', 'F', 'test2')
-print("Path for {} is:".format(demand_a_f))
-pprint(demand_a_f.path)
-print()
-# print("Path for {} is:".format(demand_e_f))
-# pprint(demand_e_f.path)
 
-
-print("Here are demands on {}".format(int_b_g))
-for demand in int_b_g.demands(model):
-    print(demand)
-
-demand_f_e = model.get_demand_object('F', 'E', 'dmd_f_e_1')
-
-# TODO - fix this!  Look in rsvp class file and add scenario for when to resignal LSPs
-print("*************** Adding 4th LSP from A to D ****************")
-model.add_rsvp_lsp('A', 'D', 'lsp_a_d_4')
-model.update_simulation()
-print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values")
-for lsp in model.rsvp_lsp_objects:
-    if 'Unrouted' not in lsp.path:
-        print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
-print()
+# demand_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+# # demand_e_f = model.get_demand_object('E', 'F', 'test2')
+# print("Path for {} is:".format(demand_a_f))
+# pprint(demand_a_f.path)
+# print()
+# # print("Path for {} is:".format(demand_e_f))
+# # pprint(demand_e_f.path)
+#
+#
+# print("Here are demands on {}".format(int_b_g))
+# for demand in int_b_g.demands(model):
+#     print(demand)
+#
+# demand_f_e = model.get_demand_object('F', 'E', 'dmd_f_e_1')
+#
+# print("*************** Adding 4th LSP from A to D ****************")
+# model.add_rsvp_lsp('A', 'D', 'lsp_a_d_4')
+# model.update_simulation()
+# print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values")
+# for lsp in model.rsvp_lsp_objects:
+#     if 'Unrouted' not in lsp.path:
+#         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
+# print()
