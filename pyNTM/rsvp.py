@@ -109,6 +109,7 @@ class RSVP_LSP(object):
 
         # Find the path cost and path headroom for each path candidate
         for path in candidate_paths:
+
             path_cost = 0
             for interface in path:
                 path_cost += interface.cost
@@ -116,13 +117,14 @@ class RSVP_LSP(object):
             proto_reservable_bw = {}
             for interface in path:
                 if interface in self.path['interfaces']:
-                    proto_reservable_bw[interface] = interface.reserved_bandwidth - self.reserved_bandwidth
+                    proto_reservable_bw[interface] = interface.reservable_bandwidth + self.reserved_bandwidth
                 else:
-                    proto_reservable_bw[interface] = interface.reserved_bandwidth
+                    proto_reservable_bw[interface] = interface.reservable_bandwidth
 
             # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
-            baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in proto_reservable_bw.values()])
+
+            baseline_path_reservable_bw = min(proto_reservable_bw.values())
 
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
@@ -148,37 +150,35 @@ class RSVP_LSP(object):
                                                    self.dest_node_object.name)
 
         # Find the path cost and path headroom for each path candidate
-        candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
-
+        candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(candidate_paths)
 
         # Filter out paths that don't have enough headroom
         candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                 if (path['baseline_path_reservable_bw']) >=
                                                 requested_bandwidth]
 
-        print("************* DEBUG *****************")
-        print(self, self.reserved_bandwidth) # TODO - debug output
-        pprint(self.path)
+        # print("************* DEBUG *****************")
+        # print(self, self.reserved_bandwidth) # TODO - debug output
+        # pprint(self.path)
 
         # If there are no paths with enough headroom, return self
         if len(candidate_paths_with_enough_headroom) == 0:
-            pdb.set_trace()
             return self
         # If there is only one path with enough headroom, make that self.path
         elif len(candidate_paths_with_enough_headroom) == 1:
-            pdb.set_trace()
             self.path = candidate_paths_with_enough_headroom[0]
         # If there is more than one path with enough headroom,
         # choose one at random and make that self.path
         elif len(candidate_paths_with_enough_headroom) > 1:
-            pdb.set_trace()
             self.path = random.choice(candidate_paths_with_enough_headroom)
-        print(self, self.reserved_bandwidth) # TODO - debug output
-        pprint(self.path)
-        print()
-        print("**************************************")
+
+        # print(self, self.reserved_bandwidth) # TODO - debug output
+        # pprint(self.path)
+        # print()
+        # print("**************************************")
 
         self.reserved_bandwidth = requested_bandwidth
+        self.setup_bandwidth = requested_bandwidth
         return self
 
 
