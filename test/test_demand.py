@@ -37,4 +37,10 @@ class TestDemand(unittest.TestCase):
     def test_add_demand_path(self):
         self.demand._add_demand_path(self.model)
 
-    # TODO - set up a full model here, validate hop by hop ECMP IGP routing
+    # TODO - set up a full model here
+
+    # TODO - validate demand does not route when source or dest node is down
+
+    # TODO - validate demand fails over to alternate path when a link fails
+
+    # TODO - validate hop by hop ECMP IGP routing

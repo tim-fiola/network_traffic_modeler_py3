@@ -114,6 +114,10 @@ class RSVP_LSP(object):
             for interface in path:
                 path_cost += interface.cost
 
+            # Find the path cost and reservable bandwidth on each path.
+            # If the path you are examining has an interface that is on
+            # the LSP's current path, don't count (or add back in) the
+            # reserved bandwidth for the LSP to that interface
             proto_reservable_bw = {}
             for interface in path:
                 if interface in self.path['interfaces']:
@@ -157,10 +161,6 @@ class RSVP_LSP(object):
                                                 if (path['baseline_path_reservable_bw']) >=
                                                 requested_bandwidth]
 
-        # print("************* DEBUG *****************")
-        # print(self, self.reserved_bandwidth) # TODO - debug output
-        # pprint(self.path)
-
         # If there are no paths with enough headroom, return self
         if len(candidate_paths_with_enough_headroom) == 0:
             return self
@@ -171,11 +171,6 @@ class RSVP_LSP(object):
         # choose one at random and make that self.path
         elif len(candidate_paths_with_enough_headroom) > 1:
             self.path = random.choice(candidate_paths_with_enough_headroom)
-
-        # print(self, self.reserved_bandwidth) # TODO - debug output
-        # pprint(self.path)
-        # print()
-        # print("**************************************")
 
         self.reserved_bandwidth = requested_bandwidth
         self.setup_bandwidth = requested_bandwidth

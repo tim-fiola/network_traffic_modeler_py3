@@ -600,11 +600,6 @@ class Model(object):
             old_path = lsp.path
             requested_bandwidth = lsp.traffic_on_lsp(self)
 
-            print("before")
-            print(lsp, lsp.setup_bandwidth, lsp.reserved_bandwidth)
-            pprint(lsp.path)
-            print()
-
             # See if a path exists that can handle the requested_bandwidth
             lsp = lsp.find_rsvp_path_w_bw(requested_bandwidth, self)
 
@@ -617,11 +612,6 @@ class Model(object):
                 for interface in lsp.path['interfaces']:
                     interface.reserved_bandwidth += requested_bandwidth
 
-                print("after")
-                print(lsp, lsp.setup_bandwidth, lsp.reserved_bandwidth)
-                pprint(lsp.path)
-                print()
-                pdb.set_trace()
         self.validate_model()
 
     def _unique_interface_per_node(self):
