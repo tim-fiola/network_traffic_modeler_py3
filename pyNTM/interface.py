@@ -107,6 +107,40 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             self._failed = True
             self.reserved_bandwidth = 0
 
+    # Put some guardrails on cost
+    # def get_cost(self):
+    #     return self._cost
+    #
+    # def set_cost(self, cost):
+    #     if cost < 1:
+    #         raise ModelException("Interface cannot be less than 1")
+    #     self._cost = cost
+    #
+    # cost = property(get_cost, set_cost)
+    @property
+    def cost(self):
+        return self._cost
+
+    @cost.setter
+    def cost(self, cost):
+        if cost < 1:
+                raise ModelException("Interface cannot be less than 1")
+        self._cost = cost
+
+    # Put some guardrails on capacity
+    # def get_capacity(self):
+    #     return self._capacity
+    #
+    # def set_capacity(self, capacity):
+    #     if not(capacity > 0):
+    #         raise ModelException("Interface capacity must be greater than 0")
+    #     self._capacity = capacity
+    #
+    # capacity = property(get_capacity, set_capacity)
+
+
+
+
     def fail_interface(self, model):
         """Returns an updated model with the specified
         interface and the remote interface with failed==True 

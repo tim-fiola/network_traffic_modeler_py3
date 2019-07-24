@@ -2,6 +2,8 @@ import unittest
 
 from pyNTM import Node
 from pyNTM import Interface
+from pyNTM import Model
+from pyNTM import ModelException
 
 
 class TestInterface(unittest.TestCase):
@@ -16,8 +18,8 @@ class TestInterface(unittest.TestCase):
         self.interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
                                      node_object=self.node_b, remote_node_object=self.node_a, address=1)
 
-    def test_repr(self):
-        self.assertEqual(repr(self.interface_a), "Interface(name = 'inerfaceA-to-B', cost = 4, capacity = 100, node_object = Node('nodeA'), remote_node_object = Node('nodeB'), address = 1)")  # noqa E501
+    # def test_repr(self):
+    #     self.assertEqual(repr(self.interface_a), "Interface(name = 'inerfaceA-to-B', cost = 4, capacity = 100, node_object = Node('nodeA'), remote_node_object = Node('nodeB'), address = 1)")  # noqa E501
 
     def test_key(self):
         self.assertEqual(self.interface_a._key, ('inerfaceA-to-B', 'nodeA'))
@@ -26,18 +28,46 @@ class TestInterface(unittest.TestCase):
         if self.interface_a == self.interface_a:
             self.assertTrue(True)
 
-    def test_init_fail_neg_cost(self):
-        with self.assertRaises(ValueError):
+    def test_init_fail_neg_cost(self): # TODO - do getter/setter for cost
+        with self.assertRaises(ModelException):
             Interface(name='inerfaceA-to-B', cost=-1, capacity=100,
                       node_object=self.node_a, remote_node_object=self.node_b, address=1)
 
-    def test_init_fail_neg_capacity(self):
-        with self.assertRaises(ValueError):
+    def test_init_fail_neg_capacity(self): # TODO - do getter/setter for capacity
+        with self.assertRaises(ModelException):
             Interface(name='inerfaceA-to-B', cost=4, capacity=-1,
                       node_object=self.node_a, remote_node_object=self.node_b, address=1)
 
     def test_reservable_bandwidth(self):
         self.assertEqual(100, self.interface_a.reservable_bandwidth)
 
-    # TODO - test interface will be down when node fails
+    def test_int_fail(self):
+        model = Model.load_model_file('igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertFalse(int_a_b.failed)
+
+        model.fail_interface('B-to-A', 'B')
+        model.update_simulation()
+
+        self.assertTrue(int_a_b.failed)
+
+    def test_int_fail(self):
+        model = Model.load_model_file('igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = model.get_interface_object('B-to-A', 'B')
+
+        self.assertFalse(int_a_b.failed)
+        self.assertFalse(int_b_a.failed)
+
+        model.fail_node('A')
+        model.update_simulation()
+
+        self.assertTrue(int_a_b.failed)
+        self.assertTrue(int_b_a.failed)
+
 

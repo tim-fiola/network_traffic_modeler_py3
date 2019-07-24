@@ -5,6 +5,7 @@ from pyNTM import Model
 from pyNTM import Circuit
 from pyNTM import Interface
 
+import pdb
 
 class TestCircuit(unittest.TestCase):
 
@@ -33,5 +34,3 @@ class TestCircuit(unittest.TestCase):
         self.assertEqual(interface_a, self.interface_a)
         self.assertEqual(interface_b, self.interface_b)
 
-    # TODO - test circuit will be down when interface is down
-    # TODO - test circuit down when one of nodes fails
