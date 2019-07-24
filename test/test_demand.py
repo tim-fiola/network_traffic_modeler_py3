@@ -37,10 +37,44 @@ class TestDemand(unittest.TestCase):
     def test_add_demand_path(self):
         self.demand._add_demand_path(self.model)
 
-    # TODO - set up a full model here
+    def test_demand_behavior(self):
+        model = Model.load_model_file('igp_routing_topology.csv')
 
-    # TODO - validate demand does not route when source or dest node is down
+        model.update_simulation()
 
-    # TODO - validate demand fails over to alternate path when a link fails
+        dmd_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_d = model.get_interface_object('B-to-D', 'B')
+        int_b_g = model.get_interface_object('B-to-G', 'B')
+        int_g_d = model.get_interface_object('G-to-D', 'G')
+        int_d_f = model.get_interface_object('D-to-F', 'D')
+        int_a_c = model.get_interface_object('A-to-C', 'A')
+        int_c_d = model.get_interface_object('C-to-D', 'C')
+        int_a_d = model.get_interface_object('A-to-D', 'A')
 
-    # TODO - validate hop by hop ECMP IGP routing
+        # Demand routes initially
+        self.assertNotEqual(dmd_a_f.path, 'Unrouted')
+
+        # Demand should not route if source node is down
+        model.fail_node('A')
+        model.update_simulation()
+        self.assertEqual(dmd_a_f.path, 'Unrouted')
+
+        # Demand should route when source node unfails
+        model.unfail_node('A')
+        model.update_simulation()
+        self.assertNotEqual(dmd_a_f.path, 'Unrouted')
+
+        # Demand should not route when dest node fails
+        model.fail_node('F')
+        model.update_simulation()
+        self.assertEqual(dmd_a_f.path, 'Unrouted')
+
+        # Demand should route when dest node unfails
+        model.unfail_node('F')
+        model.update_simulation()
+        self.assertNotEqual(dmd_a_f.path, 'Unrouted')
+
+
+
+

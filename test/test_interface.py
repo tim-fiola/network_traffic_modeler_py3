@@ -38,3 +38,6 @@ class TestInterface(unittest.TestCase):
 
     def test_reservable_bandwidth(self):
         self.assertEqual(100, self.interface_a.reservable_bandwidth)
+
+    # TODO - test interface will be down when node fails
+
