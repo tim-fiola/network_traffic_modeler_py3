@@ -802,6 +802,7 @@ class Model(object):
 
         self.validate_model()
 
+    # TODO - there is a problem with adding an LSP using this if the LSP carries traffic; (model.add_rsvp_lsp)
     def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
         """Adds an RSVP LSP with name name from the source node to the
         dest node"""
