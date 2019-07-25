@@ -50,7 +50,7 @@ class TestRSVPLSPInitial(unittest.TestCase):
     # 2. It has a setup_bandwidth of 400
     # 3. There are no available paths to support that setup_bandwidth
     def test_lsp_setup_bandwidth_failure(self):
-        self.assertEqual(self.lsp_f_e_1.path, 'Unrouted')
+        self.assertEqual(self.lsp_f_e_1.path, 'Unrouted - setup_bandwidth')
         self.assertEqual(self.lsp_f_e_1.setup_bandwidth, 400.0)
 
     # Validate reserved and reservable bandwidth on int_a_b, int_a_c

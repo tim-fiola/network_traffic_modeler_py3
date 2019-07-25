@@ -6,6 +6,7 @@ from pprint import pprint
 
 import networkx as nx
 
+
 from .circuit import Circuit
 from .demand import Demand
 from .interface import Interface
@@ -148,8 +149,10 @@ class Model(object):
                 int_res_bw_too_high.add(interface)
 
             # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
-            if interface.reserved_bandwidth != sum([lsp.reserved_bandwidth
-                                                    for lsp in interface.lsps(self)]):
+            # if math.trunc(interface.reserved_bandwidth) != math.trunc(sum([lsp.reserved_bandwidth
+            #                                         for lsp in interface.lsps(self)])):
+            if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
+                                                                      for lsp in interface.lsps(self)]), 1):
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
                                           tuple(interface.lsps(self))))
 
@@ -340,6 +343,7 @@ class Model(object):
             else:
                 interface_object.traffic = 0.0
 
+        # TODO - have this generator only include routed demands so we can remove the if 'Unrouted' statement below
         demand_object_generator = (demand_object for demand_object in self.demand_objects)
 
         # For each demand that is not Unrouted, add its traffic value to each
@@ -348,20 +352,28 @@ class Model(object):
             if 'Unrouted' not in demand_object.path:
                 # This model only allows demands to take RSVP LSPs if
                 # the demand's source/dest nodes match the LSP's source/dest nodes.
-                # If demand_object.path[0] is an LSP, then all the demand's paths
-                # will be LSPs.
+
                 # Expand each LSP into its interfaces and add that the traffic per LSP
                 # to the LSP's path interfaces.
 
-                if isinstance(demand_object.path[0], RSVP_LSP):
+                # Can demand take LSP?
+
+                routed_lsp_generator = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
+                lsps_for_demand = []
+                for lsp in routed_lsp_generator:
+                    if (lsp.source_node_object == demand_object.source_node_object and
+                            lsp.dest_node_object == demand_object.dest_node_object):
+                        lsps_for_demand.append(lsp)
+
+                if lsps_for_demand != []:
                     # Find each demands path list, determine the ECMP split across the
                     # routed LSPs, and find the traffic per path (LSP)
-                    num_routed_lsps_for_demand = float(len(demand_object.path))
+                    num_routed_lsps_for_demand = len(lsps_for_demand)
 
                     traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
 
                     # Get the interfaces for each LSP in the demand's path
-                    for lsp in demand_object.path:
+                    for lsp in lsps_for_demand:
                         lsp_path_interfaces = lsp.path['interfaces']
 
                         # This will catch unrouted LSPs that have the same source and
@@ -388,11 +400,6 @@ class Model(object):
                             for interface in lsp.path['interfaces']:
                                 interface.reserved_bandwidth += lsp.reserved_bandwidth
 
-
-#                         elif lsp.setup_bandwidth < lsp.traffic_on_lsp(self): # TODO - delete this stanza
-# #                            pdb.set_trace()
-#                             lsp._find_rsvp_path_w_bw(traffic_per_demand_path, self)
-
                         # Now that all interfaces are known,
                         # update traffic on interfaces demand touches
                         for interface in lsp_path_interfaces:
@@ -414,8 +421,8 @@ class Model(object):
 
                     # Get the interface objects and update them with the traffic
                     for interface, traffic_from_demand in demand_traffic_per_int.items():
-                        from_node = interface[0]
-                        to_node = interface[2]
+                        from_node = interface.split('-')[0]
+                        to_node = interface.split('-')[1]
                         interface_to_update = self.get_interface_object_from_nodes(from_node, to_node)
                         interface_to_update.traffic += traffic_from_demand
 
@@ -429,61 +436,6 @@ class Model(object):
         """
         # TODO - do this
         pass
-
-    # TODO - delete this as it uses end to end load balancing, not per-hop load balancing
-    # def _update_interface_utilization_old(self):
-    #     """Updates each interface's utilization; returns Model object with
-    #     updated interface utilization."""
-    #
-    #     # In the model, in an interface is failed, set the traffic attribute
-    #     # to 'Down', otherwise, initialize the traffic to zero
-    #     for interface_object in self.interface_objects:
-    #         if interface_object.failed:
-    #             interface_object.traffic = 'Down'
-    #         else:
-    #             interface_object.traffic = 0.0
-    #
-    #     # For each demand that is not Unrouted, add its traffic value to each
-    #     # interface object in the path
-    #     for demand_object in self.demand_objects:
-    #         traffic = demand_object.traffic
-    #
-    #         if 'Unrouted' not in demand_object.path:
-    #
-    #             # Find each demands path list, determine the ECMP split, and
-    #             # find the traffic per path
-    #             demand_object_paths = demand_object.path
-    #             num_demand_paths = float(len(demand_object_paths))
-    #
-    #             ecmp_split = 1 / num_demand_paths
-    #             traffic_per_demand_path = traffic * ecmp_split
-    #
-    #             # Add the traffic per path to each interface the demand touches.
-    #             for demand_object_path in demand_object_paths:
-    #                 # If the path is a single component and an LSP, expand
-    #                 # the LSP into its path interfaces
-    #                 if isinstance(demand_object_path, RSVP_LSP):
-    #                     demand_object_path = demand_object_path.path['interfaces']
-    #
-    #                 # This 'elif' part below not necessary until support for LSPs in IGP is needed
-    #                 # If the path has multiple components, check if each
-    #                 # component is an LSP and if it is, expand the component
-    #                 # into its path interfaces
-    #                 elif len(demand_object_path) > 1:
-    #                     for component in demand_object_path:
-    #                         if isinstance(component, RSVP_LSP):
-    #                             component = component.path['interfaces']
-    #
-    #                 # Now that all interfaces are known,
-    #                 # update traffic on interfaces demand touches
-    #                 for demand_path_interface in demand_object_path:
-    #                     # Get the interface's existing traffic and add the
-    #                     # portion of the demand's traffic
-    #                     existing_traffic = demand_path_interface.traffic
-    #                     existing_traffic = existing_traffic + traffic_per_demand_path
-    #                     demand_path_interface.traffic = existing_traffic
-    #
-    #     return self
 
     def _route_demands(self, demands, input_model):
         """Routes demands that don't take LSPs"""
@@ -566,15 +518,26 @@ class Model(object):
                                             available_nodes, self.demand_objects,
                                             self.rsvp_lsp_objects)
 
-        # Reset the reserved_bandwidth on each interface
-        # TODO - only enable this if using the non-stateful lsp _add_rsvp_lsp_path method
+        # Reset the reserved_bandwidth, traffic on each interface
         for interface in (interface for interface in self.interface_objects):
             interface.reserved_bandwidth = 0
+
+
+
+
+            interface.traffic = 0  # TODO - trying to fix demand add failures
+
+        for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+            lsp.path = 'Unrouted - initial'
+
+        for demand in (demand for demand in self.demand_objects):
+            demand.path = 'Unrouted'
+
 
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
         # Set reserved_bandwidth on all ints with no LSPs to zero
-        self._set_res_bw_on_ints_w_no_lsps_zero()
+#        self._set_res_bw_on_ints_w_no_lsps_zero() # TODO is this necessary now that we set all res bw to 0 at the beginning of each sim?
 
         # Route the demands
         self = self._route_demands(self.demand_objects,
@@ -600,7 +563,6 @@ class Model(object):
             old_bandwidth = lsp.reserved_bandwidth
             old_path = lsp.path
             requested_bandwidth = lsp.traffic_on_lsp(self)
-
             # See if a path exists that can handle the requested_bandwidth
             lsp = lsp.find_rsvp_path_w_bw(requested_bandwidth, self)
 
@@ -612,6 +574,8 @@ class Model(object):
                     interface.reserved_bandwidth -= old_bandwidth
                 for interface in lsp.path['interfaces']:
                     interface.reserved_bandwidth += requested_bandwidth
+            # TODO - the problem here from lsp_practice code is that if an LSP grabs more bandwidth,
+            # TODO - the other LSPs need to calculate the setup bandwidth on the
 
         self.validate_model()
 
@@ -815,7 +779,8 @@ class Model(object):
             message = added_lsp, ' already exists in rsvp_lsp_objects'
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
-        self.update_simulation()
+
+        # TODO - to get this to work need rerun demand routing???  zero out all interface bandwidths at beginning?
 
         self.validate_model()
 

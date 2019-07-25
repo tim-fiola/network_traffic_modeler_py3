@@ -232,8 +232,8 @@ class RSVP_LSP(object):
         # Option b. There are viable paths, but none that can
         # accommodate the setup_bandwidth
         if candidate_paths_with_enough_headroom == []:
-            self.path = 'Unrouted - setup_bandwidth' # TODO - make this 'Unrouted - setup_bandwidth'
-            self.reserved_bandwidth = 'Unrouted - setup_bandwidth' # TODO - make this 'Unrouted - setup_bandwidth'
+            self.path = 'Unrouted - setup_bandwidth'
+            self.reserved_bandwidth = 'Unrouted - setup_bandwidth'
             return self
 
         # Option c.  LSP can route with current setup_bandwidth
@@ -631,6 +631,7 @@ class RSVP_LSP(object):
 
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)
+        pdb.set_trace()
 
         # Route the LSP
         self._add_rsvp_lsp_path(model)

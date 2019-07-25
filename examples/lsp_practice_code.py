@@ -214,9 +214,14 @@ demand_f_e = model.get_demand_object('F', 'E', 'dmd_f_e_1')
 
 print("*************** Adding 4th LSP from A to D ****************")
 model.add_rsvp_lsp('A', 'D', 'lsp_a_d_4')
+lsp_a_d_4 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_4')
 model.update_simulation()
 print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values")
 for lsp in model.rsvp_lsp_objects:
     if 'Unrouted' not in lsp.path:
         print([lsp.lsp_name, lsp.reserved_bandwidth, lsp.setup_bandwidth, lsp.path['baseline_path_reservable_bw']])
 print()
+print("*************** Adding LSP from A to F ******************")
+model.add_rsvp_lsp('A', 'F', 'lsp_a_f')
+lsp_a_f_1 = model.get_rsvp_lsp('A', 'F', 'lsp_a_f')
+model.update_simulation()
