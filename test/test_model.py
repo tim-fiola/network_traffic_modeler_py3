@@ -19,3 +19,7 @@ class TestModel(unittest.TestCase):
         self.model = Model(interface_objects=set([self.interface_a, self.interface_b]),
                            node_objects=set([self.node_a, self.node_b]), demand_objects=set([]),
                            rsvp_lsp_objects=set([]))
+
+
+    # TODO - set model.add_rsvp_lsp call; it does not work
+    # TODO - in fact, adding an LSP to any model that already has run update_simulation fails due to interface traffic utilization errors . .

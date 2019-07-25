@@ -28,12 +28,12 @@ class TestInterface(unittest.TestCase):
         if self.interface_a == self.interface_a:
             self.assertTrue(True)
 
-    def test_init_fail_neg_cost(self): # TODO - do getter/setter for cost
+    def test_init_fail_neg_cost(self):
         with self.assertRaises(ModelException):
             Interface(name='inerfaceA-to-B', cost=-1, capacity=100,
                       node_object=self.node_a, remote_node_object=self.node_b, address=1)
 
-    def test_init_fail_neg_capacity(self): # TODO - do getter/setter for capacity
+    def test_init_fail_neg_capacity(self):
         with self.assertRaises(ModelException):
             Interface(name='inerfaceA-to-B', cost=4, capacity=-1,
                       node_object=self.node_a, remote_node_object=self.node_b, address=1)

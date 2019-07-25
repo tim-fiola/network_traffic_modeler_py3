@@ -352,6 +352,7 @@ class Model(object):
                 # will be LSPs.
                 # Expand each LSP into its interfaces and add that the traffic per LSP
                 # to the LSP's path interfaces.
+
                 if isinstance(demand_object.path[0], RSVP_LSP):
                     # Find each demands path list, determine the ECMP split across the
                     # routed LSPs, and find the traffic per path (LSP)
@@ -814,6 +815,7 @@ class Model(object):
             message = added_lsp, ' already exists in rsvp_lsp_objects'
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
+        self.update_simulation()
 
         self.validate_model()
 

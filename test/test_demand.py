@@ -105,23 +105,13 @@ class TestDemand(unittest.TestCase):
                                 node_object=node_b, remote_node_object=node_a, address=1)
         dmd_a_b = Demand(node_a, node_b, traffic=10)
 
+        lsp_a_b = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b')
+
         model = Model(interface_objects=set([interface_a, interface_b]),
                       node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
-                      rsvp_lsp_objects=set([]))
+                      rsvp_lsp_objects=set([lsp_a_b]))
+
         model.update_simulation()
-        #
-        # # Demand takes interface if no LSP is present
-        # self.assertEqual(str(dmd_a_b.path), "[Interface(name='inerfaceA-to-B', cost=4, capacity=100, node_object=node_a, remote_node_object=node_b, address=1)") # noqa
-
-        # lsp_a_b = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b')
-
-        # model = Model(interface_objects=set([interface_a, interface_b]),
-        #               node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
-        #               rsvp_lsp_objects=set([lsp_a_b]))
-
-        model.add_rsvp_lsp('nodeA', 'nodeB', lsp_name='lsp_a_b')
-        model.update_simulation()
-        print(model.get_rsvp_lsp('nodeA', 'nodeB', 'lsp_a_b').path)
 
         self.assertEqual(str(dmd_a_b.path), "[RSVP_LSP(source = nodeA, dest = nodeB, lsp_name = 'lsp_a_b')]")
 

@@ -60,3 +60,4 @@ class TestRSVPLSPInitial(unittest.TestCase):
 
         self.assertEqual(self.int_a_c.reserved_bandwidth, 75.0)
         self.assertEqual(self.int_a_c.reservable_bandwidth, 75.0)
+
