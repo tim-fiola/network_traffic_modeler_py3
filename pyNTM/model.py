@@ -485,12 +485,47 @@ class Model(object):
         """
 
         # Find parallel LSP groups
-        parallel_lsp_groups = self.determine_parallel_lsp_groups()
+        parallel_lsp_groups = self.parallel_lsp_groups()
 
         # Find all the parallel demand groups
-
+        parallel_demand_groups = self.parallel_demand_groups()
 
         # Find the amount of bandwidth each LSP in each parallel group will carry
+        for group, lsps in parallel_lsp_groups.items():
+            dmds_on_lsp_group = parallel_demand_groups[group]
+            pdb.set_trace()
+            traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group])
+            if traffic_in_demand_group > 0:
+                traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
+
+            # Now route each LSP in the group
+            for lsp in lsps:
+                # Route each LSP one at a time
+                for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+                    lsp.route_lsp(input_model)
+
+
+
+
+        return self
+
+    def _route_lsps_old(self, input_model):
+        """Route the LSPs in the model
+        :param input_model: Model object; this may have different parameters than 'self'
+        :return: self, with updated LSP paths
+        """
+
+        # Find parallel LSP groups
+        parallel_lsp_groups = self.parallel_lsp_groups()
+
+        # Find all the parallel demand groups
+        parallel_demand_groups = self.parallel_demand_groups()
+
+        # Find the amount of bandwidth each LSP in each parallel group will carry
+        for group, lsps in parallel_lsp_groups.items():
+            dmds_on_lsp_group = parallel_demand_groups[group]
+            traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group.values()])
+            traff_on_each_group_lsp = traffic_in_demand_group / len(lsps)
 
         # Route each LSP one at a time
         for lsp in (lsp for lsp in self.rsvp_lsp_objects):
@@ -498,7 +533,7 @@ class Model(object):
 
         return self
 
-    def determine_parallel_lsp_groups(self):
+    def parallel_lsp_groups(self):
         """
         For a group of parallel LSPs, determine how many can route and
         with what reserved and setup BW
@@ -522,6 +557,30 @@ class Model(object):
                         parallel_lsp_groups[key].append(lsp)
 
         return parallel_lsp_groups
+
+    def parallel_demand_groups(self):
+        """
+
+        :return:
+        """
+
+        # TODO - optimize all this stuff with generators, if possible, when it's working
+        src_node_names = set([dmd.source_node_object.name for dmd in self.demand_objects])
+        dest_node_names = set([dmd.dest_node_object.name for dmd in self.demand_objects])
+
+        parallel_demand_groups = {}
+
+        for src_node_name in src_node_names:
+            for dest_node_name in dest_node_names:
+                key = '{}-{}'.format(src_node_name, dest_node_name)
+                parallel_demand_groups[key] = []
+                for dmd in self.demand_objects:
+                    if (dmd.source_node_object.name == src_node_name and
+                             dmd.dest_node_object.name == dest_node_name):
+                        parallel_demand_groups[key].append(dmd)
+
+        return parallel_demand_groups
+
 
     def _route_lsp_demands(self, demands, input_model):
         """Route demands that ride LSPs in the model"""
