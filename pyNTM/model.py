@@ -331,7 +331,8 @@ class Model(object):
 
         return traff_per_int
 
-    def _update_interface_utilization(self):
+
+    def _update_interface_utilization(self):  #
         """Updates each interface's utilization; returns Model object with
         updated interface utilization."""
 
@@ -374,6 +375,10 @@ class Model(object):
 
                     # Get the interfaces for each LSP in the demand's path
                     for lsp in lsps_for_demand:
+
+
+                        # TODO - recalculate the LSP's path??!!!
+
                         lsp_path_interfaces = lsp.path['interfaces']
 
                         # This will catch unrouted LSPs that have the same source and
@@ -428,15 +433,6 @@ class Model(object):
 
         return self
 
-    def determine_bw_parallel_lsps(self, source_node, dest_node):
-        """
-        For a group of parallel LSPs, determine how many can route and
-        with what reserved and setup BW
-        :return: setup_bw, reserved_bw
-        """
-        # TODO - do this
-        pass
-
     def _route_demands(self, demands, input_model):
         """Routes demands that don't take LSPs"""
         for demand_object in demands:
@@ -474,17 +470,58 @@ class Model(object):
                         break
                 interface.reserved_bandwidth = reserved_bw
 
+    # TODO - route LSPs by source/dest groups instead of one by one; make a branch off this one and try that . . .
+    '''
+    1.  Get LSPs into groups with matching source/dest
+
+    2.  Find all the demands that take the LSP group
+
+    3.  Route the entire LSP group
+    '''
     def _route_lsps(self, input_model):
         """Route the LSPs in the model
         :param input_model: Model object; this may have different parameters than 'self'
         :return: self, with updated LSP paths
         """
 
+        # Find parallel LSP groups
+        parallel_lsp_groups = self.determine_parallel_lsp_groups()
+
+        # Find all the parallel demand groups
+
+
+        # Find the amount of bandwidth each LSP in each parallel group will carry
+
         # Route each LSP one at a time
         for lsp in (lsp for lsp in self.rsvp_lsp_objects):
             lsp.route_lsp(input_model)
 
         return self
+
+    def determine_parallel_lsp_groups(self):
+        """
+        For a group of parallel LSPs, determine how many can route and
+        with what reserved and setup BW
+        :return: setup_bw, reserved_bw
+        """
+
+
+        # TODO - optimize all this stuff with generators, if possible, when it's working
+        src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
+        dest_node_names = set([lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects])
+
+        parallel_lsp_groups = {}
+
+        for src_node_name in src_node_names:
+            for dest_node_name in dest_node_names:
+                key = '{}-{}'.format(src_node_name, dest_node_name)
+                parallel_lsp_groups[key] = []
+                for lsp in self.rsvp_lsp_objects:
+                    if (lsp.source_node_object.name == src_node_name and
+                             lsp.dest_node_object.name == dest_node_name):
+                        parallel_lsp_groups[key].append(lsp)
+
+        return parallel_lsp_groups
 
     def _route_lsp_demands(self, demands, input_model):
         """Route demands that ride LSPs in the model"""
@@ -521,11 +558,7 @@ class Model(object):
         # Reset the reserved_bandwidth, traffic on each interface
         for interface in (interface for interface in self.interface_objects):
             interface.reserved_bandwidth = 0
-
-
-
-
-            interface.traffic = 0  # TODO - trying to fix demand add failures
+            interface.traffic = 0
 
         for lsp in (lsp for lsp in self.rsvp_lsp_objects):
             lsp.path = 'Unrouted - initial'
@@ -536,8 +569,6 @@ class Model(object):
 
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
-        # Set reserved_bandwidth on all ints with no LSPs to zero
-#        self._set_res_bw_on_ints_w_no_lsps_zero() # TODO is this necessary now that we set all res bw to 0 at the beginning of each sim?
 
         # Route the demands
         self = self._route_demands(self.demand_objects,
@@ -574,8 +605,6 @@ class Model(object):
                     interface.reserved_bandwidth -= old_bandwidth
                 for interface in lsp.path['interfaces']:
                     interface.reserved_bandwidth += requested_bandwidth
-            # TODO - the problem here from lsp_practice code is that if an LSP grabs more bandwidth,
-            # TODO - the other LSPs need to calculate the setup bandwidth on the
 
         self.validate_model()
 
@@ -816,7 +845,7 @@ class Model(object):
 
         source_node_object = self.get_node_object(source_node_name)
         dest_node_object = self.get_node_object(dest_node_name)
-        needed_key = (source_node_object, dest_node_object, lsp_name)
+        needed_key = (source_node_name, dest_node_name, lsp_name)
 
         if needed_key not in (lsp._key for lsp in self.rsvp_lsp_objects):
             msg = "LSP with source node %s, dest node %s, and name %s \

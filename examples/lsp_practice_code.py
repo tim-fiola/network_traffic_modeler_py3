@@ -181,8 +181,9 @@ print()
 
 print("*************** Adding 3rd LSP from A to D ****************")
 model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
-model.update_simulation()
 lsp_a_d_3 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
+model.update_simulation()
+
 print("Here are the routed LSPs and their reserved_bandwidth, setup_bandwidth, and baseline_path_reservable_bw values ")
 for lsp in model.rsvp_lsp_objects:
     if 'Unrouted' not in lsp.path:

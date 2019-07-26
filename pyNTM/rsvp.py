@@ -48,15 +48,16 @@ class RSVP_LSP(object):
 
     @property
     def _key(self):
-        """Unique identifier for the rsvp lsp: (Node('source'),
-        Node('dest'), name)"""
-        return (self.source_node_object, self.dest_node_object, self.lsp_name)
+        """Unique identifier for the rsvp lsp: (Node('source').name, Node('dest').name, name)"""
+        return (self.source_node_object.name, self.dest_node_object.name, self.lsp_name)
 
     def __repr__(self):
         return 'RSVP_LSP(source = %s, dest = %s, lsp_name = %r)' % \
                (self.source_node_object.name,
                 self.dest_node_object.name,
                 self.lsp_name)
+
+    # TODO - make __ def to allow use of <, >, == by looking at source and deset only
 
     def _calculate_setup_bandwidth(self, model):
         """Find amount of bandwidth to reserve for LSP"""
@@ -631,7 +632,6 @@ class RSVP_LSP(object):
 
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)
-        pdb.set_trace()
 
         # Route the LSP
         self._add_rsvp_lsp_path(model)
