@@ -318,8 +318,6 @@ class Model(object):
             shortest_path_info[path_key]['path_traffic'] = path_traffic
             path_counter += 1
 
-        # pprint(shortest_path_info)
-
         # For each path, determine which interfaces it transits and add
         # that path's traffic to the interface
 
@@ -330,7 +328,6 @@ class Model(object):
                 traff_per_int[interface] += info['path_traffic']
 
         return traff_per_int
-
 
     def _update_interface_utilization(self):  #
         """Updates each interface's utilization; returns Model object with
@@ -376,11 +373,10 @@ class Model(object):
                     # Get the interfaces for each LSP in the demand's path
                     for lsp in lsps_for_demand:
 
-
-                        # TODO - recalculate the LSP's path??!!!
-
                         lsp_path_interfaces = lsp.path['interfaces']
 
+
+                        # TODO - need to do this during the routing of the entire LSP group
                         # This will catch unrouted LSPs that have the same source and
                         # dest node as the demand but may not have been able to signal.
                         # It will modify the reserved and setup bandwidth for any routed,
@@ -389,21 +385,21 @@ class Model(object):
                         # the LSP's traffic and if the LSP's traffic is less than than
                         # amount of the LSP path's reservable bandwidth, adjust the
                         # LSP's setup bandwidth and reserved bandwidth match the LSP's traffic
-                        if (lsp.setup_bandwidth <= lsp.traffic_on_lsp(self) <= lsp.path['baseline_path_reservable_bw']):
-
-                            # Update the reserved_bandwidth on each interface for the modified LSPs
-                            # Remove the current reserved_bw
-                            for interface in lsp.path['interfaces']:
-                                # Remove the current reserved_bw
-                                interface.reserved_bandwidth -= lsp.reserved_bandwidth
-
-                            # Change the setup/reserved bandwidth
-                            lsp.setup_bandwidth = lsp.traffic_on_lsp(self)
-                            lsp.reserved_bandwidth = lsp.traffic_on_lsp(self)
-
-                            # Add the new reserved_bw for the lsp interfaces
-                            for interface in lsp.path['interfaces']:
-                                interface.reserved_bandwidth += lsp.reserved_bandwidth
+                        # if (lsp.setup_bandwidth <= lsp.traffic_on_lsp(self) <= lsp.path['baseline_path_reservable_bw']):
+                        #
+                        #     # Update the reserved_bandwidth on each interface for the modified LSPs
+                        #     # Remove the current reserved_bw
+                        #     for interface in lsp.path['interfaces']:
+                        #         # Remove the current reserved_bw
+                        #         interface.reserved_bandwidth -= lsp.reserved_bandwidth
+                        #
+                        #     # Change the setup/reserved bandwidth
+                        #     lsp.setup_bandwidth = lsp.traffic_on_lsp(self)
+                        #     lsp.reserved_bandwidth = lsp.traffic_on_lsp(self)
+                        #
+                        #     # Add the new reserved_bw for the lsp interfaces
+                        #     for interface in lsp.path['interfaces']:
+                        #         interface.reserved_bandwidth += lsp.reserved_bandwidth
 
                         # Now that all interfaces are known,
                         # update traffic on interfaces demand touches
@@ -440,7 +436,7 @@ class Model(object):
 
         return self._update_interface_utilization()
 
-    def _set_res_bw_on_ints_w_no_lsps_zero(self):
+    def _set_res_bw_on_ints_w_no_lsps_zero(self): # TODO - is this still used?
         """
 
         :return:
@@ -476,10 +472,16 @@ class Model(object):
 
     2.  Find all the demands that take the LSP group
 
-    3.  Route the entire LSP group
+    3.  Route the entire LSP group, one at a time
     '''
     def _route_lsps(self, input_model):
         """Route the LSPs in the model
+        1.  Get LSPs into groups with matching source/dest
+
+        2.  Find all the demands that take the LSP group
+
+        3.  Route the LSP group, one at a time
+
         :param input_model: Model object; this may have different parameters than 'self'
         :return: self, with updated LSP paths
         """
@@ -497,40 +499,63 @@ class Model(object):
             if traffic_in_demand_group > 0:
                 traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
 
-            # Now route each LSP in the group
+            # Now route each LSP in the group (first routing iteration)
             for lsp in lsps:
                 # Route each LSP one at a time
                 lsp.route_lsp(input_model, traff_on_each_group_lsp)
 
+            # If all LSPs in 'lsps' list can't route, do the following:
+            # 0.  Return the reserved_bandwidth from the LSPs that could route to the interfaces in their paths
+            # 1.  Set traff_on_each_group_lsp = traffic_in_demand_group/len(lsps members that are routed)
+            # 2.  Attempt to route the 'lsps' members whose path is not 'Unrouted - setup bandwidth'
+            # 3.  Repeat step 2 until:
+            #       - each lsp in the LSPs that can route has attempted to signal for the
+            #         amount of traffic it is carrying
 
+            routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted - setup_bandwidth']
 
+            # If all or none of the LSPs can route, continue to next group; this means that either all of them
+            # can route or that none of them can route due to setup bandwidth constraints
+            if len(routed_lsps_in_group) == len(lsps) or len(lsps) - len(routed_lsps_in_group) == len(lsps):
+                continue
+            # If at least one LSP can route, attempt to increase the reserved bandwidth over
+            # the LSPs that can route
+            else:
+                setup_bw_values_tried = []  # List of setup bandwidth values attempted
+                # Give back the bw the routed LSPs reserved
+                for lsp in routed_lsps_in_group:
+                    for interface in lsp.path['interfaces']:
+                        interface.reserved_bandwidth -= lsp.reserved_bandwidth
 
+                setup_bw = traffic_in_demand_group/len(routed_lsps_in_group)
+                setup_bw_values_tried.append(setup_bw)
+
+                self._route_lsp_group(input_model, routed_lsps_in_group, setup_bw)
+
+                while (len([lsp for lsp in lsps if lsp.path != 'Unrouted - setup_bandwidth']) > 0 and
+                        setup_bw > setup_bw_values_tried[-1]):
+                    pdb.set_trace()
+                    self._route_lsp_group(input_model, routed_lsps_in_group, setup_bw)
 
         return self
 
-    # def _route_lsps_old(self, input_model):  # TODO - delete when lsp group routing fix works
-    #     """Route the LSPs in the model
-    #     :param input_model: Model object; this may have different parameters than 'self'
-    #     :return: self, with updated LSP paths
-    #     """
-    #
-    #     # Find parallel LSP groups
-    #     parallel_lsp_groups = self.parallel_lsp_groups()
-    #
-    #     # Find all the parallel demand groups
-    #     parallel_demand_groups = self.parallel_demand_groups()
-    #
-    #     # Find the amount of bandwidth each LSP in each parallel group will carry
-    #     for group, lsps in parallel_lsp_groups.items():
-    #         dmds_on_lsp_group = parallel_demand_groups[group]
-    #         traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group.values()])
-    #         traff_on_each_group_lsp = traffic_in_demand_group / len(lsps)
-    #
-    #     # Route each LSP one at a time
-    #     for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-    #         lsp.route_lsp(input_model)
-    #
-    #     return self
+    def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth):
+        """
+        Attempts to route aggregate_traffic over the LSPs in lsps_to_route
+        :param lsps_to_route: list of parallel LSPs that need a path
+        :return: lsps_to_route with updated path info
+        """
+
+#        setup_bandwidth = aggregate_traffic / len(lsps_to_route)
+
+        for lsp in lsps_to_route:
+            lsp.route_lsp(input_model, setup_bandwidth)
+
+        return lsps_to_route
+
+
+
+
 
     def parallel_lsp_groups(self):
         """
@@ -538,7 +563,6 @@ class Model(object):
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
                  with matching source/dest nodes
         """
-
 
         # TODO - optimize all this stuff with generators, if possible, when it's working
         src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
@@ -557,8 +581,6 @@ class Model(object):
 
                 if parallel_lsp_groups[key] == []:
                     del parallel_lsp_groups[key]
-
-
 
         return parallel_lsp_groups
 
@@ -588,7 +610,6 @@ class Model(object):
                     del parallel_demand_groups[key]
 
         return parallel_demand_groups
-
 
     def _route_lsp_demands(self, demands, input_model):
         """Route demands that ride LSPs in the model"""
@@ -641,6 +662,7 @@ class Model(object):
         self = self._route_demands(self.demand_objects,
                                    non_failed_interfaces_model)
 
+        # TODO - this is not necessary if we are routing entire parallel LSP groups at a time
         # Look for routed LSPs where at least one of the following is True:
         #
         #       lsp.setup_bandwidth > lsp.reserved_bandwidth
@@ -651,27 +673,27 @@ class Model(object):
         # See if there are any paths that will accommodate; this is used because
         # sometimes LSPs can't signal due to setup bandwidth constraints and their
         # traffic ends up getting carried on parallel LSPs
-        lsp_generator = [lsp for lsp in self.rsvp_lsp_objects if
-                         'Unrouted' not in lsp.path and
-                         (lsp.setup_bandwidth > lsp.reserved_bandwidth or
-                         lsp.traffic_on_lsp(self) > lsp.reserved_bandwidth or
-                         lsp.traffic_on_lsp(self) > lsp.setup_bandwidth)]
-
-        for lsp in lsp_generator:
-            old_bandwidth = lsp.reserved_bandwidth
-            old_path = lsp.path
-            requested_bandwidth = lsp.traffic_on_lsp(self)
-            # See if a path exists that can handle the requested_bandwidth
-            lsp = lsp.find_rsvp_path_w_bw(requested_bandwidth, self)
-
-            # If the path does change, update the reserved_bandwidth on the interfaces
-            if old_path['interfaces'] != lsp.path['interfaces']:
-                # Remove reserved_bandwidth from old path interfaces
-                # and add it to new path interfaces
-                for interface in old_path['interfaces']:
-                    interface.reserved_bandwidth -= old_bandwidth
-                for interface in lsp.path['interfaces']:
-                    interface.reserved_bandwidth += requested_bandwidth
+        # lsp_generator = [lsp for lsp in self.rsvp_lsp_objects if
+        #                  'Unrouted' not in lsp.path and
+        #                  (lsp.setup_bandwidth > lsp.reserved_bandwidth or
+        #                  lsp.traffic_on_lsp(self) > lsp.reserved_bandwidth or
+        #                  lsp.traffic_on_lsp(self) > lsp.setup_bandwidth)]
+        #
+        # for lsp in lsp_generator:
+        #     old_bandwidth = lsp.reserved_bandwidth
+        #     old_path = lsp.path
+        #     requested_bandwidth = lsp.traffic_on_lsp(self)
+        #     # See if a path exists that can handle the requested_bandwidth
+        #     lsp = lsp.find_rsvp_path_w_bw(requested_bandwidth, self)
+        #
+        #     # If the path does change, update the reserved_bandwidth on the interfaces
+        #     if old_path['interfaces'] != lsp.path['interfaces']:
+        #         # Remove reserved_bandwidth from old path interfaces
+        #         # and add it to new path interfaces
+        #         for interface in old_path['interfaces']:
+        #             interface.reserved_bandwidth -= old_bandwidth
+        #         for interface in lsp.path['interfaces']:
+        #             interface.reserved_bandwidth += requested_bandwidth
 
         self.validate_model()
 
