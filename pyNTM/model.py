@@ -493,7 +493,6 @@ class Model(object):
         # Find the amount of bandwidth each LSP in each parallel group will carry
         for group, lsps in parallel_lsp_groups.items():
             dmds_on_lsp_group = parallel_demand_groups[group]
-            pdb.set_trace()
             traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group])
             if traffic_in_demand_group > 0:
                 traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
@@ -501,43 +500,43 @@ class Model(object):
             # Now route each LSP in the group
             for lsp in lsps:
                 # Route each LSP one at a time
-                for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-                    lsp.route_lsp(input_model)
+                lsp.route_lsp(input_model, traff_on_each_group_lsp)
 
 
 
 
-        return self
-
-    def _route_lsps_old(self, input_model):
-        """Route the LSPs in the model
-        :param input_model: Model object; this may have different parameters than 'self'
-        :return: self, with updated LSP paths
-        """
-
-        # Find parallel LSP groups
-        parallel_lsp_groups = self.parallel_lsp_groups()
-
-        # Find all the parallel demand groups
-        parallel_demand_groups = self.parallel_demand_groups()
-
-        # Find the amount of bandwidth each LSP in each parallel group will carry
-        for group, lsps in parallel_lsp_groups.items():
-            dmds_on_lsp_group = parallel_demand_groups[group]
-            traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group.values()])
-            traff_on_each_group_lsp = traffic_in_demand_group / len(lsps)
-
-        # Route each LSP one at a time
-        for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-            lsp.route_lsp(input_model)
 
         return self
+
+    # def _route_lsps_old(self, input_model):  # TODO - delete when lsp group routing fix works
+    #     """Route the LSPs in the model
+    #     :param input_model: Model object; this may have different parameters than 'self'
+    #     :return: self, with updated LSP paths
+    #     """
+    #
+    #     # Find parallel LSP groups
+    #     parallel_lsp_groups = self.parallel_lsp_groups()
+    #
+    #     # Find all the parallel demand groups
+    #     parallel_demand_groups = self.parallel_demand_groups()
+    #
+    #     # Find the amount of bandwidth each LSP in each parallel group will carry
+    #     for group, lsps in parallel_lsp_groups.items():
+    #         dmds_on_lsp_group = parallel_demand_groups[group]
+    #         traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group.values()])
+    #         traff_on_each_group_lsp = traffic_in_demand_group / len(lsps)
+    #
+    #     # Route each LSP one at a time
+    #     for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+    #         lsp.route_lsp(input_model)
+    #
+    #     return self
 
     def parallel_lsp_groups(self):
         """
-        For a group of parallel LSPs, determine how many can route and
-        with what reserved and setup BW
-        :return: setup_bw, reserved_bw
+        Determine LSPs with same source and dest nodes
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
+                 with matching source/dest nodes
         """
 
 
@@ -556,12 +555,18 @@ class Model(object):
                              lsp.dest_node_object.name == dest_node_name):
                         parallel_lsp_groups[key].append(lsp)
 
+                if parallel_lsp_groups[key] == []:
+                    del parallel_lsp_groups[key]
+
+
+
         return parallel_lsp_groups
 
     def parallel_demand_groups(self):
         """
-
-        :return:
+        Determine demands with same source and dest nodes
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands
+                 with matching source/dest nodes
         """
 
         # TODO - optimize all this stuff with generators, if possible, when it's working
@@ -578,6 +583,9 @@ class Model(object):
                     if (dmd.source_node_object.name == src_node_name and
                              dmd.dest_node_object.name == dest_node_name):
                         parallel_demand_groups[key].append(dmd)
+
+                if parallel_demand_groups[key] == []:
+                    del parallel_demand_groups[key]
 
         return parallel_demand_groups
 

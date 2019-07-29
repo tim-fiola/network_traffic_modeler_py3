@@ -44,7 +44,7 @@ class RSVP_LSP(object):
         self.lsp_name = lsp_name
         self.path = 'Unrouted - initial'
         self.reserved_bandwidth = 'Unrouted - initial'
-        self.setup_bandwidth = 'Unrouted - initial'
+        self.setup_bandwidth = 'Unrouted - initial'  # TODO - getter/setter
 
     @property
     def _key(self):
@@ -61,7 +61,7 @@ class RSVP_LSP(object):
 
     def _calculate_setup_bandwidth(self, model):
         """Find amount of bandwidth to reserve for LSP"""
-        # TODO - this is not optimal because it will do this math for each LSP in group with same source/dest
+        # TODO - not needed
 
         # Find all demands that would ride the LSP
         demand_list = []
@@ -181,7 +181,7 @@ class RSVP_LSP(object):
 
 
 
-    def _add_rsvp_lsp_path(self, model):
+    def _add_rsvp_lsp_path(self, model, setup_bandwidth):
         """
         Determines the LSP's path regardless of whether it was previously routed
         or not (non stateful).
@@ -192,18 +192,19 @@ class RSVP_LSP(object):
         :return: self with 'path' attribute
         """
 
-        # Find all demands that would take the LSP
-        demands_for_lsp = []
-        for demand in (demand for demand in model.demand_objects):
-            if (demand.source_node_object == self.source_node_object and
-                    demand.dest_node_object == self.dest_node_object):
-                demands_for_lsp.append(demand)
-
-        # Find sum of all traffic for demands_for_lsp TODO - remove this
-#        demands_for_lsp_traffic = sum((demand.traffic for demand in demands_for_lsp))
-
-        # Find setup bandwidth
-        self = self._calculate_setup_bandwidth(model)
+        # TODO - delete all this . . .
+#         # Find all demands that would take the LSP
+#         demands_for_lsp = []
+#         for demand in (demand for demand in model.demand_objects):
+#             if (demand.source_node_object == self.source_node_object and
+#                     demand.dest_node_object == self.dest_node_object):
+#                 demands_for_lsp.append(demand)
+#
+#         # Find sum of all traffic for demands_for_lsp TODO - remove this
+# #        demands_for_lsp_traffic = sum((demand.traffic for demand in demands_for_lsp))
+#
+#         # Find setup bandwidth
+#         self = self._calculate_setup_bandwidth(model)
 
         # Get candidate paths
         candidate_paths = model.get_feasible_paths(self.source_node_object.name,
@@ -623,7 +624,7 @@ class RSVP_LSP(object):
 
         return metric
 
-    def route_lsp(self, model):
+    def route_lsp(self, model, setup_bandwidth):
         """
         Used in Model object to route each LSP
         :param model:
@@ -631,9 +632,10 @@ class RSVP_LSP(object):
         """
 
         # Calculate setup bandwidth
-        self._calculate_setup_bandwidth(model)
+#        self._calculate_setup_bandwidth(model)
+        self.setup_bandwidth = setup_bandwidth
 
         # Route the LSP
-        self._add_rsvp_lsp_path(model)
+        self._add_rsvp_lsp_path(model, setup_bandwidth)
 
         return self
