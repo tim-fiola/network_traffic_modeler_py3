@@ -57,42 +57,6 @@ class RSVP_LSP(object):
                 self.dest_node_object.name,
                 self.lsp_name)
 
-    # def _calculate_setup_bandwidth(self, model):
-    #     """Find amount of bandwidth to reserve for LSP"""
-    #     # TODO - not needed if routing parallel LSP groups
-    #
-    #     # Find all demands that would ride the LSP
-    #     demand_list = []
-    #     for demand in model.demand_objects:
-    #         if demand.source_node_object == self.source_node_object and \
-    #                 demand.dest_node_object == self.dest_node_object:
-    #             demand_list.append(demand)
-    #
-    #     sum_demand_traffic = sum([demand.traffic for demand in demand_list])
-    #
-    #     all_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if
-    #                             lsp.source_node_object == self.source_node_object and
-    #                             lsp.dest_node_object == self.dest_node_object]
-    #
-    #     needed_bw = sum_demand_traffic / len(all_lsps_src_to_dest)
-    #
-    #     self.setup_bandwidth = needed_bw
-    #
-    #     return self
-
-    def parallel_lsp_group(self, model):  # TODO - i don't think this is used . . .
-        """
-        Finds all routed LSPs whose source node and destination node match that of self
-        :param model: Model object
-        :return:  list of all routed LSPs from self.source_node_object to self.dest_node_object
-        """
-        # Calculate the amount of bandwidth for each LSP
-        routed_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if
-                                   (lsp.source_node_object == self.source_node_object and
-                                    lsp.dest_node_object == self.dest_node_object and
-                                    'Unrouted' not in lsp.path)]
-        return routed_lsps_src_to_dest
-
     def _find_path_cost_and_headroom_routed_lsp(self, candidate_paths):
         """
         Returns a list of dictionaries containing the path interfaces as

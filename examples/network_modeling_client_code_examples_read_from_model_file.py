@@ -4,11 +4,14 @@ Client code to demonstrate how to use the pyNTM network_modeling classes.
 Requires sample_network_model_file.csv to be in same directory.
 
 """
+# This is a temp hack to get this to see pyNTM and let it import
+import sys  # noqa
+sys.path.append('../')  # noqa
 
 from pyNTM import Model
 from pyNTM import Node
 
-from .graph_network import graph_network_interactive
+from graph_network import graph_network_interactive
 
 from pprint import pprint
 import time

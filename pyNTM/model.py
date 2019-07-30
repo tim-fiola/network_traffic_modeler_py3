@@ -375,41 +375,12 @@ class Model(object):
 
                         lsp_path_interfaces = lsp.path['interfaces']
 
-
-                        # TODO - need to do this during the routing of the entire LSP group
-                        # This will catch unrouted LSPs that have the same source and
-                        # dest node as the demand but may not have been able to signal.
-                        # It will modify the reserved and setup bandwidth for any routed,
-                        # parallel LSPs if necessary.
-                        # If the LSP's current setup bandwidth is less than than the amount of
-                        # the LSP's traffic and if the LSP's traffic is less than than
-                        # amount of the LSP path's reservable bandwidth, adjust the
-                        # LSP's setup bandwidth and reserved bandwidth match the LSP's traffic
-                        # if (lsp.setup_bandwidth <= lsp.traffic_on_lsp(self) <= lsp.path['baseline_path_reservable_bw']):
-                        #
-                        #     # Update the reserved_bandwidth on each interface for the modified LSPs
-                        #     # Remove the current reserved_bw
-                        #     for interface in lsp.path['interfaces']:
-                        #         # Remove the current reserved_bw
-                        #         interface.reserved_bandwidth -= lsp.reserved_bandwidth
-                        #
-                        #     # Change the setup/reserved bandwidth
-                        #     lsp.setup_bandwidth = lsp.traffic_on_lsp(self)
-                        #     lsp.reserved_bandwidth = lsp.traffic_on_lsp(self)
-                        #
-                        #     # Add the new reserved_bw for the lsp interfaces
-                        #     for interface in lsp.path['interfaces']:
-                        #         interface.reserved_bandwidth += lsp.reserved_bandwidth
-
                         # Now that all interfaces are known,
                         # update traffic on interfaces demand touches
                         for interface in lsp_path_interfaces:
                             # Get the interface's existing traffic and add the
                             # portion of the demand's traffic
-                            # TODO - clean this up (below)
-                            existing_traffic = interface.traffic
-                            existing_traffic = existing_traffic + traffic_per_demand_path
-                            interface.traffic = existing_traffic
+                            interface.traffic += traffic_per_demand_path
 
                 # If demand_object is not taking LSPs, IGP route it, using hop by hop ECMP
                 else:
@@ -466,14 +437,6 @@ class Model(object):
                         break
                 interface.reserved_bandwidth = reserved_bw
 
-    # TODO - route LSPs by source/dest groups instead of one by one; make a branch off this one and try that . . .
-    '''
-    1.  Get LSPs into groups with matching source/dest
-
-    2.  Find all the demands that take the LSP group
-
-    3.  Route the entire LSP group, one at a time
-    '''
     def _route_lsps(self, input_model):
         """Route the LSPs in the model
         1.  Get LSPs into groups with matching source/dest
@@ -536,7 +499,6 @@ class Model(object):
                 # reserved_bandwidth value to the interfaces in its
                 # prior path['interfaces'] list
                 if lsp_res_bw_before != lsp.reserved_bandwidth:
-                    pdb.set_trace()
                     for interface in lsp_path_interfaces_before:
                         interface.reserved_bandwidth -= lsp_res_bw_before
                     # . . . and then remove the new reserved bandwidth from the
@@ -616,10 +578,6 @@ class Model(object):
 
         return lsps_to_route
 
-
-
-
-
     def parallel_lsp_groups(self):
         """
         Determine LSPs with same source and dest nodes
@@ -627,9 +585,8 @@ class Model(object):
                  with matching source/dest nodes
         """
 
-        # TODO - optimize all this stuff with generators, if possible, when it's working
-        src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
-        dest_node_names = set([lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects])
+        src_node_names = (lsp.source_node_object.name for lsp in self.rsvp_lsp_objects)
+        dest_node_names = (lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects)
 
         parallel_lsp_groups = {}
 
@@ -654,7 +611,6 @@ class Model(object):
                  with matching source/dest nodes
         """
 
-        # TODO - optimize all this stuff with generators, if possible, when it's working
         src_node_names = set([dmd.source_node_object.name for dmd in self.demand_objects])
         dest_node_names = set([dmd.dest_node_object.name for dmd in self.demand_objects])
 
@@ -724,39 +680,6 @@ class Model(object):
         # Route the demands
         self = self._route_demands(self.demand_objects,
                                    non_failed_interfaces_model)
-
-        # TODO - this is not necessary if we are routing entire parallel LSP groups at a time
-        # Look for routed LSPs where at least one of the following is True:
-        #
-        #       lsp.setup_bandwidth > lsp.reserved_bandwidth
-        #       lsp.traffic_on_lsp(self) > lsp.setup_bandwidth
-        #       lsp.traffic_on_lsp(self) > lsp.reserved_bandwidth
-        #
-        #
-        # See if there are any paths that will accommodate; this is used because
-        # sometimes LSPs can't signal due to setup bandwidth constraints and their
-        # traffic ends up getting carried on parallel LSPs
-        # lsp_generator = [lsp for lsp in self.rsvp_lsp_objects if
-        #                  'Unrouted' not in lsp.path and
-        #                  (lsp.setup_bandwidth > lsp.reserved_bandwidth or
-        #                  lsp.traffic_on_lsp(self) > lsp.reserved_bandwidth or
-        #                  lsp.traffic_on_lsp(self) > lsp.setup_bandwidth)]
-        #
-        # for lsp in lsp_generator:
-        #     old_bandwidth = lsp.reserved_bandwidth
-        #     old_path = lsp.path
-        #     requested_bandwidth = lsp.traffic_on_lsp(self)
-        #     # See if a path exists that can handle the requested_bandwidth
-        #     lsp = lsp.find_rsvp_path_w_bw(requested_bandwidth, self)
-        #
-        #     # If the path does change, update the reserved_bandwidth on the interfaces
-        #     if old_path['interfaces'] != lsp.path['interfaces']:
-        #         # Remove reserved_bandwidth from old path interfaces
-        #         # and add it to new path interfaces
-        #         for interface in old_path['interfaces']:
-        #             interface.reserved_bandwidth -= old_bandwidth
-        #         for interface in lsp.path['interfaces']:
-        #             interface.reserved_bandwidth += requested_bandwidth
 
         self.validate_model()
 
@@ -948,7 +871,6 @@ class Model(object):
 
         self.validate_model()
 
-    # TODO - there is a problem with adding an LSP using this if the LSP carries traffic; (model.add_rsvp_lsp)
     def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
         """Adds an RSVP LSP with name name from the source node to the
         dest node"""
@@ -960,8 +882,6 @@ class Model(object):
             message = added_lsp, ' already exists in rsvp_lsp_objects'
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
-
-        # TODO - to get this to work need rerun demand routing???  zero out all interface bandwidths at beginning?
 
         self.validate_model()
 
@@ -1071,19 +991,6 @@ does not exist in model" % (source_node_name, dest_node_name,
                 failed_interfaces.append(interface)
 
         return failed_interfaces
-
-    # TODO - is this redundant with get_unfailed_interface_objects(self) call??
-    def get_non_failed_interface_objects(self):
-        """Returns a list of all operational interfaces"""
-        non_failed_interfaces = []
-
-        for interface in (interface for interface in self.interface_objects):
-            if not interface.failed:
-                int_object = self.get_interface_object(interface.name,
-                                                       interface.node_object.name)
-                non_failed_interfaces.append(int_object)
-
-        return non_failed_interfaces
 
     def get_unfailed_interface_objects(self):
         unfailed_interface_objects = set()

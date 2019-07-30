@@ -198,9 +198,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
                       'and', self, 'fail validation checks'
             raise ModelException(message)
 
-    # TODO - figure out if these get circuit calls are even appropriate 
-    # to be in the Interface Class; would they be better served just 
-    # being in the Model?
     def get_circuit_object(self, model):
         """Returns the circuit object from the model that an 
         interface is associated with."""
