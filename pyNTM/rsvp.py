@@ -178,10 +178,6 @@ class RSVP_LSP(object):
         self.setup_bandwidth = requested_bandwidth
         return self
 
-
-
-
-
     def _add_rsvp_lsp_path(self, model):
         """
         Determines the LSP's path regardless of whether it was previously routed
@@ -235,16 +231,10 @@ class RSVP_LSP(object):
         lowest_metric_paths = [path for path in candidate_paths_with_enough_headroom
                       if path['path_cost'] == lowest_available_metric]
 
-        # If multiple paths, pick a best path at random
-        # if len(lowest_metric_paths) > 1:
-        #     new_path = random.choice(lowest_metric_paths)
-        # else:
-        #     new_path = lowest_metric_paths[0]
-
         # If multiple best_paths, find those with fewest hops
         if len(lowest_metric_paths) > 1:
-            fewest_hops = min([len(path) for path in lowest_metric_paths])
-            lowest_hop_count_paths = [path for path in lowest_metric_paths if len(path) == fewest_hops]
+            fewest_hops = min([len(path['interfaces']) for path in lowest_metric_paths])
+            lowest_hop_count_paths = [path for path in lowest_metric_paths if len(path['interfaces']) == fewest_hops]
             if len(lowest_hop_count_paths) > 1:
                 new_path = random.choice(lowest_metric_paths)
             else:
