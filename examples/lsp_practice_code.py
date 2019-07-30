@@ -4,8 +4,6 @@ sys.path.append('../')  # noqa
 
 from pyNTM import Model
 from pprint import pprint
-import pdb
-
 
 # Test cases:
 # 1. LSP routes on path with available bandwidth

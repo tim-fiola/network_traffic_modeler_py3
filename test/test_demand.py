@@ -38,7 +38,7 @@ class TestDemand(unittest.TestCase):
         self.demand._add_demand_path(self.model)
 
     def test_demand_behavior(self):
-        model = Model.load_model_file('igp_routing_topology.csv')
+        model = Model.load_model_file('test/igp_routing_topology.csv')
 
         model.update_simulation()
 
