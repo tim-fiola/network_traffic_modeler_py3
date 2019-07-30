@@ -80,7 +80,7 @@ class RSVP_LSP(object):
     #
     #     return self
 
-    def parallel_lsp_group(self, model):
+    def parallel_lsp_group(self, model):  # TODO - i don't think this is used . . .
         """
         Finds all routed LSPs whose source node and destination node match that of self
         :param model: Model object
@@ -141,7 +141,10 @@ class RSVP_LSP(object):
         """
         Will search the topology of 'model' for a path for self that has at least
         'requested_bandwidth' of reservable_bandwidth.  If there is one, will update
-        self.path; if not, will keep same self.path
+        self.path; if not, will keep same self.path.  When checking paths,
+        this def will take into account its own reserved bandwidth if it
+        is looking at paths that have interfaces already in its
+        path['interfaces'] list.
 
         :param model: Model object to search
         :param requested_bandwidth: number of units set for reserved_bandwidth
@@ -179,7 +182,7 @@ class RSVP_LSP(object):
 
 
 
-    def _add_rsvp_lsp_path(self, model, setup_bandwidth):
+    def _add_rsvp_lsp_path(self, model):
         """
         Determines the LSP's path regardless of whether it was previously routed
         or not (non stateful).
@@ -229,14 +232,25 @@ class RSVP_LSP(object):
                                        candidate_paths_with_enough_headroom])
 
         # Finally, find all paths with the lowest cost and enough headroom
-        best_paths = [path for path in candidate_paths_with_enough_headroom
+        lowest_metric_paths = [path for path in candidate_paths_with_enough_headroom
                       if path['path_cost'] == lowest_available_metric]
 
         # If multiple paths, pick a best path at random
-        if len(best_paths) > 1:
-            new_path = random.choice(best_paths)
+        # if len(lowest_metric_paths) > 1:
+        #     new_path = random.choice(lowest_metric_paths)
+        # else:
+        #     new_path = lowest_metric_paths[0]
+
+        # If multiple best_paths, find those with fewest hops
+        if len(lowest_metric_paths) > 1:
+            fewest_hops = min([len(path) for path in lowest_metric_paths])
+            lowest_hop_count_paths = [path for path in lowest_metric_paths if len(path) == fewest_hops]
+            if len(lowest_hop_count_paths) > 1:
+                new_path = random.choice(lowest_metric_paths)
+            else:
+                new_path = lowest_hop_count_paths[0]
         else:
-            new_path = best_paths[0]
+            new_path = lowest_metric_paths[0]
 
         self.path = new_path
 
@@ -339,6 +353,6 @@ class RSVP_LSP(object):
         self.setup_bandwidth = setup_bandwidth
 
         # Route the LSP
-        self._add_rsvp_lsp_path(model, setup_bandwidth)
+        self._add_rsvp_lsp_path(model)
 
         return self
