@@ -5,6 +5,8 @@ sys.path.append('../')  # noqa
 from pyNTM import Model
 from pprint import pprint
 
+import pdb
+
 # Test cases:
 # 1. LSP routes on path with available bandwidth
 # 2. Demand shows up on LSP
@@ -45,11 +47,15 @@ if lsp_a_d_1.actual_metric == lsp_a_d_2.actual_metric:
     msg = "lsp_a_d_1 and lsp_a_d_2 should have different actual_metrics"
     raise Exception(msg)
 
+
 print()
 print("Here are the paths for the LSPs in the model")
 for lsp in model.rsvp_lsp_objects:
     pprint((lsp.lsp_name, lsp.path))
     print()
+if 'Unrouted - initial' in [lsp.path for lsp in model.rsvp_lsp_objects]:
+    print("Unexpected LSP path; breaking for debug")
+    pdb.set_trace()
 print()
 print("Here are the LSP reserved_bandwidth values:")
 for lsp in model.rsvp_lsp_objects:

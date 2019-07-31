@@ -471,100 +471,49 @@ class Model(object):
 
             # If all or none of the LSPs can route, continue to next group; this means that either all of them
             # can route or that none of them can route due to setup bandwidth constraints
-            if len(routed_lsps_in_group) == len(lsps) or len(lsps) - len(routed_lsps_in_group) == len(lsps):
-                continue
+            # if len(routed_lsps_in_group) == len(lsps) or len(lsps) - len(routed_lsps_in_group) == len(lsps):
+            #     continue  # TODO - this is causing only one lsp group to route
 
-            # If not all the LSPs can route at the lowest bandwidth, determine which
-            # LSPs can signal for more traffic.
-
-            # This value would be the optimal setup bandwidth for each LSP
-            # as it would allow the LSP to reserve bandwidth for the amount
-            # of traffic it carries
-            setup_bandwidth_optimized = traffic_in_demand_group / len(routed_lsps_in_group)
-
-            # Determine if any of the LSPs can signal for the amount of
-            # traffic they would carry (setup_bandwidth_optimized)
-            for lsp in routed_lsps_in_group:
-                # traffic_in_demand_group will ECMP split over routed_lsps_in_group
-                # For each lsp in routed_lsp_group, see if it can signal for
-                # a setup_bandwidth_optimized setup_bandwidth
-
-                lsp_path_interfaces_before = lsp.path['interfaces']
-                lsp_res_bw_before = lsp.reserved_bandwidth
-
-                # See if LSP can resignal for setup_bandwidth_optimized
-                lsp = lsp.find_rsvp_path_w_bw(setup_bandwidth_optimized, input_model)
-
-                # If the LSP reserved_bandwidth changes, restore the old
-                # reserved_bandwidth value to the interfaces in its
-                # prior path['interfaces'] list
-                if lsp_res_bw_before != lsp.reserved_bandwidth:
-                    for interface in lsp_path_interfaces_before:
-                        interface.reserved_bandwidth -= lsp_res_bw_before
-                    # . . . and then remove the new reserved bandwidth from the
-                    # new path interfaces
-                    for interface in lsp.path['interfaces']:
-                        interface.reserved_bandwidth += lsp.reserved_bandwidth
+            # If not all the LSPs in the group can route at the lowest (initial)
+            # setup bandwidth, determine which LSPs can signal and for how much traffic
+            if len(routed_lsps_in_group) != len(lsps) and len(routed_lsps_in_group) > 0:
 
 
+                # If not all the LSPs can route at the lowest setup bandwidth,
+                # determine which LSPs can signal for more traffic.
 
+                # This value would be the optimal setup bandwidth for each LSP
+                # as it would allow the LSP to reserve bandwidth for the amount
+                # of traffic it carries
+                setup_bandwidth_optimized = traffic_in_demand_group / len(routed_lsps_in_group)
 
+                # Determine if any of the LSPs can signal for the amount of
+                # traffic they would carry (setup_bandwidth_optimized)
+                for lsp in routed_lsps_in_group:
+                    # traffic_in_demand_group will ECMP split over routed_lsps_in_group
+                    # For each lsp in routed_lsp_group, see if it can signal for
+                    # a setup_bandwidth_optimized setup_bandwidth
 
+                    lsp_path_interfaces_before = lsp.path['interfaces']
+                    lsp_res_bw_before = lsp.reserved_bandwidth
 
+                    # See if LSP can resignal for setup_bandwidth_optimized
+                    lsp = lsp.find_rsvp_path_w_bw(setup_bandwidth_optimized, input_model)
 
-            # 1.  Try to route the greatest number of LSPs, take the first combo that works.
-            # If n = len(parallel LSP group); we've captured n-0 scenario above . .
-            #  Can n-1 LSPs route at setup bandwidth (agg traffic)/(n-1)
-            #  Can n-2 LSPs route at setup bandwidth (agg traffic)/(n-2)
-            #  Can n-3 LSPs route at setup bandwidth (agg traffic)/(n-3)
-            #  etc . . .
-            # 2.  Route each LSP, one at a time on the path that has the
-            #     largest amount of reservable bandwidth
-
-
-
-
-
-
-
-
-
-
-            # 3.  Once all the LSPs in the group have a path, look at each LSP's
-            #     path, one by one, and see if the traffic on the LSP is higher
-            #     than the reserved_bandwidth for the LSP
-            #     - if it is higher, then see if the path can support the
-            #       amount of traffic on the LSP
-
-
-
-
-            # If at least one LSP can route, attempt to increase the reserved bandwidth over
-            # the LSPs that can route
-            # else:
-            #     setup_bw_values_tried = [traff_on_each_group_lsp]  # List of setup bandwidth values attempted
-            #     # Give back the bw the routed LSPs reserved
-            #     for lsp in routed_lsps_in_group:
-            #         for interface in lsp.path['interfaces']:
-            #             interface.reserved_bandwidth -= lsp.reserved_bandwidth
-            #
-            #     setup_bw = traffic_in_demand_group/len(routed_lsps_in_group)
-            #     setup_bw_values_tried.append(setup_bw)
-            #
-            #     self._route_lsp_group(input_model, routed_lsps_in_group, setup_bw)
-            #
-            #     pdb.set_trace()  # TODO - continue here - see why while statement does not happen
-            #
-            #     # Iterate while there are still routed LSPs and the setup bandwidth is
-            #     # larger than the last setup bandwidth value tried
-            #     while (len([lsp for lsp in lsps if lsp.path != 'Unrouted - setup_bandwidth']) > 0 and
-            #             traffic_in_demand_group/len([lsp for lsp in lsps if lsp.path != 'Unrouted - setup_bandwidth']) > setup_bw_values_tried[-1]):
-            #
-            #         self._route_lsp_group(input_model, routed_lsps_in_group, setup_bw)
+                    # If the LSP reserved_bandwidth changes, restore the old
+                    # reserved_bandwidth value to the interfaces in its
+                    # prior path['interfaces'] list
+                    if lsp_res_bw_before != lsp.reserved_bandwidth:
+                        for interface in lsp_path_interfaces_before:
+                            interface.reserved_bandwidth -= lsp_res_bw_before
+                        # . . . and then remove the new reserved bandwidth from the
+                        # new path interfaces
+                        for interface in lsp.path['interfaces']:
+                            interface.reserved_bandwidth += lsp.reserved_bandwidth
 
         return self
 
-    def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth):
+    def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth): # TODO - is this used??!
         """
         Attempts to route aggregate_traffic over the LSPs in lsps_to_route
         :param lsps_to_route: list of parallel LSPs that need a path
@@ -585,8 +534,8 @@ class Model(object):
                  with matching source/dest nodes
         """
 
-        src_node_names = (lsp.source_node_object.name for lsp in self.rsvp_lsp_objects)
-        dest_node_names = (lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects)
+        src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
+        dest_node_names = set([lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects])
 
         parallel_lsp_groups = {}
 

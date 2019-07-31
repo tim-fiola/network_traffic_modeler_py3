@@ -6,7 +6,7 @@ from pyNTM import Model
 class TestIGPRouting(unittest.TestCase):
 
     def test_ecmp(self):
-        model = Model.load_model_file('load_model_file/igp_routing_topology.csv')
+        model = Model.load_model_file('test/igp_routing_topology.csv')
 
         model.update_simulation()
 
