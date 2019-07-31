@@ -1,3 +1,8 @@
+import sys  # noqa - these lines are a hack to get testing working
+sys.path.append('..')  # noqa
+sys.path.append('.')   # noqa
+
+
 import unittest
 
 from pyNTM import Interface
@@ -8,12 +13,12 @@ from pyNTM import Node
 class TestRSVPLSPAddLSP(unittest.TestCase):
 
     def test_setup_bw_fail(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
-        lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
-        lsp_a_d_2 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
-        lsp_f_e_1 = self.model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
-        int_a_b = self.model.get_interface_object('A-to-B', 'A')
-        int_a_c = self.model.get_interface_object('A-to-C', 'A')
+        model = Model.load_model_file('model_test_topology.csv')
+        lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+        lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
+        lsp_f_e_1 = model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_a_c = model.get_interface_object('A-to-C', 'A')
         model.update_simulation()
 
         # Fail an interface
@@ -36,11 +41,11 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
         lsp_a_d_3 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 
         # One of the 3 LSPs will not set up
-        self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
-                         self.lsp_a_d_2.reserved_bandwidth,
-                         self.lsp_a_d_3.reserved_bandwidth].count('Unrouted - setup_bandwidth'), 1)
+        self.assertEqual([lsp_a_d_1.reserved_bandwidth,
+                         lsp_a_d_2.reserved_bandwidth,
+                         lsp_a_d_3.reserved_bandwidth].count('Unrouted - setup_bandwidth'), 1)
 
         # The 2 LSPs that do set up will have setup_bandwidth of 125
-        self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
-                         self.lsp_a_d_2.reserved_bandwidth,
-                         self.lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
+        self.assertEqual([lsp_a_d_1.reserved_bandwidth,
+                         lsp_a_d_2.reserved_bandwidth,
+                         lsp_a_d_3.reserved_bandwidth].count(125.0), 2)

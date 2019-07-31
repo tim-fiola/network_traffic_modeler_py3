@@ -700,8 +700,8 @@ class Model(object):
                                      G.edges(data=True) if not (G.has_edge(remote_node_name, local_node_name))]
 
         if len(exception_ints_not_in_ckt) > 0:
-            exception_msg = 'WARNING: These interfaces were not matched into a \
-            circuit', exception_ints_not_in_ckt
+            exception_msg = ('WARNING: These interfaces were not matched into a circuit',
+                             exception_ints_not_in_ckt)
             if return_exception:
                 raise ModelException(exception_msg)
             else:
@@ -818,6 +818,8 @@ class Model(object):
             raise ModelException(message)
         self.demand_objects.add(added_demand)
 
+        # TODO - may have to validate model in another step for performance purposes for when you are loading a model
+        #  file; perhaps add a group of demands and then validate
         self.validate_model()
 
     def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
@@ -832,6 +834,8 @@ class Model(object):
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
 
+        # TODO - may have to validate model in another step for performance purposes for when you are loading a model
+        #  file; perhaps add a group of LSPs and then validate
         self.validate_model()
 
     def get_demand_object(self, source_node_name, dest_node_name, demand_name='none'):
@@ -1430,7 +1434,8 @@ does not exist in model" % (source_node_name, dest_node_name,
             else:
                 print(interface_line.split())
                 msg = ("node_name, remote_node_name, name, cost, and capacity "
-                       "must be defined for {}".format(interface_line))
+                       "must be defined for line {}, line index {}".format(interface_line,
+                                                                           lines.index(interface_line)))
                 raise ModelException(msg)
             interface_set.add(Interface(name, int(cost), int(capacity),
                                         Node(node_name), Node(remote_node_name)))
@@ -1448,11 +1453,11 @@ does not exist in model" % (source_node_name, dest_node_name,
             node_name = node_info[0]
             try:
                 node_lat = int(node_info[1])
-            except ValueError:
+            except (ValueError, IndexError):
                 node_lat = 0
             try:
                 node_lon = int(node_info[2])
-            except ValueError:
+            except (ValueError, IndexError):
                 node_lon = 0
             if node_name not in node_names:  # Pick up orphan nodes
                 new_node = Node(node_name)
