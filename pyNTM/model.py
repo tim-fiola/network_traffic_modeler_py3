@@ -458,7 +458,7 @@ class Model(object):
 
         # TODO - debug output
         print()
-        print("len(parallel_lsp_groups) = {}".format(parallel_lsp_groups))
+        print("len(parallel_lsp_groups) = {}".format(len(parallel_lsp_groups)))
         print()
         counter = 0
 
@@ -475,7 +475,7 @@ class Model(object):
                 if traffic_in_demand_group > 0:
                     traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
             except KeyError as e:
-                print("lsp with no demands {}".format(lsps))  # TODO - is this triggering in pf model file update_simulation?
+                print("lsp with no demands {}".format(lsps))
 #                pdb.set_trace()
                 pass
             # Now route each LSP in the group (first routing iteration)
