@@ -1,6 +1,7 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
 import random
+from datetime import datetime
 
 from .exceptions import ModelException
 
@@ -142,7 +143,7 @@ class RSVP_LSP(object):
         self.setup_bandwidth = requested_bandwidth
         return self
 
-    def _add_rsvp_lsp_path(self, model):
+    def _add_rsvp_lsp_path(self, model):  # TODO - this bottlenecks at scale
         """
         Determines the LSP's path regardless of whether it was previously routed
         or not (non stateful).
@@ -153,9 +154,12 @@ class RSVP_LSP(object):
         :return: self with 'path' attribute
         """
 
+        print("[{}] getting candidate paths for {}".format(datetime.now(), self))
         # Get candidate paths
         candidate_paths = model.get_feasible_paths(self.source_node_object.name,
                                                    self.dest_node_object.name)
+        print("[{}] candidate paths for {} is".format(datetime.now(), self))
+        pprint(candidate_paths)
 
         # Route LSP
         #   Options:
@@ -306,7 +310,9 @@ class RSVP_LSP(object):
 #        self._calculate_setup_bandwidth(model)
         self.setup_bandwidth = setup_bandwidth
 
+        print("[{}] routing {}".format(datetime.now(), self))
         # Route the LSP
-        self._add_rsvp_lsp_path(model)
+        self._add_rsvp_lsp_path(model)  # TODO - this bottlenecks at scale
+        print("[{}] path for {} is {}".format(datetime.now(), self, self.path))
 
         return self

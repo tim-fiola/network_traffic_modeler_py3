@@ -465,7 +465,7 @@ class Model(object):
         # Find the amount of bandwidth each LSP in each parallel group will carry
         for group, lsps in parallel_lsp_groups.items():
             counter += 1
-            # Traffic each LSP in a parallel LSP group will cary; initialize
+            # Traffic each LSP in a parallel LSP group will carry; initialize
             traff_on_each_group_lsp = None
 
             try:
@@ -478,9 +478,11 @@ class Model(object):
                 print("lsp with no demands {}".format(lsps))
 #                pdb.set_trace()
                 pass
-            # Now route each LSP in the group (first routing iteration)
+
             if traff_on_each_group_lsp == None:
                 traff_on_each_group_lsp = .01
+
+            # Now route each LSP in the group (first routing iteration)
             for lsp in lsps:
                 # Route each LSP one at a time
                 lsp.route_lsp(input_model, traff_on_each_group_lsp)
@@ -1164,8 +1166,8 @@ does not exist in model" % (source_node_name, dest_node_name,
         object to dest node object
         """
 
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
+        # source_node_object = self.get_node_object(source_node_name)
+        # dest_node_object = self.get_node_object(dest_node_name)
 
         # Convert model to networkx DiGraph
         G = self._make_weighted_network_graph(include_failed_circuits=False)
