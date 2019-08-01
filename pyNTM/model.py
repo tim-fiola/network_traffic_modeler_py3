@@ -2,6 +2,7 @@
 in the network such as Nodes, Interfaces, Circuits, and Demands.
 """
 
+from datetime import datetime
 from pprint import pprint
 
 import networkx as nx
@@ -455,8 +456,15 @@ class Model(object):
         # Find all the parallel demand groups
         parallel_demand_groups = self.parallel_demand_groups()
 
+        # TODO - debug output
+        print()
+        print("len(parallel_lsp_groups) = {}".format(parallel_lsp_groups))
+        print()
+        counter = 0
+
         # Find the amount of bandwidth each LSP in each parallel group will carry
         for group, lsps in parallel_lsp_groups.items():
+            counter += 1
             # Traffic each LSP in a parallel LSP group will cary; initialize
             traff_on_each_group_lsp = None
 
@@ -467,7 +475,7 @@ class Model(object):
                 if traffic_in_demand_group > 0:
                     traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
             except KeyError as e:
-                print(lsps)  # TODO - is this triggering in pf model file update_simulation?
+                print("lsp with no demands {}".format(lsps))  # TODO - is this triggering in pf model file update_simulation?
 #                pdb.set_trace()
                 pass
             # Now route each LSP in the group (first routing iteration)
@@ -482,8 +490,6 @@ class Model(object):
             # If not all the LSPs in the group can route at the lowest (initial)
             # setup bandwidth, determine which LSPs can signal and for how much traffic
             if len(routed_lsps_in_group) != len(lsps) and len(routed_lsps_in_group) > 0:
-
-
                 # If not all the LSPs can route at the lowest setup bandwidth,
                 # determine which LSPs can signal for more traffic.
 
@@ -515,21 +521,30 @@ class Model(object):
                         # new path interfaces
                         for interface in lsp.path['interfaces']:
                             interface.reserved_bandwidth += lsp.reserved_bandwidth
+
+            # TODO - debug output
+            print()
+            print("parallel lsp group counter is {}/{}".format(counter, len(parallel_lsp_groups)))
+            print("LSP group routed: {}, LSPs routed:".format(group))
+            print("datetime is {}".format(datetime.now()))
+            pprint(lsps)
+            print()
+
         return self
 
-    def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth): # TODO - is this used??!
-        """
-        Attempts to route aggregate_traffic over the LSPs in lsps_to_route
-        :param lsps_to_route: list of parallel LSPs that need a path
-        :return: lsps_to_route with updated path info
-        """
-
-#        setup_bandwidth = aggregate_traffic / len(lsps_to_route)
-
-        for lsp in lsps_to_route:
-            lsp.route_lsp(input_model, setup_bandwidth)
-
-        return lsps_to_route
+#     def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth): # TODO - is this used??!
+#         """
+#         Attempts to route aggregate_traffic over the LSPs in lsps_to_route
+#         :param lsps_to_route: list of parallel LSPs that need a path
+#         :return: lsps_to_route with updated path info
+#         """
+#
+# #        setup_bandwidth = aggregate_traffic / len(lsps_to_route)
+#
+#         for lsp in lsps_to_route:
+#             lsp.route_lsp(input_model, setup_bandwidth)
+#
+#         return lsps_to_route
 
     def parallel_lsp_groups(self):
         """
