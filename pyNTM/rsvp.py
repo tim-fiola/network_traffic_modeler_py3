@@ -3,15 +3,38 @@
 import random
 from datetime import datetime
 
+from .exceptions import ModelException
+
+# debug code
+import pdb
+from pprint import pprint
+
 # For when the model has both LSPs but not a full LSP mesh,
 # - create the LSP model first
 # - if there are not paths between all nodes, find those specific paths
 #    in a model made up of just interfaces
 
-
 class RSVP_LSP(object):
-    """
-    A class to represent an RSVP label-switched-path in the network model
+    """A class to represent an RSVP label-switched-path in the network model
+
+    source_node_object: Node where LSP ingresses the network (LSP starts here)
+
+    dest_node_object: Node where LSP egresses the network (LSP ends here)
+
+    lsp_name: name of LSP
+
+    path: will either be 'Unrouted' or be a dict containing the following -
+        - interfaces: list of interfaces that LSP egresses in the order it
+            egresses them
+        - path_cost: sum of costs of the interfaces
+        - baseline_path_reservable_bw: the amount of reservable bandwidth
+            available on the LSP's path when the LSP was signaled, not inclusive
+            of the bandwidth already reserved by this LSP on that path (if any)
+
+    reserved_bandwidth: amount of bandwidth reserved by this LSP
+
+    setup_bandwidth: amount of bandwidth this LSP wants to signal for
+
     """
 
     def __init__(self, source_node_object, dest_node_object,
@@ -20,45 +43,103 @@ class RSVP_LSP(object):
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.lsp_name = lsp_name
-        self.path = 'Unrouted'
-        self.reserved_bandwidth = 'Unrouted'
-        self.setup_bandwidth = 'Unrouted'
-#        self.demands = []
+        self.path = 'Unrouted - initial'
+        self.reserved_bandwidth = 'Unrouted - initial'
+        self.setup_bandwidth = 'Unrouted - initial'  # TODO - getter/setter
 
     @property
     def _key(self):
-        """
-        Unique identifier for the rsvp lsp:
-        (Node('source'), Node('dest'), name)
-        """
-        return (self.source_node_object, self.dest_node_object, self.lsp_name)
+        """Unique identifier for the rsvp lsp: (Node('source').name, Node('dest').name, name)"""
+        return (self.source_node_object.name, self.dest_node_object.name, self.lsp_name)
 
     def __repr__(self):
-        return 'RSVP_LSP(source = %s, dest = %s, name = %r)' %\
-            (self.source_node_object.name,
-             self.dest_node_object.name,
-             self.lsp_name)
+        return 'RSVP_LSP(source = %s, dest = %s, lsp_name = %r)' % \
+               (self.source_node_object.name,
+                self.dest_node_object.name,
+                self.lsp_name)
 
-    def _calculate_setup_bandwidth(self, model):
-        """Find amount of bandwidth to reserve for LSP"""
+    def _find_path_cost_and_headroom_routed_lsp(self, candidate_paths):
+        """
+        Returns a list of dictionaries containing the path interfaces as
+        well as the path cost and headroom available on the path.
+        :param candidate_paths: list of lists of Interface objects
+        :return: list of dictionaries of paths: {'interfaces': path,
+                                                 'path_cost': path_cost,
+                                                 'baseline_path_reservable_bw': baseline_path_reservable_bw}
+        """
 
-        # Find all demands that would ride the LSP
-        demand_list = []
-        for demand in model.demand_objects:
-            if demand.source_node_object == self.source_node_object and \
-                    demand.dest_node_object == self.dest_node_object:
-                demand_list.append(demand)
+        # List to hold info on each candidate path
+        candidate_path_info = []
 
-        sum_demand_traffic = sum([demand.traffic for demand in demand_list])
+        # Find the path cost and path headroom for each path candidate
+        for path in candidate_paths:
 
-        # Calculate the amount of bandwidth for each demand
-        all_lsps_src_to_dest = [lsp for lsp in model.rsvp_lsp_objects if (
-            lsp.source_node_object == self.source_node_object and lsp.dest_node_object == self.dest_node_object)]
+            path_cost = 0
+            for interface in path:
+                path_cost += interface.cost
 
-        needed_bw = sum_demand_traffic / len(all_lsps_src_to_dest)
+            # Find the path cost and reservable bandwidth on each path.
+            # If the path you are examining has an interface that is on
+            # the LSP's current path, don't count (or add back in) the
+            # reserved bandwidth for the LSP to that interface
+            proto_reservable_bw = {}
+            for interface in path:
+                if interface in self.path['interfaces']:
+                    proto_reservable_bw[interface] = interface.reservable_bandwidth + self.reserved_bandwidth
+                else:
+                    proto_reservable_bw[interface] = interface.reservable_bandwidth
 
-        self.setup_bandwidth = needed_bw
+            # baseline_path_reservable_bw is the max amount of traffic that the path
+            # can handle without saturating a component interface
 
+            baseline_path_reservable_bw = min(proto_reservable_bw.values())
+
+            path_info = {'interfaces': path, 'path_cost': path_cost,
+                         'baseline_path_reservable_bw': baseline_path_reservable_bw}
+
+            candidate_path_info.append(path_info)
+
+        return candidate_path_info
+
+    def find_rsvp_path_w_bw(self, requested_bandwidth, model):
+        """
+        Will search the topology of 'model' for a path for self that has at least
+        'requested_bandwidth' of reservable_bandwidth.  If there is one, will update
+        self.path; if not, will keep same self.path.  When checking paths,
+        this def will take into account its own reserved bandwidth if it
+        is looking at paths that have interfaces already in its
+        path['interfaces'] list.
+
+        :param model: Model object to search
+        :param requested_bandwidth: number of units set for reserved_bandwidth
+        :return: self with the current or updated path info
+        """
+
+        # Get candidate paths
+        candidate_paths = model.get_feasible_paths(self.source_node_object.name,
+                                                   self.dest_node_object.name)
+
+        # Find the path cost and path headroom for each path candidate
+        candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(candidate_paths)
+
+        # Filter out paths that don't have enough headroom
+        candidate_paths_with_enough_headroom = [path for path in candidate_path_info
+                                                if (path['baseline_path_reservable_bw']) >=
+                                                requested_bandwidth]
+
+        # If there are no paths with enough headroom, return self
+        if len(candidate_paths_with_enough_headroom) == 0:
+            return self
+        # If there is only one path with enough headroom, make that self.path
+        elif len(candidate_paths_with_enough_headroom) == 1:
+            self.path = candidate_paths_with_enough_headroom[0]
+        # If there is more than one path with enough headroom,
+        # choose one at random and make that self.path
+        elif len(candidate_paths_with_enough_headroom) > 1:
+            self.path = random.choice(candidate_paths_with_enough_headroom)
+
+        self.reserved_bandwidth = requested_bandwidth
+        self.setup_bandwidth = requested_bandwidth
         return self
 
     def _add_rsvp_lsp_path(self, model):  # TODO - this bottlenecks at scale
@@ -87,84 +168,90 @@ class RSVP_LSP(object):
 
         # Option a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
         if candidate_paths == []:
-            self.path = 'Unrouted'
-            self.reserved_bandwidth = 'Unrouted'
-        else:
-            # Find the path cost and path headroom for each path candidate
-            candidate_path_info = \
-                self._find_path_cost_and_headroom(candidate_paths, model)
+            # If there are no possible paths, then LSP is Unrouted
+            self.path = 'Unrouted - no path'
+            self.reserved_bandwidth = 'Unrouted - no path'
+            return self
 
-            # Filter out paths that don't have enough headroom
-            candidate_paths_with_enough_headroom = [
-                path for path in candidate_path_info if path['path_headroom'] >= self.setup_bandwidth]
+        # Find the path cost and path headroom for each path candidate
+        candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
 
-            # 1.There are no viable paths with needed headroom,
-            #   LSP is not routed and trying to initially signal
-            if len(candidate_paths_with_enough_headroom) == 0 and \
-                    self.path == 'Unrouted':
-                self.reserved_bandwidth = 'Unrouted'
-                self.path = 'Unrouted'
+        # Filter out paths that don't have enough headroom
+        candidate_paths_with_enough_headroom = [path for path in candidate_path_info
+                                                if path['baseline_path_reservable_bw'] >=
+                                                self.setup_bandwidth]
 
-            # 2. There are no viable paths with needed headroom,
-            #    LSP is already signaled and looking for more
-            #    reserved bandwidth:
-            elif len(candidate_paths_with_enough_headroom) == 0 and \
-                    self.path != 'Unrouted':
-                # Keep the current setup bandwidth and path
-                self.reserved_bandwidth = self.reserved_bandwidth
-                self.path = self.path
-            # 3. There are viable paths with enough headroom
+        # Option b. There are viable paths, but none that can
+        # accommodate the setup_bandwidth
+        if candidate_paths_with_enough_headroom == []:
+            self.path = 'Unrouted - setup_bandwidth'
+            self.reserved_bandwidth = 'Unrouted - setup_bandwidth'
+            return self
+
+        # Option c.  LSP can route with current setup_bandwidth
+
+        # Find the lowest available path metric
+        lowest_available_metric = min([path['path_cost'] for path in
+                                       candidate_paths_with_enough_headroom])
+
+        # Finally, find all paths with the lowest cost and enough headroom
+        lowest_metric_paths = [path for path in candidate_paths_with_enough_headroom
+                               if path['path_cost'] == lowest_available_metric]
+
+        # If multiple best_paths, find those with fewest hops
+        if len(lowest_metric_paths) > 1:
+            fewest_hops = min([len(path['interfaces']) for path in lowest_metric_paths])
+            lowest_hop_count_paths = [path for path in lowest_metric_paths if len(path['interfaces']) == fewest_hops]
+            if len(lowest_hop_count_paths) > 1:
+                new_path = random.choice(lowest_metric_paths)
             else:
+                new_path = lowest_hop_count_paths[0]
+        else:
+            new_path = lowest_metric_paths[0]
 
-                # reservable_bandwidth is not updating - debug
+        self.path = new_path
 
-                self.reserved_bandwidth = self.setup_bandwidth
-                # Find the lowest available path metric
+        # Since there is enough headroom, set LSP reserved_bandwidth
+        # to setup_bandwidth
+        self.reserved_bandwidth = self.setup_bandwidth
 
-                lowest_available_metric = min(
-                    [path['path_cost'] for path in candidate_paths_with_enough_headroom])
-
-                # Finally, find all paths with the lowest cost and enough headroom
-                best_paths = [path for path in candidate_paths_with_enough_headroom
-                              if path['path_cost'] == lowest_available_metric]
-
-                # If multiple paths, pick a best path at random
-                if len(best_paths) > 1:
-                    self.path = random.choice(best_paths)
-                else:
-                    self.path = best_paths[0]
+        # Update the reserved_bandwidth on each interface on the new path
+        for interface in self.path['interfaces']:
+            # Make LSP reserved_bandwidth = setup_bandwidth because it is able to
+            # signal for the entire amount
+            interface.reserved_bandwidth += self.reserved_bandwidth
 
         return self
 
-    def _find_path_cost_and_headroom(self, candidate_paths, model):
-        """Returns a list of dictionaries containing the path interfaces as
-        well as the path cost and headroom available on the path."""
+    def _find_path_cost_and_headroom(self, candidate_paths):
+        """
+        Returns a list of dictionaries containing the path interfaces as
+        well as the path cost and headroom available on the path.
+        :param candidate_paths: list of lists of Interface objects
+        :return: list of dictionaries of paths: {'interfaces': path,
+                                                 'path_cost': path_cost,
+                                                 'baseline_path_reservable_bw': baseline_path_reservable_bw}
+        """
 
         # List to hold info on each candidate path
         candidate_path_info = []
-#        path_counter = 0
 
         # Find the path cost and path headroom for each path candidate
         for path in candidate_paths:
             path_cost = 0
             for interface in path:
                 path_cost += interface.cost
-            # Path headroom is the max amount of traffic that the path
+
+            # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
-            path_headroom = min([interface.reservable_bandwidth
-                                 for interface in path])
-#            path_info = {}
+            baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
+
             path_info = {'interfaces': path, 'path_cost': path_cost,
-                         'path_headroom': path_headroom}
+                         'baseline_path_reservable_bw': baseline_path_reservable_bw}
 
             candidate_path_info.append(path_info)
-#            path_counter += 1
 
         return candidate_path_info
-
-    def lsp_can_route(self, model):
-        """ """
-        pass
 
     def demands_on_lsp(self, model):
         """Returns demands that LSP is transporting."""
@@ -175,33 +262,52 @@ class RSVP_LSP(object):
 
         return demand_list
 
+    def traffic_on_lsp(self, model):
+        """
+        Returns the amount of traffic on the LSP
+        :param model: Model object for LSP
+        :return: Units of traffic on the LSP
+        """
+
+        # Find all LSPs with same source and dest as self
+        parallel_routed_lsps = self.parallel_lsp_group(model)
+        total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
+
+        if len(parallel_routed_lsps) > 0:
+            traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
+        else:
+            traffic_on_lsp = total_traffic
+
+        return traffic_on_lsp
+
     def effective_metric(self, model):
-        """
-        Returns the metric for the best path. This value will be the
+        """Returns the metric for the best path. This value will be the
         shortest possible path from LSP's source to dest, regardless of
-        whether the LSP takes that shortest path or not.
-        """
+        whether the LSP takes that shortest path or not."""
 
         return model.get_shortest_path(self.source_node_object.name,
                                        self.dest_node_object.name)['cost']
 
     def actual_metric(self, model):
-        """
-        Returns the metric sum of the interfaces that the LSP actually
-        transits.
-        """
-        if self.path == 'Unrouted':
+        """Returns the metric sum of the interfaces that the LSP actually
+        transits."""
+        if 'Unrouted' in self.path:
             metric = 'Unrouted'
         else:
-            metric = sum(
-                [interface.cost for interface in self.path['interfaces']])
+            metric = sum([interface.cost for interface in self.path['interfaces']])
 
         return metric
 
-    def route_lsp(self, model):
+    def route_lsp(self, model, setup_bandwidth):
+        """
+        Used in Model object to route each LSP
+        :param model:
+        :return:
+        """
 
         # Calculate setup bandwidth
-        self._calculate_setup_bandwidth(model)
+#        self._calculate_setup_bandwidth(model)
+        self.setup_bandwidth = setup_bandwidth
 
         print("[{}] routing {}".format(datetime.now(), self))
         # Route the LSP
