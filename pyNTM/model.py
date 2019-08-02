@@ -109,7 +109,6 @@ class Model(object):
         # Find objects in interface_objects that are not Interface objects
         non_interface_objects = set()
 
-
         # Ints with non-boolean failed attribute
         non_bool_failed = set()
         # Ints with non-integer cost value
@@ -150,7 +149,7 @@ class Model(object):
             # if math.trunc(interface.reserved_bandwidth) != math.trunc(sum([lsp.reserved_bandwidth
             #                                         for lsp in interface.lsps(self)])):
             if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
-                                                                      for lsp in interface.lsps(self)]), 1):
+                                                                    for lsp in interface.lsps(self)]), 1):
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
                                           tuple(interface.lsps(self))))
 
@@ -473,7 +472,7 @@ class Model(object):
 
                 traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group])
                 if traffic_in_demand_group > 0:
-                    traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
+                    traff_on_each_group_lsp = traffic_in_demand_group / len(lsps)
             except KeyError as e:
                 print("lsp with no demands {}".format(lsps))
 #                pdb.set_trace()
@@ -567,7 +566,7 @@ class Model(object):
                 parallel_lsp_groups[key] = []
                 for lsp in self.rsvp_lsp_objects:
                     if (lsp.source_node_object.name == src_node_name and
-                             lsp.dest_node_object.name == dest_node_name):
+                            lsp.dest_node_object.name == dest_node_name):
                         parallel_lsp_groups[key].append(lsp)
 
                 if parallel_lsp_groups[key] == []:
@@ -593,7 +592,7 @@ class Model(object):
                 parallel_demand_groups[key] = []
                 for dmd in self.demand_objects:
                     if (dmd.source_node_object.name == src_node_name and
-                             dmd.dest_node_object.name == dest_node_name):
+                            dmd.dest_node_object.name == dest_node_name):
                         parallel_demand_groups[key].append(dmd)
 
                 if parallel_demand_groups[key] == []:
@@ -704,7 +703,7 @@ class Model(object):
             int2 = self.get_interface_object_from_nodes(interface[1],
                                                         interface[0])
 
-            if (int1.in_ckt == False and int2.in_ckt == False):
+            if (int1.in_ckt is False and int2.in_ckt is False):
                 # Mark interface objects as in_ckt = True
                 int1.in_ckt = True
                 int2.in_ckt = True
@@ -854,7 +853,7 @@ class Model(object):
         self.validate_model()
 
     def add_demand_bulk(self, source_node_name, dest_node_name, traffic=0,
-                   name='none'):
+                        name='none'):
         """Adds a traffic load from point A to point B in the model.  Does not
         validate model.  Recommended for larger demand adds.  Must include
         a validate_model call after this call is complete.
@@ -997,7 +996,7 @@ does not exist in model" % (source_node_name, dest_node_name,
             msg = "Unable to find circuit"
             raise ModelException(msg)
 
-    ##### Convenience calls #####
+    # Convenience calls #####
     def get_failed_interface_objects(self):
         """
         Returns a list of all failed interfaces
@@ -1084,8 +1083,8 @@ does not exist in model" % (source_node_name, dest_node_name,
 
         # Ensure local and remote nodes are failed = False and set reservable
         # bandwidth on each interface to interface.capacity
-        if self.get_node_object(interface_object.node_object.name).failed == False and \
-                self.get_node_object(remote_interface.node_object.name).failed == False:
+        if self.get_node_object(interface_object.node_object.name).failed is False and \
+                self.get_node_object(remote_interface.node_object.name).failed is False:
 
             remote_interface.failed = False
             remote_interface.reserved_bandwidth = 0
@@ -1108,7 +1107,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         # Get all non-failed interfaces on the source node
         initial_candidate_paths = [interface for interface in
                                    source_node_object.interfaces(self)
-                                   if interface.failed == False]
+                                   if interface.failed is False]
 
         initial_candidate_path_list = []
 
@@ -1139,10 +1138,10 @@ does not exist in model" % (source_node_name, dest_node_name,
             most_recent_node_interfaces = \
                 [interface for interface in
                  Node(most_recent_node).interfaces(self)
-                 if interface.failed == False]
+                 if interface.failed is False]
 
             for interface_object in most_recent_node_interfaces:
-                if interface_object.failed == False:  # this
+                if interface_object.failed is False:  # this
                     remote_node = interface_object.remote_node_object.name
                     if remote_node in node_path:
                         continue  # There's a loop, move on to next adjacency
@@ -1435,7 +1434,7 @@ does not exist in model" % (source_node_name, dest_node_name,
             # Get non-failed edge names
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name, interface.cost)
-                          for interface in self.interface_objects if interface.failed == False)
+                          for interface in self.interface_objects if interface.failed is False)
         elif include_failed_circuits:
             # Get all edge names
             edge_names = ((interface.node_object.name,

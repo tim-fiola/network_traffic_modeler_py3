@@ -1,8 +1,6 @@
 import unittest
 
-from pyNTM import Interface
 from pyNTM import Model
-from pyNTM import Node
 
 
 class TestRSVPLSPAddLSP(unittest.TestCase):
@@ -43,9 +41,8 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
         Test that all 4 LSPs between A and D route
         """
         # All the paths for each LSP from Node('A') to Node('D')
-        paths = [lsp.path for lsp in self.model.rsvp_lsp_objects if lsp.source_node_object.name == 'A'
-                 and lsp.dest_node_object.name == 'D']
+        paths = [lsp.path for lsp in self.model.rsvp_lsp_objects if lsp.source_node_object.name == 'A' and
+                 lsp.dest_node_object.name == 'D']
 
         # Ensure all LSPs route
         self.assertNotIn("Unrouted", paths)
-

@@ -10,7 +10,7 @@ class TestIGPRouting(unittest.TestCase):
 
         model.update_simulation()
 
-        dmd_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+        # dmd_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_d = model.get_interface_object('B-to-D', 'B')
         int_b_g = model.get_interface_object('B-to-G', 'B')

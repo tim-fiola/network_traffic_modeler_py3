@@ -3,6 +3,7 @@
 from .rsvp import RSVP_LSP
 from .exceptions import ModelException
 
+
 class Interface(object):
     """An object representing a Node interface"""
 
@@ -163,8 +164,8 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         demands = model.demand_objects
         for demand in demands:
             for demand_path in demand.path:
-            # Counter for total number of paths for each demand
-            # num_paths = 0
+                # Counter for total number of paths for each demand
+                # num_paths = 0
             if demand.path != 'Unrouted':
                 for dmd_path in demand.path:
                     # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,

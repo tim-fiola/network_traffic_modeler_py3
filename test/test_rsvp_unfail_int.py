@@ -53,7 +53,7 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
                                      remote_node_object=Node('D'), address=6)], ]
 
         possible_paths = [['A-to-B', 'B-to-D'],
-                          ['A-to-C', 'C-to-D'],]
+                          ['A-to-C', 'C-to-D'], ]
         # Validate lsp_a_d_1 and lsp_a_d_2 path interfaces
         # are in possible_paths
         self.assertIn([interface.name for interface in self.lsp_a_d_1.path['interfaces']], possible_paths)

@@ -4,7 +4,6 @@ from pyNTM import RSVP_LSP
 from pyNTM import Model
 
 
-
 class TestRSVPLSPInitial(unittest.TestCase):
 
     @classmethod
@@ -22,7 +21,7 @@ class TestRSVPLSPInitial(unittest.TestCase):
         # self.rsvp_lsp = RSVP_LSP(source_node_object=self.node_a, dest_node_object=self.node_b, lsp_name='A-to-B')
 
     def test_lsp_instance(self):
-         self.assertIsInstance(self.lsp_a_d_1, RSVP_LSP)
+        self.assertIsInstance(self.lsp_a_d_1, RSVP_LSP)
 
     def test_lsp_path_instance(self):
         self.assertIsInstance(self.lsp_a_d_1.path, dict)
@@ -60,4 +59,3 @@ class TestRSVPLSPInitial(unittest.TestCase):
 
         self.assertEqual(self.int_a_c.reserved_bandwidth, 75.0)
         self.assertEqual(self.int_a_c.reservable_bandwidth, 75.0)
-

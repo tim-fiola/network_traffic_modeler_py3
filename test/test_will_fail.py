@@ -7,9 +7,7 @@ sys.path.append('test')  # noqa -
 
 import unittest
 
-from pyNTM import Interface
 from pyNTM import Model
-from pyNTM import Node
 
 
 class TestRSVPLSPSetupBWFail(unittest.TestCase):
@@ -18,11 +16,10 @@ class TestRSVPLSPSetupBWFail(unittest.TestCase):
         model = Model.load_model_file('model_test_topology.csv')
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
         lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
-        lsp_f_e_1 = model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
-        int_a_b = model.get_interface_object('A-to-B', 'A')
-        int_a_c = model.get_interface_object('A-to-C', 'A')
+        # lsp_f_e_1 = model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
+        # int_a_b = model.get_interface_object('A-to-B', 'A')
+        # int_a_c = model.get_interface_object('A-to-C', 'A')
         # model.update_simulation()
-
 
         # Add additional traffic from A to D
         model.add_demand('A', 'D', 100, 'demand_a_d_3')
@@ -37,13 +34,13 @@ class TestRSVPLSPSetupBWFail(unittest.TestCase):
 
         # One of the 3 LSPs will not set up
         self.assertEqual([lsp_a_d_1.reserved_bandwidth,
-                         lsp_a_d_2.reserved_bandwidth,
-                         lsp_a_d_3.reserved_bandwidth].count('Unrouted - setup_bandwidth'), 1)
+                          lsp_a_d_2.reserved_bandwidth,
+                          lsp_a_d_3.reserved_bandwidth].count('Unrouted - setup_bandwidth'), 1)
 
         # The 2 LSPs that do set up will have setup_bandwidth of 125
         self.assertEqual([lsp_a_d_1.reserved_bandwidth,
-                         lsp_a_d_2.reserved_bandwidth,
-                         lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
+                          lsp_a_d_2.reserved_bandwidth,
+                          lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
 
 
 # class TestRSVPLSPSetupBWAdjust(unittest.TestCase):
