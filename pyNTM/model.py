@@ -109,7 +109,6 @@ class Model(object):
         # Find objects in interface_objects that are not Interface objects
         non_interface_objects = set()
 
-
         # Ints with non-boolean failed attribute
         non_bool_failed = set()
         # Ints with non-integer cost value
@@ -150,7 +149,7 @@ class Model(object):
             # if math.trunc(interface.reserved_bandwidth) != math.trunc(sum([lsp.reserved_bandwidth
             #                                         for lsp in interface.lsps(self)])):
             if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
-                                                                      for lsp in interface.lsps(self)]), 1):
+                                                                    for lsp in interface.lsps(self)]), 1):
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
                                           tuple(interface.lsps(self))))
 
@@ -567,7 +566,7 @@ class Model(object):
                 parallel_lsp_groups[key] = []
                 for lsp in self.rsvp_lsp_objects:
                     if (lsp.source_node_object.name == src_node_name and
-                             lsp.dest_node_object.name == dest_node_name):
+                            lsp.dest_node_object.name == dest_node_name):
                         parallel_lsp_groups[key].append(lsp)
 
                 if parallel_lsp_groups[key] == []:
@@ -593,7 +592,7 @@ class Model(object):
                 parallel_demand_groups[key] = []
                 for dmd in self.demand_objects:
                     if (dmd.source_node_object.name == src_node_name and
-                             dmd.dest_node_object.name == dest_node_name):
+                            dmd.dest_node_object.name == dest_node_name):
                         parallel_demand_groups[key].append(dmd)
 
                 if parallel_demand_groups[key] == []:
@@ -854,7 +853,7 @@ class Model(object):
         self.validate_model()
 
     def add_demand_bulk(self, source_node_name, dest_node_name, traffic=0,
-                   name='none'):
+                        name='none'):
         """Adds a traffic load from point A to point B in the model.  Does not
         validate model.  Recommended for larger demand adds.  Must include
         a validate_model call after this call is complete.

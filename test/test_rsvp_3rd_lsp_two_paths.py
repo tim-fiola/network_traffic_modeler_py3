@@ -10,7 +10,7 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.maxDiff = None
-        self.model = Model.load_model_file('model_test_topology.csv')
+        self.model = Model.load_model_file('test/model_test_topology.csv')
         self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
         self.lsp_a_d_2 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
         self.lsp_f_e_1 = self.model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')

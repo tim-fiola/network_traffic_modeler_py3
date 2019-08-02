@@ -15,7 +15,7 @@ from pyNTM import Node
 class TestRSVPLSPSetupBWFail(unittest.TestCase):
 
     def test_setup_bw_fail(self):
-        model = Model.load_model_file('model_test_topology.csv')
+        model = Model.load_model_file('test/model_test_topology.csv')
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
         lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
         lsp_f_e_1 = model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
