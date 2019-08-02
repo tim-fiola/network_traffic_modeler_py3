@@ -159,10 +159,10 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
 
     def demands(self, model):
         """Returns list of demands that egress the interface"""
-        dmd_list = []
-        demands = model.demand_objects
+        dmd_set = set()
+        demands = (demand for demand in model.demand_objects)
         for demand in demands:
-            for demand_path in demand.path:
+
             # Counter for total number of paths for each demand
             # num_paths = 0
             if demand.path != 'Unrouted':
@@ -183,6 +183,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         dmd_list = list(dmd_set)
 
         # TODO - add % of each demand that is on the interface next to the demand
+
         return dmd_list
 
     @property
