@@ -408,35 +408,35 @@ class Model(object):
 
         return self._update_interface_utilization()
 
-    def _set_res_bw_on_ints_w_no_lsps_zero(self): # TODO - is this still used?
-        """
-
-        :return:
-        """
-
-        # Find all ints with LSPs
-        routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
-        ints_with_lsps = set()
-        for lsp in routed_lsps:
-            for interface in lsp.path['interfaces']:
-                ints_with_lsps.add(interface)
-
-        # For every interface not in ints_with_lsps, set reserved_bandwidth to zero
-        for interface in (interface for interface in self.interface_objects):
-            # Set interface.reserved_bandwidth to zero if it has no LSPs
-            if interface not in ints_with_lsps:
-                interface.reserved_bandwidth = 0
-            # Set interface.reserved_bandwidth to sum of all the lsp setup_bandwidths
-            # or to interface.capacity if the interface is oversubscribed
-            if interface in ints_with_lsps:
-                reserved_bw = 0
-                for lsp in interface.lsps(self):
-                    reserved_bw += lsp.reserved_bandwidth
-
-                    if reserved_bw > interface.capacity:
-                        reserved_bw = interface.capacity
-                        break
-                interface.reserved_bandwidth = reserved_bw
+    # def _set_res_bw_on_ints_w_no_lsps_zero(self): # TODO - is this still used?
+    #     """
+    #
+    #     :return:
+    #     """
+    #
+    #     # Find all ints with LSPs
+    #     routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
+    #     ints_with_lsps = set()
+    #     for lsp in routed_lsps:
+    #         for interface in lsp.path['interfaces']:
+    #             ints_with_lsps.add(interface)
+    #
+    #     # For every interface not in ints_with_lsps, set reserved_bandwidth to zero
+    #     for interface in (interface for interface in self.interface_objects):
+    #         # Set interface.reserved_bandwidth to zero if it has no LSPs
+    #         if interface not in ints_with_lsps:
+    #             interface.reserved_bandwidth = 0
+    #         # Set interface.reserved_bandwidth to sum of all the lsp setup_bandwidths
+    #         # or to interface.capacity if the interface is oversubscribed
+    #         if interface in ints_with_lsps:
+    #             reserved_bw = 0
+    #             for lsp in interface.lsps(self):
+    #                 reserved_bw += lsp.reserved_bandwidth
+    #
+    #                 if reserved_bw > interface.capacity:
+    #                     reserved_bw = interface.capacity
+    #                     break
+    #             interface.reserved_bandwidth = reserved_bw
 
     def _route_lsps(self, input_model):
         """Route the LSPs in the model
@@ -466,7 +466,7 @@ class Model(object):
         for group, lsps in parallel_lsp_groups.items():
             counter += 1
             # Traffic each LSP in a parallel LSP group will carry; initialize
-            traff_on_each_group_lsp = None
+            traff_on_each_group_lsp = 0
 
             try:
                 dmds_on_lsp_group = parallel_demand_groups[group]
@@ -479,10 +479,11 @@ class Model(object):
 #                pdb.set_trace()
                 pass
 
-            if traff_on_each_group_lsp == None:
-                traff_on_each_group_lsp = .01
+            # if traff_on_each_group_lsp == None:
+            #     traff_on_each_group_lsp = .01
 
             # Now route each LSP in the group (first routing iteration)
+            # TODO - make nx graph G here once so we don't have to keep recreating it?
             for lsp in lsps:
                 # Route each LSP one at a time
                 lsp.route_lsp(input_model, traff_on_each_group_lsp)
@@ -1144,24 +1145,24 @@ does not exist in model" % (source_node_name, dest_node_name,
 
         return feasible_paths
 
-    def get_feasible_paths_old(self, source_node_object, dest_node_object):
-        """Returns a list of all feasible (loop free) paths from source node
-        object to dest node object
-        """
+    # def get_feasible_paths_old(self, source_node_object, dest_node_object):  # TODO - delete this
+    #     """Returns a list of all feasible (loop free) paths from source node
+    #     object to dest node object
+    #     """
+    #
+    #     data = self._get_initial_candidate_paths(source_node_object,
+    #                                              dest_node_object)
+    #
+    #     initial_candidate_paths = data['initial_candidate_paths']
+    #     feasible_paths = data['feasible_paths']
+    #
+    #     feasible_paths = self._examine_candidate_paths(source_node_object,
+    #                                                    dest_node_object,
+    #                                                    initial_candidate_paths,
+    #                                                    feasible_paths)
+    #     return feasible_paths
 
-        data = self._get_initial_candidate_paths(source_node_object,
-                                                 dest_node_object)
-
-        initial_candidate_paths = data['initial_candidate_paths']
-        feasible_paths = data['feasible_paths']
-
-        feasible_paths = self._examine_candidate_paths(source_node_object,
-                                                       dest_node_object,
-                                                       initial_candidate_paths,
-                                                       feasible_paths)
-        return feasible_paths
-
-    def get_feasible_paths(self, source_node_name, dest_node_name):
+    def get_feasible_paths(self, source_node_name, dest_node_name):  # TODO - make G once in _route_lsps so don't have to keep recreating it?
         """Returns a list of all feasible (loop free) paths from source node
         object to dest node object
         """
