@@ -43,14 +43,14 @@ class TestDemand(unittest.TestCase):
         model.update_simulation()
 
         dmd_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
-        int_a_b = model.get_interface_object('A-to-B', 'A')
-        int_b_d = model.get_interface_object('B-to-D', 'B')
-        int_b_g = model.get_interface_object('B-to-G', 'B')
-        int_g_d = model.get_interface_object('G-to-D', 'G')
-        int_d_f = model.get_interface_object('D-to-F', 'D')
-        int_a_c = model.get_interface_object('A-to-C', 'A')
-        int_c_d = model.get_interface_object('C-to-D', 'C')
-        int_a_d = model.get_interface_object('A-to-D', 'A')
+        # int_a_b = model.get_interface_object('A-to-B', 'A')
+        # int_b_d = model.get_interface_object('B-to-D', 'B')
+        # int_b_g = model.get_interface_object('B-to-G', 'B')
+        # int_g_d = model.get_interface_object('G-to-D', 'G')
+        # int_d_f = model.get_interface_object('D-to-F', 'D')
+        # int_a_c = model.get_interface_object('A-to-C', 'A')
+        # int_c_d = model.get_interface_object('C-to-D', 'C')
+        # int_a_d = model.get_interface_object('A-to-D', 'A')
 
         # Demand routes initially
         self.assertNotEqual(dmd_a_f.path, 'Unrouted')
@@ -114,4 +114,3 @@ class TestDemand(unittest.TestCase):
         model.update_simulation()
 
         self.assertEqual(str(dmd_a_b.path), "[RSVP_LSP(source = nodeA, dest = nodeB, lsp_name = 'lsp_a_b')]")
-

@@ -5,7 +5,6 @@ from pyNTM import Model
 from pyNTM import Circuit
 from pyNTM import Interface
 
-import pdb
 
 class TestCircuit(unittest.TestCase):
 
@@ -33,4 +32,3 @@ class TestCircuit(unittest.TestCase):
         (interface_a, interface_b) = self.circuit.get_circuit_interfaces(self.model)
         self.assertEqual(interface_a, self.interface_a)
         self.assertEqual(interface_b, self.interface_b)
-

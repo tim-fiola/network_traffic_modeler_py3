@@ -1,4 +1,4 @@
-"""A Circuit object in a Model.  Circuit is comprised of two Interface objects"""
+"""A Circuit object in a Model. Circuit is comprised of two Interface objects"""
 
 
 class Circuit(object):

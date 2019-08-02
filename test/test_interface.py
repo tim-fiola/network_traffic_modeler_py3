@@ -54,7 +54,7 @@ class TestInterface(unittest.TestCase):
 
         self.assertTrue(int_a_b.failed)
 
-    def test_int_fail(self):
+    def test_int_fail_2(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -69,5 +69,3 @@ class TestInterface(unittest.TestCase):
 
         self.assertTrue(int_a_b.failed)
         self.assertTrue(int_b_a.failed)
-
-

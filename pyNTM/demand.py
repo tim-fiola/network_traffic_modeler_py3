@@ -3,7 +3,9 @@ to a destination Node"""
 
 
 class Demand(object):
-    """A representation of traffic load on the modeled network"""
+    """
+    A representation of traffic load on the modeled network
+    """
 
     def __init__(self, source_node_object, dest_node_object, traffic=0, name='none'):
         self.source_node_object = source_node_object
@@ -13,7 +15,7 @@ class Demand(object):
         self.path = 'Unrouted'
 
         # Validate traffic value
-        if not (isinstance(traffic, (int, float))) or traffic < 0:
+        if not(isinstance(traffic, (int, float))) or traffic < 0:
             raise ValueError('Must be a positive int or float')
 
     @property
@@ -35,14 +37,15 @@ class Demand(object):
         :return: list of paths the demand takes or 'Unrouted' string
         """
 
-        # Find if there is an LSP with source/dest same as demand source/dest                
+        # Find if there is an LSP with source/dest same as demand source/dest
         demand_path = []
 
         # Find all LSPs that can carry the demand:
         for lsp in (lsp for lsp in model.rsvp_lsp_objects):
-            if (lsp.source_node_object == self.source_node_object and \
-                    lsp.dest_node_object == self.dest_node_object and \
-                    'Unrouted' not in lsp.path ):
+            if (lsp.source_node_object == self.source_node_object and
+                    lsp.dest_node_object == self.dest_node_object and
+                    'Unrouted' not in lsp.path):
+
                 demand_path.append(lsp)
 
         # If demand can't be carried by LSP, do shortest path routing

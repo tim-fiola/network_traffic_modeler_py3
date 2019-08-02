@@ -1,7 +1,8 @@
-"""A class that defines the network being modeled and that contains all modeled objects
-in the network such as Nodes, Interfaces, Circuits, and Demands.
-"""
+"""A class that defines the network being modeled and that contains all
+modeled objects in the network such as Nodes, Interfaces, Circuits,
+and Demands."""
 
+import networkx as nx
 from pprint import pprint
 
 import networkx as nx
@@ -16,6 +17,7 @@ from .node import Node
 from .rsvp import RSVP_LSP
 
 import pdb
+
 
 class Model(object):
     """A network model object consisting of the following base components:
@@ -33,8 +35,6 @@ class Model(object):
           A demand also has a magnitude, representing how much traffic it
           is carrying.  The demand's magnitude will apply against each
           interface's available capacity
-
-
     """
 
     def __init__(self, interface_objects=set([]), node_objects=set([]),
@@ -47,29 +47,26 @@ class Model(object):
         self.rsvp_lsp_objects = rsvp_lsp_objects
 
     def __repr__(self):
-        return 'Model(Interfaces: %s, Nodes: %s, Demands: %s, RSVP_LSPs: %s)' \
-               % (len(self.interface_objects),
-                  len(self.node_objects),
-                  len(self.demand_objects),
-                  len(self.rsvp_lsp_objects))
+        return 'Model(Interfaces: %s, Nodes: %s, Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
+                                                                                 len(self.node_objects),
+                                                                                 len(self.demand_objects),
+                                                                                 len(self.rsvp_lsp_objects))
 
     @classmethod
-    def create_network_model(cls, network_interfaces):
+    def create_network_model(self, cls, network_interfaces):
         """
         A tool that reads network interface info and returns a *new* model.
         Interface info must be in format like below example:
 
-        network_interfaces = [
-        {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
-         'remote_node': 'B', 'address': 1, 'failed': False},
-        {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
-         'remote_node': 'B', 'address': 2, 'failed': False},
-        {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
-         'remote_node': 'C', 'address': 3, 'failed': False},]
-        """
+        .. highlight:: python
+        .. code-block:: python
 
-        interface_objects, node_objects = \
-            Model._make_network_interfaces(network_interfaces)
+            network_interfaces = [
+                {'name':'A-B', 'cost':4,'capacity':100, 'node':'A', 'remote_node': 'B', 'address': 1, 'failed': False},
+                {'name':'A-C', 'cost':1,'capacity':200, 'node':'A', 'remote_node': 'C', 'address': 3, 'failed': False}
+            ]
+        """
+        interface_objects, node_objects = Model._make_network_interfaces(network_interfaces)
 
         model = Model(interface_objects, node_objects)
 
@@ -85,6 +82,7 @@ class Model(object):
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example:
 
+<<<<<<< HEAD:pyNTM/model.py
         network_interfaces = [
         {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
          'remote_node': 'B', 'address': 1, 'failed': False},
@@ -99,7 +97,6 @@ class Model(object):
         self.node_objects = self.node_objects.union(new_node_objects)
         self.interface_objects = \
             self.interface_objects.union(new_interface_objects)
-
         self.validate_model()
 
     def validate_model(self):
@@ -112,6 +109,8 @@ class Model(object):
 
         # Find objects in interface_objects that are not Interface objects
         non_interface_objects = set()
+
+
         # Ints with non-boolean failed attribute
         non_bool_failed = set()
         # Ints with non-integer cost value
@@ -133,15 +132,15 @@ class Model(object):
                 non_interface_objects.add(interface)
 
             # Make sure 'failed' values are either True or False
-            if isinstance(interface.failed, bool) == False:
+            if isinstance(interface.failed, bool) is False:
                 non_bool_failed.add(interface)
 
             # Make sure 'metric' values are integers
-            if isinstance(interface.cost, int) == False:
+            if isinstance(interface.cost, int) is False:
                 metrics_not_ints.add(interface)
 
             # Make sure 'capacity' values are numbers
-            if isinstance(interface.capacity, (float, int)) == False:
+            if isinstance(interface.capacity, (float, int)) is False:
                 capacity_not_number.add(interface)
 
             # Verify that interface.reserved_bandwidth is not gt interface.capacity
@@ -204,7 +203,8 @@ class Model(object):
         if len(circuits_with_mismatched_interface_capacity) > 0:
             int_status_error_dict = {
                 'circuits_with_mismatched_interface_capacity':
-                    circuits_with_mismatched_interface_capacity}
+                circuits_with_mismatched_interface_capacity
+            }
             error_data.append(int_status_error_dict)
 
         # Verify no duplicate nodes
@@ -224,7 +224,9 @@ class Model(object):
             return self
 
     def get_circuit_objects(self):
-        """Returns a set of circuit objects in the Model"""
+        """
+        Returns a set of circuit objects in the Model
+        """
         return self.circuit_objects
 
     def _demand_traffic_per_int(self, demand):
@@ -232,8 +234,8 @@ class Model(object):
         Given a Demand object, return key, value pairs for how much traffic each
         interface gets from the routing of the traffic load over Model interfaces.
 
-        :demand: Demand object
-        :return: dict of ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
+        : demand: Demand object
+        : return: dict of ('source_node_name-dest_node_name': < traffic from demand > ) k, v pairs
 
         Example: The interface from node G to node D has 2.5 units of traffic from 'demand'
         {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
@@ -622,7 +624,6 @@ class Model(object):
         for demand in (demand for demand in self.demand_objects):
             demand.path = 'Unrouted'
 
-
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
 
@@ -633,7 +634,8 @@ class Model(object):
         self.validate_model()
 
     def _unique_interface_per_node(self):
-        """Checks that the interface names on each node are unique; returns
+        """
+        Checks that the interface names on each node are unique; returns
         an message if a duplicate interface name is found on the same node
         """
 
@@ -657,7 +659,6 @@ class Model(object):
     def _make_circuits(self, return_exception=True,
                        include_failed_circuits=True):
         """Matches interface objects into circuits and returns the circuits list"""
-
         G = self._make_weighted_network_graph(include_failed_circuits=True)
 
         # Determine which interfaces pair up into good circuits in G
@@ -720,7 +721,9 @@ class Model(object):
 
     @property
     def all_interface_addresses(self):
-        """Returns all interface addresses"""
+        """
+        Returns all interface addresses
+        """
         return set(interface.address for interface in self.interface_objects)
 
     def add_circuit(self, node_a_object, node_b_object, node_a_interface_name,
@@ -753,14 +756,18 @@ class Model(object):
             return False
 
     def get_orphan_node_objects(self):
-        """Returns Nodes that have no interfaces"""
+        """
+        Returns Nodes that have no interfaces
+        """
         for node in self.node_objects:
             if len(node.interfaces(self)) == 0:
                 self._orphan_nodes.add(node)
         return self._orphan_nodes
 
     def add_node(self, node_object):
-        """Adds a node object to the model object"""
+        """
+        Adds a node object to the model object
+        """
 
         if node_object.name in [node.name for node in self.node_objects]:
             message = "A node with name %s already exists in the model" \
@@ -772,7 +779,9 @@ class Model(object):
         self.validate_model()
 
     def get_node_object(self, node_name):
-        """Returns a node object, given a node's name"""
+        """
+        Returns a node object, given a node's name
+        """
 
         # TODO - It seems like this part could be optimized
         node_object_list = [node for node in self.node_objects]
@@ -823,8 +832,10 @@ class Model(object):
         self.validate_model()
 
     def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
-        """Adds an RSVP LSP with name name from the source node to the
-        dest node"""
+        """
+        Adds an RSVP LSP with name name from the source node to the
+        dest node
+        """
         source_node_object = self.get_node_object(source_node_name)
         dest_node_object = self.get_node_object(dest_node_name)
         added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
@@ -839,7 +850,8 @@ class Model(object):
         self.validate_model()
 
     def get_demand_object(self, source_node_name, dest_node_name, demand_name='none'):
-        """Returns demand specified by the source_node_name, dest_node_name, name;
+        """
+        Returns demand specified by the source_node_name, dest_node_name, name;
         throws exception if demand not found
         """
         source_node_object = self.get_node_object(source_node_name)
@@ -907,11 +919,14 @@ does not exist in model" % (source_node_name, dest_node_name,
         int_key = (interface_name, node_object_name)
         interface_key_iterator = (interface._key for interface in
                                   self.interface_objects)
+
         if int_key not in (interface_key_iterator):
             raise ModelException('specified interface does not exist')
 
     def get_circuit_object_from_interface(self, interface_name, node_name):
-        """Returns a circuit object, given a node and interface name"""
+        """
+        Returns a circuit object, given a node and interface name
+        """
 
         circuit = None  # initialize the variable to be returned
 
@@ -919,7 +934,6 @@ does not exist in model" % (source_node_name, dest_node_name,
         self._does_interface_exist(interface_name, node_name)
 
         interface = self.get_interface_object(interface_name, node_name)
-        remote_interface = interface.get_remote_interface(self)
 
         ckt_object_iterator = (ckt for ckt in self.circuit_objects)
 
@@ -936,7 +950,9 @@ does not exist in model" % (source_node_name, dest_node_name,
 
     ##### Convenience calls #####
     def get_failed_interface_objects(self):
-        """Returns a list of all failed interfaces"""
+        """
+        Returns a list of all failed interfaces
+        """
         failed_interfaces = []
 
         for interface in self.interface_objects:
@@ -1000,7 +1016,8 @@ does not exist in model" % (source_node_name, dest_node_name,
         If raise_excecption=True, an exception
         will be raised if the interface cannot be unfailed.
         An example of this would be if you tried to unfail the interface
-        when the parent node or remote node was in a failed state"""
+        when the parent node or remote node was in a failed state
+        """
 
         if not (isinstance(raise_exception, bool)):
             message = "raise_exception must be boolean value"
@@ -1066,8 +1083,6 @@ does not exist in model" % (source_node_name, dest_node_name,
         for path in candidate_paths:
             node_path = [source.name]
 
-            last_interface = path[-1]
-
             for interface_object in path:
                 node_path.append(interface_object.remote_node_object.name)
 
@@ -1111,7 +1126,8 @@ does not exist in model" % (source_node_name, dest_node_name,
         return feasible_paths
 
     def get_feasible_paths(self, source_node_name, dest_node_name):
-        """Returns a list of all feasible (loop free) paths from source node
+        """
+        Returns a list of all feasible (loop free) paths from source node
         object to dest node object
         """
 
@@ -1135,7 +1151,8 @@ does not exist in model" % (source_node_name, dest_node_name,
         return model_feasible_paths
 
     def get_shortest_path(self, source_node_name, dest_node_name):
-        """For a source and dest node name pair, find the shortest path.
+        """
+        For a source and dest node name pair, find the shortest path.
         Return the shortest path in dictionary form:
         shortest_path = {'path': [list of shortest path routes],
                             'cost': path_cost}
@@ -1188,7 +1205,6 @@ does not exist in model" % (source_node_name, dest_node_name,
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
                                                        dest_node_name,
                                                        weight='cost')
-
         try:
             for path in digraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path)
@@ -1230,7 +1246,7 @@ does not exist in model" % (source_node_name, dest_node_name,
 
         return model_path
 
-    ###### NODE CALLS ######
+    # NODE CALLS ######
     def get_node_interfaces(self, node_name):
         """Returns list of interfaces on specified node name"""
         return Node(node_name).interfaces(self)
@@ -1258,7 +1274,8 @@ does not exist in model" % (source_node_name, dest_node_name,
         ints_to_unfail_iterator = (interface for interface in
                                    self.get_node_interfaces(node_name))
 
-        node_to_unfail = self.get_node_object(node_name)
+        # Find node's interfaces and unfail them
+        ints_to_unfail_iterator = (interface for interface in self.get_node_interfaces(node_name))
 
         for interface in ints_to_unfail_iterator:
 
@@ -1273,7 +1290,9 @@ does not exist in model" % (source_node_name, dest_node_name,
                                       remote_int.node_object.name, False)
 
     def get_failed_node_objects(self):
-        """Returns a list of all failed nodes"""
+        """
+        Returns a list of all failed nodes
+        """
         failed_nodes = []
 
         for node in (node for node in self.node_objects):
@@ -1294,7 +1313,7 @@ does not exist in model" % (source_node_name, dest_node_name,
 
         return non_failed_nodes
 
-    ##### Display calls #########
+    # Display calls #########
     def display_interface_status(self):
         """Returns failed = True/False for each interface"""
 
@@ -1319,7 +1338,11 @@ does not exist in model" % (source_node_name, dest_node_name,
             print(node.name.ljust(12), str(node.failed).ljust(12))
 
     def display_interfaces_traffic(self):
-        """A human-readable(-ish) display of interfaces and traffic on each"""
+        """
+        A human-readable(-ish) display of interfaces and traffic on each
+        """
+
+        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), 'Traffic'.ljust(12))
 
         print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12),
               'Traffic'.ljust(12))
@@ -1332,7 +1355,9 @@ does not exist in model" % (source_node_name, dest_node_name,
             print(repr(interface.traffic).ljust(12))
 
     def display_demand_paths(self):
-        """Displays each demand and its path(s) across the network"""
+        """
+        Displays each demand and its path(s) across the network
+        """
 
         demand_iter = (demand for demand in self.demand_objects)
 
@@ -1409,9 +1434,11 @@ does not exist in model" % (source_node_name, dest_node_name,
 
     @staticmethod
     def load_model_file(data_file):
-        """Opens a network_modeling data file and returns a model containing
+        """
+        Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
-        format to produce a valid model"""
+        format to produce a valid model
+        """
         # Open the file with the data, read it, and split it into lines
         with open(data_file, 'r') as f:
             data = f.read()
@@ -1490,6 +1517,7 @@ does not exist in model" % (source_node_name, dest_node_name,
                 demand_name = name
             model.add_demand(source, dest, traffic, demand_name)
         # Define the LSP info
+
         # If the demands_info_end_index is the same as the length of the
         # lines list, then there is no LSP section
         if demands_info_end_index != len(lines):
@@ -1511,7 +1539,10 @@ does not exist in model" % (source_node_name, dest_node_name,
         return model
 
     def get_demand_objects_source_node(self, source_node_name):
-        """Returns list of demand objects originating at the source node"""
+        """
+        Returns list of demand objects originating at the source node
+        """
+
         demand_list = []
         for demand in (demand for demand in self.demand_objects):
             if demand.source_node_object.name == source_node_name:

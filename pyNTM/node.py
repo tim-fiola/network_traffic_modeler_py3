@@ -3,13 +3,13 @@
 from .exceptions import ModelException
 
 
-
 class Node(object):
-    """A class to represent a router in the model"""
+    """
+    A class to represent a router in the model
+    """
 
     def __init__(self, name, lat=0, lon=0):
         self.name = name
-
         self._failed = False
         self.lat = lat
         self.lon = lon
@@ -50,7 +50,12 @@ class Node(object):
             raise ModelException('must be boolean')
 
     def interfaces(self, model):
-        """Returns interfaces for a given node"""
+        """
+        Returns interfaces for a given node
+
+        :param model: model structure
+        :return adjacency_list: (list) list of interfaces on the given node
+        """
         adjacency_list = []
 
         interface_iterator = (interface for interface in model.interface_objects)
@@ -62,7 +67,9 @@ class Node(object):
         return adjacency_list
 
     def adjacent_nodes(self, model):
-        """Returns a list of adjacent nodes"""
+        """
+        Returns a list of adjacent nodes
+        """
 
         adjacencies = self.interfaces(model)
 
