@@ -1,6 +1,7 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
 import random
+from datetime import datetime
 
 # For when the model has both LSPs but not a full LSP mesh,
 # - create the LSP model first
@@ -60,12 +61,31 @@ class RSVP_LSP(object):
 
         return self
 
-    def _add_rsvp_lsp_path(self, model):
-        """Determines the LSP's path"""
+    def _add_rsvp_lsp_path(self, model):  # TODO - this bottlenecks at scale
+        """
+        Determines the LSP's path regardless of whether it was previously routed
+        or not (non stateful).
+        If this LSP is currently routed and takes takes on additional traffic
+        and there is not a path that can handle the additional traffic,
+        this LSP will not signal.
+        :param model: Model object that the LSP is in
+        :return: self with 'path' attribute
+        """
 
+        print("[{}] getting candidate paths for {}".format(datetime.now(), self))
         # Get candidate paths
-        candidate_paths = model.get_feasible_paths(
-            self.source_node_object.name, self.dest_node_object.name)
+        candidate_paths = model.get_feasible_paths(self.source_node_object.name,
+                                                   self.dest_node_object.name)
+        print("[{}] candidate paths for {} is".format(datetime.now(), self))
+        pprint(candidate_paths)
+
+        # Route LSP
+        #   Options:
+        #   a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
+        #   b.  There are viable paths, but none with enough headroom - LSP will not be routed
+        #   c.  LSP can route with current setup_bandwidth
+
+        # Option a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
         if candidate_paths == []:
             self.path = 'Unrouted'
             self.reserved_bandwidth = 'Unrouted'
@@ -183,7 +203,9 @@ class RSVP_LSP(object):
         # Calculate setup bandwidth
         self._calculate_setup_bandwidth(model)
 
+        print("[{}] routing {}".format(datetime.now(), self))
         # Route the LSP
-        self._add_rsvp_lsp_path(model)
+        self._add_rsvp_lsp_path(model)  # TODO - this bottlenecks at scale
+        print("[{}] path for {} is {}".format(datetime.now(), self, self.path))
 
         return self

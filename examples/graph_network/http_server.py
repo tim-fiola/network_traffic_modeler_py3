@@ -19,9 +19,11 @@ if sys.version_info[0] == 2:
     import socket
     import thread
     import webbrowser
+
     handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-    input = raw_input
+#    input = raw_input
     server = "python -m SimpleHTTPServer 8000"
+
 
     class StoppableHTTPServer(BaseHTTPServer.HTTPServer):
 
@@ -53,8 +55,10 @@ else:
     import socket
     import _thread as thread
     import webbrowser
+
     handler = http.server.SimpleHTTPRequestHandler
     server = "python -m http.server 8000"
+
 
     class StoppableHTTPServer(http.server.HTTPServer):
 

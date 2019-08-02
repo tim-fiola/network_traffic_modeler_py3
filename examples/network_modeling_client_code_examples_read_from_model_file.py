@@ -4,6 +4,9 @@ Client code to demonstrate how to use the pyNTM network_modeling classes.
 Requires sample_network_model_file.csv to be in same directory.
 
 """
+# This is a temp hack to get this to see pyNTM and let it import
+import sys  # noqa
+sys.path.append('../')  # noqa
 
 from pyNTM import Model
 from pyNTM import Node
@@ -176,15 +179,15 @@ print()
 
 
 # Fail a node and interface and display a utilization graph
-print("Failing node E and interface B-to-D on node B and displaying \
-a network graph:")
+print("Failing node E and interface B-to-D on node B and displaying "
+       "a network graph:")
 model1.fail_node('E')
 model1.fail_interface('B-to-D', 'B')
 model1.update_simulation()
 
 # Get a demand and view its path
 print("Get a demand and view its path.")
-dmd_A_D = model1.get_demand_object('A', 'D')
+dmd_A_D = model1.get_demand_object('A', 'D', "''")
 print("Demand from A to D is")
 print(dmd_A_D)
 print()

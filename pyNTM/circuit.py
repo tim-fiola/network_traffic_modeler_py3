@@ -9,7 +9,7 @@ class Circuit(object):
         self.interface_b = interface_b
 
     def __repr__(self):
-        return 'Circuit(%r, %r)'\
+        return 'Circuit(%r, %r)' \
                % (self.interface_a,
                   self.interface_b,)
 

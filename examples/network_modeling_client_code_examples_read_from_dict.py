@@ -5,7 +5,7 @@ Client code to demonstrate how to use the pyNTM network_modeling classes
 from pyNTM import Model
 from pyNTM import Node
 
-from graph_network import graph_network_interactive
+from .graph_network import graph_network_interactive
 
 from pprint import pprint
 import time
