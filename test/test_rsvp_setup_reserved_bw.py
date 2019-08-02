@@ -7,9 +7,7 @@ sys.path.append('test')  # noqa -
 
 import unittest
 
-from pyNTM import Interface
 from pyNTM import Model
-from pyNTM import Node
 
 
 class TestRSVPLSPSetupBWFail(unittest.TestCase):
@@ -31,7 +29,6 @@ class TestRSVPLSPSetupBWFail(unittest.TestCase):
         self.model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
         self.lsp_a_d_3 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
         self.model.update_simulation()
-
 
     def test_setup_bw_fail(self):
         # One of the 3 LSPs will not set up

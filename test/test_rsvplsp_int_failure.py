@@ -1,10 +1,6 @@
 import unittest
 
-from pyNTM import Node
-from pyNTM import RSVP_LSP
 from pyNTM import Model
-
-import pdb
 
 
 class TestRSVPLSPIntFailure(unittest.TestCase):

@@ -3,6 +3,7 @@
 from .exceptions import ModelException
 from .rsvp import RSVP_LSP
 
+
 class Interface(object):
     """An object representing a Node interface"""
 
@@ -94,8 +95,8 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         if not status:
 
             # Check to see if both nodes are failed = False
-            if self.node_object.failed == False and \
-                    self.remote_node_object.failed == False:
+            if self.node_object.failed is False and \
+                    self.remote_node_object.failed is False:
                 self._failed = False
 
             else:
@@ -167,8 +168,8 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         remote_interface = Interface.get_remote_interface(self, model)
 
         # check to see if the local and remote node are failed
-        if self.node_object.failed == False and \
-                self.remote_node_object.failed == False:
+        if self.node_object.failed is False and \
+                self.remote_node_object.failed is False:
 
             # set the 2 interfaces to failed = False
             self.failed = False
@@ -213,7 +214,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
 
             # Counter for total number of paths for each demand
             # num_paths = 0
-            if demand.path != 'Unrouted':
+            if 'Unrouted' not in demand.path:
                 for dmd_path in demand.path:
                     # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
                     # look at the LSP path and get demands on the LSP and add them to dmd_set
@@ -231,7 +232,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         dmd_list = list(dmd_set)
 
         # TODO - add % of each demand that is on the interface next to the demand
-
         return dmd_list
 
     def lsps(self, model):

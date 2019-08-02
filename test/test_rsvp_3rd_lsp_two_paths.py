@@ -1,8 +1,6 @@
 import unittest
 
-from pyNTM import Interface
 from pyNTM import Model
-from pyNTM import Node
 
 
 class TestRSVPLSPAddLSP(unittest.TestCase):
@@ -48,13 +46,13 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
 
         # One of the 3 LSPs will not set up
         self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
-                         self.lsp_a_d_2.reserved_bandwidth,
-                         self.lsp_a_d_3.reserved_bandwidth].count('Unrouted - setup_bandwidth'), 1)
+                          self.lsp_a_d_2.reserved_bandwidth,
+                          self.lsp_a_d_3.reserved_bandwidth].count('Unrouted - setup_bandwidth'), 1)
 
         # The 2 LSPs that do set up will have setup_bandwidth of 125
         self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
-                         self.lsp_a_d_2.reserved_bandwidth,
-                         self.lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
+                          self.lsp_a_d_2.reserved_bandwidth,
+                          self.lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
 
     def test_setup_bandwidth(self):
         """
