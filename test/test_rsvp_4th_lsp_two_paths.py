@@ -31,12 +31,14 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
         # Add 3rd and 4th LSPs from Node('A') to Node('D')
 
         self.model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
-        self.lsp_a_d_3 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
         self.model.update_simulation()
+        self.lsp_a_d_3 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
+
 
         self.model.add_rsvp_lsp('A', 'D', 'lsp_a_d_4')
-        self.lsp_a_d_4 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_4')
         self.model.update_simulation()
+        self.lsp_a_d_4 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_4')
+
 
     def test_validate_lsp_routing(self):
         """
