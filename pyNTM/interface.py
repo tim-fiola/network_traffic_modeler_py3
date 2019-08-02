@@ -163,16 +163,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         demands = model.demand_objects
         for demand in demands:
             for demand_path in demand.path:
-
-<<<<<<< HEAD
-                # If demand_path is an RSVP LSP, look at the LSP path
-                if isinstance(demand_path, RSVP_LSP):
-                    for dmd in demand_path.demands_on_lsp(model):
-                        dmd_list.append(dmd)
-                # If demand_path is not an LSP, look for self in demand_path
-                elif self in demand_path:
-                    dmd_list.append(demand)
-=======
             # Counter for total number of paths for each demand
             # num_paths = 0
             if demand.path != 'Unrouted':
@@ -193,8 +183,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         dmd_list = list(dmd_set)
 
         # TODO - add % of each demand that is on the interface next to the demand
->>>>>>> 945a82cb316127ef780ca51379691944c921087f
-
         return dmd_list
 
     @property
