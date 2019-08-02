@@ -10,7 +10,7 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.maxDiff = None
-        self.model = Model.load_model_file('test/model_test_topology.csv')
+        self.model = Model.load_model_file('model_test_topology.csv')
         self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
         self.lsp_a_d_2 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
         self.lsp_f_e_1 = self.model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
@@ -19,16 +19,16 @@ class TestRSVPLSPAddLSP(unittest.TestCase):
         self.model.update_simulation()
 
         # Fail an interface
-        self.model.fail_interface('A-to-B', 'A')
-        self.model.update_simulation()
+        # self.model.fail_interface('A-to-B', 'A')
+        # self.model.update_simulation()
 
         # Add additional traffic from A to D
         self.model.add_demand('A', 'D', 100, 'demand_a_d_3')
-        self.model.update_simulation()
+        # self.model.update_simulation()
 
         # Unfail interface int_a_b
-        self.model.unfail_interface('A-to-B', 'A')
-        self.model.update_simulation()
+        # self.model.unfail_interface('A-to-B', 'A')
+        # self.model.update_simulation()
 
         # Add 3rd and 4th LSPs from Node('A') to Node('D')
 

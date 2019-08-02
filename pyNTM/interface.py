@@ -3,7 +3,6 @@
 from .rsvp import RSVP_LSP
 from .exceptions import ModelException
 
-
 class Interface(object):
     """An object representing a Node interface"""
 
@@ -165,6 +164,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         for demand in demands:
             for demand_path in demand.path:
 
+<<<<<<< HEAD
                 # If demand_path is an RSVP LSP, look at the LSP path
                 if isinstance(demand_path, RSVP_LSP):
                     for dmd in demand_path.demands_on_lsp(model):
@@ -172,6 +172,28 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
                 # If demand_path is not an LSP, look for self in demand_path
                 elif self in demand_path:
                     dmd_list.append(demand)
+=======
+            # Counter for total number of paths for each demand
+            # num_paths = 0
+            if demand.path != 'Unrouted':
+                for dmd_path in demand.path:
+                    # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
+                    # look at the LSP path and get demands on the LSP and add them to dmd_set
+                    if isinstance(dmd_path, RSVP_LSP):
+                        if self in dmd_path.path['interfaces']:
+                            dmd_set.add(demand)
+
+                    # If path is not an LSP, then it's a list of Interface
+                    # objects; look for self in dmd_path
+
+                    elif self in dmd_path:
+                        # num_paths += 1
+                        dmd_set.add(demand)
+
+        dmd_list = list(dmd_set)
+
+        # TODO - add % of each demand that is on the interface next to the demand
+>>>>>>> 945a82cb316127ef780ca51379691944c921087f
 
         return dmd_list
 

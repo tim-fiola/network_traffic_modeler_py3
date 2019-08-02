@@ -2,7 +2,7 @@
 modeled objects in the network such as Nodes, Interfaces, Circuits,
 and Demands."""
 
-import networkx as nx
+from datetime import datetime
 from pprint import pprint
 
 import networkx as nx
@@ -82,7 +82,6 @@ class Model(object):
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example:
 
-<<<<<<< HEAD:pyNTM/model.py
         network_interfaces = [
         {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
          'remote_node': 'B', 'address': 1, 'failed': False},
@@ -409,35 +408,35 @@ class Model(object):
 
         return self._update_interface_utilization()
 
-    def _set_res_bw_on_ints_w_no_lsps_zero(self): # TODO - is this still used?
-        """
-
-        :return:
-        """
-
-        # Find all ints with LSPs
-        routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
-        ints_with_lsps = set()
-        for lsp in routed_lsps:
-            for interface in lsp.path['interfaces']:
-                ints_with_lsps.add(interface)
-
-        # For every interface not in ints_with_lsps, set reserved_bandwidth to zero
-        for interface in (interface for interface in self.interface_objects):
-            # Set interface.reserved_bandwidth to zero if it has no LSPs
-            if interface not in ints_with_lsps:
-                interface.reserved_bandwidth = 0
-            # Set interface.reserved_bandwidth to sum of all the lsp setup_bandwidths
-            # or to interface.capacity if the interface is oversubscribed
-            if interface in ints_with_lsps:
-                reserved_bw = 0
-                for lsp in interface.lsps(self):
-                    reserved_bw += lsp.reserved_bandwidth
-
-                    if reserved_bw > interface.capacity:
-                        reserved_bw = interface.capacity
-                        break
-                interface.reserved_bandwidth = reserved_bw
+    # def _set_res_bw_on_ints_w_no_lsps_zero(self): # TODO - is this still used?
+    #     """
+    #
+    #     :return:
+    #     """
+    #
+    #     # Find all ints with LSPs
+    #     routed_lsps = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
+    #     ints_with_lsps = set()
+    #     for lsp in routed_lsps:
+    #         for interface in lsp.path['interfaces']:
+    #             ints_with_lsps.add(interface)
+    #
+    #     # For every interface not in ints_with_lsps, set reserved_bandwidth to zero
+    #     for interface in (interface for interface in self.interface_objects):
+    #         # Set interface.reserved_bandwidth to zero if it has no LSPs
+    #         if interface not in ints_with_lsps:
+    #             interface.reserved_bandwidth = 0
+    #         # Set interface.reserved_bandwidth to sum of all the lsp setup_bandwidths
+    #         # or to interface.capacity if the interface is oversubscribed
+    #         if interface in ints_with_lsps:
+    #             reserved_bw = 0
+    #             for lsp in interface.lsps(self):
+    #                 reserved_bw += lsp.reserved_bandwidth
+    #
+    #                 if reserved_bw > interface.capacity:
+    #                     reserved_bw = interface.capacity
+    #                     break
+    #             interface.reserved_bandwidth = reserved_bw
 
     def _route_lsps(self, input_model):
         """Route the LSPs in the model
@@ -457,30 +456,43 @@ class Model(object):
         # Find all the parallel demand groups
         parallel_demand_groups = self.parallel_demand_groups()
 
+        # TODO - debug output
+        print()
+        print("len(parallel_lsp_groups) = {}".format(len(parallel_lsp_groups)))
+        print()
+        counter = 0
+
         # Find the amount of bandwidth each LSP in each parallel group will carry
         for group, lsps in parallel_lsp_groups.items():
-            dmds_on_lsp_group = parallel_demand_groups[group]
-            traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group])
-            if traffic_in_demand_group > 0:
-                traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
+            counter += 1
+            # Traffic each LSP in a parallel LSP group will carry; initialize
+            traff_on_each_group_lsp = 0
+
+            try:
+                dmds_on_lsp_group = parallel_demand_groups[group]
+
+                traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group])
+                if traffic_in_demand_group > 0:
+                    traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
+            except KeyError as e:
+                print("lsp with no demands {}".format(lsps))
+#                pdb.set_trace()
+                pass
+
+            # if traff_on_each_group_lsp == None:
+            #     traff_on_each_group_lsp = .01
 
             # Now route each LSP in the group (first routing iteration)
+            # TODO - make nx graph G here once so we don't have to keep recreating it?
             for lsp in lsps:
                 # Route each LSP one at a time
                 lsp.route_lsp(input_model, traff_on_each_group_lsp)
 
             routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted - setup_bandwidth']
 
-            # If all or none of the LSPs can route, continue to next group; this means that either all of them
-            # can route or that none of them can route due to setup bandwidth constraints
-            # if len(routed_lsps_in_group) == len(lsps) or len(lsps) - len(routed_lsps_in_group) == len(lsps):
-            #     continue  # TODO - this is causing only one lsp group to route
-
             # If not all the LSPs in the group can route at the lowest (initial)
             # setup bandwidth, determine which LSPs can signal and for how much traffic
             if len(routed_lsps_in_group) != len(lsps) and len(routed_lsps_in_group) > 0:
-
-
                 # If not all the LSPs can route at the lowest setup bandwidth,
                 # determine which LSPs can signal for more traffic.
 
@@ -513,21 +525,29 @@ class Model(object):
                         for interface in lsp.path['interfaces']:
                             interface.reserved_bandwidth += lsp.reserved_bandwidth
 
+            # TODO - debug output
+            print()
+            print("parallel lsp group counter is {}/{}".format(counter, len(parallel_lsp_groups)))
+            print("LSP group routed: {}, LSPs routed:".format(group))
+            print("datetime is {}".format(datetime.now()))
+            pprint(lsps)
+            print()
+
         return self
 
-    def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth): # TODO - is this used??!
-        """
-        Attempts to route aggregate_traffic over the LSPs in lsps_to_route
-        :param lsps_to_route: list of parallel LSPs that need a path
-        :return: lsps_to_route with updated path info
-        """
-
-#        setup_bandwidth = aggregate_traffic / len(lsps_to_route)
-
-        for lsp in lsps_to_route:
-            lsp.route_lsp(input_model, setup_bandwidth)
-
-        return lsps_to_route
+#     def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth): # TODO - is this used??!
+#         """
+#         Attempts to route aggregate_traffic over the LSPs in lsps_to_route
+#         :param lsps_to_route: list of parallel LSPs that need a path
+#         :return: lsps_to_route with updated path info
+#         """
+#
+# #        setup_bandwidth = aggregate_traffic / len(lsps_to_route)
+#
+#         for lsp in lsps_to_route:
+#             lsp.route_lsp(input_model, setup_bandwidth)
+#
+#         return lsps_to_route
 
     def parallel_lsp_groups(self):
         """
@@ -624,12 +644,14 @@ class Model(object):
         for demand in (demand for demand in self.demand_objects):
             demand.path = 'Unrouted'
 
+        print("Routing the LSPs . . . ")
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
-
+        print("LSPs routed; routing demands now . . .")
         # Route the demands
         self = self._route_demands(self.demand_objects,
                                    non_failed_interfaces_model)
+        print("Demands routed; validating model . . . ")
 
         self.validate_model()
 
@@ -817,7 +839,9 @@ class Model(object):
 
     def add_demand(self, source_node_name, dest_node_name, traffic=0,
                    name='none'):
-        """Adds a traffic load from point A to point B in the model"""
+        """Adds a traffic load from point A to point B in the model and
+        validates model.
+        """
         source_node_object = self.get_node_object(source_node_name)
         dest_node_object = self.get_node_object(dest_node_name)
         added_demand = Demand(source_node_object, dest_node_object,
@@ -827,14 +851,26 @@ class Model(object):
             raise ModelException(message)
         self.demand_objects.add(added_demand)
 
-        # TODO - may have to validate model in another step for performance purposes for when you are loading a model
-        #  file; perhaps add a group of demands and then validate
         self.validate_model()
 
-    def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
+    def add_demand_bulk(self, source_node_name, dest_node_name, traffic=0,
+                   name='none'):
+        """Adds a traffic load from point A to point B in the model.  Does not
+        validate model.  Recommended for larger demand adds.  Must include
+        a validate_model call after this call is complete.
         """
-        Adds an RSVP LSP with name name from the source node to the
-        dest node
+        source_node_object = self.get_node_object(source_node_name)
+        dest_node_object = self.get_node_object(dest_node_name)
+        added_demand = Demand(source_node_object, dest_node_object,
+                              traffic, name)
+        if added_demand in self.demand_objects:
+            message = added_demand, ' already exists in demand_objects'
+            raise ModelException(message)
+        self.demand_objects.add(added_demand)
+
+    def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
+        """Adds an RSVP LSP with name name from the source node to the
+        dest node and validates model.
         """
         source_node_object = self.get_node_object(source_node_name)
         dest_node_object = self.get_node_object(dest_node_name)
@@ -845,9 +881,22 @@ class Model(object):
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
 
-        # TODO - may have to validate model in another step for performance purposes for when you are loading a model
-        #  file; perhaps add a group of LSPs and then validate
         self.validate_model()
+
+    def add_rsvp_lsp_bulk(self, source_node_name, dest_node_name, name):
+        """Adds an RSVP LSP with name name from the source node to the
+        dest node.  Does not validate model.  Recommended for larger
+        RSVP LSP adds.  Must include a validate_model call after this
+        call is complete.
+        """
+        source_node_object = self.get_node_object(source_node_name)
+        dest_node_object = self.get_node_object(dest_node_name)
+        added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
+
+        if added_lsp in self.rsvp_lsp_objects:
+            message = added_lsp, ' already exists in rsvp_lsp_objects'
+            raise ModelException(message)
+        self.rsvp_lsp_objects.add(added_lsp)
 
     def get_demand_object(self, source_node_name, dest_node_name, demand_name='none'):
         """
@@ -1131,8 +1180,8 @@ does not exist in model" % (source_node_name, dest_node_name,
         object to dest node object
         """
 
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
+        # source_node_object = self.get_node_object(source_node_name)
+        # dest_node_object = self.get_node_object(dest_node_name)
 
         # Convert model to networkx DiGraph
         G = self._make_weighted_network_graph(include_failed_circuits=False)
@@ -1515,7 +1564,7 @@ does not exist in model" % (source_node_name, dest_node_name,
                 demand_name = 'none'
             else:
                 demand_name = name
-            model.add_demand(source, dest, traffic, demand_name)
+            model.add_demand_bulk(source, dest, traffic, demand_name)
         # Define the LSP info
 
         # If the demands_info_end_index is the same as the length of the
@@ -1534,7 +1583,9 @@ does not exist in model" % (source_node_name, dest_node_name,
                     lsp_name = 'none'
                 else:
                     lsp_name = name
-                model.add_rsvp_lsp(source, dest, name)
+                model.add_rsvp_lsp_bulk(source, dest, name)
+
+        model.validate_model()
 
         return model
 

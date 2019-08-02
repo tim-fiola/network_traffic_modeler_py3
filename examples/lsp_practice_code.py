@@ -124,6 +124,15 @@ print()
 print()
 print()
 
+
+print("****** Add LSP from B to C ******")
+model.add_rsvp_lsp('B', 'C', 'lsp_b_c_1')
+lsp_b_c_1 = model.get_rsvp_lsp('B', 'C', 'lsp_b_c_1')
+model.update_simulation()
+print("Here is lsp_b_c_1 path")
+pprint(lsp_b_c_1.path)
+
+
 # Fail interface a_to_b; expected behavior is
 # -- lsp that was on a_to_b reroute to path with interface a_to_c
 # -- interface a_to_c reservable_bandwidth drops to 0
