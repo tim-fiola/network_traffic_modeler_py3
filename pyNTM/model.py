@@ -119,6 +119,8 @@ class Model(object):
         int_res_bw_too_high = set()
         # Sum of reserved_bandwidth of LSPs != interface.reserved_bandwidth
         int_res_bw_sum_error = set()
+        # LSPs with duplicate keys
+        duplicate_lsps = set()  # TODO - check for duplicate LSPs and interfaces and demands
 
         error_data = []  # list of all errored checks
 
