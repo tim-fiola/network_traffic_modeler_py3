@@ -5,6 +5,7 @@ and Demands."""
 from datetime import datetime
 from pprint import pprint
 
+import numpy as np
 import networkx as nx
 
 from .circuit import Circuit
@@ -116,8 +117,8 @@ class Model(object):
         int_res_bw_too_high = set()
         # Sum of reserved_bandwidth of LSPs != interface.reserved_bandwidth
         int_res_bw_sum_error = set()
-        # LSPs with duplicate keys
-        duplicate_lsps = set()  # TODO - check for duplicate LSPs and interfaces and demands
+
+        # TODO - check for duplicate LSPs and interfaces and demands, but need a way that scales
 
         error_data = []  # list of all errored checks
 
@@ -759,8 +760,16 @@ class Model(object):
         int_b = Interface(node_b_interface_name, cost_intf_b, capacity,
                           node_b_object, node_a_object, address)
 
+        existing_int_keys = set([interface._key for interface in self.interface_objects])
+        if int_a._key in existing_int_keys:
+            raise ModelException("interface {} already exists in model".format(int_a))
+        if int_b._key in existing_int_keys:
+            raise ModelException("interface {} already exists in model".format(int_b))
+
         self.interface_objects.add(int_a)
         self.interface_objects.add(int_b)
+
+
 
         self.validate_model()
 
@@ -840,8 +849,8 @@ class Model(object):
         dest_node_object = self.get_node_object(dest_node_name)
         added_demand = Demand(source_node_object, dest_node_object,
                               traffic, name)
-        if added_demand in self.demand_objects:
-            message = added_demand, ' already exists in demand_objects'
+        if added_demand._key in set([demand._key for demand in self.demand_objects]):
+            message = '{} already exists in demand_objects'.format(added_demand)
             raise ModelException(message)
         self.demand_objects.add(added_demand)
 
@@ -870,7 +879,7 @@ class Model(object):
         dest_node_object = self.get_node_object(dest_node_name)
         added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
 
-        if added_lsp in self.rsvp_lsp_objects:
+        if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
             message = added_lsp, ' already exists in rsvp_lsp_objects'
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
@@ -1215,15 +1224,6 @@ does not exist in model" % (source_node_name, dest_node_name,
         except BaseException:
             return converted_path
 
-    def validate_rsvp_lsps(self):
-        """Validates RSVP LSPs in model"""
-        # not needed at this point; since the LSPs are a set, it's not
-        # possible to have duplicate LSPs, which is what I was going to
-        # check for
-        #
-        # TODO - Actually, maybe add this to warn the user they added an LSP that already exists
-        pass
-
     def get_shortest_path_lsps(self, source_node_name, dest_node_name):
         """New shortest path def for use in LSP full mesh network"""
 
@@ -1501,8 +1501,13 @@ does not exist in model" % (source_node_name, dest_node_name,
                        "must be defined for line {}, line index {}".format(interface_line,
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
-            interface_set.add(Interface(name, int(cost), int(capacity),
-                                        Node(node_name), Node(remote_node_name)))
+
+            new_interface = Interface(name, int(cost), int(capacity), Node(node_name), Node(remote_node_name))
+
+            if new_interface._key in [interface.key for interface in model.interface_objects]:
+                raise ModelException("{} already exists in Model's interfaces".format(new_interface))
+
+            interface_set.add()
             node_list.append(Node(node_name))
             node_list.append(Node(remote_node_name))
         model = Model(interface_set, set(node_list))
@@ -1552,6 +1557,8 @@ does not exist in model" % (source_node_name, dest_node_name,
                 demand_name = 'none'
             else:
                 demand_name = name
+
+
             model.add_demand_bulk(source, dest, traffic, demand_name)
         # Define the LSP info
 

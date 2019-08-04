@@ -21,7 +21,7 @@ class Demand(object):
     @property
     def _key(self):
         """Unique identifier for the demand: (Node('source'), Node('dest'), name)"""
-        return (self.source_node_object, self.dest_node_object, self.name)
+        return (self.source_node_object.name, self.dest_node_object.name, self.name)
 
     def __repr__(self):
         return 'Demand(source = %s, dest = %s, traffic = %s, name = %r)' % \
