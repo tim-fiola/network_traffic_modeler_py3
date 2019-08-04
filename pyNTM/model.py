@@ -7,7 +7,6 @@ from pprint import pprint
 
 import networkx as nx
 
-
 from .circuit import Circuit
 from .demand import Demand
 from .interface import Interface
@@ -15,8 +14,6 @@ from .exceptions import ModelException
 from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
-
-import pdb
 
 
 class Model(object):
@@ -294,9 +291,7 @@ class Model(object):
         shortest_path_info = {}
         path_counter = 0
         for path in shortest_path_list:
-            interfaces_list = []  # List of path interfaces
             traffic_splits_per_interface = {}  # Dict of cumulative splits per interface
-            path_traffic = 0  # Amount of traffic for the path
 
             path_key = 'path_' + str(path_counter)
 
@@ -475,9 +470,8 @@ class Model(object):
                 traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group])
                 if traffic_in_demand_group > 0:
                     traff_on_each_group_lsp = traffic_in_demand_group / len(lsps)
-            except KeyError as e:
+            except KeyError:
                 print("lsp with no demands {}".format(lsps))
-#                pdb.set_trace()
                 pass
 
             # if traff_on_each_group_lsp == None:
@@ -705,7 +699,7 @@ class Model(object):
             int2 = self.get_interface_object_from_nodes(interface[1],
                                                         interface[0])
 
-            if (int1.in_ckt is False and int2.in_ckt is False):
+            if int1.in_ckt is False and int2.in_ckt is False:
                 # Mark interface objects as in_ckt = True
                 int1.in_ckt = True
                 int2.in_ckt = True
@@ -740,7 +734,6 @@ class Model(object):
             if interface.node_object.name == local_node_name and \
                     interface.remote_node_object.name == remote_node_name:
                 return interface
-                break
 
     @property
     def all_interface_addresses(self):
@@ -904,13 +897,6 @@ class Model(object):
         Returns demand specified by the source_node_name, dest_node_name, name;
         throws exception if demand not found
         """
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
-        demand_key = (source_node_object.name, dest_node_object.name, demand_name)
-
-        model_demand_keys = (demand_object._key for demand_object in
-                             self.demand_objects)
-
         model_demand_iterator = (demand for demand in self.demand_objects)
 
         demand_to_return = None
@@ -930,8 +916,6 @@ class Model(object):
         """Returns the RSVP LSP from the model with the specified source node
         name, dest node name, and LSP name."""
 
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
         needed_key = (source_node_name, dest_node_name, lsp_name)
 
         if needed_key not in (lsp._key for lsp in self.rsvp_lsp_objects):
@@ -1185,11 +1169,11 @@ does not exist in model" % (source_node_name, dest_node_name,
         # dest_node_object = self.get_node_object(dest_node_name)
 
         # Convert model to networkx DiGraph
-        G = self._make_weighted_network_graph(include_failed_circuits=False)
+        G = self._make_weighted_network_graph(include_failed_circuits=False)  # noqa - using networkx convention for G
 
         # Get the paths
         all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
-                                                         dest_node_name, )
+                                                         dest_node_name,)
 
         # Convert each path to the Model format
         model_feasible_paths = []
@@ -1212,7 +1196,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         G = self._make_weighted_network_graph(include_failed_circuits=False)
 
         # Define the Model-style path to be built
-        converted_path = {}
+        converted_path = dict()
         converted_path['path'] = []
         converted_path['cost'] = None
 
@@ -1472,8 +1456,6 @@ does not exist in model" % (source_node_name, dest_node_name,
 
         Note: if a demand name is not provided, the name will default to 'none'
         """
-
-        demands = []
         for demand in list_of_demand_properties:
             if 'name' in demand.keys():
                 demand_name = demand['name']
@@ -1489,6 +1471,14 @@ does not exist in model" % (source_node_name, dest_node_name,
         the info in the data file.  The data file must be of the appropriate
         format to produce a valid model
         """
+
+        # Explicitly define an empty model
+        model = Model()
+        model.demand_objects = set()
+        model.rsvp_lsp_objects = set()
+        model.node_objects = set()
+        model.interface_objects = set()
+
         # Open the file with the data, read it, and split it into lines
         with open(data_file, 'r') as f:
             data = f.read()
@@ -1499,15 +1489,12 @@ does not exist in model" % (source_node_name, dest_node_name,
         int_info_begin_index = 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
         interface_lines = lines[int_info_begin_index:int_info_end_index]
-        interface_set = set([])
+        interface_set = set()
         node_list = []
         for interface_line in interface_lines:
-            # Initialize interface characteristics
-            node_name, remote_node_name, name, cost, capacity = ['', '', '', '', '']
             # Read interface characteristics
             if len(interface_line.split()) == 5:
-                node_name, remote_node_name, name, cost, capacity = \
-                    interface_line.split()
+                node_name, remote_node_name, name, cost, capacity = interface_line.split()
             else:
                 print(interface_line.split())
                 msg = ("node_name, remote_node_name, name, cost, and capacity "
@@ -1550,7 +1537,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         demands_info_end_index = find_end_index(demands_info_begin_index, lines)
         # There may or may not be LSPs in the model, so if there are not,
         # set the demands_info_end_index as the last line in the file
-        if not (demands_info_end_index):
+        if not demands_info_end_index:
             demands_info_end_index = len(lines)
 
         demands_lines = lines[demands_info_begin_index:demands_info_end_index]
@@ -1580,10 +1567,6 @@ does not exist in model" % (source_node_name, dest_node_name,
                 dest = lsp_info[1]
                 name = lsp_info[2]
 
-                if name == '':
-                    lsp_name = 'none'
-                else:
-                    lsp_name = name
                 model.add_rsvp_lsp_bulk(source, dest, name)
 
         model.validate_model()

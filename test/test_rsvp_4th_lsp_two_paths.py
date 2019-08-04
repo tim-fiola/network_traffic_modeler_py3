@@ -66,14 +66,6 @@ class TestRSVPLSPAddLSP4LSPs(unittest.TestCase):
             model1.add_demand(demand['source'], demand['dest'],
                               demand['traffic'], demand['name'])
 
-        lsp_a_d_1 = model1.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
-        lsp_a_d_2 = model1.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
-        lsp_a_d_3 = model1.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
-        lsp_a_d_4 = model1.get_rsvp_lsp('A', 'D', 'lsp_a_d_4')
-        # lsp_f_e_1 = model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
-        # int_a_b = model.get_interface_object('A-to-B', 'A')
-        # int_a_c = model.get_interface_object('A-to-C', 'A')
-
         model1.update_simulation()
 
         # All the paths for each LSP from Node('A') to Node('D')
