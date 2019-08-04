@@ -1,10 +1,3 @@
-import sys  # noqa - these lines are a hack to get testing working
-sys.path.append('..')  # noqa
-sys.path.append('.')   # noqa
-
-sys.path.append('test')  # noqa -
-
-
 import unittest
 
 from pyNTM import Model
