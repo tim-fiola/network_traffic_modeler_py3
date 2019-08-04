@@ -15,7 +15,8 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
         """
 
         model = Model()
-        model.rsvp_lsp_objects = set([])
+        model.rsvp_lsp_objects = set()
+        model.demand_objects = set()
 
         int_list = [{'name': 'E-to-A', 'cost': 10, 'capacity': 300, 'node': 'E', 'remote_node': 'A', 'address': 1,
                      'failed': False},
