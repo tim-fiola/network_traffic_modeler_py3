@@ -5,7 +5,6 @@ and Demands."""
 from datetime import datetime
 from pprint import pprint
 
-import numpy as np
 import networkx as nx
 
 from .circuit import Circuit
@@ -769,8 +768,6 @@ class Model(object):
         self.interface_objects.add(int_a)
         self.interface_objects.add(int_b)
 
-
-
         self.validate_model()
 
     def is_node_an_orphan(self, node_object):
@@ -1464,12 +1461,16 @@ does not exist in model" % (source_node_name, dest_node_name,
             self.add_demand(demand['source'], demand['dest'],
                             demand['traffic'], demand_name)
 
+    # TODO - make this a class method?  model1 = model1.load_model_file?  This may resolve the model
+    #  info bleedover problem
     @staticmethod
     def load_model_file(data_file):
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
-        format to produce a valid model
+        format to produce a valid model.  This cannot be used to open
+        multiple models in a single python instance - there may be
+        unpredictable results in the info in the models.
         """
 
         # Explicitly define an empty model
@@ -1507,7 +1508,7 @@ does not exist in model" % (source_node_name, dest_node_name,
             if new_interface._key in [interface.key for interface in model.interface_objects]:
                 raise ModelException("{} already exists in Model's interfaces".format(new_interface))
 
-            interface_set.add()
+            interface_set.add(new_interface)
             node_list.append(Node(node_name))
             node_list.append(Node(remote_node_name))
         model = Model(interface_set, set(node_list))
@@ -1557,7 +1558,6 @@ does not exist in model" % (source_node_name, dest_node_name,
                 demand_name = 'none'
             else:
                 demand_name = name
-
 
             model.add_demand_bulk(source, dest, traffic, demand_name)
         # Define the LSP info

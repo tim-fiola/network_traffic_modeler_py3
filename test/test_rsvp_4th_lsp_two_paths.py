@@ -11,6 +11,7 @@ class TestRSVPLSPAddLSP4LSPs(unittest.TestCase):
 
         model1 = Model()
         model1.rsvp_lsp_objects = set([])
+        model1.demand_objects = set([])
 
         int_list = [{'name': 'E-to-A', 'cost': 10, 'capacity': 300, 'node': 'E', 'remote_node': 'A', 'address': 1,
                      'failed': False},
