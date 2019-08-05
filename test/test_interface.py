@@ -41,7 +41,7 @@ class TestInterface(unittest.TestCase):
     def test_reservable_bandwidth(self):
         self.assertEqual(100, self.interface_a.reservable_bandwidth)
 
-    def test_int_fail(self):
+    def test_int_fail(self):  # TODO - don't use load model file here
         model = Model.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -54,7 +54,7 @@ class TestInterface(unittest.TestCase):
 
         self.assertTrue(int_a_b.failed)
 
-    def test_int_fail_2(self):
+    def test_int_fail_2(self):   # TODO - don't use load model file here
         model = Model.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 

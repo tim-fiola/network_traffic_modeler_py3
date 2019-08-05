@@ -32,12 +32,12 @@ class TestDemand(unittest.TestCase):
         self.assertEqual(repr(self.demand), "Demand(source = nodeA, dest = nodeB, traffic = 10, name = 'A-to-B')")
 
     def test_key(self):
-        self.assertEqual(self.demand._key, (Node('nodeA'), Node('nodeB'), 'A-to-B'))
+        self.assertEqual(self.demand._key, (Node('nodeA').name, Node('nodeB').name, 'A-to-B'))
 
     def test_add_demand_path(self):
         self.demand._add_demand_path(self.model)
 
-    def test_demand_behavior(self):
+    def test_demand_behavior(self):  # TODO - don't use load file here
         model = Model.load_model_file('test/igp_routing_topology.csv')
 
         model.update_simulation()

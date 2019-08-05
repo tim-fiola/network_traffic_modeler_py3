@@ -7,7 +7,6 @@ from pprint import pprint
 
 import networkx as nx
 
-
 from .circuit import Circuit
 from .demand import Demand
 from .interface import Interface
@@ -15,8 +14,6 @@ from .exceptions import ModelException
 from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
-
-import pdb
 
 
 class Model(object):
@@ -109,7 +106,6 @@ class Model(object):
         # Find objects in interface_objects that are not Interface objects
         non_interface_objects = set()
 
-
         # Ints with non-boolean failed attribute
         non_bool_failed = set()
         # Ints with non-integer cost value
@@ -120,6 +116,8 @@ class Model(object):
         int_res_bw_too_high = set()
         # Sum of reserved_bandwidth of LSPs != interface.reserved_bandwidth
         int_res_bw_sum_error = set()
+
+        # TODO - check for duplicate LSPs and interfaces and demands, but need a way that scales
 
         error_data = []  # list of all errored checks
 
@@ -150,7 +148,7 @@ class Model(object):
             # if math.trunc(interface.reserved_bandwidth) != math.trunc(sum([lsp.reserved_bandwidth
             #                                         for lsp in interface.lsps(self)])):
             if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
-                                                                      for lsp in interface.lsps(self)]), 1):
+                                                                    for lsp in interface.lsps(self)]), 1):
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
                                           tuple(interface.lsps(self))))
 
@@ -293,9 +291,7 @@ class Model(object):
         shortest_path_info = {}
         path_counter = 0
         for path in shortest_path_list:
-            interfaces_list = []  # List of path interfaces
             traffic_splits_per_interface = {}  # Dict of cumulative splits per interface
-            path_traffic = 0  # Amount of traffic for the path
 
             path_key = 'path_' + str(path_counter)
 
@@ -473,10 +469,9 @@ class Model(object):
 
                 traffic_in_demand_group = sum([dmd.traffic for dmd in dmds_on_lsp_group])
                 if traffic_in_demand_group > 0:
-                    traff_on_each_group_lsp = traffic_in_demand_group/len(lsps)
-            except KeyError as e:
+                    traff_on_each_group_lsp = traffic_in_demand_group / len(lsps)
+            except KeyError:
                 print("lsp with no demands {}".format(lsps))
-#                pdb.set_trace()
                 pass
 
             # if traff_on_each_group_lsp == None:
@@ -567,7 +562,7 @@ class Model(object):
                 parallel_lsp_groups[key] = []
                 for lsp in self.rsvp_lsp_objects:
                     if (lsp.source_node_object.name == src_node_name and
-                             lsp.dest_node_object.name == dest_node_name):
+                            lsp.dest_node_object.name == dest_node_name):
                         parallel_lsp_groups[key].append(lsp)
 
                 if parallel_lsp_groups[key] == []:
@@ -593,7 +588,7 @@ class Model(object):
                 parallel_demand_groups[key] = []
                 for dmd in self.demand_objects:
                     if (dmd.source_node_object.name == src_node_name and
-                             dmd.dest_node_object.name == dest_node_name):
+                            dmd.dest_node_object.name == dest_node_name):
                         parallel_demand_groups[key].append(dmd)
 
                 if parallel_demand_groups[key] == []:
@@ -704,7 +699,7 @@ class Model(object):
             int2 = self.get_interface_object_from_nodes(interface[1],
                                                         interface[0])
 
-            if (int1.in_ckt == False and int2.in_ckt == False):
+            if int1.in_ckt is False and int2.in_ckt is False:
                 # Mark interface objects as in_ckt = True
                 int1.in_ckt = True
                 int2.in_ckt = True
@@ -739,7 +734,6 @@ class Model(object):
             if interface.node_object.name == local_node_name and \
                     interface.remote_node_object.name == remote_node_name:
                 return interface
-                break
 
     @property
     def all_interface_addresses(self):
@@ -764,6 +758,12 @@ class Model(object):
                           node_a_object, node_b_object, address)
         int_b = Interface(node_b_interface_name, cost_intf_b, capacity,
                           node_b_object, node_a_object, address)
+
+        existing_int_keys = set([interface._key for interface in self.interface_objects])
+        if int_a._key in existing_int_keys:
+            raise ModelException("interface {} already exists in model".format(int_a))
+        if int_b._key in existing_int_keys:
+            raise ModelException("interface {} already exists in model".format(int_b))
 
         self.interface_objects.add(int_a)
         self.interface_objects.add(int_b)
@@ -846,15 +846,15 @@ class Model(object):
         dest_node_object = self.get_node_object(dest_node_name)
         added_demand = Demand(source_node_object, dest_node_object,
                               traffic, name)
-        if added_demand in self.demand_objects:
-            message = added_demand, ' already exists in demand_objects'
+        if added_demand._key in set([demand._key for demand in self.demand_objects]):
+            message = '{} already exists in demand_objects'.format(added_demand)
             raise ModelException(message)
         self.demand_objects.add(added_demand)
 
         self.validate_model()
 
     def add_demand_bulk(self, source_node_name, dest_node_name, traffic=0,
-                   name='none'):
+                        name='none'):
         """Adds a traffic load from point A to point B in the model.  Does not
         validate model.  Recommended for larger demand adds.  Must include
         a validate_model call after this call is complete.
@@ -876,7 +876,7 @@ class Model(object):
         dest_node_object = self.get_node_object(dest_node_name)
         added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
 
-        if added_lsp in self.rsvp_lsp_objects:
+        if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
             message = added_lsp, ' already exists in rsvp_lsp_objects'
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
@@ -903,13 +903,6 @@ class Model(object):
         Returns demand specified by the source_node_name, dest_node_name, name;
         throws exception if demand not found
         """
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
-        demand_key = (source_node_object.name, dest_node_object.name, demand_name)
-
-        model_demand_keys = (demand_object._key for demand_object in
-                             self.demand_objects)
-
         model_demand_iterator = (demand for demand in self.demand_objects)
 
         demand_to_return = None
@@ -929,8 +922,6 @@ class Model(object):
         """Returns the RSVP LSP from the model with the specified source node
         name, dest node name, and LSP name."""
 
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
         needed_key = (source_node_name, dest_node_name, lsp_name)
 
         if needed_key not in (lsp._key for lsp in self.rsvp_lsp_objects):
@@ -997,7 +988,7 @@ does not exist in model" % (source_node_name, dest_node_name,
             msg = "Unable to find circuit"
             raise ModelException(msg)
 
-    ##### Convenience calls #####
+    # Convenience calls #####
     def get_failed_interface_objects(self):
         """
         Returns a list of all failed interfaces
@@ -1084,8 +1075,8 @@ does not exist in model" % (source_node_name, dest_node_name,
 
         # Ensure local and remote nodes are failed = False and set reservable
         # bandwidth on each interface to interface.capacity
-        if self.get_node_object(interface_object.node_object.name).failed == False and \
-                self.get_node_object(remote_interface.node_object.name).failed == False:
+        if self.get_node_object(interface_object.node_object.name).failed is False and \
+                self.get_node_object(remote_interface.node_object.name).failed is False:
 
             remote_interface.failed = False
             remote_interface.reserved_bandwidth = 0
@@ -1108,7 +1099,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         # Get all non-failed interfaces on the source node
         initial_candidate_paths = [interface for interface in
                                    source_node_object.interfaces(self)
-                                   if interface.failed == False]
+                                   if interface.failed is False]
 
         initial_candidate_path_list = []
 
@@ -1139,10 +1130,10 @@ does not exist in model" % (source_node_name, dest_node_name,
             most_recent_node_interfaces = \
                 [interface for interface in
                  Node(most_recent_node).interfaces(self)
-                 if interface.failed == False]
+                 if interface.failed is False]
 
             for interface_object in most_recent_node_interfaces:
-                if interface_object.failed == False:  # this
+                if interface_object.failed is False:  # this
                     remote_node = interface_object.remote_node_object.name
                     if remote_node in node_path:
                         continue  # There's a loop, move on to next adjacency
@@ -1184,11 +1175,11 @@ does not exist in model" % (source_node_name, dest_node_name,
         # dest_node_object = self.get_node_object(dest_node_name)
 
         # Convert model to networkx DiGraph
-        G = self._make_weighted_network_graph(include_failed_circuits=False)
+        G = self._make_weighted_network_graph(include_failed_circuits=False)  # noqa - using networkx convention for G
 
         # Get the paths
         all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
-                                                         dest_node_name, )
+                                                         dest_node_name,)
 
         # Convert each path to the Model format
         model_feasible_paths = []
@@ -1211,7 +1202,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         G = self._make_weighted_network_graph(include_failed_circuits=False)
 
         # Define the Model-style path to be built
-        converted_path = {}
+        converted_path = dict()
         converted_path['path'] = []
         converted_path['cost'] = None
 
@@ -1229,15 +1220,6 @@ does not exist in model" % (source_node_name, dest_node_name,
             return converted_path
         except BaseException:
             return converted_path
-
-    def validate_rsvp_lsps(self):
-        """Validates RSVP LSPs in model"""
-        # not needed at this point; since the LSPs are a set, it's not
-        # possible to have duplicate LSPs, which is what I was going to
-        # check for
-        #
-        # TODO - Actually, maybe add this to warn the user they added an LSP that already exists
-        pass
 
     def get_shortest_path_lsps(self, source_node_name, dest_node_name):
         """New shortest path def for use in LSP full mesh network"""
@@ -1435,7 +1417,7 @@ does not exist in model" % (source_node_name, dest_node_name,
             # Get non-failed edge names
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name, interface.cost)
-                          for interface in self.interface_objects if interface.failed == False)
+                          for interface in self.interface_objects if interface.failed is False)
         elif include_failed_circuits:
             # Get all edge names
             edge_names = ((interface.node_object.name,
@@ -1471,8 +1453,6 @@ does not exist in model" % (source_node_name, dest_node_name,
 
         Note: if a demand name is not provided, the name will default to 'none'
         """
-
-        demands = []
         for demand in list_of_demand_properties:
             if 'name' in demand.keys():
                 demand_name = demand['name']
@@ -1481,13 +1461,25 @@ does not exist in model" % (source_node_name, dest_node_name,
             self.add_demand(demand['source'], demand['dest'],
                             demand['traffic'], demand_name)
 
+    # TODO - make this a class method?  model1 = model1.load_model_file?  This may resolve the model
+    #  info bleedover problem
     @staticmethod
     def load_model_file(data_file):
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
-        format to produce a valid model
+        format to produce a valid model.  This cannot be used to open
+        multiple models in a single python instance - there may be
+        unpredictable results in the info in the models.
         """
+
+        # Explicitly define an empty model
+        model = Model()
+        model.demand_objects = set()
+        model.rsvp_lsp_objects = set()
+        model.node_objects = set()
+        model.interface_objects = set()
+
         # Open the file with the data, read it, and split it into lines
         with open(data_file, 'r') as f:
             data = f.read()
@@ -1498,23 +1490,25 @@ does not exist in model" % (source_node_name, dest_node_name,
         int_info_begin_index = 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
         interface_lines = lines[int_info_begin_index:int_info_end_index]
-        interface_set = set([])
+        interface_set = set()
         node_list = []
         for interface_line in interface_lines:
-            # Initialize interface characteristics
-            node_name, remote_node_name, name, cost, capacity = ['', '', '', '', '']
             # Read interface characteristics
             if len(interface_line.split()) == 5:
-                node_name, remote_node_name, name, cost, capacity = \
-                    interface_line.split()
+                node_name, remote_node_name, name, cost, capacity = interface_line.split()
             else:
                 print(interface_line.split())
                 msg = ("node_name, remote_node_name, name, cost, and capacity "
                        "must be defined for line {}, line index {}".format(interface_line,
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
-            interface_set.add(Interface(name, int(cost), int(capacity),
-                                        Node(node_name), Node(remote_node_name)))
+
+            new_interface = Interface(name, int(cost), int(capacity), Node(node_name), Node(remote_node_name))
+
+            if new_interface._key in [interface.key for interface in model.interface_objects]:
+                raise ModelException("{} already exists in Model's interfaces".format(new_interface))
+
+            interface_set.add(new_interface)
             node_list.append(Node(node_name))
             node_list.append(Node(remote_node_name))
         model = Model(interface_set, set(node_list))
@@ -1549,7 +1543,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         demands_info_end_index = find_end_index(demands_info_begin_index, lines)
         # There may or may not be LSPs in the model, so if there are not,
         # set the demands_info_end_index as the last line in the file
-        if not (demands_info_end_index):
+        if not demands_info_end_index:
             demands_info_end_index = len(lines)
 
         demands_lines = lines[demands_info_begin_index:demands_info_end_index]
@@ -1564,6 +1558,7 @@ does not exist in model" % (source_node_name, dest_node_name,
                 demand_name = 'none'
             else:
                 demand_name = name
+
             model.add_demand_bulk(source, dest, traffic, demand_name)
         # Define the LSP info
 
@@ -1579,10 +1574,6 @@ does not exist in model" % (source_node_name, dest_node_name,
                 dest = lsp_info[1]
                 name = lsp_info[2]
 
-                if name == '':
-                    lsp_name = 'none'
-                else:
-                    lsp_name = name
                 model.add_rsvp_lsp_bulk(source, dest, name)
 
         model.validate_model()

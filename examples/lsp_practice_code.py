@@ -96,7 +96,9 @@ traffic_values = [interface.traffic for interface in model.interface_objects]
 expected_traffic = [40.0, 266.6666666666667, 0.0, 20.0, 133.33333333333334,
                     400.0, 133.33333333333334, 0.0, 75.0, 85.0, 95.0, 0.0,
                     400.0, 75.0, 10.0, 133.33333333333334, 133.33333333333334, 10.0]
-if traffic_values.sort() != expected_traffic.sort():
+traffic_values.sort()
+expected_traffic.sort()
+if traffic_values != expected_traffic:
     msg = "error in traffic engine"
     raise Exception(msg)
 print()
@@ -126,6 +128,7 @@ print()
 
 
 print("****** Add LSP from B to C ******")
+print("There will be no traffic on this LSP")
 model.add_rsvp_lsp('B', 'C', 'lsp_b_c_1')
 lsp_b_c_1 = model.get_rsvp_lsp('B', 'C', 'lsp_b_c_1')
 model.update_simulation()
