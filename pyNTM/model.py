@@ -95,7 +95,6 @@ class Model(object):
             self.interface_objects.union(new_interface_objects)
         self.validate_model()
 
-    # TODO - simplify this; it's too complex
     def validate_model(self):
         """
         Validates that data fed into the model creates a valid network model
