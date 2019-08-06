@@ -134,7 +134,7 @@ class RSVP_LSP(object):
         self.setup_bandwidth = requested_bandwidth
         return self
 
-    def _add_rsvp_lsp_path(self, model):  # TODO - this bottlenecks at scale
+    def _add_rsvp_lsp_path(self, model):
         """
         Determines the LSP's path regardless of whether it was previously routed
         or not (non stateful).
@@ -174,6 +174,9 @@ class RSVP_LSP(object):
         # Find the path cost and path headroom for each path candidate
         candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
 
+        # TODO - is this necessary to filter out paths that don't have enough headroom
+        #  anymore since model.get_shortest path and model.get_feasible_paths
+        #  only return paths with enough bandwidth?!
         # Filter out paths that don't have enough headroom
         candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                 if path['baseline_path_reservable_bw'] >=
@@ -308,7 +311,7 @@ class RSVP_LSP(object):
 
         print("[{}] routing {}".format(datetime.now(), self))  # TODO - debug output
         # Route the LSP
-        self._add_rsvp_lsp_path(model)  # TODO - this bottlenecks at scale
-        print("[{}] path for {} is {}".format(datetime.now(), self, self.path))
+        self._add_rsvp_lsp_path(model)
+        print("[{}] path for {} is {}".format(datetime.now(), self, self.path))  # TODO - debug output
 
         return self

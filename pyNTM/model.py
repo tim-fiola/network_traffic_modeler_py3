@@ -1207,7 +1207,8 @@ does not exist in model" % (source_node_name, dest_node_name,
 
     def get_shortest_path(self, source_node_name, dest_node_name, needed_bw):
         """
-        For a source and dest node name pair, find the shortest path.
+        For a source and dest node name pair, find the shortest path(s) with at
+        least needed_bw.
         Return the shortest path in dictionary form:
         shortest_path = {'path': [list of shortest path routes],
                             'cost': path_cost}
