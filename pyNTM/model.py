@@ -1205,7 +1205,7 @@ does not exist in model" % (source_node_name, dest_node_name,
     #     # Return the paths
     #     return model_feasible_paths
 
-    def get_shortest_path(self, source_node_name, dest_node_name):
+    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw):
         """
         For a source and dest node name pair, find the shortest path.
         Return the shortest path in dictionary form:
@@ -1214,7 +1214,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         """
 
         # Define a networkx DiGraph to find the path
-        G = self._make_weighted_network_graph(include_failed_circuits=False)
+        G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
         converted_path = dict()

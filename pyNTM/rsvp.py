@@ -5,10 +5,6 @@ from datetime import datetime
 
 from pprint import pprint
 
-# For when the model has both LSPs but not a full LSP mesh,
-# - create the LSP model first
-# - if there are not paths between all nodes, find those specific paths
-#    in a model made up of just interfaces
 
 class RSVP_LSP(object):
     """A class to represent an RSVP label-switched-path in the network model
@@ -151,11 +147,14 @@ class RSVP_LSP(object):
 
         print("[{}] getting candidate paths for {}".format(datetime.now(), self))
 
-        # TODO - optimize - try all shortest paths first, then try all feasible paths
+        # Try all shortest paths with needed reservable bandwidth first
+        candidate_paths = model.get_shortest_path(self.source_node_object.name,
+                                                  self.dest_node_object.name, self.setup_bandwidth)
 
-        # Get candidate paths
-        candidate_paths = model.get_feasible_paths(self.source_node_object.name,
-                                                   self.dest_node_object.name, self.setup_bandwidth)
+        # If there are no shortest paths available, try all paths with reservable bandwidth
+        if candidate_paths == []:
+            candidate_paths = model.get_feasible_paths(self.source_node_object.name,
+                                                       self.dest_node_object.name, self.setup_bandwidth)
         print("[{}] len(candidate paths) for {} is".format(datetime.now(), self))
         pprint(len(candidate_paths))
 
@@ -236,7 +235,7 @@ class RSVP_LSP(object):
         candidate_path_info = []
 
         # Find the path cost and path headroom for each path candidate
-        for path in candidate_paths:
+        for path in candidate_paths['path']:
             path_cost = 0
             for interface in path:
                 path_cost += interface.cost
@@ -285,7 +284,7 @@ class RSVP_LSP(object):
         whether the LSP takes that shortest path or not."""
 
         return model.get_shortest_path(self.source_node_object.name,
-                                       self.dest_node_object.name)['cost']
+                                       self.dest_node_object.name, needed_bw=0)['cost']
 
     def actual_metric(self, model):
         """Returns the metric sum of the interfaces that the LSP actually

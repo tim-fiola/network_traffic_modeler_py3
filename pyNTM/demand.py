@@ -51,7 +51,7 @@ class Demand(object):
         # If demand can't be carried by LSP, do shortest path routing
         if demand_path == []:
             demand_path = model.get_shortest_path(self.source_node_object.name,
-                                                  self.dest_node_object.name)['path']
+                                                  self.dest_node_object.name, needed_bw=0)['path']
 
         if demand_path == []:
             demand_path = 'Unrouted'
