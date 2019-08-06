@@ -15,8 +15,6 @@ from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
 
-import pdb
-
 
 class Model(object):
     """A network model object consisting of the following base components:
@@ -1169,21 +1167,18 @@ does not exist in model" % (source_node_name, dest_node_name,
                                                        feasible_paths)
         return feasible_paths
 
-    def get_feasible_paths(self, source_node_name, dest_node_name):
+    def get_feasible_paths(self, source_node_name, dest_node_name, needed_bw=0):
         """
         Returns a list of all feasible (loop free) paths from source node
         object to dest node object
         """
-
-        # source_node_object = self.get_node_object(source_node_name)
-        # dest_node_object = self.get_node_object(dest_node_name)
 
         # Convert model to networkx DiGraph
         G = self._make_weighted_network_graph(include_failed_circuits=False)  # noqa - using networkx convention for G
 
         # Get the paths
         all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
-                                                         dest_node_name,)
+                                                         dest_node_name, 10)  # TODO - i specified max hop limit of 10
 
         # Convert each path to the Model format
         model_feasible_paths = []
@@ -1191,8 +1186,39 @@ does not exist in model" % (source_node_name, dest_node_name,
             model_path = self._convert_nx_path_to_model_path(digraph_path)
             model_feasible_paths.append(model_path)
 
+        G.clear()
+
         # Return the paths
         return model_feasible_paths
+
+    # def get_feasible_paths_w_reservable_bw(self, source_node_name, dest_node_name, requested_bw):
+    #     """
+    #     Returns a list of all feasible (loop free) paths from source node
+    #     object to dest node object
+    #     """
+    #
+    #     ints_w_needed_bw = (interface for interface in self.interface_objects if (not(interface.failed) and
+    #                         interface.reservable_bandwidth >= requested_bw))
+    #
+    #
+    #     # TODO - only include interfaces in G that have the requested setup bandwidth for the LSP
+    #     # Convert model to networkx DiGraph
+    #     G = self._make_weighted_network_graph(include_failed_circuits=False)  # noqa - using networkx convention for G
+    #
+    #     # Get the paths
+    #     all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
+    #                                                      dest_node_name, 10)  # TODO - i specified max hop limit of 10
+    #
+    #     # Convert each path to the Model format
+    #     model_feasible_paths = []
+    #     for digraph_path in all_feasible_digraph_paths:
+    #         model_path = self._convert_nx_path_to_model_path(digraph_path)
+    #         model_feasible_paths.append(model_path)
+    #
+    #     G.clear()
+    #
+    #     # Return the paths
+    #     return model_feasible_paths
 
     def get_shortest_path(self, source_node_name, dest_node_name):
         """
@@ -1412,7 +1438,7 @@ does not exist in model" % (source_node_name, dest_node_name,
             pprint(interface)
             print()
 
-    def _make_weighted_network_graph(self, include_failed_circuits=True):
+    def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0):
         """Returns a networkx weighted network directional graph from
         the input Model object"""
         G = nx.DiGraph()
@@ -1421,12 +1447,14 @@ does not exist in model" % (source_node_name, dest_node_name,
             # Get non-failed edge names
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name, interface.cost)
-                          for interface in self.interface_objects if interface.failed is False)
+                          for interface in self.interface_objects
+                          if (interface.failed is False and
+                              interface.reservable_bandwidth >= needed_bw))
         elif include_failed_circuits:
             # Get all edge names
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name, interface.cost)
-                          for interface in self.interface_objects)
+                          for interface in self.interface_objects if interface.reservable_bandwidth >= needed_bw)
 
         # Add edges to networkx DiGraph
         G.add_weighted_edges_from(edge_names, weight='cost')
@@ -1585,7 +1613,7 @@ does not exist in model" % (source_node_name, dest_node_name,
     #     return model
 
     @classmethod
-    def load_model_file(cls, data_file):
+    def load_model_file(cls, data_file):  # TODO - add notes where it finds duplicate entries
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
@@ -1594,22 +1622,10 @@ does not exist in model" % (source_node_name, dest_node_name,
         unpredictable results in the info in the models.
         """
 
-        # Explicitly define an empty model
-        # model = Model()
-        # model.demand_objects = set()
-        # model.rsvp_lsp_objects = set()
-        # model.node_objects = set()
-        # model.interface_objects = set()
-
         interface_set = set()
-        interface_key_set = set()
         node_set = set()
-        node_key_set = set()
         demand_set = set()
-        demand_key_set = set()
         lsp_set = set()
-        lsp_key_set = set()
-
 
         # Open the file with the data, read it, and split it into lines
         with open(data_file, 'r') as f:
@@ -1636,10 +1652,8 @@ does not exist in model" % (source_node_name, dest_node_name,
 
             new_interface = Interface(name, int(cost), int(capacity), Node(node_name), Node(remote_node_name))
 
-            if new_interface._key in set([interface._key for interface in interface_set]):
-                raise ModelException("{} already exists in Model's interfaces".format(new_interface))
-
-            interface_set.add(new_interface)
+            if new_interface._key not in set([interface._key for interface in interface_set]):
+                interface_set.add(new_interface)
 
             if node_name not in [node.name for node in node_set]:  # TODO - can we use generators here?
                 node_set.add(Node(node_name))
@@ -1692,8 +1706,6 @@ does not exist in model" % (source_node_name, dest_node_name,
                 demand_name = name
 
             demand = Demand(source_node, dest_node, traffic, demand_name)
-
-            pdb.set_trace()
 
             if demand._key not in set([dmd._key for dmd in demand_set]):
                 demand_set.add(Demand(source_node, dest_node, traffic, demand_name))

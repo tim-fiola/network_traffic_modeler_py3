@@ -150,11 +150,14 @@ class RSVP_LSP(object):
         """
 
         print("[{}] getting candidate paths for {}".format(datetime.now(), self))
+
+        # TODO - optimize - try all shortest paths first, then try all feasible paths
+
         # Get candidate paths
         candidate_paths = model.get_feasible_paths(self.source_node_object.name,
-                                                   self.dest_node_object.name)
-        print("[{}] candidate paths for {} is".format(datetime.now(), self))
-        pprint(candidate_paths)
+                                                   self.dest_node_object.name, self.setup_bandwidth)
+        print("[{}] len(candidate paths) for {} is".format(datetime.now(), self))
+        pprint(len(candidate_paths))
 
         # Route LSP
         #   Options:
@@ -302,10 +305,9 @@ class RSVP_LSP(object):
         """
 
         # Calculate setup bandwidth
-#        self._calculate_setup_bandwidth(model)
         self.setup_bandwidth = setup_bandwidth
 
-        print("[{}] routing {}".format(datetime.now(), self))
+        print("[{}] routing {}".format(datetime.now(), self))  # TODO - debug output
         # Route the LSP
         self._add_rsvp_lsp_path(model)  # TODO - this bottlenecks at scale
         print("[{}] path for {} is {}".format(datetime.now(), self, self.path))
