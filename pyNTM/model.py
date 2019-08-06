@@ -34,8 +34,8 @@ class Model(object):
           interface's available capacity
     """
 
-    def __init__(self, interface_objects=set([]), node_objects=set([]),
-                 demand_objects=set([]), rsvp_lsp_objects=set([])):
+    def __init__(self, interface_objects=set(), node_objects=set(),
+                 demand_objects=set(), rsvp_lsp_objects=set()):
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
@@ -480,12 +480,11 @@ class Model(object):
             #     traff_on_each_group_lsp = .01
 
             # Now route each LSP in the group (first routing iteration)
-            # TODO - make nx graph G here once so we don't have to keep recreating it?
             for lsp in lsps:
                 # Route each LSP one at a time
                 lsp.route_lsp(input_model, traff_on_each_group_lsp)
 
-            routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted - setup_bandwidth']
+            routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted']
 
             # If not all the LSPs in the group can route at the lowest (initial)
             # setup bandwidth, determine which LSPs can signal and for how much traffic
@@ -531,20 +530,6 @@ class Model(object):
             print()
 
         return self
-
-#     def _route_lsp_group(self, input_model, lsps_to_route, setup_bandwidth): # TODO - is this used??!
-#         """
-#         Attempts to route aggregate_traffic over the LSPs in lsps_to_route
-#         :param lsps_to_route: list of parallel LSPs that need a path
-#         :return: lsps_to_route with updated path info
-#         """
-#
-# #        setup_bandwidth = aggregate_traffic / len(lsps_to_route)
-#
-#         for lsp in lsps_to_route:
-#             lsp.route_lsp(input_model, setup_bandwidth)
-#
-#         return lsps_to_route
 
     def parallel_lsp_groups(self):
         """
@@ -636,7 +621,7 @@ class Model(object):
             interface.traffic = 0
 
         for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-            lsp.path = 'Unrouted - initial'
+            lsp.path = 'Unrouted'
 
         for demand in (demand for demand in self.demand_objects):
             demand.path = 'Unrouted'
@@ -1174,7 +1159,7 @@ does not exist in model" % (source_node_name, dest_node_name,
         """
 
         # Convert model to networkx DiGraph
-        G = self._make_weighted_network_graph(include_failed_circuits=False)  # noqa - using networkx convention for G
+        G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw = needed_bw)  # noqa - using networkx convention for G
 
         # Get the paths
         all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
@@ -1459,6 +1444,10 @@ does not exist in model" % (source_node_name, dest_node_name,
         # Add edges to networkx DiGraph
         G.add_weighted_edges_from(edge_names, weight='cost')
 
+        # Add all the nodes
+        node_name_iterator = (node.name for node in self.node_objects)
+        G.add_nodes_from(node_name_iterator)
+
         return G
 
     def _make_weighted_network_graph_lsps(self):
@@ -1493,127 +1482,8 @@ does not exist in model" % (source_node_name, dest_node_name,
             self.add_demand(demand['source'], demand['dest'],
                             demand['traffic'], demand_name)
 
-    # TODO - make this a class method?  model1 = model1.load_model_file?  This may resolve the model
-    #  info bleedover problem
-    # @staticmethod
-    # def load_model_file_old_broke(data_file):
-    #     """
-    #     Opens a network_modeling data file and returns a model containing
-    #     the info in the data file.  The data file must be of the appropriate
-    #     format to produce a valid model.  This cannot be used to open
-    #     multiple models in a single python instance - there may be
-    #     unpredictable results in the info in the models.
-    #     """
-    #
-    #     # Explicitly define an empty model
-    #     model = Model()
-    #     model.demand_objects = set()
-    #     model.rsvp_lsp_objects = set()
-    #     model.node_objects = set()
-    #     model.interface_objects = set()
-    #
-    #     # Open the file with the data, read it, and split it into lines
-    #     with open(data_file, 'r') as f:
-    #         data = f.read()
-    #
-    #     lines = data.splitlines()
-    #
-    #     # Define the interfaces info
-    #     int_info_begin_index = 2
-    #     int_info_end_index = find_end_index(int_info_begin_index, lines)
-    #     interface_lines = lines[int_info_begin_index:int_info_end_index]
-    #     interface_set = set()
-    #     node_list = []
-    #     for interface_line in interface_lines:
-    #         # Read interface characteristics
-    #         if len(interface_line.split()) == 5:
-    #             node_name, remote_node_name, name, cost, capacity = interface_line.split()
-    #         else:
-    #             print(interface_line.split())
-    #             msg = ("node_name, remote_node_name, name, cost, and capacity "
-    #                    "must be defined for line {}, line index {}".format(interface_line,
-    #                                                                        lines.index(interface_line)))
-    #             raise ModelException(msg)
-    #
-    #         new_interface = Interface(name, int(cost), int(capacity), Node(node_name), Node(remote_node_name))
-    #
-    #         if new_interface._key in [interface.key for interface in model.interface_objects]:
-    #             raise ModelException("{} already exists in Model's interfaces".format(new_interface))
-    #
-    #         interface_set.add(new_interface)
-    #         node_list.append(Node(node_name))
-    #         node_list.append(Node(remote_node_name))
-    #     model = Model(interface_set, set(node_list))
-    #
-    #     # Define the nodes info
-    #     nodes_info_begin_index = int_info_end_index + 3
-    #     nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
-    #     node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
-    #     node_names = set([node.name for node in node_list])
-    #     for node_line in node_lines:
-    #         node_info = node_line.split()
-    #         node_name = node_info[0]
-    #         try:
-    #             node_lat = int(node_info[1])
-    #         except (ValueError, IndexError):
-    #             node_lat = 0
-    #         try:
-    #             node_lon = int(node_info[2])
-    #         except (ValueError, IndexError):
-    #             node_lon = 0
-    #         if node_name not in node_names:  # Pick up orphan nodes
-    #             new_node = Node(node_name)
-    #             model.add_node(new_node)
-    #             new_node.lat = node_lat
-    #             new_node.lon = node_lon
-    #         else:
-    #             model.get_node_object(node_name).lat = node_lat
-    #             model.get_node_object(node_name).lon = node_lon
-    #
-    #     # Define the demands info
-    #     demands_info_begin_index = nodes_info_end_index + 3
-    #     demands_info_end_index = find_end_index(demands_info_begin_index, lines)
-    #     # There may or may not be LSPs in the model, so if there are not,
-    #     # set the demands_info_end_index as the last line in the file
-    #     if not demands_info_end_index:
-    #         demands_info_end_index = len(lines)
-    #
-    #     demands_lines = lines[demands_info_begin_index:demands_info_end_index]
-    #
-    #     for demand_line in demands_lines:
-    #         demand_info = demand_line.split()
-    #         source = demand_info[0]
-    #         dest = demand_info[1]
-    #         traffic = int(demand_info[2])
-    #         name = demand_info[3]
-    #         if name == '':
-    #             demand_name = 'none'
-    #         else:
-    #             demand_name = name
-    #
-    #         model.add_demand_bulk(source, dest, traffic, demand_name)
-    #     # Define the LSP info
-    #
-    #     # If the demands_info_end_index is the same as the length of the
-    #     # lines list, then there is no LSP section
-    #     if demands_info_end_index != len(lines):
-    #         lsp_info_begin_index = demands_info_end_index + 3
-    #         lsp_lines = lines[lsp_info_begin_index:]
-    #
-    #         for lsp_line in lsp_lines:
-    #             lsp_info = lsp_line.split()
-    #             source = lsp_info[0]
-    #             dest = lsp_info[1]
-    #             name = lsp_info[2]
-    #
-    #             model.add_rsvp_lsp_bulk(source, dest, name)
-    #
-    #     model.validate_model()
-    #
-    #     return model
-
     @classmethod
-    def load_model_file(cls, data_file):  # TODO - add notes where it finds duplicate entries
+    def load_model_file(cls, data_file):
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
@@ -1654,13 +1524,17 @@ does not exist in model" % (source_node_name, dest_node_name,
 
             if new_interface._key not in set([interface._key for interface in interface_set]):
                 interface_set.add(new_interface)
+            else:
+                print("{} already exists in model; disregarding line {}".format(new_interface,
+                                                                                lines.index(interface_line)))
 
-            if node_name not in [node.name for node in node_set]:  # TODO - can we use generators here?
+            # Derive Nodes from the Interface data
+            if node_name not in set([node.name for node in node_set]):
                 node_set.add(Node(node_name))
-            if remote_node_name not in [node.name for node in node_set]:
+            if remote_node_name not in set([node.name for node in node_set]):
                 node_set.add(Node(remote_node_name))
 
-        # Define the nodes info
+        # Define the explicit nodes info from the file
         nodes_info_begin_index = int_info_end_index + 3
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
@@ -1679,6 +1553,10 @@ does not exist in model" % (source_node_name, dest_node_name,
             new_node = Node(node_name)
             if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
                 node_set.add(new_node)
+            else:
+                print("{} on line {} already exists in model, "
+                      "updating lat/lon values if they are specified".format(new_node,
+                                                                             lines.index(node_line)))
             new_node.lat = node_lat
             new_node.lon = node_lon
 
@@ -1705,10 +1583,13 @@ does not exist in model" % (source_node_name, dest_node_name,
             else:
                 demand_name = name
 
-            demand = Demand(source_node, dest_node, traffic, demand_name)
+            new_demand = Demand(source_node, dest_node, traffic, demand_name)
 
-            if demand._key not in set([dmd._key for dmd in demand_set]):
-                demand_set.add(Demand(source_node, dest_node, traffic, demand_name))
+            if new_demand._key not in set([dmd._key for dmd in demand_set]):
+                demand_set.add(new_demand)
+            else:
+                print("{} already exists in model; disregarding line {}".format(new_demand,
+                                                                                lines.index(demand_line)))
 
         # Define the LSP info
 
@@ -1728,6 +1609,9 @@ does not exist in model" % (source_node_name, dest_node_name,
                 new_lsp = RSVP_LSP(source_node, dest_node, name)
                 if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
                     lsp_set.add(new_lsp)
+                else:
+                    print("{} already exists in model; disregarding line {}".format(new_lsp,
+                                                                                    lines.index(lsp_line)))
 
         return cls(interface_set, node_set, demand_set, lsp_set)
 

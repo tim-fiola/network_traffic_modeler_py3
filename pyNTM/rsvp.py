@@ -168,8 +168,8 @@ class RSVP_LSP(object):
         # Option a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
         if candidate_paths == []:
             # If there are no possible paths, then LSP is Unrouted
-            self.path = 'Unrouted - no path'
-            self.reserved_bandwidth = 'Unrouted - no path'
+            self.path = 'Unrouted'
+            self.reserved_bandwidth = 'Unrouted'
             return self
 
         # Find the path cost and path headroom for each path candidate
@@ -183,8 +183,8 @@ class RSVP_LSP(object):
         # Option b. There are viable paths, but none that can
         # accommodate the setup_bandwidth
         if candidate_paths_with_enough_headroom == []:
-            self.path = 'Unrouted - setup_bandwidth'
-            self.reserved_bandwidth = 'Unrouted - setup_bandwidth'
+            self.path = 'Unrouted'
+            self.reserved_bandwidth = 'Unrouted'
             return self
 
         # Option c.  LSP can route with current setup_bandwidth

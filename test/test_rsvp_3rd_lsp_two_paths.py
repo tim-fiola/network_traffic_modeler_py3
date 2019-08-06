@@ -80,7 +80,7 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
         # One of the 3 LSPs will not set up
         self.assertEqual([lsp_a_d_1.reserved_bandwidth,
                           lsp_a_d_2.reserved_bandwidth,
-                          lsp_a_d_3.reserved_bandwidth].count('Unrouted - setup_bandwidth'), 1)
+                          lsp_a_d_3.reserved_bandwidth].count('Unrouted'), 1)
 
         # The 2 LSPs that do set up will have setup_bandwidth of 125
         self.assertEqual([lsp_a_d_1.reserved_bandwidth,
