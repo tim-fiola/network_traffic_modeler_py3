@@ -32,7 +32,7 @@ class Demand(object):
 
     def _add_demand_path(self, model):
         """
-
+        Adds path(s) the the demand for the given model the demand routes through.
         :param model: Model object
         :return: list of paths the demand takes or 'Unrouted' string
         """
