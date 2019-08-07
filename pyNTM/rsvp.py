@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pprint import pprint
 
-
+import pdb
 class RSVP_LSP(object):
     """A class to represent an RSVP label-switched-path in the network model
 
@@ -53,7 +53,11 @@ class RSVP_LSP(object):
     def _find_path_cost_and_headroom_routed_lsp(self, candidate_paths):
         """
         Returns a list of dictionaries containing the path interfaces as
-        well as the path cost and headroom available on the path.
+        well as the path cost and headroom available on the path.  This def
+        takes into account that self is a routed LSP and is looking to
+        signal for additional bandwidth.  As such, this def adds back its
+        existing reserved_bandwidth to any Interface in a path in
+        candidate_paths that it is already signaled on.
         :param candidate_paths: list of lists of Interface objects
         :return: list of dictionaries of paths: {'interfaces': path,
                                                  'path_cost': path_cost,
@@ -63,9 +67,10 @@ class RSVP_LSP(object):
         # List to hold info on each candidate path
         candidate_path_info = []
 
-        # Find the path cost and path headroom for each path candidate
-        for path in candidate_paths:
+        pdb.set_trace()
 
+        # Find the path cost and path headroom for each path candidate
+        for path in candidate_paths['path']:
             path_cost = 0
             for interface in path:
                 path_cost += interface.cost
@@ -108,12 +113,24 @@ class RSVP_LSP(object):
         """
 
         # Get candidate paths
-        candidate_paths = model.get_feasible_paths(self.source_node_object.name,
-                                                   self.dest_node_object.name)
+        # candidate_paths = model.get_feasible_paths(self.source_node_object.name,
+        #                                            self.dest_node_object.name)
+
+        candidate_paths = model.get_shortest_path_for_routed_lsp(self.source_node_object.name,
+                                                                 self.dest_node_object.name,
+                                                                 self, self.reserved_bandwidth)
 
         # Find the path cost and path headroom for each path candidate
         candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(candidate_paths)
 
+        # TODO - figure out how this is related to rsvp._add_rsvp_lsp_path
+        #  only building G with interfaces with the needed bandwidth; **ANSWER**: this is
+        #  the iteration where the LSP is signaled already and is looking to signal for
+        #  additional bandwidth.  This iteration needs to account for interfaces it is
+        #  already signaled across so it can add its existing reserved bandwidth back
+        #  to the interface's reservable_bandwidth before considering if that interface
+        #  has requested_bandwidth available.  This is a candidate for optimization because
+        #  we can do that add back before building G
         # Filter out paths that don't have enough headroom
         candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                 if (path['baseline_path_reservable_bw']) >=
@@ -145,18 +162,9 @@ class RSVP_LSP(object):
         :return: self with 'path' attribute
         """
 
-        print("[{}] getting candidate paths for {}".format(datetime.now(), self))
-
-        # Try all shortest paths with needed reservable bandwidth first
+        # Try all shortest paths with needed reservable bandwidth
         candidate_paths = model.get_shortest_path(self.source_node_object.name,
                                                   self.dest_node_object.name, self.setup_bandwidth)
-
-        # If there are no shortest paths available, try all paths with reservable bandwidth
-        if candidate_paths == []:
-            candidate_paths = model.get_feasible_paths(self.source_node_object.name,
-                                                       self.dest_node_object.name, self.setup_bandwidth)
-        print("[{}] len(candidate paths) for {} is".format(datetime.now(), self))
-        pprint(len(candidate_paths))
 
         # Route LSP
         #   Options:
@@ -309,9 +317,7 @@ class RSVP_LSP(object):
         # Calculate setup bandwidth
         self.setup_bandwidth = setup_bandwidth
 
-        print("[{}] routing {}".format(datetime.now(), self))  # TODO - debug output
         # Route the LSP
         self._add_rsvp_lsp_path(model)
-        print("[{}] path for {} is {}".format(datetime.now(), self, self.path))  # TODO - debug output
 
         return self

@@ -5,84 +5,34 @@ from pyNTM import Model
 
 class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
 
-    def test_reserved_bandwidth(self):
-        """
-        The 3rd LSP from Node('A') to Node('D') should cause one of
-        the lsp_a_d_[1-3] to not signal.
-        This LSP will be the 3rd LSP signaled over two possible paths,
-        with the 2 existing LSPs each taking up the majority of
-        reservable bandwidth on each path.
-        """
+    @classmethod
+    def setUpClass(self):
+        self.model = Model.load_model_file('test/model_test_topology.csv')
 
-        model = Model()
-        model.rsvp_lsp_objects = set()
-        model.demand_objects = set()
+        self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+        self.lsp_a_d_2 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
+        self.lsp_f_e_1 = self.model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
+        self.int_a_b = self.model.get_interface_object('A-to-B', 'A')
+        self.int_a_c = self.model.get_interface_object('A-to-C', 'A')
 
-        int_list = [{'name': 'E-to-A', 'cost': 10, 'capacity': 300, 'node': 'E', 'remote_node': 'A', 'address': 1,
-                     'failed': False},
-                    {'name': 'C-to-D', 'cost': 30, 'capacity': 150, 'node': 'C', 'remote_node': 'D', 'address': 5,
-                     'failed': False},
-                    {'name': 'D-to-C', 'cost': 30, 'capacity': 150, 'node': 'D', 'remote_node': 'C', 'address': 5,
-                     'failed': False},
-                    {'name': 'A-to-E', 'cost': 10, 'capacity': 300, 'node': 'A', 'remote_node': 'E', 'address': 1,
-                     'failed': False},
-                    {'name': 'A-to-D', 'cost': 40, 'capacity': 20, 'node': 'A', 'remote_node': 'D', 'address': 2,
-                     'failed': False},
-                    {'name': 'D-to-A', 'cost': 40, 'capacity': 20, 'node': 'D', 'remote_node': 'A', 'address': 2,
-                     'failed': False},
-                    {'name': 'G-to-D', 'cost': 10, 'capacity': 100, 'node': 'G', 'remote_node': 'D', 'address': 7,
-                     'failed': False},
-                    {'name': 'C-to-A', 'cost': 30, 'capacity': 150, 'node': 'C', 'remote_node': 'A', 'address': 3,
-                     'failed': False},
-                    {'name': 'D-to-F', 'cost': 10, 'capacity': 300, 'node': 'D', 'remote_node': 'F', 'address': 6,
-                     'failed': False},
-                    {'name': 'F-to-D', 'cost': 10, 'capacity': 300, 'node': 'F', 'remote_node': 'D', 'address': 6,
-                     'failed': False},
-                    {'name': 'D-to-G', 'cost': 10, 'capacity': 100, 'node': 'D', 'remote_node': 'G', 'address': 7,
-                     'failed': False},
-                    {'name': 'B-to-A', 'cost': 20, 'capacity': 125, 'node': 'B', 'remote_node': 'A', 'address': 4,
-                     'failed': False},
-                    {'name': 'D-to-B', 'cost': 20, 'capacity': 125, 'node': 'D', 'remote_node': 'B', 'address': 8,
-                     'failed': False},
-                    {'name': 'B-to-G', 'cost': 10, 'capacity': 100, 'node': 'B', 'remote_node': 'G', 'address': 9,
-                     'failed': False},
-                    {'name': 'A-to-C', 'cost': 30, 'capacity': 150, 'node': 'A', 'remote_node': 'C', 'address': 3,
-                     'failed': False},
-                    {'name': 'B-to-D', 'cost': 20, 'capacity': 125, 'node': 'B', 'remote_node': 'D', 'address': 8,
-                     'failed': False},
-                    {'name': 'G-to-B', 'cost': 10, 'capacity': 100, 'node': 'G', 'remote_node': 'B', 'address': 9,
-                     'failed': False},
-                    {'name': 'A-to-B', 'cost': 20, 'capacity': 125, 'node': 'A', 'remote_node': 'B', 'address': 4,
-                     'failed': False}]
+        self.model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
+        self.lsp_a_d_3 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
+        self.model.add_demand('A', 'D', 100, 'dmd_a_d_3')
+        self.model.update_simulation()
 
-        model.add_network_interfaces_from_list(int_list)
-        model.add_rsvp_lsp('A', 'D', 'lsp_a_d_1')
-        model.add_rsvp_lsp('A', 'D', 'lsp_a_d_2')
-        model.add_rsvp_lsp('A', 'D', 'lsp_a_d_3')
-
-        demands = [{'source': 'A', 'dest': 'D', 'traffic': 100, 'name': 'dmd_a_d_3'},
-                   {'source': 'A', 'dest': 'D', 'traffic': 70, 'name': 'dmd_a_d_2'},
-                   {'source': 'A', 'dest': 'D', 'traffic': 80, 'name': 'dmd_a_d_1'},
-                   {'source': 'F', 'dest': 'E', 'traffic': 400, 'name': 'dmd_f_e_1'},
-                   {'source': 'A', 'dest': 'F', 'traffic': 40, 'name': 'dmd_a_f_1'},
-                   ]
-
-        for demand in demands:
-            model.add_demand(demand['source'], demand['dest'],
-                             demand['traffic'], demand['name'])
-
-        lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
-        lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
-        lsp_a_d_3 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
-
-        model.update_simulation()
-
+    # Each LSP will attempt to signal for 250 traffic/3 LSPs = 83.3 traffic/lsp.
+    # Since any path from A to D cannot fit 83.3*2 traffic, only 2 of the LSPs
+    # will be able to signal and reserve a setup bandwidth of 83.3 traffic
+    def test_1_lsp_unrouted(self):
         # One of the 3 LSPs will not set up
-        self.assertEqual([lsp_a_d_1.reserved_bandwidth,
-                          lsp_a_d_2.reserved_bandwidth,
-                          lsp_a_d_3.reserved_bandwidth].count('Unrouted'), 1)
+        self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
+                          self.lsp_a_d_2.reserved_bandwidth,
+                          self.lsp_a_d_3.reserved_bandwidth].count('Unrouted'), 1)
 
+    # Once the 2 LSPs that do initially signal for 83.3 traffic, each will have
+    # room to signal for and reserve more traffic: 250 traffic/2 lsps = 125 traffic/lsp
+    def test_auto_bw_adjust(self):
         # The 2 LSPs that do set up will have setup_bandwidth of 125
-        self.assertEqual([lsp_a_d_1.reserved_bandwidth,
-                          lsp_a_d_2.reserved_bandwidth,
-                          lsp_a_d_3.reserved_bandwidth].count(125.0), 2)
+        self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
+                          self.lsp_a_d_2.reserved_bandwidth,
+                          self.lsp_a_d_3.reserved_bandwidth].count(125.0), 2)

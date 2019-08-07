@@ -2,7 +2,6 @@
 modeled objects in the network such as Nodes, Interfaces, Circuits,
 and Demands."""
 
-from datetime import datetime
 from pprint import pprint
 
 import networkx as nx
@@ -15,6 +14,7 @@ from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
 
+import pdb
 
 class Model(object):
     """A network model object consisting of the following base components:
@@ -63,8 +63,8 @@ class Model(object):
     #     .. code-block:: python
     #
     #         network_interfaces = [
-    #             {'name':'A-B', 'cost':4,'capacity':100, 'node':'A', 'remote_node': 'B', 'address': 1, 'failed': False},
-    #             {'name':'A-C', 'cost':1,'capacity':200, 'node':'A', 'remote_node': 'C', 'address': 3, 'failed': False}
+    #           {'name':'A-B', 'cost':4,'capacity':100, 'node':'A', 'remote_node': 'B', 'address': 1, 'failed': False},
+    #           {'name':'A-C', 'cost':1,'capacity':200, 'node':'A', 'remote_node': 'C', 'address': 3, 'failed': False}
     #         ]
     #     """
     #     interface_objects, node_objects = Model._make_network_interfaces(network_interfaces)
@@ -943,6 +943,7 @@ class Model(object):
 
         node_object = self.get_node_object(node_name)
 
+        # TODO - it seems like this could be optimized
         interface_name_list = [interface.name for
                                interface in node_object.interfaces(self)]
 
@@ -966,7 +967,7 @@ class Model(object):
 
     def get_circuit_object_from_interface(self, interface_name, node_name):
         """
-        Returns a circuit object, given a node and interface name
+        Returns a Circuit object, given a Node name and Interface name
         """
 
         circuit = None  # initialize the variable to be returned
@@ -992,17 +993,21 @@ class Model(object):
     # Convenience calls #####
     def get_failed_interface_objects(self):
         """
-        Returns a list of all failed interfaces
+        Returns a list of all failed interfaces in the Model
         """
         failed_interfaces = []
 
-        for interface in self.interface_objects:
+        for interface in (interface for interface in self.interface_objects):
             if interface.failed:
                 failed_interfaces.append(interface)
 
         return failed_interfaces
 
     def get_unfailed_interface_objects(self):
+        """
+        Returns a list of all non-failed interfaces in the Model
+        """
+
         unfailed_interface_objects = set()
 
         interface_iter = (interface for interface in self.interface_objects)
@@ -1018,7 +1023,7 @@ class Model(object):
         Returns list of demand objects that cannot be routed
         """
         unrouted_demands = []
-        for demand in self.demand_objects:
+        for demand in (demand for demand in self.demand_objects):
             if demand.path == "Unrouted":
                 unrouted_demands.append(demand)
 
@@ -1034,13 +1039,13 @@ class Model(object):
         return interface_to_edit
 
     def fail_interface(self, interface_name, node_name):
-        """Fails the interface object for the node_name/interface_name pair"""
+        """Fails the Interface object for the interface_name/node_name pair"""
 
         # Get the interface object
         interface_object = self.get_interface_object(interface_name, node_name)
 
         # Does interface exist?
-        if interface_object not in set(self.interface_objects):
+        if interface_object not in self.interface_objects:
             ModelException('specified interface does not exist')
 
         # find the remote interface
@@ -1048,16 +1053,19 @@ class Model(object):
 
         remote_interface_object.failed = True
         interface_object.failed = True
-        # self.validate_model()
 
     def unfail_interface(self, interface_name, node_name, raise_exception=False):
-        """Unfails the interface object for the interface_name, node_object,
-        remote_node_object tuple.
+        """
+        Unfails the Interface object for the interface_name, node_name pair.
 
-        If raise_excecption=True, an exception
-        will be raised if the interface cannot be unfailed.
-        An example of this would be if you tried to unfail the interface
-        when the parent node or remote node was in a failed state
+        :param interface_name:
+        :param node_name:
+        :param raise_exception: If raise_excecption=True, an exception
+                                will be raised if the interface cannot be unfailed.
+                                An example of this would be if you tried to unfail
+                                the interface when the parent node or remote node
+                                was in a failed state
+        :return: Interface object from Model that is not failed
         """
 
         if not (isinstance(raise_exception, bool)):
@@ -1074,7 +1082,7 @@ class Model(object):
         # Find the remote interface
         remote_interface = interface_object.get_remote_interface(self)
 
-        # Ensure local and remote nodes are failed = False and set reservable
+        # Ensure local and remote nodes are failed == False and set reservable
         # bandwidth on each interface to interface.capacity
         if self.get_node_object(interface_object.node_object.name).failed is False and \
                 self.get_node_object(remote_interface.node_object.name).failed is False:
@@ -1085,11 +1093,12 @@ class Model(object):
             interface_object.reserved_bandwidth = 0
             self.validate_model()
         else:
-
             if raise_exception:
-                message = "Local and/or remote node are failed; cannot have \
-    unfailed interface on failed node"
+                message = ("Local and/or remote node are failed; cannot have "
+                           "unfailed interface on failed node.")
                 raise ModelException(message)
+
+    # TODO - left off on reviewing docstrings and calls here -------vvvvvvvv--------
 
     # Path-related calls
     def _get_initial_candidate_paths(self, source_node_object, dest_node_object):
@@ -1166,6 +1175,7 @@ class Model(object):
                                                        feasible_paths)
         return feasible_paths
 
+    # TODO - is this used now that we search for shortest path only considering interfaces with enough bandwidth?
     def get_feasible_paths(self, source_node_name, dest_node_name, needed_bw=0):
         """
         Returns a list of all feasible (loop free) paths from source node
@@ -1252,6 +1262,39 @@ class Model(object):
             return converted_path
         except BaseException:
             return converted_path
+
+    def get_shortest_path_for_routed_lsp(self, source_node_name, dest_node_name, lsp, needed_bw):
+        """
+        For a source and dest node name pair, find the shortest path(s) with at
+        least needed_bw available for an LSP that is already routed.
+        Return the shortest path in dictionary form:
+        shortest_path = {'path': [list of shortest path routes],
+                            'cost': path_cost}
+        """
+
+        # Define a networkx DiGraph to find the path
+        G = self._make_weighted_network_graph_routed_lsp(lsp, needed_bw=needed_bw)
+
+        # Define the Model-style path to be built
+        converted_path = dict()
+        converted_path['path'] = []
+        converted_path['cost'] = None
+
+        # Find the shortest paths in G between source and dest
+        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
+                                                       dest_node_name,
+                                                       weight='cost')
+        pdb.set_trace()
+        try:
+            for path in digraph_shortest_paths:
+                model_path = self._convert_nx_path_to_model_path(path)
+                converted_path['path'].append(model_path)
+                converted_path['cost'] = nx.shortest_path_length(G, source_node_name,
+                                                                 dest_node_name, weight='cost')
+            return converted_path
+        except BaseException:
+            return converted_path
+
 
     # TODO - is this being used anywhere?
     # def get_shortest_path_lsps(self, source_node_name, dest_node_name):
@@ -1467,6 +1510,52 @@ class Model(object):
         G.add_nodes_from(node_name_iterator)
 
         return G
+
+    def _make_weighted_network_graph_routed_lsp(self, lsp, needed_bw=0):
+        """
+        Returns a networkx weighted network directional graph from the input Model object.
+        Considers edges with needed_bw of reservable_bandwidth and also takes into account
+        reserved_bandwidth by the lsp on Interfaces in the existing LSP path
+        :param self:
+        :param include_failed_circuits:
+        :param lsp:
+        :param needed_bw:
+        :return:
+        """
+        G = nx.DiGraph()
+
+        # The Interfaces that the lsp is routed over currently
+        lsp_path_interfaces = lsp.path['interfaces']
+
+        eligible_interface_generator = [interface for interface in self.interface_objects if
+                                        interface.failed is False]  # TODO change to generator when done
+
+        eligible_interfaces = set()
+
+        for interface in eligible_interface_generator:
+            # Add back the lsp's reserved bandwidth to Interfaces already in its path
+            if interface in lsp_path_interfaces:
+                effective_reservable_bw = interface.reservable_bandwidth + lsp.reserved_bandwidth
+            else:
+                effective_reservable_bw = interface.reservable_bandwidth
+
+            if effective_reservable_bw >= needed_bw:
+                eligible_interfaces.add(interface)
+
+        # Get edge names in eligible_interfaces
+        edge_names = [(interface.node_object.name,
+                       interface.remote_node_object.name, interface.cost)
+                      for interface in eligible_interfaces]  # TODO - change to generator when done
+
+        # Add edges to networkx DiGraph
+        G.add_weighted_edges_from(edge_names, weight='cost')
+
+        # Add all the nodes
+        node_name_iterator = (node.name for node in self.node_objects)
+        G.add_nodes_from(node_name_iterator)
+
+        return G
+
 
     def _make_weighted_network_graph_lsps(self):
         """Returns a networkx weighted network directional graph from the
