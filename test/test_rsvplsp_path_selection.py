@@ -24,6 +24,12 @@ class TestRSVPLSPPathSelection(unittest.TestCase):
 
         self.assertIn(lsp_a_d_1_path_info, path_list)
 
+    def test_lsp_no_route(self):
+        self.assertEqual(self.lsp_e_a_1.path, 'Unrouted')
+
+    def test_unrouted_lsp_res_bw(self):
+        self.assertEqual(self.lsp_e_a_1.reserved_bandwidth, 'Unrouted')
+
     # def test_get_feasible_paths(self):
     #     pdb.set_trace()
     #     self.assertIn(self.int_a_d, self.lsp_a_d_1.path['interfaces'])

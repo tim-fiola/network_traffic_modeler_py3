@@ -15,7 +15,8 @@ class TestRSVPLSPInitial(unittest.TestCase):
         self.lsp_f_e_1 = self.model.get_rsvp_lsp('F', 'E', 'lsp_f_e_1')
         self.int_a_b = self.model.get_interface_object('A-to-B', 'A')
         self.int_a_c = self.model.get_interface_object('A-to-C', 'A')
-
+        self.dmd_a_d_1 = self.model.get_demand_object('A', 'D', 'dmd_a_d_1')
+        self.dmd_a_d_2 = self.model.get_demand_object('A', 'D', 'dmd_a_d_2')
         self.model.update_simulation()
 
     def test_lsp_instance(self):
@@ -32,6 +33,17 @@ class TestRSVPLSPInitial(unittest.TestCase):
 
     def test_lsp_reserved_bw(self):
         self.assertEqual(self.lsp_a_d_1.reserved_bandwidth, 75.0)
+
+    # lsp_a_d_1 and lsp_a_d_2 each carry part of dmd_a_d_1 and dmd_a_d_2 but
+    # do not carry any other demands
+    def test_demands_on_lsp(self):
+        self.assertIn(self.dmd_a_d_1, self.lsp_a_d_1.demands_on_lsp(self.model))
+        self.assertIn(self.dmd_a_d_2, self.lsp_a_d_2.demands_on_lsp(self.model))
+        self.assertEqual(len(self.lsp_a_d_1.demands_on_lsp(self.model)), 2)
+        self.assertEqual(len(self.lsp_a_d_2.demands_on_lsp(self.model)), 2)
+
+    def test_traffic_on_lsp(self):
+        self.assertEqual(self.lsp_a_d_1.traffic_on_lsp(self.model), 75)
 
     # lsp_a_d_1 and lsp_a_d_2 take different paths, so actual_metric values
     # should not be equal; one path actual_metric is 40, the other path's
