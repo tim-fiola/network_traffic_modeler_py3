@@ -1102,108 +1102,106 @@ class Model(object):
                            "unfailed interface on failed node.")
                 raise ModelException(message)
 
-    # TODO - left off on reviewing docstrings and calls here -------vvvvvvvv--------
+    # # Path-related calls
+    # def _get_initial_candidate_paths(self, source_node_object, dest_node_object):
+    #     """Returns a dict containing adjacencies of the source node
+    #     (initial_candidate_paths) and any first order feasible paths (those
+    #     paths where the dest node a direct adjacency to the source node)
+    #     """
+    #     # Get all non-failed interfaces on the source node
+    #     initial_candidate_paths = [interface for interface in
+    #                                source_node_object.interfaces(self)
+    #                                if interface.failed is False]
+    #
+    #     initial_candidate_path_list = []
+    #
+    #     # A list of complete paths from source to dest
+    #     feasible_paths_in_def = []
+    #
+    #     for interface in initial_candidate_paths:
+    #         if not interface.failed:
+    #             if interface.remote_node_object.name == dest_node_object.name:
+    #                 feasible_paths_in_def.append([interface])
+    #             else:
+    #                 initial_candidate_path_list.append([interface])
+    #
+    #     return {'initial_candidate_paths': initial_candidate_path_list,
+    #             'feasible_paths': feasible_paths_in_def}
+    #
+    # def _examine_candidate_paths(self, source, dest, candidate_paths,
+    #                              feasible_paths):
+    #     """Returns feasible (loop free) paths between source and dest"""
+    #
+    #     for path in candidate_paths:
+    #         node_path = [source.name]
+    #
+    #         for interface_object in path:
+    #             node_path.append(interface_object.remote_node_object.name)
+    #
+    #         most_recent_node = node_path[-1]
+    #         most_recent_node_interfaces = \
+    #             [interface for interface in
+    #              Node(most_recent_node).interfaces(self)
+    #              if interface.failed is False]
+    #
+    #         for interface_object in most_recent_node_interfaces:
+    #             if interface_object.failed is False:  # this
+    #                 remote_node = interface_object.remote_node_object.name
+    #                 if remote_node in node_path:
+    #                     continue  # There's a loop, move on to next adjacency
+    #                 elif remote_node == dest.name:
+    #                     feasible_path = path[:]
+    #                     feasible_path.append(interface_object)
+    #                     feasible_paths.append(feasible_path)
+    #                 elif remote_node not in node_path:
+    #                     good_path = path[:]
+    #                     good_path.append(interface_object)
+    #                     candidate_paths.append(good_path)
+    #
+    #     return feasible_paths
 
-    # Path-related calls
-    def _get_initial_candidate_paths(self, source_node_object, dest_node_object):
-        """Returns a dict containing adjacencies of the source node
-        (initial_candidate_paths) and any first order feasible paths (those
-        paths where the dest node a direct adjacency to the source node)
-        """
-        # Get all non-failed interfaces on the source node
-        initial_candidate_paths = [interface for interface in
-                                   source_node_object.interfaces(self)
-                                   if interface.failed is False]
-
-        initial_candidate_path_list = []
-
-        # A list of complete paths from source to dest
-        feasible_paths_in_def = []
-
-        for interface in initial_candidate_paths:
-            if not interface.failed:
-                if interface.remote_node_object.name == dest_node_object.name:
-                    feasible_paths_in_def.append([interface])
-                else:
-                    initial_candidate_path_list.append([interface])
-
-        return {'initial_candidate_paths': initial_candidate_path_list,
-                'feasible_paths': feasible_paths_in_def}
-
-    def _examine_candidate_paths(self, source, dest, candidate_paths,
-                                 feasible_paths):
-        """Returns feasible (loop free) paths between source and dest"""
-
-        for path in candidate_paths:
-            node_path = [source.name]
-
-            for interface_object in path:
-                node_path.append(interface_object.remote_node_object.name)
-
-            most_recent_node = node_path[-1]
-            most_recent_node_interfaces = \
-                [interface for interface in
-                 Node(most_recent_node).interfaces(self)
-                 if interface.failed is False]
-
-            for interface_object in most_recent_node_interfaces:
-                if interface_object.failed is False:  # this
-                    remote_node = interface_object.remote_node_object.name
-                    if remote_node in node_path:
-                        continue  # There's a loop, move on to next adjacency
-                    elif remote_node == dest.name:
-                        feasible_path = path[:]
-                        feasible_path.append(interface_object)
-                        feasible_paths.append(feasible_path)
-                    elif remote_node not in node_path:
-                        good_path = path[:]
-                        good_path.append(interface_object)
-                        candidate_paths.append(good_path)
-
-        return feasible_paths
-
-    def get_feasible_paths_old(self, source_node_object, dest_node_object):
-        """Returns a list of all feasible (loop free) paths from source node
-        object to dest node object
-        """
-
-        data = self._get_initial_candidate_paths(source_node_object,
-                                                 dest_node_object)
-
-        initial_candidate_paths = data['initial_candidate_paths']
-        feasible_paths = data['feasible_paths']
-
-        feasible_paths = self._examine_candidate_paths(source_node_object,
-                                                       dest_node_object,
-                                                       initial_candidate_paths,
-                                                       feasible_paths)
-        return feasible_paths
-
-    # TODO - is this used now that we search for shortest path only considering interfaces with enough bandwidth?
-    def get_feasible_paths(self, source_node_name, dest_node_name, needed_bw=0):
-        """
-        Returns a list of all feasible (loop free) paths from source node
-        object to dest node object
-        """
-
-        # Convert model to networkx DiGraph
-        G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)  # noqa - using networkx convention for G
-
-        # Get the paths
-        # TODO - I hard-coded a max hop limit of 10; make this configurable in the Model object
-        all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
-                                                         dest_node_name, 10)
-
-        # Convert each path to the Model format
-        model_feasible_paths = []
-        for digraph_path in all_feasible_digraph_paths:
-            model_path = self._convert_nx_path_to_model_path(digraph_path)
-            model_feasible_paths.append(model_path)
-
-        G.clear()
-
-        # Return the paths
-        return model_feasible_paths
+    # def get_feasible_paths_old(self, source_node_object, dest_node_object):
+    #     """Returns a list of all feasible (loop free) paths from source node
+    #     object to dest node object
+    #     """
+    #
+    #     data = self._get_initial_candidate_paths(source_node_object,
+    #                                              dest_node_object)
+    #
+    #     initial_candidate_paths = data['initial_candidate_paths']
+    #     feasible_paths = data['feasible_paths']
+    #
+    #     feasible_paths = self._examine_candidate_paths(source_node_object,
+    #                                                    dest_node_object,
+    #                                                    initial_candidate_paths,
+    #                                                    feasible_paths)
+    #     return feasible_paths
+    #
+    # # TODO - is this used now that we search for shortest path only considering interfaces with enough bandwidth?
+    # def get_feasible_paths(self, source_node_name, dest_node_name, needed_bw=0):
+    #     """
+    #     Returns a list of all feasible (loop free) paths from source node
+    #     object to dest node object
+    #     """
+    #
+    #     # Convert model to networkx DiGraph
+    #     G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)  # noqa - using networkx convention for G
+    #
+    #     # Get the paths
+    #     # TODO - I hard-coded a max hop limit of 10; make this configurable in the Model object
+    #     all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
+    #                                                      dest_node_name, 10)
+    #
+    #     # Convert each path to the Model format
+    #     model_feasible_paths = []
+    #     for digraph_path in all_feasible_digraph_paths:
+    #         model_path = self._convert_nx_path_to_model_path(digraph_path)
+    #         model_feasible_paths.append(model_path)
+    #
+    #     G.clear()
+    #
+    #     # Return the paths
+    #     return model_feasible_paths
 
     # TODO - delete this; it's not being used
     # def get_feasible_paths_w_reservable_bw(self, source_node_name, dest_node_name, requested_bw):
