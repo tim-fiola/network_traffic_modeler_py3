@@ -51,31 +51,6 @@ class Model(object):
                                                                                  len(self.demand_objects),
                                                                                  len(self.rsvp_lsp_objects))
 
-    # TODO - this class method is not properly implemented and what is it for?
-    # @classmethod
-    # def create_network_model(cls, network_interfaces):
-    #     """
-    #     A tool that reads network interface info and returns a *new* model.
-    #     Interface info must be in format like below example:
-    #
-    #     .. highlight:: python
-    #     .. code-block:: python
-    #
-    #         network_interfaces = [
-    #           {'name':'A-B', 'cost':4,'capacity':100, 'node':'A', 'remote_node': 'B', 'address': 1, 'failed': False},
-    #           {'name':'A-C', 'cost':1,'capacity':200, 'node':'A', 'remote_node': 'C', 'address': 3, 'failed': False}
-    #         ]
-    #     """
-    #     interface_objects, node_objects = Model._make_network_interfaces(network_interfaces)
-    #
-    #     model = Model(interface_objects, node_objects)
-    #
-    #     model._make_circuits()
-    #
-    #     validated_network_model = model.validate_model()
-    #
-    #     return validated_network_model
-
     def add_network_interfaces_from_list(self, network_interfaces):
         """
         A tool that reads network interface info and updates an *existing* model.
@@ -457,44 +432,54 @@ class Model(object):
 
             routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted']
 
+            # ##### Optimize the LSP group reserved bandwidth #####
             # If not all the LSPs in the group can route at the lowest (initial)
             # setup bandwidth, determine which LSPs can signal and for how much traffic
             if len(routed_lsps_in_group) != len(lsps) and len(routed_lsps_in_group) > 0:
-                # If not all the LSPs can route at the lowest setup bandwidth,
-                # determine which LSPs can signal for more traffic.
-
-                # This value would be the optimal setup bandwidth for each LSP
-                # as it would allow the LSP to reserve bandwidth for the amount
-                # of traffic it carries
-                setup_bandwidth_optimized = traffic_in_demand_group / len(routed_lsps_in_group)
-
-                # Determine if any of the LSPs can signal for the amount of
-                # traffic they would carry (setup_bandwidth_optimized)
-                for lsp in routed_lsps_in_group:
-                    # traffic_in_demand_group will ECMP split over routed_lsps_in_group
-                    # For each lsp in routed_lsp_group, see if it can signal for
-                    # a setup_bandwidth_optimized setup_bandwidth
-
-                    lsp_path_interfaces_before = lsp.path['interfaces']
-                    lsp_res_bw_before = lsp.reserved_bandwidth
-
-                    # See if LSP can resignal for setup_bandwidth_optimized
-                    lsp = lsp.find_rsvp_path_w_bw(setup_bandwidth_optimized, input_model)
-
-                    # If the LSP reserved_bandwidth changes, restore the old
-                    # reserved_bandwidth value to the interfaces in its
-                    # prior path['interfaces'] list
-                    if lsp_res_bw_before != lsp.reserved_bandwidth:
-                        for interface in lsp_path_interfaces_before:
-                            interface.reserved_bandwidth -= lsp_res_bw_before
-                        # . . . and then remove the new reserved bandwidth from the
-                        # new path interfaces
-                        for interface in lsp.path['interfaces']:
-                            interface.reserved_bandwidth += lsp.reserved_bandwidth
+                self._optimize_parallel_lsp_group_res_bw(input_model, routed_lsps_in_group, traffic_in_demand_group)
 
             counter += 1
 
         return self
+
+    def _optimize_parallel_lsp_group_res_bw(self, input_model, routed_lsps_in_group, traffic_in_demand_group):
+        """
+        If not all LSPs in a parallel LSP group can route, some of the LSPs that did
+        route may be able to signal for their setup_bandwidth.
+
+        :param input_model: Model object containing the parallel LSP group
+        :param routed_lsps_in_group: LSPs in parallel LSP group with a path
+        :param traffic_in_demand_group: aggregate traffic for all demands with
+               the same source node and destination node as the parallel LSP group
+        :return:
+        """
+        # This value would be the optimal setup bandwidth for each LSP
+        # as it would allow the LSP to reserve bandwidth for the amount
+        # of traffic it carries
+        setup_bandwidth_optimized = traffic_in_demand_group / len(routed_lsps_in_group)
+        # Determine if any of the LSPs can signal for the amount of
+        # traffic they would carry (setup_bandwidth_optimized)
+        for lsp in routed_lsps_in_group:
+            # traffic_in_demand_group will ECMP split over routed_lsps_in_group
+            # For each lsp in routed_lsp_group, see if it can signal for
+            # a setup_bandwidth_optimized setup_bandwidth
+
+            lsp_path_interfaces_before = lsp.path['interfaces']
+            lsp_res_bw_before = lsp.reserved_bandwidth
+
+            # See if LSP can resignal for setup_bandwidth_optimized
+            lsp = lsp.find_rsvp_path_w_bw(setup_bandwidth_optimized, input_model)
+
+            # If the LSP reserved_bandwidth changes, restore the old
+            # reserved_bandwidth value to the interfaces in its
+            # prior path['interfaces'] list
+            if lsp_res_bw_before != lsp.reserved_bandwidth:
+                for interface in lsp_path_interfaces_before:
+                    interface.reserved_bandwidth -= lsp_res_bw_before
+                # . . . and then remove the new reserved bandwidth from the
+                # new path interfaces
+                for interface in lsp.path['interfaces']:
+                    interface.reserved_bandwidth += lsp.reserved_bandwidth
 
     def parallel_lsp_groups(self):
         """
@@ -852,22 +837,6 @@ class Model(object):
 
         self.validate_model()
 
-    # TODO - is this used?
-    # def add_demand_bulk(self, source_node_name, dest_node_name, traffic=0,
-    #                     name='none'):
-    #     """Adds a traffic load from point A to point B in the model.  Does not
-    #     validate model.  Recommended for larger demand adds.  Must include
-    #     a validate_model call after this call is complete.
-    #     """
-    #     source_node_object = self.get_node_object(source_node_name)
-    #     dest_node_object = self.get_node_object(dest_node_name)
-    #     added_demand = Demand(source_node_object, dest_node_object,
-    #                           traffic, name)
-    #     if added_demand in self.demand_objects:
-    #         message = added_demand, ' already exists in demand_objects'
-    #         raise ModelException(message)
-    #     self.demand_objects.add(added_demand)
-
     def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
         """
         Adds an RSVP LSP with name from the source node to the
@@ -887,22 +856,6 @@ class Model(object):
         self.rsvp_lsp_objects.add(added_lsp)
 
         self.validate_model()
-
-    # TODO - is this used?
-    # def add_rsvp_lsp_bulk(self, source_node_name, dest_node_name, name):
-    #     """Adds an RSVP LSP with name name from the source node to the
-    #     dest node.  Does not validate model.  Recommended for larger
-    #     RSVP LSP adds.  Must include a validate_model call after this
-    #     call is complete.
-    #     """
-    #     source_node_object = self.get_node_object(source_node_name)
-    #     dest_node_object = self.get_node_object(dest_node_name)
-    #     added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
-    #
-    #     if added_lsp in self.rsvp_lsp_objects:
-    #         message = added_lsp, ' already exists in rsvp_lsp_objects'
-    #         raise ModelException(message)
-    #     self.rsvp_lsp_objects.add(added_lsp)
 
     def get_demand_object(self, source_node_name, dest_node_name, demand_name='none'):
         """
@@ -1102,137 +1055,6 @@ class Model(object):
                            "unfailed interface on failed node.")
                 raise ModelException(message)
 
-    # # Path-related calls
-    # def _get_initial_candidate_paths(self, source_node_object, dest_node_object):
-    #     """Returns a dict containing adjacencies of the source node
-    #     (initial_candidate_paths) and any first order feasible paths (those
-    #     paths where the dest node a direct adjacency to the source node)
-    #     """
-    #     # Get all non-failed interfaces on the source node
-    #     initial_candidate_paths = [interface for interface in
-    #                                source_node_object.interfaces(self)
-    #                                if interface.failed is False]
-    #
-    #     initial_candidate_path_list = []
-    #
-    #     # A list of complete paths from source to dest
-    #     feasible_paths_in_def = []
-    #
-    #     for interface in initial_candidate_paths:
-    #         if not interface.failed:
-    #             if interface.remote_node_object.name == dest_node_object.name:
-    #                 feasible_paths_in_def.append([interface])
-    #             else:
-    #                 initial_candidate_path_list.append([interface])
-    #
-    #     return {'initial_candidate_paths': initial_candidate_path_list,
-    #             'feasible_paths': feasible_paths_in_def}
-    #
-    # def _examine_candidate_paths(self, source, dest, candidate_paths,
-    #                              feasible_paths):
-    #     """Returns feasible (loop free) paths between source and dest"""
-    #
-    #     for path in candidate_paths:
-    #         node_path = [source.name]
-    #
-    #         for interface_object in path:
-    #             node_path.append(interface_object.remote_node_object.name)
-    #
-    #         most_recent_node = node_path[-1]
-    #         most_recent_node_interfaces = \
-    #             [interface for interface in
-    #              Node(most_recent_node).interfaces(self)
-    #              if interface.failed is False]
-    #
-    #         for interface_object in most_recent_node_interfaces:
-    #             if interface_object.failed is False:  # this
-    #                 remote_node = interface_object.remote_node_object.name
-    #                 if remote_node in node_path:
-    #                     continue  # There's a loop, move on to next adjacency
-    #                 elif remote_node == dest.name:
-    #                     feasible_path = path[:]
-    #                     feasible_path.append(interface_object)
-    #                     feasible_paths.append(feasible_path)
-    #                 elif remote_node not in node_path:
-    #                     good_path = path[:]
-    #                     good_path.append(interface_object)
-    #                     candidate_paths.append(good_path)
-    #
-    #     return feasible_paths
-
-    # def get_feasible_paths_old(self, source_node_object, dest_node_object):
-    #     """Returns a list of all feasible (loop free) paths from source node
-    #     object to dest node object
-    #     """
-    #
-    #     data = self._get_initial_candidate_paths(source_node_object,
-    #                                              dest_node_object)
-    #
-    #     initial_candidate_paths = data['initial_candidate_paths']
-    #     feasible_paths = data['feasible_paths']
-    #
-    #     feasible_paths = self._examine_candidate_paths(source_node_object,
-    #                                                    dest_node_object,
-    #                                                    initial_candidate_paths,
-    #                                                    feasible_paths)
-    #     return feasible_paths
-    #
-    # # TODO - is this used now that we search for shortest path only considering interfaces with enough bandwidth?
-    # def get_feasible_paths(self, source_node_name, dest_node_name, needed_bw=0):
-    #     """
-    #     Returns a list of all feasible (loop free) paths from source node
-    #     object to dest node object
-    #     """
-    #
-    #     # Convert model to networkx DiGraph
-    #     G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)  # noqa - using networkx convention for G
-    #
-    #     # Get the paths
-    #     # TODO - I hard-coded a max hop limit of 10; make this configurable in the Model object
-    #     all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
-    #                                                      dest_node_name, 10)
-    #
-    #     # Convert each path to the Model format
-    #     model_feasible_paths = []
-    #     for digraph_path in all_feasible_digraph_paths:
-    #         model_path = self._convert_nx_path_to_model_path(digraph_path)
-    #         model_feasible_paths.append(model_path)
-    #
-    #     G.clear()
-    #
-    #     # Return the paths
-    #     return model_feasible_paths
-
-    # TODO - delete this; it's not being used
-    # def get_feasible_paths_w_reservable_bw(self, source_node_name, dest_node_name, requested_bw):
-    #     """
-    #     Returns a list of all feasible (loop free) paths from source node
-    #     object to dest node object
-    #     """
-    #
-    #     ints_w_needed_bw = (interface for interface in self.interface_objects if (not(interface.failed) and
-    #                         interface.reservable_bandwidth >= requested_bw))
-    #
-    #
-    #
-    #     # Convert model to networkx DiGraph
-    #     G = self._make_weighted_network_graph(include_failed_circuits=False)  # noqa - using networkx convention for G
-    #
-    #     # Get the paths
-    #     all_feasible_digraph_paths = nx.all_simple_paths(G, source_node_name,
-    #                                                      dest_node_name, 10)
-    #
-    #     # Convert each path to the Model format
-    #     model_feasible_paths = []
-    #     for digraph_path in all_feasible_digraph_paths:
-    #         model_path = self._convert_nx_path_to_model_path(digraph_path)
-    #         model_feasible_paths.append(model_path)
-    #
-    #     G.clear()
-    #
-    #     # Return the paths
-    #     return model_feasible_paths
-
     def get_shortest_path(self, source_node_name, dest_node_name, needed_bw):
         """
         For a source and dest node name pair, find the shortest path(s) with at
@@ -1295,32 +1117,6 @@ class Model(object):
             return converted_path
         except BaseException:
             return converted_path
-
-    # TODO - is this being used anywhere?
-    # def get_shortest_path_lsps(self, source_node_name, dest_node_name):
-    #     """New shortest path def for use in LSP full mesh network"""
-    #
-    #     # Define a networkx DiGraph to find the path
-    #     G = self._make_weighted_network_graph_lsps()
-    #
-    #     # Define the Model-style path to be built
-    #     converted_path = {}
-    #     converted_path['path'] = []
-    #     converted_path['cost'] = None
-    #
-    #     # Find the shortest paths in G between source and dest
-    #     digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-    #                                                    dest_node_name,
-    #                                                    weight='cost')
-    #     try:
-    #         for path in digraph_shortest_paths:
-    #             model_path = self._convert_nx_path_to_model_path(path)
-    #             converted_path['path'].append(model_path)
-    #             converted_path['cost'] = nx.shortest_path_length(G, source_node_name,
-    #                                                              dest_node_name, weight='cost')
-    #         return converted_path
-    #     except BaseException:
-    #         return converted_path
 
     def _convert_nx_path_to_model_path(self, nx_graph_path):
         """Given a path from an networkx DiGraph, converts that
