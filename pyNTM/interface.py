@@ -86,7 +86,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             raise ModelException('must be boolean value')
 
         if not status:
-
             # Check to see if both nodes are failed = False
             if self.node_object.failed is False and \
                     self.remote_node_object.failed is False:
@@ -100,16 +99,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             self._failed = True
             self.reserved_bandwidth = 0
 
-    # Put some guardrails on cost
-    # def get_cost(self):
-    #     return self._cost
-    #
-    # def set_cost(self, cost):
-    #     if cost < 1:
-    #         raise ModelException("Interface cost cannot be less than 1")
-    #     self._cost = cost
-    #
-    # cost = property(get_cost, set_cost)
     @property
     def cost(self):
         return self._cost

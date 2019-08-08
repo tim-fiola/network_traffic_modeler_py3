@@ -2,7 +2,6 @@ import unittest
 
 from pyNTM import Model
 
-
 class TestModel(unittest.TestCase):
 
     @classmethod
@@ -40,12 +39,86 @@ class TestModel(unittest.TestCase):
         dmd_a_b = self.model.get_demand_object('A', 'B', 'dmd_a_b')
         self.assertEqual(self.model.get_demand_objects_dest_node('B'), [dmd_a_b])
 
-    # TODO - get get_failed_interface_objects before int fail
+    # No interfaces are failed
+    def test_get_failed_ints_1(self):
+        self.assertEqual(self.model.get_failed_interface_objects(), [])
 
-    # TODO - test fail interface
+    def test_get_unfailed_ints(self):
+        self.assertTrue(len(self.model.get_unfailed_interface_objects()), 18)
 
-    # TODO - test get_unfailed_interface_objects
+    # Fail interface; 2 interfaces should be down
+    def test_get_failed_ints_2(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+        failed_int_list = model.get_failed_interface_objects()
+        self.assertEqual(len(failed_int_list), 2)
 
-    # TODO - get get_failed_interface_objects after int fail
+    def test_get_unfailed_ints_2(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+        self.assertEqual(len(model.get_unfailed_interface_objects()), 16)
 
-    # TODO - test unfail interface when one of the Nodes is failed
+    def test_unfail_interface(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        model.fail_interface('A-to-B', 'A')
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        model.update_simulation()
+        self.assertTrue(int_a_b.failed)
+        model.unfail_interface('A-to-B', 'A')
+        model.update_simulation()
+        self.assertFalse(int_a_b.failed)
+
+    # When Node A fails, all of its Interfaces and adjacent Interfaces
+    # should also fail
+    def test_fail_node(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        model.fail_node('A')
+        model.update_simulation()
+        self.assertTrue(model.get_node_object('A').failed)
+
+    def test_failed_node_interfaces(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        model.fail_node('A')
+        model.update_simulation()
+        self.assertEqual(len(model.get_failed_interface_objects()), 8)
+
+    # When a Node is failed, all of its Interfaces must stay failed
+    # until the Node is unfailed
+    def test_int_stays_down(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = model.get_interface_object('B-to-A', 'B')
+        model.update_simulation()
+        model.fail_node('A')
+        model.update_simulation()
+        self.assertTrue(model.get_node_object('A').failed)
+        model.unfail_interface('A-to-B', 'A')
+        self.assertTrue(int_a_b.failed)
+        model.unfail_interface('B-to-A', 'B')
+        model.update_simulation()
+        self.assertTrue(int_b_a.failed)
+
+    def test_int_comes_up(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = model.get_interface_object('B-to-A', 'B')
+        model.update_simulation()
+        model.fail_node('A')
+        model.update_simulation()
+        self.assertTrue(model.get_node_object('A').failed)
+        model.unfail_interface('A-to-B', 'A')
+        self.assertTrue(int_a_b.failed)
+        model.unfail_interface('B-to-A', 'B')
+        model.update_simulation()
+        self.assertTrue(int_b_a.failed)
+        model.unfail_node('A')
+        model.update_simulation()
+        self.assertFalse(model.get_node_object('A').failed)
+        self.assertFalse(model.get_node_object('B').failed)
