@@ -62,6 +62,9 @@ class TestRSVPLSPInitial(unittest.TestCase):
         self.assertEqual(self.lsp_f_e_1.path, 'Unrouted')
         self.assertEqual(self.lsp_f_e_1.setup_bandwidth, 400.0)
 
+    def test_unrouted_lsp_actual_metric(self):
+        self.assertEqual(self.lsp_f_e_1.actual_metric(self.model), 'Unrouted')
+
     # Validate reserved and reservable bandwidth on int_a_b, int_a_c
     def test_reserved_bandwidth(self):
         self.assertEqual(self.int_a_b.reserved_bandwidth, 75.0)

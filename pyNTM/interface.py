@@ -7,8 +7,7 @@ from .rsvp import RSVP_LSP
 class Interface(object):
     """An object representing a Node interface"""
 
-    def __init__(self, name, cost, capacity, node_object, remote_node_object,
-                 address=0):
+    def __init__(self, name, cost, capacity, node_object, remote_node_object, address=0):
         self.name = name
         self.cost = cost
         self.capacity = capacity
@@ -18,12 +17,6 @@ class Interface(object):
         self.traffic = 0.0
         self._failed = False
         self.reserved_bandwidth = 0
-
-        # Validate cost and capacity values
-        if not (isinstance(cost, (int, float))):
-            raise ValueError('Cost must be positive integer or float')
-        if not (isinstance(capacity, (int, float))):
-            raise ValueError('Capacity must be positive integer or float')
 
     @property
     def _key(self):

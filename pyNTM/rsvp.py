@@ -274,13 +274,13 @@ class RSVP_LSP(object):
         """
 
         # Find all LSPs with same source and dest as self
-        parallel_routed_lsps = model.parallel_lsp_groups()
+        parallel_routed_lsp_groups = model.parallel_lsp_groups()
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
-        if len(parallel_routed_lsps) > 0:
-            traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
-        else:
-            traffic_on_lsp = total_traffic
+        key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
+        parallel_routed_lsps = parallel_routed_lsp_groups[key]
+
+        traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
 
         return traffic_on_lsp
 
