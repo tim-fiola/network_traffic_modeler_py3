@@ -20,7 +20,7 @@ class Demand(object):
 
     @property
     def _key(self):
-        """Unique identifier for the demand: (Node('source'), Node('dest'), name)"""
+        """Unique identifier for the demand: (Node('source').name, Node('dest').name, name)"""
         return (self.source_node_object.name, self.dest_node_object.name, self.name)
 
     def __repr__(self):
@@ -32,7 +32,7 @@ class Demand(object):
 
     def _add_demand_path(self, model):
         """
-
+        Adds path(s) the the demand for the given model the demand routes through.
         :param model: Model object
         :return: list of paths the demand takes or 'Unrouted' string
         """
@@ -51,7 +51,7 @@ class Demand(object):
         # If demand can't be carried by LSP, do shortest path routing
         if demand_path == []:
             demand_path = model.get_shortest_path(self.source_node_object.name,
-                                                  self.dest_node_object.name)['path']
+                                                  self.dest_node_object.name, needed_bw=0)['path']
 
         if demand_path == []:
             demand_path = 'Unrouted'

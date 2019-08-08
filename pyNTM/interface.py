@@ -7,8 +7,7 @@ from .rsvp import RSVP_LSP
 class Interface(object):
     """An object representing a Node interface"""
 
-    def __init__(self, name, cost, capacity, node_object, remote_node_object,
-                 address=0):
+    def __init__(self, name, cost, capacity, node_object, remote_node_object, address=0):
         self.name = name
         self.cost = cost
         self.capacity = capacity
@@ -18,12 +17,6 @@ class Interface(object):
         self.traffic = 0.0
         self._failed = False
         self.reserved_bandwidth = 0
-
-        # Validate cost and capacity values
-        if not (isinstance(cost, (int, float))):
-            raise ValueError('Cost must be positive integer or float')
-        if not (isinstance(capacity, (int, float))):
-            raise ValueError('Capacity must be positive integer or float')
 
     @property
     def _key(self):
@@ -93,7 +86,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             raise ModelException('must be boolean value')
 
         if not status:
-
             # Check to see if both nodes are failed = False
             if self.node_object.failed is False and \
                     self.remote_node_object.failed is False:
@@ -107,16 +99,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             self._failed = True
             self.reserved_bandwidth = 0
 
-    # Put some guardrails on cost
-    # def get_cost(self):
-    #     return self._cost
-    #
-    # def set_cost(self, cost):
-    #     if cost < 1:
-    #         raise ModelException("Interface cost cannot be less than 1")
-    #     self._cost = cost
-    #
-    # cost = property(get_cost, set_cost)
     @property
     def cost(self):
         return self._cost

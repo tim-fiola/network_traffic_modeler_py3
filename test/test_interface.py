@@ -21,6 +21,12 @@ class TestInterface(unittest.TestCase):
     # def test_repr(self):
     #     self.assertEqual(repr(self.interface_a), "Interface(name = 'inerfaceA-to-B', cost = 4, capacity = 100, node_object = Node('nodeA'), remote_node_object = Node('nodeB'), address = 1)")  # noqa E501
 
+    def test_bad_int_cost(self):
+        with self.assertRaises(ModelException) as context:
+            (Interface('test_int', -5, 40, self.node_a, self.node_b, 50))
+
+            self.assertTrue('Interface cost cannot be less than 1' in context.exception)
+
     def test_key(self):
         self.assertEqual(self.interface_a._key, ('inerfaceA-to-B', 'nodeA'))
 

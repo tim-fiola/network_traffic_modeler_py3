@@ -75,8 +75,8 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
         print("lsp_a_d_1.reserved_bandwidth = {}".format(lsp_a_d_1.reserved_bandwidth))
         print('int_a_c reservable_bandwidth = {}'.format(model.get_interface_object('A-to-C',
                                                                                     'A').reservable_bandwidth))
-        self.assertIn(lsp_a_d_1.reserved_bandwidth, ['Unrouted - setup_bandwidth', 125.0])
-        self.assertIn(lsp_a_d_2.reserved_bandwidth, ['Unrouted - setup_bandwidth', 125.0])
+        self.assertIn(lsp_a_d_1.reserved_bandwidth, ['Unrouted', 125.0])
+        self.assertIn(lsp_a_d_2.reserved_bandwidth, ['Unrouted', 125.0])
         self.assertNotEqual(lsp_a_d_1.reserved_bandwidth, lsp_a_d_2.reserved_bandwidth)
 
     # lsp_a_d_1/2 will each try to set up at 125.0 traffic units
