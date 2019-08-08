@@ -27,11 +27,6 @@ print()
 source = 'A'
 dest = 'B'
 
-# Find all paths between source and destination nodes
-print("Find the number of loop free, unique paths from Node A to Node B:")
-good_paths = model1.get_feasible_paths(source, dest)
-print("There are %i unique paths between %s and %s" % (len(good_paths),
-                                                       source, dest))
 print()
 
 # find the best path from node A to B

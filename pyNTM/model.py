@@ -197,13 +197,6 @@ class Model(object):
         else:
             return self
 
-    # TODO - is this necessary?  remove this
-    # def get_circuit_objects(self):
-    #     """
-    #     Returns a set of circuit objects in the Model
-    #     """
-    #     return self.circuit_objects
-
     def _demand_traffic_per_int(self, demand):
         """
         Given a Demand object, return key, value pairs for how much traffic each
@@ -1055,13 +1048,17 @@ class Model(object):
                            "unfailed interface on failed node.")
                 raise ModelException(message)
 
-    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw):
+    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
         """
-        For a source and dest node name pair, find the shortest path(s) with at
+                For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
-        Return the shortest path in dictionary form:
-        shortest_path = {'path': [list of shortest path routes],
-                            'cost': path_cost}
+
+        :param source_node_name: name of source node in path
+        :param dest_node_name: name of destination node in path
+        :param needed_bw: the amount of reservable bandwidth required on the path
+        :return: Return the shortest path in dictionary form:
+                 shortest_path = {'path': [list of shortest path routes],
+                                  'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1412,23 +1409,26 @@ class Model(object):
             node_info = node_line.split()
             node_name = node_info[0]
             try:
-                node_lat = int(node_info[1])
+                node_lat = int(node_info[2])
             except (ValueError, IndexError):
                 node_lat = 0
             try:
-                node_lon = int(node_info[2])
+                node_lon = int(node_info[1])
             except (ValueError, IndexError):
                 node_lon = 0
 
             new_node = Node(node_name)
             if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
                 node_set.add(new_node)
+                new_node.lat = node_lat
+                new_node.lon = node_lon
             else:
                 print("{} on line {} already exists in model, "
                       "updating lat/lon values if they are specified".format(new_node,
                                                                              lines.index(node_line)))
-            new_node.lat = node_lat
-            new_node.lon = node_lon
+                existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
+                existing_node.lat = node_lat
+                existing_node.lon = node_lon
 
         # Define the demands info
         demands_info_begin_index = nodes_info_end_index + 3

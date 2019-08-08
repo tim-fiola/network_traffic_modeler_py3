@@ -27,7 +27,7 @@ C	0	50
 D 50	0
 E	75	0
 F 75	0
-G	30	30
+G	30	35
 
 DEMANDS_TABLE
 source	dest	traffic	name
