@@ -12,10 +12,10 @@ Changes to the topology can be done to simulate new routers, circuits, circuit c
 
 Examine and run the client code to get an understanding of how this code works.
 
-Currently this modeling code supports simple OSPF/ISIS routing. There is no layer 1 SRLG support at the moment.
-RSVP auto-bandwidth is also supported in this release in beta form: the RSVP code works properly but the LSP path finding does not scale well across large topologies at this time.
+Currently this modeling code supports OSPF/ISIS routing and RSVP auto-bandwidth LSPs.
+For a network with hundreds of nodes and thousands of LSPs, it may take several minutes for the model to converge when update_simulation is called.
 
-IGP routing should perform well at scale as it leverages path calculations from the networkx module. There are no implied or explicit warranties associated with this app.
+There are no implied or explicit warranties associated with this app.
 
 
 Full API set use cases include
@@ -51,3 +51,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
