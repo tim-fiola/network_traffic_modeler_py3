@@ -18,6 +18,11 @@ class TestModel(unittest.TestCase):
         self.dmd_a_f_1 = self.model.get_demand_object('A', 'F', 'dmd_a_f_1')
         self.model.update_simulation()
 
+    def test_lat_lon(self):
+        node_g = self.model.get_node_object('G')
+        self.assertEqual(node_g.lat, 35)
+        self.assertEqual(node_g.lon, 30)
+
     def test_demand_add(self):
         self.model.add_demand('A', 'B', 40, 'dmd_a_b')
         self.model.update_simulation()

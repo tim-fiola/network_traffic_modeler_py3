@@ -2,10 +2,14 @@
 Client code to demonstrate how to use the pyNTM network_modeling classes
 """
 
+# This is a temp hack to get this to see pyNTM and let it import
+import sys  # noqa
+sys.path.append('../')  # noqa
+
 from pyNTM import Model
 from pyNTM import Node
 
-from .graph_network import graph_network_interactive
+from graph_network import graph_network_interactive
 
 from pprint import pprint
 import time
@@ -125,14 +129,6 @@ for name in node_names:
     node.lat = lat
     node.lon = lon
     counter = counter + 1
-print()
-
-# Find all paths between source and destination nodes
-
-print("Find the number of loop free, unique paths from Node A to Node B:")
-good_paths = model1.get_feasible_paths(source, dest)
-print("There are %i unique paths between %s and %s" % (len(good_paths),
-                                                       source, dest))
 print()
 
 # create demand objects from list of demands

@@ -125,7 +125,7 @@ def _prep_network_model_for_graph(model):
 
     ######################
     # Get utilization for each interface and match it up with a color
-    ckt_generator = (ckt for ckt in model.get_circuit_objects())
+    ckt_generator = (ckt for ckt in model.circuit_objects)
     for ckt in ckt_generator:
         # Get each interface
         int1, int2 = ckt.get_circuit_interfaces(model)
