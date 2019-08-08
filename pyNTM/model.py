@@ -1553,38 +1553,6 @@ class Model(object):
 
         return G
 
-    def _make_weighted_network_graph_lsps(self):
-        """Returns a networkx weighted network directional graph from the
-        input Model object; uses rsvp LSPs as edges"""
-
-        G = nx.MultiDiGraph()  # multiple edge directional graph
-
-        edge_names = ((rsvp_lsp.node_object.name,
-                       rsvp_lsp.remote_node_object.name, rsvp_lsp.cost) for rsvp_lsp
-                      in self.rsvp_lsp_objects)
-
-        G.add_weighted_edges_from(edge_names, weight='cost')
-
-        return G
-
-    def create_demand_objects_from_list(self, list_of_demand_properties):
-        """Creates demand object from a list of demand properties and
-        adds it to the model.
-
-        The demand properties list must have the following format:
-        demand_properties = [   {'source': 'A', 'dest': 'B', 'traffic': 50, 'name': 'demand1'},
-                                {'source': 'A', 'dest': 'F', 'traffic': 22},]
-
-        Note: if a demand name is not provided, the name will default to 'none'
-        """
-        for demand in list_of_demand_properties:
-            if 'name' in demand.keys():
-                demand_name = demand['name']
-            else:
-                demand_name = 'none'
-            self.add_demand(demand['source'], demand['dest'],
-                            demand['traffic'], demand_name)
-
     @classmethod
     def load_model_file(cls, data_file):
         """

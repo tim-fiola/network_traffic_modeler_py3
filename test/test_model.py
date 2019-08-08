@@ -22,38 +22,21 @@ class TestModel(unittest.TestCase):
         self.model.update_simulation()
 
     def test_demand_add(self):
-        # node_a = Node(name='nodeA', lat=0, lon=0)
-        # node_b = Node(name='nodeB', lat=0, lon=0)
-        # interface_a = Interface(name='inerfaceA-to-B', cost=4, capacity=100,
-        #                              node_object=node_a, remote_node_object=node_b, address=1)
-        # interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
-        #                              node_object=node_b, remote_node_object=node_a, address=1)
-        # model = Model(interface_objects=set([interface_a, interface_b]),
-        #               node_objects=set([node_a, node_b]), demand_objects=set([]),
-        #               rsvp_lsp_objects=set([]))
-        # model.update_simulation()
         self.model.add_demand('nodeA', 'nodeB', 40, 'dmd_a_b')
         self.model.update_simulation()
         self.assertEqual(self.model.__repr__(), 'Model(Interfaces: 2, Nodes: 2, Demands: 1, RSVP_LSPs: 0)')
 
     def test_rsvp_lsp_add(self):
-        # node_a = Node(name='nodeA', lat=0, lon=0)
-        # node_b = Node(name='nodeB', lat=0, lon=0)
-        # interface_a = Interface(name='inerfaceA-to-B', cost=4, capacity=100,
-        #                              node_object=node_a, remote_node_object=node_b, address=1)
-        # interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
-        #                              node_object=node_b, remote_node_object=node_a, address=1)
-        # dmd_a_b = Demand(node_a, node_b, 40, 'dmd_a_b_1')
-        # model = Model(interface_objects=set([interface_a, interface_b]),
-        #               node_objects=set([node_a, node_b]), demand_objects=set([dmd_a_b]),
-        #               rsvp_lsp_objects=set([]))
-        # model.update_simulation()
-        # model.add_demand('nodeA', 'nodeB', 40, 'dmd_a_b')
-        # model.update_simulation()
         self.model.add_rsvp_lsp('nodeA', 'nodeB', 'lsp_a_b_1')
         self.model.update_simulation()
         self.assertEqual(self.model.__repr__(), 'Model(Interfaces: 2, Nodes: 2, Demands: 1, RSVP_LSPs: 1)')
 
+    # TODO - get get_failed_interface_objects before int fail
+
     # TODO - test fail interface
+
+    # TODO - test get_unfailed_interface_objects
+
+    # TODO - get get_failed_interface_objects after int fail
 
     # TODO - test unfail interface when one of the Nodes is failed
