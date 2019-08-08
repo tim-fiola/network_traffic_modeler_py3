@@ -1,11 +1,15 @@
 """Simple, menu-driven UI for network_modeling module.
 Allows users to interact with and relate between associated
 demands, interfaces, and nodes."""
+# This is a temp hack to get this to see pyNTM and let it import
+import sys  # noqa
+sys.path.append('../')  # noqa
+
 
 from pyNTM import Model
 from pyNTM import ModelException
-from .graph_network import graph_network
-from .graph_network import graph_network_interactive
+from graph_network import graph_network
+from graph_network import graph_network_interactive
 
 from tkinter import ttk as ttk
 from tkinter import *
@@ -96,7 +100,7 @@ def create_interactive_network_graph_and_refresh():
 
 
 def set_active_interface_from_listbox(event):
-    """Sets the selected interface value from a listbox to the 
+    """Sets the selected interface value from a listbox to the
     active_interface"""
     w = event.widget
     value = (w.curselection())  # TODO -- comment this out and test
@@ -141,7 +145,7 @@ def set_active_demand_from_listbox(event):
 
 
 def set_active_object_from_option_menu(event):
-    """Refreshes the tabs with the new active object info and displays 
+    """Refreshes the tabs with the new active object info and displays
     the info based on the new active object"""
 
     # Try to delete the Node Demand Info labelframe to clear the demand paths
@@ -282,7 +286,7 @@ def display_selected_objects(canvas_object, row_, column_):
 
 def display_demands(label_info, canvas_object, list_of_demands, row_,
                     column_,):
-    """Displays a label for demands and a single-select listbox of the 
+    """Displays a label for demands and a single-select listbox of the
     demands below the label_info on a given canvas_object.  A horizontal
     scrollbar is included """
 
@@ -467,7 +471,8 @@ def examine_selected_demand(*args):
     #### Display the selected demand's path(s) ####
 
     demand_path_frame = LabelFrame(demand_tab,
-                                   text="Demand Path Info (Ordered hops from source to destination); Displays all paths for ECMP demands.")
+                                   text=("Demand Path Info (Ordered hops from source to destination); "
+                                         "Displays all paths for ECMP demands."))
     demand_path_frame.grid(row=3, column=0, columnspan=10, sticky='W',
                            padx=10, pady=10)
 
@@ -597,7 +602,7 @@ def examine_paths(*args):
         source_node_object = model.get_node_object(source_node.get())
         dest_node_object = model.get_node_object(dest_node.get())
 
-        all_paths = model.get_feasible_paths(source_node.get(),
+        all_paths = model.get_all_paths_reservable_bw(source_node.get(),
                                              dest_node.get())
 
         # Create label frame to hold the feasible path(s) # frame_canvas
@@ -626,7 +631,7 @@ def examine_paths(*args):
         column_counter = 0
         path_counter = 0
 
-        for path in all_paths:
+        for path in all_paths['path']:
             list_of_interfaces = path
             label = "Feasible Path %s" % (str(path_counter))
             display_interfaces(label, path_frame, list_of_interfaces,
