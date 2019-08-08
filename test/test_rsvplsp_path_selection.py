@@ -2,8 +2,6 @@ import unittest
 
 from pyNTM import Model
 
-import pdb
-
 
 class TestRSVPLSPPathSelection(unittest.TestCase):
 

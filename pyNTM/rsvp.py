@@ -1,11 +1,8 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
 import random
-from datetime import datetime
 
-from pprint import pprint
 
-import pdb
 class RSVP_LSP(object):
     """A class to represent an RSVP label-switched-path in the network model
 
@@ -66,8 +63,6 @@ class RSVP_LSP(object):
 
         # List to hold info on each candidate path
         candidate_path_info = []
-
-        pdb.set_trace()
 
         # Find the path cost and path headroom for each path candidate
         for path in candidate_paths['path']:

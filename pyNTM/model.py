@@ -14,7 +14,6 @@ from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
 
-import pdb
 
 class Model(object):
     """A network model object consisting of the following base components:
@@ -1284,7 +1283,6 @@ class Model(object):
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
                                                        dest_node_name,
                                                        weight='cost')
-        pdb.set_trace()
         try:
             for path in digraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path)
@@ -1294,7 +1292,6 @@ class Model(object):
             return converted_path
         except BaseException:
             return converted_path
-
 
     # TODO - is this being used anywhere?
     # def get_shortest_path_lsps(self, source_node_name, dest_node_name):
@@ -1555,7 +1552,6 @@ class Model(object):
         G.add_nodes_from(node_name_iterator)
 
         return G
-
 
     def _make_weighted_network_graph_lsps(self):
         """Returns a networkx weighted network directional graph from the
