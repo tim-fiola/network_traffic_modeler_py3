@@ -431,7 +431,10 @@ class Model(object):
         parallel_demand_groups = self.parallel_demand_groups()
 
         # Find the amount of bandwidth each LSP in each parallel group will carry
+        counter = 1
         for group, lsps in parallel_lsp_groups.items():
+            print("Routing {} LSPs in parallel LSP group {}; {}/{}".format(len(lsps), group, counter,
+                                                                           len(parallel_lsp_groups)))
             # Traffic each LSP in a parallel LSP group will carry; initialize
             traff_on_each_group_lsp = 0
 
@@ -488,6 +491,8 @@ class Model(object):
                         # new path interfaces
                         for interface in lsp.path['interfaces']:
                             interface.reserved_bandwidth += lsp.reserved_bandwidth
+
+            counter += 1
 
         return self
 
