@@ -1048,9 +1048,50 @@ class Model(object):
                            "unfailed interface on failed node.")
                 raise ModelException(message)
 
+    def get_all_paths_reservable_bw(self, source_node_name, dest_node_name, include_failed_circuits=True,
+                                    cutoff=10, needed_bw=0):
+        """
+        For a source and dest node name pair, find all simple path(s) with at
+        least needed_bw reservable bandwidth available less than or equal to
+        cutoff hops long.
+
+        The amount of simple paths (paths that don't have repeating nodes) can
+        be very large for larger topologies and so this call can be very expensive.
+        Use the cutoff argument to limit the path length to consider to cut down on
+        the time it takes to run this call.
+
+        :param source_node_name: name of source node in path
+        :param dest_node_name: name of destination node in path
+        :param include_failed_circuits: include failed circuits in the topology
+        :param needed_bw: the amount of reservable bandwidth required on the path
+        :param cutoff: max amount of path hops
+        :return: Return the shortest path in dictionary form:
+                 shortest_path = {'path': [list of shortest path routes],
+                                  'cost': path_cost}
+        """
+
+        # Define a networkx DiGraph to find the path
+        G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits, needed_bw=needed_bw)
+
+        # Define the Model-style path to be built
+        converted_path = dict()
+        converted_path['path'] = []
+
+        # Find the simple paths in G between source and dest
+        digraph_shortest_paths = nx.all_simple_paths(G, source_node_name, dest_node_name, cutoff=cutoff)
+
+        try:
+            for path in digraph_shortest_paths:
+                model_path = self._convert_nx_path_to_model_path(path)
+                converted_path['path'].append(model_path)
+
+            return converted_path
+        except BaseException:
+            return converted_path
+
     def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
         """
-                For a source and dest node name pair, find the shortest path(s) with at
+        For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
 
         :param source_node_name: name of source node in path

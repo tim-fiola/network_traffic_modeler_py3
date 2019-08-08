@@ -127,3 +127,25 @@ class TestModel(unittest.TestCase):
         model.update_simulation()
         self.assertFalse(model.get_node_object('A').failed)
         self.assertFalse(model.get_node_object('B').failed)
+
+    # Find all simple paths less than 2 hops from A to D; no required
+    # bandwidth needed
+    def test_all_paths_cutoff(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 2, 0)
+        self.assertEqual(len(all_paths['path']), 3)
+        path_lengths = [len(path) for path in all_paths['path']]
+        path_lengths.sort()
+        self.assertEqual(path_lengths, [1, 2, 2])
+
+    # Find all simple paths from A to D with at least 10 unit of
+    # reservable bandwidth
+    def test_all_paths_needed_bw(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 10)
+        self.assertEqual(len(all_paths['path']), 4)
+        path_lengths = [len(path) for path in all_paths['path']]
+        path_lengths.sort()
+        self.assertEqual(path_lengths, [1, 2, 2, 3])
