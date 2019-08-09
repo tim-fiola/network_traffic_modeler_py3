@@ -1,25 +1,20 @@
 language: python
-
 python:
 - 3.4
 - 3.5
 - 3.6
-
 install:
 - pip install -r requirements.txt
 - pip install -r requirements_dev.txt
 - pip install .
-
 script:
 - pytest
-
 after_success: coveralls
-
 deploy:
   provider: pypi
   user: fooelisa
   password:
-    secure: kai0vLh1/J8Ekg8nFS2qNi9wr8YnOL25A2YyStAdgU4BDV3oR8s5eRQRJB0oL//twDkmRtpLwp5J1OUAjOPeanNqItS3wJ1RCLwOYGhjqQP0aPRkvGJnky1klqsMxABaRr8ahI2WZKmM4eYr2/Z9J7VYLPq1u1sbNItmpVSAp5nUvhaxlxgl11mo+4it+/5z+LKQ15ivOTYwRI7FB0R3ZdqW6WgUC+GLt9+j3msFK/bXIQca85eye3sJlWZjIKMbdeUo3+n6af34D3IwkhlEdps2UCoGtjbB8FRnWOZPNIOi89nRgPFgjsCXhn4B1Gk8ncdLhfB2KnQwRE1pl8Q+iKkNku2x3XjxiSU7Lnym1cyd+J7LBcCHnX1UA90zDueFPkkP+hZr+PGdvacF1dFkspiggSNQ8trCEV3uDbly1+seZMWWInRmOYDDwvWIuEMiUwrMpFj7yY0h+eCv3lD2WVTeJwHAJmIzv/drr4/BZQaQlcZy9C2D3A8PY3ccSSJHwWTvOFHzrUXdiGuqGWmof5an/q5uaUFTA3UgzcHVRFXUKjKYGwtonwGbbv9tfDKU5fyXWr00I+b04Qvd4LAsZP1PM6pK50H6B3HKOqkif6O5MWXQW3pMsYDbSDIRbkFw0iYw2dX6XkAoHu8VKnDNKWTVXffGAP679XaEftI/U4I=
+    secure: "tP8Wp7pQ+Uzl51/Sd+wKHx6nLoQ+RUPkLWgldlOFBDLqkpcvJavtI0Ic2DLXpLfUYqpo86SHZx5GIktseGL073qrAFOKhnqWg86brp7bP5Ll2jNBCmlz7CF3PndxfgTuH+tSMZbum/nhBAAm0QBe9Brlv6pKi+FLyKPp3Cya1QK92ajsEP90nYRK/imYgs+lfKaVLR/YkfA+L9MrWLYLmpMaoS7fEbJo5LmhN3kRGq4+6Z9WRXpFBxBt40DONzCkOU0W1Fn2J+U2zI6XI8erbCaOMDoh7uiI0a9hvhpOviEjJjdVP0t2fOaIXRemtHrv6gnSiVJ1UT7AyCwnF5ey/2LZcGskc7khk4Qi0P/zPGuowniGy/XfVe1BoOJ48PpRinIgN58aJilSPe18LDHTA/e9Jiw1hGRTvE2PIrLXRhUMQsoD2WoZ3+cH66w11kEBB80KrvjBxsTn3irnY2L+cRBFWw+4nHgZezEBw884k2u3YWwOZLeEm0abVB4y80z/xgUb0rCDCY+rHlhiEdIaYmWzLpSWWjFQgkdbykzE/qwpgnjdICYAL4kTHi2C8JaLpTMBth481WRmQKSX8cLuKSV2d63Yz/cmJjtvS3e7GnArdGztf9PK2JhFArm2Tp1whVZJdPEGzFIBzk14z1XpS6KIuzBFSZI1fbF22XUC/hc="
   on:
     tags: true
     branch: master
