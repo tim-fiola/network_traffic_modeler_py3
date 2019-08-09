@@ -1,16 +1,9 @@
 API
 =======
 
-Circuit
+Model
 ----------
-.. autoclass:: pyNTM.circuit.Circuit
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Demand
-----------
-.. autoclass:: pyNTM.demand.Demand
+.. autoclass:: pyNTM.model.Model
     :members:
     :undoc-members:
     :show-inheritance:
@@ -29,9 +22,16 @@ Interface
     :undoc-members:
     :show-inheritance:
 
-Model
+Demand
 ----------
-.. autoclass:: pyNTM.model.Model
+.. autoclass:: pyNTM.demand.Demand
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Circuit
+----------
+.. autoclass:: pyNTM.circuit.Circuit
     :members:
     :undoc-members:
     :show-inheritance:
