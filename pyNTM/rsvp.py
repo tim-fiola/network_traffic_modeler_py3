@@ -1,6 +1,7 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
 import random
+from .exceptions import ModelException
 
 
 class RSVP_LSP(object):
@@ -27,14 +28,15 @@ class RSVP_LSP(object):
     """
 
     def __init__(self, source_node_object, dest_node_object,
-                 lsp_name='none'):
+                 lsp_name='none', configured_setup_bandwidth=None):
 
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.lsp_name = lsp_name
         self.path = 'Unrouted - initial'
         self.reserved_bandwidth = 'Unrouted - initial'
-        self.setup_bandwidth = 'Unrouted - initial'  # TODO - getter/setter
+        self._setup_bandwidth = 'Unrouted - initial'  # TODO - getter/setter
+        self.configured_setup_bandwidth = configured_setup_bandwidth
 
     @property
     def _key(self):
@@ -93,6 +95,32 @@ class RSVP_LSP(object):
 
         return candidate_path_info
 
+    @property
+    def setup_bandwidth(self):
+        """
+        The bandwidth the LSP attempts to signal for.
+        :return: the bandwidth the LSP attempts to signal for
+        """
+
+        return self._setup_bandwidth
+
+    @setup_bandwidth.setter
+    def setup_bandwidth(self, proposed_setup_bw):
+        """
+        Puts guardrails on the setup bandwidth for the RSVP LSP
+        :param proposed_setup_bw: setup bandwidth value to be evaluated
+        :return:
+        """
+
+        # Check for configured_setup_bandwidth
+        if self.configured_setup_bandwidth:
+            self._setup_bandwidth = float(self.configured_setup_bandwidth)
+        elif proposed_setup_bw >= 0:
+            self._setup_bandwidth = float(proposed_setup_bw)
+        elif proposed_setup_bw < 0:
+            msg = "setup_bandwidth must be 0 or greater"
+            raise ModelException(msg)
+
     def find_rsvp_path_w_bw(self, requested_bandwidth, model):
         """
         Will search the topology of 'model' for a path for self that has at least
@@ -118,14 +146,6 @@ class RSVP_LSP(object):
         # Find the path cost and path headroom for each path candidate
         candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(candidate_paths)
 
-        # TODO - figure out how this is related to rsvp._add_rsvp_lsp_path
-        #  only building G with interfaces with the needed bandwidth; **ANSWER**: this is
-        #  the iteration where the LSP is signaled already and is looking to signal for
-        #  additional bandwidth.  This iteration needs to account for interfaces it is
-        #  already signaled across so it can add its existing reserved bandwidth back
-        #  to the interface's reservable_bandwidth before considering if that interface
-        #  has requested_bandwidth available.  This is a candidate for optimization because
-        #  we can do that add back before building G
         # Filter out paths that don't have enough headroom
         candidate_paths_with_enough_headroom = [path for path in candidate_path_info
                                                 if (path['baseline_path_reservable_bw']) >=

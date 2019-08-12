@@ -47,7 +47,7 @@ class TestInterface(unittest.TestCase):
     def test_reservable_bandwidth(self):
         self.assertEqual(100, self.interface_a.reservable_bandwidth)
 
-    def test_int_fail(self):  # TODO - don't use load model file here
+    def test_int_fail(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -60,7 +60,7 @@ class TestInterface(unittest.TestCase):
 
         self.assertTrue(int_a_b.failed)
 
-    def test_int_fail_2(self):   # TODO - don't use load model file here
+    def test_int_fail_2(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -75,3 +75,48 @@ class TestInterface(unittest.TestCase):
 
         self.assertTrue(int_a_b.failed)
         self.assertTrue(int_b_a.failed)
+
+    def test_demands_non_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertTrue(int_a_b.demands(model) != [])
+
+    def test_traffic_non_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertTrue(int_a_b.traffic, 20)
+
+    def test_demands_non_failed(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+
+        self.assertEqual(int_a_b.demands(model), [dmd_a_f_1])
+
+    def test_traffic_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertEqual(int_a_b.traffic, 'Down')
+
+    def test_dmd_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertEqual(int_a_b.demands(model), [])

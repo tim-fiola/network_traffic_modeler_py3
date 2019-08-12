@@ -1517,7 +1517,12 @@ class Model(object):
                 dest = lsp_info[1]
                 dest_node = [node for node in node_set if node.name == dest][0]
                 name = lsp_info[2]
-                new_lsp = RSVP_LSP(source_node, dest_node, name)
+                try:
+                    configured_setup_bw = lsp_info[3]
+                except IndexError:
+                    configured_setup_bw = None
+                new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
+
                 if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
                     lsp_set.add(new_lsp)
                 else:
