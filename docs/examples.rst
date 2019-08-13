@@ -21,7 +21,12 @@ The lsp_practice_code.py script demos how auto-bandwidth RSVP LSPs react to
 The network_modeling_client_code_examples_read_from_*.py files demo the following:
 
 * loading a network topology from a list or from a file
-* an interactive visualization of the network: includes tooltips, an interactive legend, and ability to move objects
+* an interactive visualization of the network to include
+
+  - tooltips showing interface name and utilization
+  - interface colors indicating utilization range
+  - an interactive legend that allows user to select which interface utilization ranges to view
+  - ability to move objects
 * addition of new circuit and node to the network
 * viewing interface traffic
 * getting the shortest path
