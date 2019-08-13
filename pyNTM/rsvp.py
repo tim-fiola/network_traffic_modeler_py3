@@ -184,50 +184,36 @@ class RSVP_LSP(object):
         # Route LSP
         #   Options:
         #   a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
-        #   b.  There are viable paths, but none with enough headroom - LSP will not be routed
-        #   c.  LSP can route with current setup_bandwidth
+        #   b.  LSP can route with current setup_bandwidth
 
         # Option a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
-        if candidate_paths == []:
+        if candidate_paths['path'] == []:
             # If there are no possible paths, then LSP is Unrouted
             self.path = 'Unrouted'
             self.reserved_bandwidth = 'Unrouted'
             return self
 
+        self.path = {}
+
         # Find the path cost and path headroom for each path candidate
         candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
 
-        # TODO - is this necessary to filter out paths that don't have enough headroom
-        #  anymore since model.get_shortest path and model.get_feasible_paths
-        #  only return paths with enough bandwidth?!
-        # Filter out paths that don't have enough headroom
-        candidate_paths_with_enough_headroom = [path for path in candidate_path_info
-                                                if path['baseline_path_reservable_bw'] >=
-                                                self.setup_bandwidth]
-
-        # Option b. There are viable paths, but none that can
-        # accommodate the setup_bandwidth
-        if candidate_paths_with_enough_headroom == []:
-            self.path = 'Unrouted'
-            self.reserved_bandwidth = 'Unrouted'
-            return self
-
-        # Option c.  LSP can route with current setup_bandwidth
+        # Option b.  LSP can route with current setup_bandwidth
 
         # Find the lowest available path metric
         lowest_available_metric = min([path['path_cost'] for path in
-                                       candidate_paths_with_enough_headroom])
+                                       candidate_path_info])
 
-        # Finally, find all paths with the lowest cost and enough headroom
-        lowest_metric_paths = [path for path in candidate_paths_with_enough_headroom
+        # Finally, find all paths with the lowest path metric
+        lowest_metric_paths = [path for path in candidate_path_info
                                if path['path_cost'] == lowest_available_metric]
 
-        # If multiple best_paths, find those with fewest hops
+        # If multiple lowest_metric_paths, find those with fewest hops
         if len(lowest_metric_paths) > 1:
-            fewest_hops = min([len(path['interfaces']) for path in lowest_metric_paths])
-            lowest_hop_count_paths = [path for path in lowest_metric_paths if len(path['interfaces']) == fewest_hops]
+            fewest_hops = min([len(path['interfaces']) for path in candidate_path_info])
+            lowest_hop_count_paths = [path for path in candidate_path_info if len(path['interfaces']) == fewest_hops]
             if len(lowest_hop_count_paths) > 1:
-                new_path = random.choice(lowest_metric_paths)
+                new_path = random.choice(lowest_hop_count_paths)
             else:
                 new_path = lowest_hop_count_paths[0]
         else:

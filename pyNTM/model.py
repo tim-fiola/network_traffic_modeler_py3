@@ -1361,8 +1361,8 @@ class Model(object):
         # The Interfaces that the lsp is routed over currently
         lsp_path_interfaces = lsp.path['interfaces']
 
-        eligible_interface_generator = [interface for interface in self.interface_objects if
-                                        interface.failed is False]  # TODO change to generator when done
+        eligible_interface_generator = (interface for interface in self.interface_objects if
+                                        interface.failed is False)
 
         eligible_interfaces = set()
 
@@ -1377,9 +1377,9 @@ class Model(object):
                 eligible_interfaces.add(interface)
 
         # Get edge names in eligible_interfaces
-        edge_names = [(interface.node_object.name,
+        edge_names = ((interface.node_object.name,
                        interface.remote_node_object.name, interface.cost)
-                      for interface in eligible_interfaces]  # TODO - change to generator when done
+                      for interface in eligible_interfaces)
 
         # Add edges to networkx DiGraph
         G.add_weighted_edges_from(edge_names, weight='cost')
