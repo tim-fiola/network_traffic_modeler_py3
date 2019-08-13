@@ -1438,9 +1438,9 @@ class Model(object):
 
             # Derive Nodes from the Interface data
             if node_name not in set([node.name for node in node_set]):
-                node_set.add(Node(node_name))
+                node_set.add(new_interface.node_object)
             if remote_node_name not in set([node.name for node in node_set]):
-                node_set.add(Node(remote_node_name))
+                node_set.add(new_interface.remote_node_object)
 
         # Define the explicit nodes info from the file
         nodes_info_begin_index = int_info_end_index + 3

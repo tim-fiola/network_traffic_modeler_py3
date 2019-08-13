@@ -52,7 +52,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         """Amount of bandwidth available for rsvp lsp reservation"""
         return self.capacity - self.reserved_bandwidth
 
-    # @property
+    # @property # TODO - remove this commented out section
     # def reserved_bandwidth(self):
     #     """
     #     Amount of bandwidth reserved by RSVP LSPs
@@ -85,10 +85,10 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         if not (isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
+        # if not Failed (if True)
         if not status:
             # Check to see if both nodes are failed = False
-            if self.node_object.failed is False and \
-                    self.remote_node_object.failed is False:
+            if self.node_object.failed is False and self.remote_node_object.failed is False:
                 self._failed = False
 
             else:
@@ -157,8 +157,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             self.failed = False
             remote_interface.failed = False
         else:
-            message = ("Local and/or remote node are failed; cannot have "
-                       "unfailed interface on failed node")
+            message = ("Local and/or remote node are failed; cannot have unfailed interface on failed node")
             raise ModelException(message)
 
     def get_remote_interface(self, model):

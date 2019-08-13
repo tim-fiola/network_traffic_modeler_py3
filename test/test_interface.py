@@ -120,3 +120,52 @@ class TestInterface(unittest.TestCase):
         int_a_b = model.get_interface_object('A-to-B', 'A')
 
         self.assertEqual(int_a_b.demands(model), [])
+
+    def test_bad_failed_status(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        with self.assertRaises(ModelException) as context:
+            int_a_b.failed = 'hi'
+
+            self.assertTrue('must be boolean value' in context.exception)
+
+    def test_failed_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        model.fail_node('A')
+        model.update_simulation()
+
+        self.assertTrue(int_a_b.failed)
+
+    def test_remote_int_failed(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_b_a = model.get_interface_object('B-to-A', 'B')
+
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        self.assertTrue(int_b_a.failed)
+
+    def test_unfail_int_failed_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        model.fail_node('A')
+        model.update_simulation()
+
+        err_msg = 'Local and/or remote node are failed; cannot have unfailed interface on failed node'
+
+        with self.assertRaises(ModelException) as context:
+            int_a_b.unfail_interface(model)
+
+            self.assertTrue(err_msg in context.exception)

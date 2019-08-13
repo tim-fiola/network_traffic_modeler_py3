@@ -54,3 +54,14 @@ class TestNode(unittest.TestCase):
     def test_adjacent_nodes(self):
         node_list = self.node_a.adjacent_nodes(self.model)
         self.assertEqual({self.node_b}, node_list)
+
+    def test_fail_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        model.fail_node('A')
+        model.update_simulation()
+
+        node_a = model.get_node_object('A')
+
+        self.assertTrue(node_a.failed)
