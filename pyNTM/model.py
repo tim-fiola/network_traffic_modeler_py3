@@ -1366,6 +1366,8 @@ class Model(object):
 
         eligible_interfaces = set()
 
+        # Find only the interfaces that are not failed and that have
+        # enough reservable_bandwidth
         for interface in eligible_interface_generator:
             # Add back the lsp's reserved bandwidth to Interfaces already in its path
             if interface in lsp_path_interfaces:

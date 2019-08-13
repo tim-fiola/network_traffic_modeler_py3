@@ -85,7 +85,6 @@ class RSVP_LSP(object):
 
             # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
-
             baseline_path_reservable_bw = min(proto_reservable_bw.values())
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
@@ -136,9 +135,6 @@ class RSVP_LSP(object):
         """
 
         # Get candidate paths
-        # candidate_paths = model.get_feasible_paths(self.source_node_object.name,
-        #                                            self.dest_node_object.name)
-
         candidate_paths = model.get_shortest_path_for_routed_lsp(self.source_node_object.name,
                                                                  self.dest_node_object.name,
                                                                  self, self.reserved_bandwidth)
