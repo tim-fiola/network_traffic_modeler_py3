@@ -1,6 +1,7 @@
 import unittest
 
 from pyNTM import Model
+from pyNTM import ModelException
 
 class TestModel(unittest.TestCase):
 
@@ -149,3 +150,40 @@ class TestModel(unittest.TestCase):
         path_lengths = [len(path) for path in all_paths['path']]
         path_lengths.sort()
         self.assertEqual(path_lengths, [1, 2, 2, 3])
+
+    def test_get_failed_nodes(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        model.fail_node('A')
+        model.fail_node('G')
+        model.update_simulation()
+
+        node_a = model.get_node_object('A')
+        node_g = model.get_node_object('G')
+
+        self.assertEqual(set(model.get_failed_node_objects()), set([node_a, node_g]))
+
+    def test_get_non_failed_nodes(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        model.fail_node('A')
+        model.fail_node('G')
+        model.update_simulation()
+
+        node_b = model.get_node_object('B')
+        node_c = model.get_node_object('C')
+        node_d = model.get_node_object('D')
+        node_e = model.get_node_object('E')
+        node_f = model.get_node_object('F')
+
+        unfailed_node_list = [node_b, node_c, node_d, node_e, node_f]
+
+        self.assertEqual(set(model.get_non_failed_node_objects()), set(unfailed_node_list))
+
+    def test_bad_interface_model_file_load(self):
+        err_msg = 'node_name, remote_node_name, name, cost, and capacity must be defined for line'
+        with self.assertRaises(ModelException) as context:
+            Model.load_model_file('test/bad_interface_routing_topology.csv')
+            self.assertTrue(err_msg in context.exception)

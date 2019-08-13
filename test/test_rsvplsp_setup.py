@@ -2,6 +2,7 @@ import unittest
 
 from pyNTM import RSVP_LSP
 from pyNTM import Model
+from pyNTM import ModelException
 
 
 class TestRSVPLSPInitial(unittest.TestCase):
@@ -72,3 +73,17 @@ class TestRSVPLSPInitial(unittest.TestCase):
 
         self.assertEqual(self.int_a_c.reserved_bandwidth, 75.0)
         self.assertEqual(self.int_a_c.reservable_bandwidth, 75.0)
+
+    # Test for setup bandwidth must be >= 0
+    def test_bad_setup_bw(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+
+        lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+
+        msg = "setup_bandwidth must be 0 or greater"
+
+        with self.assertRaises(ModelException) as context:
+            lsp_a_d_1.setup_bandwidth = -1
+
+            self.assertTrue(msg in context.exception)

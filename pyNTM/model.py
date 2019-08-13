@@ -1422,7 +1422,6 @@ class Model(object):
             if len(interface_line.split()) == 5:
                 node_name, remote_node_name, name, cost, capacity = interface_line.split()
             else:
-                print(interface_line.split())
                 msg = ("node_name, remote_node_name, name, cost, and capacity "
                        "must be defined for line {}, line index {}".format(interface_line,
                                                                            lines.index(interface_line)))
