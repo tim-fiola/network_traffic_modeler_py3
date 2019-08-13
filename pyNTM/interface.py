@@ -112,18 +112,10 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
     def cost(self, cost):
         if cost < 1:
             raise ModelException("Interface cost cannot be less than 1")
+        if not isinstance(cost, int):
+            raise ModelException("Interface cost must be integer")
         self._cost = cost
 
-    # Put some guardrails on capacity
-    # def get_capacity(self):
-    #     return self._capacity
-    #
-    # def set_capacity(self, capacity):
-    #     if not(capacity > 0):
-    #         raise ModelException("Interface capacity must be greater than 0")
-    #     self._capacity = capacity
-    #
-    # capacity = property(get_capacity, set_capacity)
     @property
     def capacity(self):
         return self._capacity

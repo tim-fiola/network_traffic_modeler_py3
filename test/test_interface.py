@@ -210,3 +210,15 @@ class TestInterface(unittest.TestCase):
         model.fail_interface('A-to-B', 'A')
         model.update_simulation()
         self.assertEqual(int_a_b.utilization, 'Int is down')
+
+    def test_int_cost_not_integer(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        err_msg = 'Interface cost must be integer'
+
+        with self.assertRaises(ModelException) as context:
+            int_a_b.cost = 14.1
+            self.assertTrue(err_msg in context.exception)

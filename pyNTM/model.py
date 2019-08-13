@@ -86,11 +86,11 @@ class Model(object):
         non_interface_objects = set()
 
         # Ints with non-boolean failed attribute
-        non_bool_failed = set()
+        non_bool_failed = set()  # TODO - setter used; remove?
         # Ints with non-integer cost value
-        metrics_not_ints = set()
+        metrics_not_ints = set()  # TODO - setter used; remove?
         # Ints with non-numerical capacity value
-        capacity_not_number = set()
+        capacity_not_number = set()  # TODO - setter used; remove?
         # Ints with reservable_bandwidth > capacity
         int_res_bw_too_high = set()
         # Sum of reserved_bandwidth of LSPs != interface.reserved_bandwidth
@@ -101,33 +101,8 @@ class Model(object):
         error_data = []  # list of all errored checks
 
         # Validate the individual interface entries
-        for interface in (interface for interface in self.interface_objects):
-
-            # Make sure is instance Interface
-            if not (isinstance(interface, Interface)):
-                non_interface_objects.add(interface)
-
-            # Make sure 'failed' values are either True or False
-            if isinstance(interface.failed, bool) is False:
-                non_bool_failed.add(interface)
-
-            # Make sure 'metric' values are integers
-            if isinstance(interface.cost, int) is False:
-                metrics_not_ints.add(interface)
-
-            # Make sure 'capacity' values are numbers
-            if isinstance(interface.capacity, (float, int)) is False:
-                capacity_not_number.add(interface)
-
-            # Verify that interface.reserved_bandwidth is not gt interface.capacity
-            if interface.reserved_bandwidth > interface.capacity:
-                int_res_bw_too_high.add(interface)
-
-            # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
-            if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
-                                                                    for lsp in interface.lsps(self)]), 1):
-                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
-                                          tuple(interface.lsps(self))))
+        self._validate_interfaces(capacity_not_number, int_res_bw_sum_error, int_res_bw_too_high, metrics_not_ints,
+                                  non_bool_failed, non_interface_objects)
 
         # If creation of circuits returns a dict, there are problems
         if isinstance(circuits, dict):
@@ -196,6 +171,36 @@ class Model(object):
             raise ModelException(message, error_data)
         else:
             return self
+
+    def _validate_interfaces(self, capacity_not_number, int_res_bw_sum_error, int_res_bw_too_high, metrics_not_ints,
+                             non_bool_failed, non_interface_objects):
+        for interface in (interface for interface in self.interface_objects):
+
+            # Make sure is instance Interface
+            if not (isinstance(interface, Interface)):
+                non_interface_objects.add(interface)
+
+            # Make sure 'failed' values are either True or False
+            if isinstance(interface.failed, bool) is False:
+                non_bool_failed.add(interface)
+
+            # Make sure 'metric' values are integers
+            if isinstance(interface.cost, int) is False:
+                metrics_not_ints.add(interface)
+
+            # Make sure 'capacity' values are numbers
+            if isinstance(interface.capacity, (float, int)) is False:
+                capacity_not_number.add(interface)
+
+            # Verify that interface.reserved_bandwidth is not gt interface.capacity
+            if interface.reserved_bandwidth > interface.capacity:
+                int_res_bw_too_high.add(interface)
+
+            # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
+            if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
+                                                                    for lsp in interface.lsps(self)]), 1):
+                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
+                                          tuple(interface.lsps(self))))
 
     def _demand_traffic_per_int(self, demand):
         """
