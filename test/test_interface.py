@@ -52,13 +52,16 @@ class TestInterface(unittest.TestCase):
         model.update_simulation()
 
         int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = model.get_interface_object('B-to-A', 'B')
 
         self.assertFalse(int_a_b.failed)
 
-        model.fail_interface('B-to-A', 'B')
+        int_a_b.fail_interface(model)
         model.update_simulation()
 
+        self.assertEqual(int_a_b.get_remote_interface(model), int_b_a)
         self.assertTrue(int_a_b.failed)
+        self.assertTrue(int_b_a.failed)
 
     def test_int_fail_2(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
@@ -169,3 +172,41 @@ class TestInterface(unittest.TestCase):
             int_a_b.unfail_interface(model)
 
             self.assertTrue(err_msg in context.exception)
+
+    # Test __ne__ method against Nodes with same names as nodes in the Model
+    def test_not_equal(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        address = int_a_b.address
+
+        node_a_prime = Node('A')
+        node_b_prime = Node('B')
+
+        int_a_b_prime = Interface('A-to-B', 20, 125, node_a_prime, node_b_prime, address)
+
+        self.assertFalse(int_a_b == int_a_b_prime)
+
+    def test_get_ckt(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        ckt1 = model.get_circuit_object_from_interface('A-to-B', 'A')
+        ckt2 = int_a_b.get_circuit_object(model)
+
+        self.assertEqual(ckt1, ckt2)
+
+    def test_utilization(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        util = (20/125)*100
+
+        self.assertEqual(int_a_b.utilization, util)
+
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+        self.assertEqual(int_a_b.utilization, 'Int is down')

@@ -25,14 +25,19 @@ class Interface(object):
 
     # Modify the __hash__ and __eq__ methods to make comparisons easier
     def __eq__(self, other_object):
-        if not isinstance(other_object, Interface):
-            return NotImplemented
+        # if not isinstance(other_object, Interface):
+        #     return NotImplemented
 
         return [self.node_object, self.remote_node_object, self.name,
                 self.capacity, self.address] == [other_object.node_object,
                                                  other_object.remote_node_object, other_object.name,
                                                  other_object.capacity, other_object.address]
-        # return self.__dict__ == other_object.__dict__
+
+    def __ne__(self, other_object):
+        return [self.node_object, self.remote_node_object, self.name,
+                self.capacity, self.address] != [other_object.node_object,
+                                                 other_object.remote_node_object, other_object.name,
+                                                 other_object.capacity, other_object.address]
 
     def __hash__(self):
         return hash(tuple(sorted(self.__dict__.items())))
@@ -164,27 +169,22 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         """Searches the model and returns the remote interface"""
 
         for interface in (interface for interface in model.interface_objects):
-            if interface.node_object.name == self.remote_node_object.name and \
-                    interface.address == self.address:
+            if interface.node_object.name == self.remote_node_object.name and interface.address == self.address:
                 remote_interface = interface
                 break
 
         # sanity check
-        if remote_interface.remote_node_object.interfaces(model) == \
-                self.node_object.interfaces(model):
+        if remote_interface.remote_node_object.interfaces(model) == self.node_object.interfaces(model):
             return remote_interface
         else:
-            message = 'Internal Validation Error', remote_interface, \
-                      'and', self, 'fail validation checks'
+            message = 'Internal Validation Error {} and {} fail validation checks'.format(remote_interface, self)
             raise ModelException(message)
 
     def get_circuit_object(self, model):
         """Returns the circuit object from the model that an
         interface is associated with."""
-
         ckt = model.get_circuit_object_from_interface(self.name,
                                                       self.node_object.name)
-
         return ckt
 
     def demands(self, model):
@@ -233,8 +233,8 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
 
     @property
     def utilization(self):
-        """Returns utilization = (self.traffic/self.capacity)*100% """
+        """Returns utilization percent = (self.traffic/self.capacity)*100 """
         if self.traffic == 'Down':
             return 'Int is down'
         else:
-            return self.traffic / self.capacity
+            return (self.traffic / self.capacity)*100

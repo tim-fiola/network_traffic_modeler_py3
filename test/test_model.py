@@ -58,8 +58,10 @@ class TestModel(unittest.TestCase):
         model.update_simulation()
         model.fail_interface('A-to-B', 'A')
         model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = model.get_interface_object('B-to-A', 'B')
         failed_int_list = model.get_failed_interface_objects()
-        self.assertEqual(len(failed_int_list), 2)
+        self.assertEqual(set(failed_int_list), set([int_a_b, int_b_a]))
 
     def test_get_unfailed_ints_2(self):
         model = Model.load_model_file('test/model_test_topology.csv')
