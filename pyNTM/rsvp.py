@@ -134,29 +134,25 @@ class RSVP_LSP(object):
         :return: self with the current or updated path info
         """
 
-        # Get candidate paths
+        # Get candidate paths; only include interfaces that have requested_bandwidth
+        # of reservable_bandwidth
         candidate_paths = model.get_shortest_path_for_routed_lsp(self.source_node_object.name,
                                                                  self.dest_node_object.name,
-                                                                 self, self.reserved_bandwidth)
+                                                                 self, requested_bandwidth)
 
         # Find the path cost and path headroom for each path candidate
         candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(candidate_paths)
 
-        # Filter out paths that don't have enough headroom
-        candidate_paths_with_enough_headroom = [path for path in candidate_path_info
-                                                if (path['baseline_path_reservable_bw']) >=
-                                                requested_bandwidth]
-
         # If there are no paths with enough headroom, return self
-        if len(candidate_paths_with_enough_headroom) == 0:
+        if len(candidate_path_info) == 0:
             return self
         # If there is only one path with enough headroom, make that self.path
-        elif len(candidate_paths_with_enough_headroom) == 1:
-            self.path = candidate_paths_with_enough_headroom[0]
+        elif len(candidate_path_info) == 1:
+            self.path = candidate_path_info[0]
         # If there is more than one path with enough headroom,
         # choose one at random and make that self.path
-        elif len(candidate_paths_with_enough_headroom) > 1:
-            self.path = random.choice(candidate_paths_with_enough_headroom)
+        elif len(candidate_path_info) > 1:
+            self.path = random.choice(candidate_path_info)
 
         self.reserved_bandwidth = requested_bandwidth
         self.setup_bandwidth = requested_bandwidth
