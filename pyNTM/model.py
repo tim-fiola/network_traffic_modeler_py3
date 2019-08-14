@@ -711,7 +711,7 @@ class Model(object):
         """
         Returns Nodes that have no interfaces
         """
-        for node in self.node_objects:
+        for node in (node for node in self.node_objects):
             if len(node.interfaces(self)) == 0:
                 self._orphan_nodes.add(node)
         return self._orphan_nodes
@@ -721,7 +721,7 @@ class Model(object):
         Adds a node object to the model object
         """
 
-        if node_object.name in [node.name for node in self.node_objects]:
+        if node_object.name in [node.name for node in self.node_objects]:  # TODO - make this a generator
             message = "A node with name %s already exists in the model" \
                       % node_object.name
             raise ModelException(message)
@@ -807,7 +807,7 @@ class Model(object):
         added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
 
         if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
-            message = added_lsp, ' already exists in rsvp_lsp_objects'
+            message = '{} already exists in rsvp_lsp_objects'.format(added_lsp)
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
 
@@ -828,7 +828,6 @@ class Model(object):
                     demand.name == demand_name:
                 demand_to_return = demand
                 return demand_to_return
-                break
 
         if demand_to_return is None:
             raise ModelException('no matching demand')
@@ -856,18 +855,8 @@ class Model(object):
 
         node_object = self.get_node_object(node_name)
 
-        # TODO - it seems like this could be optimized
-        interface_name_list = [interface.name for
-                               interface in node_object.interfaces(self)]
-
-        if interface_name in interface_name_list:
-            index = interface_name_list.index(interface_name)
-            needed_interface = node_object.interfaces(self)[index]
-            return needed_interface
-        else:
-            msg = "Interface(%s, %s, NA) does not exist" % (interface_name,
-                                                            node_name)
-            raise ModelException(msg)
+        int_object = [interface for interface in node_object.interfaces(self) if interface.name == interface_name]
+        return int_object[0]
 
     def _does_interface_exist(self, interface_name, node_object_name):
         int_key = (interface_name, node_object_name)
@@ -882,25 +871,14 @@ class Model(object):
         Returns a Circuit object, given a Node name and Interface name
         """
 
-        circuit = None  # initialize the variable to be returned
-
         # Does interface exist?
         self._does_interface_exist(interface_name, node_name)
 
         interface = self.get_interface_object(interface_name, node_name)
 
-        ckt_object_iterator = (ckt for ckt in self.circuit_objects)
+        ckts = [ckt for ckt in self.circuit_objects if interface in (ckt.interface_a, ckt.interface_b)]
 
-        for ckt in ckt_object_iterator:
-            if interface in (ckt.interface_a, ckt.interface_b):
-                circuit = ckt
-                break
-
-        if circuit is not None:
-            return circuit
-        else:
-            msg = "Unable to find circuit"
-            raise ModelException(msg)
+        return ckts[0]
 
     # Convenience calls #####
     def get_failed_interface_objects(self):

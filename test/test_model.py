@@ -4,6 +4,7 @@ from pyNTM import Model
 from pyNTM import ModelException
 from pyNTM import Node
 
+
 class TestModel(unittest.TestCase):
 
     @classmethod
@@ -230,3 +231,78 @@ class TestModel(unittest.TestCase):
         model.update_simulation()
 
         self.assertIn(node_z, model.node_objects)
+
+    def test_get_bad_interface(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        with self.assertRaises(ModelException) as context:
+            model.get_interface_object('A-to-Z', 'A')
+        self.assertTrue('specified interface does not exist' in context.exception.args[0])
+
+    def test_bad_ckt(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        with self.assertRaises(ModelException) as context:
+            model.get_circuit_object_from_interface('A-to-Z', 'A')
+        self.assertTrue('specified interface does not exist' in context.exception.args[0])
+
+    def test_get_ckt(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        ckt = model.get_circuit_object_from_interface('A-to-B', 'A')
+
+        self.assertIn(ckt, model.circuit_objects)
+
+    def test_get_unrouted_dmds(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        model.fail_node('D')
+        model.update_simulation()
+        dmd_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+
+        self.assertTrue(dmd_a_f, model.get_unrouted_demand_objects())
+
+    def test_get_bad_dmd(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        with self.assertRaises(ModelException) as context:
+            model.get_demand_object('F', 'A', 'bad_demand')
+        self.assertIn('no matching demand', context.exception.args[0])
+
+    def test_get_bad_lsp(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        err_msg = "LSP with source node A, dest node B, and name bad_lsp does not exist in model"
+
+        with self.assertRaises(ModelException) as context:
+            model.get_rsvp_lsp('A', 'B', 'bad_lsp')
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_add_duplicate_lsp(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+
+        err_msg = 'already exists in rsvp_lsp_objects'
+
+        with self.assertRaises(ModelException) as context:
+            model.add_rsvp_lsp('F', 'E', 'lsp_f_e_1')
+        self.assertIn(err_msg, context.exception.args[0])
+
+    # def test_node_orphan(self):
+    #     model = Model.load_model_file('test/igp_routing_topology.csv')
+    #     model.update_simulation()
+    #
+    #
+    #     zz = Node('ZZ')
+    #     model.add_node(zz)
+    #     model.update_simulation()
+    #
+    #     import pdb
+    #     pdb.set_trace()
+    #
+    #     self.assertTrue(model.is_node_an_orphan(zz))
