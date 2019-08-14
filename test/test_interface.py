@@ -24,8 +24,7 @@ class TestInterface(unittest.TestCase):
     def test_bad_int_cost(self):
         with self.assertRaises(ModelException) as context:
             (Interface('test_int', -5, 40, self.node_a, self.node_b, 50))
-
-            self.assertTrue('Interface cost cannot be less than 1' in context.exception)
+        self.assertTrue('Interface cost cannot be less than 1' in context.exception.args[0])
 
     def test_key(self):
         self.assertEqual(self.interface_a._key, ('inerfaceA-to-B', 'nodeA'))
@@ -133,7 +132,7 @@ class TestInterface(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             int_a_b.failed = 'hi'
 
-            self.assertTrue('must be boolean value' in context.exception)
+        self.assertTrue('must be boolean value' in context.exception.args[0])
 
     def test_failed_node(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
@@ -171,7 +170,7 @@ class TestInterface(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             int_a_b.unfail_interface(model)
 
-            self.assertTrue(err_msg in context.exception)
+        self.assertTrue(err_msg in context.exception.args[0])
 
     # Test __ne__ method against Nodes with same names as nodes in the Model
     def test_not_equal(self):
@@ -219,6 +218,6 @@ class TestInterface(unittest.TestCase):
 
         err_msg = 'Interface cost must be integer'
 
-        with self.assertRaises(ModelException) as context:  # TODO - all context err_msg in context.exception silently fail
+        with self.assertRaises(ModelException) as context:
             int_a_b.cost = 14.1
-        self.assertTrue(err_msg in context.exception)
+        self.assertTrue(err_msg in context.exception.args[0])

@@ -188,13 +188,11 @@ class TestModel(unittest.TestCase):
         err_msg = 'node_name, remote_node_name, name, cost, and capacity must be defined for line'
         with self.assertRaises(ModelException) as context:
             Model.load_model_file('test/interface_field_info_missing_routing_topology.csv')
-        self.assertTrue(err_msg in context.exception)
+        self.assertTrue(err_msg in err_msg in context.exception.args[0])
 
     def test_ckt_mismatch_int_capacity_file_load(self):
         err_msg = 'circuits_with_mismatched_interface_capacity'
         model = Model.load_model_file('test/mismatched_ckt_int_capacity_topology_file.csv')
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
-        import pdb
-        pdb.set_trace()
-        self.assertTrue(err_msg in context.exception)
+        self.assertTrue(err_msg in context.exception.args[0][1][0].keys())

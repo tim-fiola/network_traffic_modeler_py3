@@ -86,4 +86,4 @@ class TestRSVPLSPInitial(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             lsp_a_d_1.setup_bandwidth = -1
 
-            self.assertTrue(msg in context.exception)
+        self.assertTrue(msg in context.exception.args[0])
