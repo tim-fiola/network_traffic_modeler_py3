@@ -41,7 +41,7 @@ class Model(object):
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
-        self._orphan_nodes = set([])
+        # self._orphan_nodes = set([])
         self.circuit_objects = set([])
         self.rsvp_lsp_objects = rsvp_lsp_objects
 
@@ -564,17 +564,16 @@ class Model(object):
 
             if len(node_int_list) > len(node_int_set):
                 # Find which ints are duplicate
-                ints_count = [node_int_list.count(int_name) for int_name in node_int_list]
-                for value in ints_count:
-                    if value > 1:
-                        index_value = ints_count.index(value)
-                        exception_data = (node.name, node_int_list.index(index_value))
-                        exception_interfaces.add(exception_data)
+                for item in node_int_set:
+                    node_int_list.remove(item)
+                # Add the remaining node and interface name to exception_interfaces
+                for item in node_int_list:
+                    exception_interfaces.add((node, item))
 
         if len(exception_interfaces) > 0:
             message = ("Interface names must be unique per node.  The following"
                        " nodes have duplicate interface names {}".format(exception_interfaces))
-            return message
+            raise ModelException(message)
         else:
             return True
 
@@ -634,8 +633,8 @@ class Model(object):
                                      G.edges(data=True) if not (G.has_edge(remote_node_name, local_node_name))]
 
         if len(exception_ints_not_in_ckt) > 0:
-            exception_msg = ('WARNING: These interfaces were not matched into a circuit',
-                             exception_ints_not_in_ckt)
+            exception_msg = ('WARNING: These interfaces were not matched '
+                             'into a circuit {}'.format(exception_ints_not_in_ckt))
             if return_exception:
                 raise ModelException(exception_msg)
             else:
@@ -702,19 +701,18 @@ class Model(object):
 
     def is_node_an_orphan(self, node_object):
         """Determines if a node is in orphan_nodes"""
-        if node_object in self._orphan_nodes:
+        if node_object in self.get_orphan_node_objects():
             return True
         else:
             return False
 
     def get_orphan_node_objects(self):
         """
-        Returns Nodes that have no interfaces
+        Returns list of Nodes that have no interfaces
         """
-        for node in (node for node in self.node_objects):
-            if len(node.interfaces(self)) == 0:
-                self._orphan_nodes.add(node)
-        return self._orphan_nodes
+        orphan_nodes = [node for node in self.node_objects if len(node.interfaces(self)) == 0]
+
+        return orphan_nodes
 
     def add_node(self, node_object):
         """
