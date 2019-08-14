@@ -591,6 +591,7 @@ class Model(object):
                              G.edges(data=True) if G.has_edge(remote_node_name,
                                                               local_node_name))
 
+        # TODO - maybe use the iteration here to check interface reservable_bw stuff?
         # Set interface object in_ckt = False and baseline the address
         for interface in (interface for interface in self.interface_objects):
             interface.in_ckt = False
@@ -736,7 +737,7 @@ class Model(object):
             node_object = node_object_list[node_index]
             return node_object
         else:
-            message = "No node with name %s exists in the model" % node_name
+            message = "No node with name %s exists in the model" % node_name   # TODO - unit test this
             raise ModelException(message)
 
     def _make_network_interfaces(self, interface_info_list):
