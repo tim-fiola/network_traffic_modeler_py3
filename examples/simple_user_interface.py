@@ -20,6 +20,8 @@ import re
 
 background_color = 'tan'
 
+# TODO - have this support RSVP LSPs
+
 
 def open_file():
     """Opens the file that describes the Model and allows user to save
@@ -225,7 +227,7 @@ def display_selected_objects(canvas_object, row_, column_):
 
         interface_failed = interface_object.failed
 
-        interface_util = str(round((interface_object.utilization * 100), 1))
+        interface_util = str(round((interface_object.utilization), 1))
 
         interface_info = interface_object
 

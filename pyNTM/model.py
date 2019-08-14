@@ -1108,7 +1108,7 @@ class Model(object):
         for hop in nx_graph_path:
             current_hop_index = nx_graph_path.index(hop)
             next_hop_index = current_hop_index + 1
-            if current_hop_index + 1 < len(nx_graph_path):  # TODO - use next_hop_index here
+            if next_hop_index < len(nx_graph_path):
                 next_hop = nx_graph_path[next_hop_index]
                 interface = self.get_interface_object_from_nodes(hop, next_hop)
                 model_path.append(interface)
