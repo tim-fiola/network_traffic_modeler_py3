@@ -184,8 +184,17 @@ class TestModel(unittest.TestCase):
 
         self.assertEqual(set(model.get_non_failed_node_objects()), set(unfailed_node_list))
 
-    def test_bad_interface_model_file_load(self):
+    def test_interface_fields_missing_model_file_load(self):
         err_msg = 'node_name, remote_node_name, name, cost, and capacity must be defined for line'
         with self.assertRaises(ModelException) as context:
-            Model.load_model_file('test/bad_interface_routing_topology.csv')
-            self.assertTrue(err_msg in context.exception)
+            Model.load_model_file('test/interface_field_info_missing_routing_topology.csv')
+        self.assertTrue(err_msg in context.exception)
+
+    def test_ckt_mismatch_int_capacity_file_load(self):
+        err_msg = 'circuits_with_mismatched_interface_capacity'
+        model = Model.load_model_file('test/mismatched_ckt_int_capacity_topology_file.csv')
+        with self.assertRaises(ModelException) as context:
+            model.update_simulation()
+        import pdb
+        pdb.set_trace()
+        self.assertTrue(err_msg in context.exception)

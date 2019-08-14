@@ -73,7 +73,6 @@ class Model(object):
             self.interface_objects.union(new_interface_objects)
         self.validate_model()
 
-    # TODO - simplify this; too complex right now
     def validate_model(self):
         """
         Validates that data fed into the model creates a valid network model
@@ -82,45 +81,26 @@ class Model(object):
         # create circuits table, flags ints that are not part of a circuit
         circuits = self._make_circuits(return_exception=True)
 
-        # Find objects in interface_objects that are not Interface objects
-        non_interface_objects = set()
-
-        # Ints with non-boolean failed attribute
-        non_bool_failed = set()  # TODO - setter used; remove?
-        # Ints with non-integer cost value
-        metrics_not_ints = set()  # TODO - setter used; remove?
-        # Ints with non-numerical capacity value
-        capacity_not_number = set()  # TODO - setter used; remove?
-        # Ints with reservable_bandwidth > capacity
-        int_res_bw_too_high = set()
-        # Sum of reserved_bandwidth of LSPs != interface.reserved_bandwidth
-        int_res_bw_sum_error = set()
-
         # TODO - check for duplicate LSPs and interfaces and demands, but need a way that scales
 
         error_data = []  # list of all errored checks
 
-        # Validate the individual interface entries
-        self._validate_interfaces(capacity_not_number, int_res_bw_sum_error, int_res_bw_too_high, metrics_not_ints,
-                                  non_bool_failed, non_interface_objects)
+        # Check for interfaces whose reserved bandwidth is gt the interface's capacity
+        int_res_bw_too_high = set([interface for interface in self.interface_objects
+                                   if interface.reserved_bandwidth > interface.capacity])
+
+        # Check for interfaces whose reserved bandwidth does not sum up to
+        # the reserved bandwidth for the LSPs on the interface
+        int_res_bw_sum_error = set([(interface, interface.reserved_bandwidth, tuple(interface.lsps(self)))
+                                    for interface in self.interface_objects if
+                                    round(interface.reserved_bandwidth, 1) !=
+                                    round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)])
 
         # If creation of circuits returns a dict, there are problems
         if isinstance(circuits, dict):
             error_data.append({'ints_w_no_remote_int': circuits['data']})
 
         # Append any failed checks to error_data
-        if len(non_interface_objects) > 0:
-            error_data.append(non_interface_objects)
-
-        if len(non_bool_failed) > 0:
-            error_data.append({'non_boolean_failed': non_bool_failed})
-
-        if len(metrics_not_ints) > 0:
-            error_data.append({'non_integer_metrics': metrics_not_ints})
-
-        if len(capacity_not_number) > 0:
-            error_data.append({'invalid_capacity': capacity_not_number})
-
         if len(int_res_bw_too_high) > 0:
             error_data.append({'int_res_bw_too_high': int_res_bw_too_high})
 
@@ -168,39 +148,9 @@ class Model(object):
             message = 'network interface validation failed, see returned data'
             pprint(message)
             pprint(error_data)
-            raise ModelException(message, error_data)
+            raise ModelException((message, error_data))
         else:
             return self
-
-    def _validate_interfaces(self, capacity_not_number, int_res_bw_sum_error, int_res_bw_too_high, metrics_not_ints,
-                             non_bool_failed, non_interface_objects):
-        for interface in (interface for interface in self.interface_objects):
-
-            # Make sure is instance Interface
-            if not (isinstance(interface, Interface)):
-                non_interface_objects.add(interface)
-
-            # Make sure 'failed' values are either True or False
-            if isinstance(interface.failed, bool) is False:
-                non_bool_failed.add(interface)
-
-            # Make sure 'metric' values are integers
-            if isinstance(interface.cost, int) is False:
-                metrics_not_ints.add(interface)
-
-            # Make sure 'capacity' values are numbers
-            if isinstance(interface.capacity, (float, int)) is False:
-                capacity_not_number.add(interface)
-
-            # Verify that interface.reserved_bandwidth is not gt interface.capacity
-            if interface.reserved_bandwidth > interface.capacity:
-                int_res_bw_too_high.add(interface)
-
-            # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
-            if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
-                                                                    for lsp in interface.lsps(self)]), 1):
-                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
-                                          tuple(interface.lsps(self))))
 
     def _demand_traffic_per_int(self, demand):
         """
@@ -558,11 +508,11 @@ class Model(object):
         # add them to non_failed_interfaces.
         # If the interface is not failed, then by definition, the nodes are
         # not failed
-        for interface_object in (interface_object for interface_object in self.interface_objects):
-            if not interface_object.failed:
-                non_failed_interfaces.add(interface_object)
-                available_nodes.add(interface_object.node_object)
-                available_nodes.add(interface_object.remote_node_object)
+        for interface_object in (interface_object for interface_object in self.interface_objects
+                                 if interface_object.failed is not True):
+            non_failed_interfaces.add(interface_object)
+            available_nodes.add(interface_object.node_object)
+            available_nodes.add(interface_object.remote_node_object)
 
         # Create a model consisting only of the non-failed interfaces and
         # corresponding non-failed (available) nodes
@@ -598,15 +548,20 @@ class Model(object):
         a message if a duplicate interface name is found on the same node
         """
 
-        checked_interfaces = set()  # interfaces that have been checked
         exception_interfaces = set()  # duplicate interfaces
 
-        iterator = (interface_obj for interface_obj in self.interface_objects)
-        for interface in iterator:
-            if interface in checked_interfaces:
-                exception_interfaces.add(interface)
-            else:
-                checked_interfaces.add(interface)
+        for node in (node for node in self.node_objects):
+            node_int_list = [interface.name for interface in node.interfaces(self)]
+            node_int_set = set(node_int_list)
+
+            if len(node_int_list) > len(node_int_set):
+                # Find which ints are duplicate
+                ints_count = [node_int_list.count(int_name) for int_name in node_int_list]
+                for value in ints_count:
+                    if value > 1:
+                        index_value = ints_count.index(value)
+                        exception_data = (node.name, node_int_list.index(index_value))
+                        exception_interfaces.add(exception_data)
 
         if len(exception_interfaces) > 0:
             message = ("Interface names must be unique per node.  The following"
@@ -728,9 +683,9 @@ class Model(object):
 
         existing_int_keys = set([interface._key for interface in self.interface_objects])
         if int_a._key in existing_int_keys:
-            raise ModelException("interface {} already exists in model".format(int_a))
+            raise ModelException("interface {} on node {} already exists in model".format(int_a, node_a_object))
         if int_b._key in existing_int_keys:
-            raise ModelException("interface {} already exists in model".format(int_b))
+            raise ModelException("interface {} on node {} already exists in model".format(int_b, node_b_object))
 
         self.interface_objects.add(int_a)
         self.interface_objects.add(int_b)

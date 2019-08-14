@@ -219,6 +219,6 @@ class TestInterface(unittest.TestCase):
 
         err_msg = 'Interface cost must be integer'
 
-        with self.assertRaises(ModelException) as context:
+        with self.assertRaises(ModelException) as context:  # TODO - all context err_msg in context.exception silently fail
             int_a_b.cost = 14.1
-            self.assertTrue(err_msg in context.exception)
+        self.assertTrue(err_msg in context.exception)
