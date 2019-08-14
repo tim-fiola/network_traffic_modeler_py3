@@ -57,21 +57,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         """Amount of bandwidth available for rsvp lsp reservation"""
         return self.capacity - self.reserved_bandwidth
 
-    # @property # TODO - remove this commented out section
-    # def reserved_bandwidth(self):
-    #     """
-    #     Amount of bandwidth reserved by RSVP LSPs
-    #     :return: reserved bandwidth
-    #     """
-    #     return self._reserved_bandwidth
-    #
-    # @reserved_bandwidth.setter
-    # def reserved_bandwidth(self):
-    #     """
-    #     Setter for reserved_bandwidth property
-    #     :return:
-    #     """
-
     @property
     def failed(self):
         """

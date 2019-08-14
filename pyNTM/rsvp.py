@@ -35,7 +35,7 @@ class RSVP_LSP(object):
         self.lsp_name = lsp_name
         self.path = 'Unrouted - initial'
         self.reserved_bandwidth = 'Unrouted - initial'
-        self._setup_bandwidth = 'Unrouted - initial'  # TODO - getter/setter
+        self._setup_bandwidth = 'Unrouted - initial'
         self.configured_setup_bandwidth = configured_setup_bandwidth
 
     @property

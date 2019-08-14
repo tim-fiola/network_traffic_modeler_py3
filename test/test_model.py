@@ -353,3 +353,13 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
         self.assertIn(err_msg, context.exception.args[0])
+
+    def test_int_name_change(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        interface = model.get_interface_object('A-to-B', 'A')
+
+        model.change_interface_name('A', 'A-to-B', 'A-to-B-changed')
+
+        self.assertEqual(interface.name, 'A-to-B-changed')

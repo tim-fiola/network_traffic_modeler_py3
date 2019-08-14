@@ -41,7 +41,6 @@ class Model(object):
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
-        # self._orphan_nodes = set([])
         self.circuit_objects = set([])
         self.rsvp_lsp_objects = rsvp_lsp_objects
 
@@ -489,14 +488,6 @@ class Model(object):
 
         return parallel_demand_groups
 
-    def _route_lsp_demands(self, demands, input_model):
-        """Route demands that ride LSPs in the model"""
-        for demand_object in (demand for demand in demands):
-            demand_object._add_demand_path(input_model)
-            self._update_interface_utilization()
-
-        return self
-
     def update_simulation(self):
         """
         Updates the simulation state; this needs to be run any time there is
@@ -719,9 +710,8 @@ class Model(object):
         Adds a node object to the model object
         """
 
-        if node_object.name in [node.name for node in self.node_objects]:  # TODO - make this a generator
-            message = "A node with name %s already exists in the model" \
-                      % node_object.name
+        if node_object.name in (node.name for node in self.node_objects):
+            message = "A node with name {} already exists in the model".format(node_object.name)
             raise ModelException(message)
         else:
             self.node_objects.add(node_object)
