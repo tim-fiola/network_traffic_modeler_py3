@@ -81,20 +81,28 @@ class Model(object):
         # create circuits table, flags ints that are not part of a circuit
         circuits = self._make_circuits(return_exception=True)
 
-        # TODO - check for duplicate LSPs and interfaces and demands, but need a way that scales
-
         error_data = []  # list of all errored checks
 
-        # Check for interfaces whose reserved bandwidth is gt the interface's capacity
-        int_res_bw_too_high = set([interface for interface in self.interface_objects
-                                   if interface.reserved_bandwidth > interface.capacity])
+        # # Check for interfaces whose reserved bandwidth is gt the interface's capacity
+        # int_res_bw_too_high = set([interface for interface in self.interface_objects
+        #                            if interface.reserved_bandwidth > interface.capacity])
+        #
+        # # Check for interfaces whose reserved bandwidth does not sum up to
+        # # the reserved bandwidth for the LSPs on the interface
+        # int_res_bw_sum_error = set([(interface, interface.reserved_bandwidth, tuple(interface.lsps(self)))
+        #                             for interface in self.interface_objects if
+        #                             round(interface.reserved_bandwidth, 1) !=
+        #                             round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)])
 
-        # Check for interfaces whose reserved bandwidth does not sum up to
-        # the reserved bandwidth for the LSPs on the interface
-        int_res_bw_sum_error = set([(interface, interface.reserved_bandwidth, tuple(interface.lsps(self)))
-                                    for interface in self.interface_objects if
-                                    round(interface.reserved_bandwidth, 1) !=
-                                    round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)])
+        int_res_bw_too_high = set([])
+        int_res_bw_sum_error = set([])
+
+        for interface in (interface for interface in self.interface_objects):
+            if interface.reserved_bandwidth > interface.capacity:
+                int_res_bw_too_high.add(interface)
+            if (round(interface.reserved_bandwidth, 1) !=
+                    round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)):
+                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
         # If creation of circuits returns a dict, there are problems
         if isinstance(circuits, dict):
@@ -591,7 +599,6 @@ class Model(object):
                              G.edges(data=True) if G.has_edge(remote_node_name,
                                                               local_node_name))
 
-        # TODO - maybe use the iteration here to check interface reservable_bw stuff?
         # Set interface object in_ckt = False and baseline the address
         for interface in (interface for interface in self.interface_objects):
             interface.in_ckt = False
@@ -727,17 +734,12 @@ class Model(object):
         """
         Returns a Node object, given a node's name
         """
+        matching_node = [node for node in self.node_objects if node.name == node_name]
 
-        # TODO - It seems like this part could be optimized
-        node_object_list = [node for node in self.node_objects]
-        node_names = [node.name for node in node_object_list]
-
-        if node_name in node_names:
-            node_index = node_names.index(node_name)
-            node_object = node_object_list[node_index]
-            return node_object
+        if len(matching_node) > 0:
+            return matching_node[0]
         else:
-            message = "No node with name %s exists in the model" % node_name   # TODO - unit test this
+            message = "No node with name %s exists in the model" % node_name
             raise ModelException(message)
 
     def _make_network_interfaces(self, interface_info_list):
@@ -863,7 +865,6 @@ class Model(object):
             needed_interface = node_object.interfaces(self)[index]
             return needed_interface
         else:
-
             msg = "Interface(%s, %s, NA) does not exist" % (interface_name,
                                                             node_name)
             raise ModelException(msg)

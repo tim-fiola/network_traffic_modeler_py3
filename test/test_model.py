@@ -2,6 +2,7 @@ import unittest
 
 from pyNTM import Model
 from pyNTM import ModelException
+from pyNTM import Node
 
 class TestModel(unittest.TestCase):
 
@@ -196,3 +197,36 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
         self.assertTrue(err_msg in context.exception.args[0][1][0].keys())
+
+    def test_get_bad_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        err_msg = 'No node with name ZZ exists in the model'
+
+        with self.assertRaises(ModelException) as context:
+            model.get_node_object('ZZ')
+        self.assertTrue(err_msg in context.exception.args[0])
+
+    def test_add_duplicate_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        node_a = Node('A')
+
+        err_msg = 'A node with name A already exists in the model'
+
+        with self.assertRaises(ModelException) as context:
+            model.add_node(node_a)
+        self.assertTrue(err_msg in context.exception.args[0])
+
+    def test_add_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        node_z = Node('Z')
+
+        model.add_node(node_z)
+        model.update_simulation()
+
+        self.assertIn(node_z, model.node_objects)
