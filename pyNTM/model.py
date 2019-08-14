@@ -82,17 +82,6 @@ class Model(object):
 
         error_data = []  # list of all errored checks
 
-        # # Check for interfaces whose reserved bandwidth is gt the interface's capacity
-        # int_res_bw_too_high = set([interface for interface in self.interface_objects
-        #                            if interface.reserved_bandwidth > interface.capacity])
-        #
-        # # Check for interfaces whose reserved bandwidth does not sum up to
-        # # the reserved bandwidth for the LSPs on the interface
-        # int_res_bw_sum_error = set([(interface, interface.reserved_bandwidth, tuple(interface.lsps(self)))
-        #                             for interface in self.interface_objects if
-        #                             round(interface.reserved_bandwidth, 1) !=
-        #                             round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)])
-
         int_res_bw_too_high = set([])
         int_res_bw_sum_error = set([])
 
