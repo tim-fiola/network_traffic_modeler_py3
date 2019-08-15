@@ -17,6 +17,7 @@ from .rsvp import RSVP_LSP
 
 class Model(object):
     """A network model object consisting of the following base components:
+
         - Interface objects: network node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
@@ -56,14 +57,16 @@ class Model(object):
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example:
 
-        network_interfaces = [
-        {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
-         'remote_node': 'B', 'address': 1, 'failed': False},
-        {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
-         'remote_node': 'B', 'address': 2, 'failed': False},
-        {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
-         'remote_node': 'C', 'address': 3, 'failed': False},]
+            network_interfaces = [
+            {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
+            'remote_node': 'B', 'address': 1, 'failed': False},
+            {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
+            'remote_node': 'B', 'address': 2, 'failed': False},
+            {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
+            'remote_node': 'C', 'address': 3, 'failed': False},]
+
         """
+
         # TODO - look at removing requirement that address be specified
         new_interface_objects, new_node_objects = \
             self._make_network_interfaces(network_interfaces)
@@ -430,7 +433,7 @@ class Model(object):
         """
         Determine LSPs with same source and dest nodes
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
-                 with matching source/dest nodes
+        with matching source/dest nodes
         """
 
         src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
@@ -456,7 +459,7 @@ class Model(object):
         """
         Determine demands with same source and dest nodes
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands
-                 with matching source/dest nodes
+        with matching source/dest nodes
         """
 
         src_node_names = set([dmd.source_node_object.name for dmd in self.demand_objects])
@@ -775,6 +778,7 @@ class Model(object):
         """
         Adds an RSVP LSP with name from the source node to the
         dest node and validates model.
+
         :param source_node_name: LSP source Node name
         :param dest_node_name: LSP destination Node name
         :param name: name of LSP
@@ -984,8 +988,7 @@ class Model(object):
         :param needed_bw: the amount of reservable bandwidth required on the path
         :param cutoff: max amount of path hops
         :return: Return the shortest path in dictionary form:
-                 shortest_path = {'path': [list of shortest path routes],
-                                  'cost': path_cost}
+                 shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1016,8 +1019,7 @@ class Model(object):
         :param dest_node_name: name of destination node in path
         :param needed_bw: the amount of reservable bandwidth required on the path
         :return: Return the shortest path in dictionary form:
-                 shortest_path = {'path': [list of shortest path routes],
-                                  'cost': path_cost}
+                 shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1048,8 +1050,7 @@ class Model(object):
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available for an LSP that is already routed.
         Return the shortest path in dictionary form:
-        shortest_path = {'path': [list of shortest path routes],
-                            'cost': path_cost}
+        shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
