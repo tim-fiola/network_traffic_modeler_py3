@@ -106,6 +106,7 @@ class Model(object):
         # Validate there are no duplicate interfaces
         unique_interfaces_per_node = self._unique_interface_per_node()
 
+        # Log any duplicate interfaces on a node
         if not unique_interfaces_per_node:
             error_data.append(unique_interfaces_per_node)
 
