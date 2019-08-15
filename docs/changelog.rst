@@ -1,9 +1,16 @@
 Changelog
 =========
 
+1.1
+----
+* added configured, fixed setup bandwidth capability on RSVP LSPs
+* made small performance optimizations
+
 1.0
 ----
 * first release including pypi inetgration
+
+
 
 previous releases
 ------------------
