@@ -25,14 +25,19 @@ class Interface(object):
 
     # Modify the __hash__ and __eq__ methods to make comparisons easier
     def __eq__(self, other_object):
-        if not isinstance(other_object, Interface):
-            return NotImplemented
+        # if not isinstance(other_object, Interface):
+        #     return NotImplemented
 
         return [self.node_object, self.remote_node_object, self.name,
                 self.capacity, self.address] == [other_object.node_object,
                                                  other_object.remote_node_object, other_object.name,
                                                  other_object.capacity, other_object.address]
-        # return self.__dict__ == other_object.__dict__
+
+    def __ne__(self, other_object):
+        return [self.node_object, self.remote_node_object, self.name,
+                self.capacity, self.address] != [other_object.node_object,
+                                                 other_object.remote_node_object, other_object.name,
+                                                 other_object.capacity, other_object.address]
 
     def __hash__(self):
         return hash(tuple(sorted(self.__dict__.items())))
@@ -52,21 +57,6 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         """Amount of bandwidth available for rsvp lsp reservation"""
         return self.capacity - self.reserved_bandwidth
 
-    # @property
-    # def reserved_bandwidth(self):
-    #     """
-    #     Amount of bandwidth reserved by RSVP LSPs
-    #     :return: reserved bandwidth
-    #     """
-    #     return self._reserved_bandwidth
-    #
-    # @reserved_bandwidth.setter
-    # def reserved_bandwidth(self):
-    #     """
-    #     Setter for reserved_bandwidth property
-    #     :return:
-    #     """
-
     @property
     def failed(self):
         """
@@ -85,10 +75,10 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         if not (isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
+        # if not Failed (if True)
         if not status:
             # Check to see if both nodes are failed = False
-            if self.node_object.failed is False and \
-                    self.remote_node_object.failed is False:
+            if self.node_object.failed is False and self.remote_node_object.failed is False:
                 self._failed = False
 
             else:
@@ -107,18 +97,10 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
     def cost(self, cost):
         if cost < 1:
             raise ModelException("Interface cost cannot be less than 1")
+        if not isinstance(cost, int):
+            raise ModelException("Interface cost must be integer")
         self._cost = cost
 
-    # Put some guardrails on capacity
-    # def get_capacity(self):
-    #     return self._capacity
-    #
-    # def set_capacity(self, capacity):
-    #     if not(capacity > 0):
-    #         raise ModelException("Interface capacity must be greater than 0")
-    #     self._capacity = capacity
-    #
-    # capacity = property(get_capacity, set_capacity)
     @property
     def capacity(self):
         return self._capacity
@@ -157,35 +139,29 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             self.failed = False
             remote_interface.failed = False
         else:
-            message = ("Local and/or remote node are failed; cannot have "
-                       "unfailed interface on failed node")
+            message = ("Local and/or remote node are failed; cannot have unfailed interface on failed node")
             raise ModelException(message)
 
     def get_remote_interface(self, model):
         """Searches the model and returns the remote interface"""
 
         for interface in (interface for interface in model.interface_objects):
-            if interface.node_object.name == self.remote_node_object.name and \
-                    interface.address == self.address:
+            if interface.node_object.name == self.remote_node_object.name and interface.address == self.address:
                 remote_interface = interface
                 break
 
         # sanity check
-        if remote_interface.remote_node_object.interfaces(model) == \
-                self.node_object.interfaces(model):
+        if remote_interface.remote_node_object.interfaces(model) == self.node_object.interfaces(model):
             return remote_interface
         else:
-            message = 'Internal Validation Error', remote_interface, \
-                      'and', self, 'fail validation checks'
+            message = 'Internal Validation Error {} and {} fail validation checks'.format(remote_interface, self)
             raise ModelException(message)
 
     def get_circuit_object(self, model):
         """Returns the circuit object from the model that an
         interface is associated with."""
-
         ckt = model.get_circuit_object_from_interface(self.name,
                                                       self.node_object.name)
-
         return ckt
 
     def demands(self, model):
@@ -234,8 +210,8 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
 
     @property
     def utilization(self):
-        """Returns utilization = (self.traffic/self.capacity)*100% """
+        """Returns utilization percent = (self.traffic/self.capacity)*100 """
         if self.traffic == 'Down':
             return 'Int is down'
         else:
-            return self.traffic / self.capacity
+            return (self.traffic / self.capacity)*100

@@ -41,7 +41,6 @@ class Model(object):
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
-        self._orphan_nodes = set([])
         self.circuit_objects = set([])
         self.rsvp_lsp_objects = rsvp_lsp_objects
 
@@ -73,7 +72,6 @@ class Model(object):
             self.interface_objects.union(new_interface_objects)
         self.validate_model()
 
-    # TODO - simplify this; too complex right now
     def validate_model(self):
         """
         Validates that data fed into the model creates a valid network model
@@ -82,70 +80,23 @@ class Model(object):
         # create circuits table, flags ints that are not part of a circuit
         circuits = self._make_circuits(return_exception=True)
 
-        # Find objects in interface_objects that are not Interface objects
-        non_interface_objects = set()
-
-        # Ints with non-boolean failed attribute
-        non_bool_failed = set()
-        # Ints with non-integer cost value
-        metrics_not_ints = set()
-        # Ints with non-numerical capacity value
-        capacity_not_number = set()
-        # Ints with reservable_bandwidth > capacity
-        int_res_bw_too_high = set()
-        # Sum of reserved_bandwidth of LSPs != interface.reserved_bandwidth
-        int_res_bw_sum_error = set()
-
-        # TODO - check for duplicate LSPs and interfaces and demands, but need a way that scales
-
         error_data = []  # list of all errored checks
 
-        # Validate the individual interface entries
+        int_res_bw_too_high = set([])
+        int_res_bw_sum_error = set([])
+
         for interface in (interface for interface in self.interface_objects):
-
-            # Make sure is instance Interface
-            if not (isinstance(interface, Interface)):
-                non_interface_objects.add(interface)
-
-            # Make sure 'failed' values are either True or False
-            if isinstance(interface.failed, bool) is False:
-                non_bool_failed.add(interface)
-
-            # Make sure 'metric' values are integers
-            if isinstance(interface.cost, int) is False:
-                metrics_not_ints.add(interface)
-
-            # Make sure 'capacity' values are numbers
-            if isinstance(interface.capacity, (float, int)) is False:
-                capacity_not_number.add(interface)
-
-            # Verify that interface.reserved_bandwidth is not gt interface.capacity
             if interface.reserved_bandwidth > interface.capacity:
                 int_res_bw_too_high.add(interface)
-
-            # Verify interface.reserved_bandwidth == sum of interface.lsps(model) reserved bandwidth
-            if round(interface.reserved_bandwidth, 1) != round(sum([lsp.reserved_bandwidth
-                                                                    for lsp in interface.lsps(self)]), 1):
-                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth,
-                                          tuple(interface.lsps(self))))
+            if (round(interface.reserved_bandwidth, 1) !=
+                    round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)):
+                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
         # If creation of circuits returns a dict, there are problems
         if isinstance(circuits, dict):
             error_data.append({'ints_w_no_remote_int': circuits['data']})
 
         # Append any failed checks to error_data
-        if len(non_interface_objects) > 0:
-            error_data.append(non_interface_objects)
-
-        if len(non_bool_failed) > 0:
-            error_data.append({'non_boolean_failed': non_bool_failed})
-
-        if len(metrics_not_ints) > 0:
-            error_data.append({'non_integer_metrics': metrics_not_ints})
-
-        if len(capacity_not_number) > 0:
-            error_data.append({'invalid_capacity': capacity_not_number})
-
         if len(int_res_bw_too_high) > 0:
             error_data.append({'int_res_bw_too_high': int_res_bw_too_high})
 
@@ -155,6 +106,7 @@ class Model(object):
         # Validate there are no duplicate interfaces
         unique_interfaces_per_node = self._unique_interface_per_node()
 
+        # Log any duplicate interfaces on a node
         if not unique_interfaces_per_node:
             error_data.append(unique_interfaces_per_node)
 
@@ -193,7 +145,7 @@ class Model(object):
             message = 'network interface validation failed, see returned data'
             pprint(message)
             pprint(error_data)
-            raise ModelException(message, error_data)
+            raise ModelException((message, error_data))
         else:
             return self
 
@@ -526,14 +478,6 @@ class Model(object):
 
         return parallel_demand_groups
 
-    def _route_lsp_demands(self, demands, input_model):
-        """Route demands that ride LSPs in the model"""
-        for demand_object in (demand for demand in demands):
-            demand_object._add_demand_path(input_model)
-            self._update_interface_utilization()
-
-        return self
-
     def update_simulation(self):
         """
         Updates the simulation state; this needs to be run any time there is
@@ -553,11 +497,11 @@ class Model(object):
         # add them to non_failed_interfaces.
         # If the interface is not failed, then by definition, the nodes are
         # not failed
-        for interface_object in (interface_object for interface_object in self.interface_objects):
-            if not interface_object.failed:
-                non_failed_interfaces.add(interface_object)
-                available_nodes.add(interface_object.node_object)
-                available_nodes.add(interface_object.remote_node_object)
+        for interface_object in (interface_object for interface_object in self.interface_objects
+                                 if interface_object.failed is not True):
+            non_failed_interfaces.add(interface_object)
+            available_nodes.add(interface_object.node_object)
+            available_nodes.add(interface_object.remote_node_object)
 
         # Create a model consisting only of the non-failed interfaces and
         # corresponding non-failed (available) nodes
@@ -593,20 +537,24 @@ class Model(object):
         a message if a duplicate interface name is found on the same node
         """
 
-        checked_interfaces = set()  # interfaces that have been checked
         exception_interfaces = set()  # duplicate interfaces
 
-        iterator = (interface_obj for interface_obj in self.interface_objects)
-        for interface in iterator:
-            if interface in checked_interfaces:
-                exception_interfaces.add(interface)
-            else:
-                checked_interfaces.add(interface)
+        for node in (node for node in self.node_objects):
+            node_int_list = [interface.name for interface in node.interfaces(self)]
+            node_int_set = set(node_int_list)
+
+            if len(node_int_list) > len(node_int_set):
+                # Find which ints are duplicate
+                for item in node_int_set:
+                    node_int_list.remove(item)
+                # Add the remaining node and interface name to exception_interfaces
+                for item in node_int_list:
+                    exception_interfaces.add((node, item))
 
         if len(exception_interfaces) > 0:
             message = ("Interface names must be unique per node.  The following"
                        " nodes have duplicate interface names {}".format(exception_interfaces))
-            return message
+            raise ModelException(message)
         else:
             return True
 
@@ -666,8 +614,8 @@ class Model(object):
                                      G.edges(data=True) if not (G.has_edge(remote_node_name, local_node_name))]
 
         if len(exception_ints_not_in_ckt) > 0:
-            exception_msg = ('WARNING: These interfaces were not matched into a circuit',
-                             exception_ints_not_in_ckt)
+            exception_msg = ('WARNING: These interfaces were not matched '
+                             'into a circuit {}'.format(exception_ints_not_in_ckt))
             if return_exception:
                 raise ModelException(exception_msg)
             else:
@@ -723,9 +671,9 @@ class Model(object):
 
         existing_int_keys = set([interface._key for interface in self.interface_objects])
         if int_a._key in existing_int_keys:
-            raise ModelException("interface {} already exists in model".format(int_a))
+            raise ModelException("interface {} on node {} already exists in model".format(int_a, node_a_object))
         if int_b._key in existing_int_keys:
-            raise ModelException("interface {} already exists in model".format(int_b))
+            raise ModelException("interface {} on node {} already exists in model".format(int_b, node_b_object))
 
         self.interface_objects.add(int_a)
         self.interface_objects.add(int_b)
@@ -734,28 +682,26 @@ class Model(object):
 
     def is_node_an_orphan(self, node_object):
         """Determines if a node is in orphan_nodes"""
-        if node_object in self._orphan_nodes:
+        if node_object in self.get_orphan_node_objects():
             return True
         else:
             return False
 
     def get_orphan_node_objects(self):
         """
-        Returns Nodes that have no interfaces
+        Returns list of Nodes that have no interfaces
         """
-        for node in self.node_objects:
-            if len(node.interfaces(self)) == 0:
-                self._orphan_nodes.add(node)
-        return self._orphan_nodes
+        orphan_nodes = [node for node in self.node_objects if len(node.interfaces(self)) == 0]
+
+        return orphan_nodes
 
     def add_node(self, node_object):
         """
         Adds a node object to the model object
         """
 
-        if node_object.name in [node.name for node in self.node_objects]:
-            message = "A node with name %s already exists in the model" \
-                      % node_object.name
+        if node_object.name in (node.name for node in self.node_objects):
+            message = "A node with name {} already exists in the model".format(node_object.name)
             raise ModelException(message)
         else:
             self.node_objects.add(node_object)
@@ -766,15 +712,10 @@ class Model(object):
         """
         Returns a Node object, given a node's name
         """
+        matching_node = [node for node in self.node_objects if node.name == node_name]
 
-        # TODO - It seems like this part could be optimized
-        node_object_list = [node for node in self.node_objects]
-        node_names = [node.name for node in node_object_list]
-
-        if node_name in node_names:
-            node_index = node_names.index(node_name)
-            node_object = node_object_list[node_index]
-            return node_object
+        if len(matching_node) > 0:
+            return matching_node[0]
         else:
             message = "No node with name %s exists in the model" % node_name
             raise ModelException(message)
@@ -844,7 +785,7 @@ class Model(object):
         added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
 
         if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
-            message = added_lsp, ' already exists in rsvp_lsp_objects'
+            message = '{} already exists in rsvp_lsp_objects'.format(added_lsp)
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
 
@@ -865,7 +806,6 @@ class Model(object):
                     demand.name == demand_name:
                 demand_to_return = demand
                 return demand_to_return
-                break
 
         if demand_to_return is None:
             raise ModelException('no matching demand')
@@ -893,19 +833,8 @@ class Model(object):
 
         node_object = self.get_node_object(node_name)
 
-        # TODO - it seems like this could be optimized
-        interface_name_list = [interface.name for
-                               interface in node_object.interfaces(self)]
-
-        if interface_name in interface_name_list:
-            index = interface_name_list.index(interface_name)
-            needed_interface = node_object.interfaces(self)[index]
-            return needed_interface
-        else:
-
-            msg = "Interface(%s, %s, NA) does not exist" % (interface_name,
-                                                            node_name)
-            raise ModelException(msg)
+        int_object = [interface for interface in node_object.interfaces(self) if interface.name == interface_name]
+        return int_object[0]
 
     def _does_interface_exist(self, interface_name, node_object_name):
         int_key = (interface_name, node_object_name)
@@ -920,25 +849,14 @@ class Model(object):
         Returns a Circuit object, given a Node name and Interface name
         """
 
-        circuit = None  # initialize the variable to be returned
-
         # Does interface exist?
         self._does_interface_exist(interface_name, node_name)
 
         interface = self.get_interface_object(interface_name, node_name)
 
-        ckt_object_iterator = (ckt for ckt in self.circuit_objects)
+        ckts = [ckt for ckt in self.circuit_objects if interface in (ckt.interface_a, ckt.interface_b)]
 
-        for ckt in ckt_object_iterator:
-            if interface in (ckt.interface_a, ckt.interface_b):
-                circuit = ckt
-                break
-
-        if circuit is not None:
-            return circuit
-        else:
-            msg = "Unable to find circuit"
-            raise ModelException(msg)
+        return ckts[0]
 
     # Convenience calls #####
     def get_failed_interface_objects(self):
@@ -1180,7 +1098,7 @@ class Model(object):
         for hop in nx_graph_path:
             current_hop_index = nx_graph_path.index(hop)
             next_hop_index = current_hop_index + 1
-            if current_hop_index + 1 < len(nx_graph_path):  # TODO - use next_hop_index here
+            if next_hop_index < len(nx_graph_path):
                 next_hop = nx_graph_path[next_hop_index]
                 interface = self.get_interface_object_from_nodes(hop, next_hop)
                 model_path.append(interface)
@@ -1361,11 +1279,13 @@ class Model(object):
         # The Interfaces that the lsp is routed over currently
         lsp_path_interfaces = lsp.path['interfaces']
 
-        eligible_interface_generator = [interface for interface in self.interface_objects if
-                                        interface.failed is False]  # TODO change to generator when done
+        eligible_interface_generator = (interface for interface in self.interface_objects if
+                                        interface.failed is False)
 
         eligible_interfaces = set()
 
+        # Find only the interfaces that are not failed and that have
+        # enough reservable_bandwidth
         for interface in eligible_interface_generator:
             # Add back the lsp's reserved bandwidth to Interfaces already in its path
             if interface in lsp_path_interfaces:
@@ -1377,9 +1297,9 @@ class Model(object):
                 eligible_interfaces.add(interface)
 
         # Get edge names in eligible_interfaces
-        edge_names = [(interface.node_object.name,
+        edge_names = ((interface.node_object.name,
                        interface.remote_node_object.name, interface.cost)
-                      for interface in eligible_interfaces]  # TODO - change to generator when done
+                      for interface in eligible_interfaces)
 
         # Add edges to networkx DiGraph
         G.add_weighted_edges_from(edge_names, weight='cost')
@@ -1422,7 +1342,6 @@ class Model(object):
             if len(interface_line.split()) == 5:
                 node_name, remote_node_name, name, cost, capacity = interface_line.split()
             else:
-                print(interface_line.split())
                 msg = ("node_name, remote_node_name, name, cost, and capacity "
                        "must be defined for line {}, line index {}".format(interface_line,
                                                                            lines.index(interface_line)))
@@ -1438,9 +1357,9 @@ class Model(object):
 
             # Derive Nodes from the Interface data
             if node_name not in set([node.name for node in node_set]):
-                node_set.add(Node(node_name))
+                node_set.add(new_interface.node_object)
             if remote_node_name not in set([node.name for node in node_set]):
-                node_set.add(Node(remote_node_name))
+                node_set.add(new_interface.remote_node_object)
 
         # Define the explicit nodes info from the file
         nodes_info_begin_index = int_info_end_index + 3
@@ -1517,7 +1436,12 @@ class Model(object):
                 dest = lsp_info[1]
                 dest_node = [node for node in node_set if node.name == dest][0]
                 name = lsp_info[2]
-                new_lsp = RSVP_LSP(source_node, dest_node, name)
+                try:
+                    configured_setup_bw = lsp_info[3]
+                except IndexError:
+                    configured_setup_bw = None
+                new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
+
                 if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
                     lsp_set.add(new_lsp)
                 else:

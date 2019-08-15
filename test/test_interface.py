@@ -24,8 +24,7 @@ class TestInterface(unittest.TestCase):
     def test_bad_int_cost(self):
         with self.assertRaises(ModelException) as context:
             (Interface('test_int', -5, 40, self.node_a, self.node_b, 50))
-
-            self.assertTrue('Interface cost cannot be less than 1' in context.exception)
+        self.assertTrue('Interface cost cannot be less than 1' in context.exception.args[0])
 
     def test_key(self):
         self.assertEqual(self.interface_a._key, ('inerfaceA-to-B', 'nodeA'))
@@ -47,20 +46,23 @@ class TestInterface(unittest.TestCase):
     def test_reservable_bandwidth(self):
         self.assertEqual(100, self.interface_a.reservable_bandwidth)
 
-    def test_int_fail(self):  # TODO - don't use load model file here
+    def test_int_fail(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
         int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = model.get_interface_object('B-to-A', 'B')
 
         self.assertFalse(int_a_b.failed)
 
-        model.fail_interface('B-to-A', 'B')
+        int_a_b.fail_interface(model)
         model.update_simulation()
 
+        self.assertEqual(int_a_b.get_remote_interface(model), int_b_a)
         self.assertTrue(int_a_b.failed)
+        self.assertTrue(int_b_a.failed)
 
-    def test_int_fail_2(self):   # TODO - don't use load model file here
+    def test_int_fail_2(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -75,3 +77,147 @@ class TestInterface(unittest.TestCase):
 
         self.assertTrue(int_a_b.failed)
         self.assertTrue(int_b_a.failed)
+
+    def test_demands_non_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertTrue(int_a_b.demands(model) != [])
+
+    def test_traffic_non_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertTrue(int_a_b.traffic, 20)
+
+    def test_demands_non_failed(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+
+        self.assertEqual(int_a_b.demands(model), [dmd_a_f_1])
+
+    def test_traffic_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertEqual(int_a_b.traffic, 'Down')
+
+    def test_dmd_failed_int(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        self.assertEqual(int_a_b.demands(model), [])
+
+    def test_bad_failed_status(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        with self.assertRaises(ModelException) as context:
+            int_a_b.failed = 'hi'
+
+        self.assertTrue('must be boolean value' in context.exception.args[0])
+
+    def test_failed_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        model.fail_node('A')
+        model.update_simulation()
+
+        self.assertTrue(int_a_b.failed)
+
+    def test_remote_int_failed(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_b_a = model.get_interface_object('B-to-A', 'B')
+
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        self.assertTrue(int_b_a.failed)
+
+    def test_unfail_int_failed_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        model.fail_node('A')
+        model.update_simulation()
+
+        err_msg = 'Local and/or remote node are failed; cannot have unfailed interface on failed node'
+
+        with self.assertRaises(ModelException) as context:
+            int_a_b.unfail_interface(model)
+
+        self.assertTrue(err_msg in context.exception.args[0])
+
+    # Test __ne__ method against Nodes with same names as nodes in the Model
+    def test_not_equal(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        address = int_a_b.address
+
+        node_a_prime = Node('A')
+        node_b_prime = Node('B')
+
+        int_a_b_prime = Interface('A-to-B', 20, 125, node_a_prime, node_b_prime, address)
+
+        self.assertFalse(int_a_b == int_a_b_prime)
+
+    def test_get_ckt(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        ckt1 = model.get_circuit_object_from_interface('A-to-B', 'A')
+        ckt2 = int_a_b.get_circuit_object(model)
+
+        self.assertEqual(ckt1, ckt2)
+
+    def test_utilization(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        util = (20/125)*100
+
+        self.assertEqual(int_a_b.utilization, util)
+
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+        self.assertEqual(int_a_b.utilization, 'Int is down')
+
+    def test_int_cost_not_integer(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        err_msg = 'Interface cost must be integer'
+
+        with self.assertRaises(ModelException) as context:
+            int_a_b.cost = 14.1
+        self.assertTrue(err_msg in context.exception.args[0])

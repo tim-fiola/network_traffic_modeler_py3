@@ -1,6 +1,7 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
 import random
+from .exceptions import ModelException
 
 
 class RSVP_LSP(object):
@@ -27,14 +28,15 @@ class RSVP_LSP(object):
     """
 
     def __init__(self, source_node_object, dest_node_object,
-                 lsp_name='none'):
+                 lsp_name='none', configured_setup_bandwidth=None):
 
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.lsp_name = lsp_name
         self.path = 'Unrouted - initial'
         self.reserved_bandwidth = 'Unrouted - initial'
-        self.setup_bandwidth = 'Unrouted - initial'  # TODO - getter/setter
+        self._setup_bandwidth = 'Unrouted - initial'
+        self.configured_setup_bandwidth = configured_setup_bandwidth
 
     @property
     def _key(self):
@@ -83,7 +85,6 @@ class RSVP_LSP(object):
 
             # baseline_path_reservable_bw is the max amount of traffic that the path
             # can handle without saturating a component interface
-
             baseline_path_reservable_bw = min(proto_reservable_bw.values())
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
@@ -92,6 +93,32 @@ class RSVP_LSP(object):
             candidate_path_info.append(path_info)
 
         return candidate_path_info
+
+    @property
+    def setup_bandwidth(self):
+        """
+        The bandwidth the LSP attempts to signal for.
+        :return: the bandwidth the LSP attempts to signal for
+        """
+
+        return self._setup_bandwidth
+
+    @setup_bandwidth.setter
+    def setup_bandwidth(self, proposed_setup_bw):
+        """
+        Puts guardrails on the setup bandwidth for the RSVP LSP
+        :param proposed_setup_bw: setup bandwidth value to be evaluated
+        :return:
+        """
+
+        # Check for configured_setup_bandwidth
+        if self.configured_setup_bandwidth:
+            self._setup_bandwidth = float(self.configured_setup_bandwidth)
+        elif proposed_setup_bw >= 0:
+            self._setup_bandwidth = float(proposed_setup_bw)
+        elif proposed_setup_bw < 0:
+            msg = "setup_bandwidth must be 0 or greater"
+            raise ModelException(msg)
 
     def find_rsvp_path_w_bw(self, requested_bandwidth, model):
         """
@@ -107,40 +134,25 @@ class RSVP_LSP(object):
         :return: self with the current or updated path info
         """
 
-        # Get candidate paths
-        # candidate_paths = model.get_feasible_paths(self.source_node_object.name,
-        #                                            self.dest_node_object.name)
-
+        # Get candidate paths; only include interfaces that have requested_bandwidth
+        # of reservable_bandwidth
         candidate_paths = model.get_shortest_path_for_routed_lsp(self.source_node_object.name,
                                                                  self.dest_node_object.name,
-                                                                 self, self.reserved_bandwidth)
+                                                                 self, requested_bandwidth)
 
         # Find the path cost and path headroom for each path candidate
         candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(candidate_paths)
 
-        # TODO - figure out how this is related to rsvp._add_rsvp_lsp_path
-        #  only building G with interfaces with the needed bandwidth; **ANSWER**: this is
-        #  the iteration where the LSP is signaled already and is looking to signal for
-        #  additional bandwidth.  This iteration needs to account for interfaces it is
-        #  already signaled across so it can add its existing reserved bandwidth back
-        #  to the interface's reservable_bandwidth before considering if that interface
-        #  has requested_bandwidth available.  This is a candidate for optimization because
-        #  we can do that add back before building G
-        # Filter out paths that don't have enough headroom
-        candidate_paths_with_enough_headroom = [path for path in candidate_path_info
-                                                if (path['baseline_path_reservable_bw']) >=
-                                                requested_bandwidth]
-
         # If there are no paths with enough headroom, return self
-        if len(candidate_paths_with_enough_headroom) == 0:
+        if len(candidate_path_info) == 0:
             return self
         # If there is only one path with enough headroom, make that self.path
-        elif len(candidate_paths_with_enough_headroom) == 1:
-            self.path = candidate_paths_with_enough_headroom[0]
+        elif len(candidate_path_info) == 1:
+            self.path = candidate_path_info[0]
         # If there is more than one path with enough headroom,
         # choose one at random and make that self.path
-        elif len(candidate_paths_with_enough_headroom) > 1:
-            self.path = random.choice(candidate_paths_with_enough_headroom)
+        elif len(candidate_path_info) > 1:
+            self.path = random.choice(candidate_path_info)
 
         self.reserved_bandwidth = requested_bandwidth
         self.setup_bandwidth = requested_bandwidth
@@ -164,50 +176,36 @@ class RSVP_LSP(object):
         # Route LSP
         #   Options:
         #   a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
-        #   b.  There are viable paths, but none with enough headroom - LSP will not be routed
-        #   c.  LSP can route with current setup_bandwidth
+        #   b.  LSP can route with current setup_bandwidth
 
         # Option a.  There are no viable paths on the topology to route LSP - LSP will be unrouted
-        if candidate_paths == []:
+        if candidate_paths['path'] == []:
             # If there are no possible paths, then LSP is Unrouted
             self.path = 'Unrouted'
             self.reserved_bandwidth = 'Unrouted'
             return self
 
+        self.path = {}
+
         # Find the path cost and path headroom for each path candidate
         candidate_path_info = self._find_path_cost_and_headroom(candidate_paths)
 
-        # TODO - is this necessary to filter out paths that don't have enough headroom
-        #  anymore since model.get_shortest path and model.get_feasible_paths
-        #  only return paths with enough bandwidth?!
-        # Filter out paths that don't have enough headroom
-        candidate_paths_with_enough_headroom = [path for path in candidate_path_info
-                                                if path['baseline_path_reservable_bw'] >=
-                                                self.setup_bandwidth]
-
-        # Option b. There are viable paths, but none that can
-        # accommodate the setup_bandwidth
-        if candidate_paths_with_enough_headroom == []:
-            self.path = 'Unrouted'
-            self.reserved_bandwidth = 'Unrouted'
-            return self
-
-        # Option c.  LSP can route with current setup_bandwidth
+        # Option b.  LSP can route with current setup_bandwidth
 
         # Find the lowest available path metric
         lowest_available_metric = min([path['path_cost'] for path in
-                                       candidate_paths_with_enough_headroom])
+                                       candidate_path_info])
 
-        # Finally, find all paths with the lowest cost and enough headroom
-        lowest_metric_paths = [path for path in candidate_paths_with_enough_headroom
+        # Finally, find all paths with the lowest path metric
+        lowest_metric_paths = [path for path in candidate_path_info
                                if path['path_cost'] == lowest_available_metric]
 
-        # If multiple best_paths, find those with fewest hops
+        # If multiple lowest_metric_paths, find those with fewest hops
         if len(lowest_metric_paths) > 1:
-            fewest_hops = min([len(path['interfaces']) for path in lowest_metric_paths])
-            lowest_hop_count_paths = [path for path in lowest_metric_paths if len(path['interfaces']) == fewest_hops]
+            fewest_hops = min([len(path['interfaces']) for path in candidate_path_info])
+            lowest_hop_count_paths = [path for path in candidate_path_info if len(path['interfaces']) == fewest_hops]
             if len(lowest_hop_count_paths) > 1:
-                new_path = random.choice(lowest_metric_paths)
+                new_path = random.choice(lowest_hop_count_paths)
             else:
                 new_path = lowest_hop_count_paths[0]
         else:
