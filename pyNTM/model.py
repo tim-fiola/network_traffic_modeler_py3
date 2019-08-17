@@ -106,11 +106,10 @@ class Model(object):
         int_res_bw_too_high = set([])
         int_res_bw_sum_error = set([])
 
-
         for interface in (interface for interface in self.interface_objects):
             if interface.reserved_bandwidth > interface.capacity:
                 int_res_bw_too_high.add(interface)
-            if (round(interface.reserved_bandwidth, 1) != int_info[interface._key]['reserved_bandwidth']):
+            if round(interface.reserved_bandwidth, 1) != int_info[interface._key]['reserved_bandwidth']:
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
         # If creation of circuits returns a dict, there are problems
