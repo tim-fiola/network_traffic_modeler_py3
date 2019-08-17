@@ -79,8 +79,9 @@ class Model(object):
         """
         Makes dict of information for each interface.  Most of this information
         is derived from the simulation.
-        :return: dict object.  Keys are the key for each interface; values are
-        dicts for each key that hold information about the interface.
+        Returns dict object.  Keys are the _key for each Interface; values are
+        dicts for each interface_ key that hold information about the Interface.
+        :return: int_info
         """
         keys = (interface._key for interface in self.interface_objects)
         int_info = {key: {'lsps': [], 'reserved_bandwidth': 0} for key in keys}
