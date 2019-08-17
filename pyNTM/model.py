@@ -366,10 +366,10 @@ class Model(object):
         """
 
         # Find parallel LSP groups
-        parallel_lsp_groups = self.parallel_lsp_groups()
+        parallel_lsp_groups = self.parallel_lsp_groups()  # TODO - can this be optimized?
 
         # Find all the parallel demand groups
-        parallel_demand_groups = self.parallel_demand_groups()
+        parallel_demand_groups = self.parallel_demand_groups()  # TODO - can this be optimized?
 
         # Find the amount of bandwidth each LSP in each parallel group will carry
         counter = 1
@@ -392,7 +392,7 @@ class Model(object):
                 pass
 
             # Now route each LSP in the group (first routing iteration)
-            for lsp in lsps:
+            for lsp in lsps:  # TODO - can this be optimized?
                 # Route each LSP one at a time
                 lsp.route_lsp(input_model, traff_on_each_group_lsp)
 
