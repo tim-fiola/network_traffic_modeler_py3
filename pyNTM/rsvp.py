@@ -192,16 +192,8 @@ class RSVP_LSP(object):
 
         # Option b.  LSP can route with current setup_bandwidth
 
-        # Find the lowest available path metric
-        lowest_available_metric = min([path['path_cost'] for path in
-                                       candidate_path_info])
-
-        # Finally, find all paths with the lowest path metric
-        lowest_metric_paths = [path for path in candidate_path_info
-                               if path['path_cost'] == lowest_available_metric]
-
         # If multiple lowest_metric_paths, find those with fewest hops
-        if len(lowest_metric_paths) > 1:
+        if len(candidate_path_info) > 1:
             fewest_hops = min([len(path['interfaces']) for path in candidate_path_info])
             lowest_hop_count_paths = [path for path in candidate_path_info if len(path['interfaces']) == fewest_hops]
             if len(lowest_hop_count_paths) > 1:
@@ -209,12 +201,12 @@ class RSVP_LSP(object):
             else:
                 new_path = lowest_hop_count_paths[0]
         else:
-            new_path = lowest_metric_paths[0]
+            new_path = candidate_path_info[0]
 
         self.path = new_path
 
-        # Since there is enough headroom, set LSP reserved_bandwidth
-        # to setup_bandwidth
+        # Since there is enough headroom, set LSP
+        # reserved_bandwidth to setup_bandwidth
         self.reserved_bandwidth = self.setup_bandwidth
 
         # Update the reserved_bandwidth on each interface on the new path
