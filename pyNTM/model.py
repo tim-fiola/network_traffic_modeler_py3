@@ -75,6 +75,21 @@ class Model(object):
             self.interface_objects.union(new_interface_objects)
         self.validate_model()
 
+    def _make_int_info_dict(self):
+        """
+        Makes dict of information for each interface.  Most of this information
+        is derived from the simulation.
+        :return: dict object.  Keys are the key for each interface; values are
+        dicts for each key that hold information about the interface.
+        """
+        keys = (interface._key for interface in self.interface_objects)
+        int_info = {key: {'lsps': [], 'reserved_bandwidth': 0} for key in keys}
+        for lsp in (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path):
+            for interface in lsp.path['interfaces']:
+                int_info[interface._key]['lsps'].append(lsp)
+                int_info[interface._key]['reserved_bandwidth'] += round(lsp.reserved_bandwidth, 1)
+        return int_info
+
     def validate_model(self):
         """
         Validates that data fed into the model creates a valid network model
@@ -83,16 +98,19 @@ class Model(object):
         # create circuits table, flags ints that are not part of a circuit
         circuits = self._make_circuits(return_exception=True)
 
+        # Make dict to hold interface data
+        int_info = self._make_int_info_dict()
+
         error_data = []  # list of all errored checks
 
         int_res_bw_too_high = set([])
         int_res_bw_sum_error = set([])
 
+
         for interface in (interface for interface in self.interface_objects):
             if interface.reserved_bandwidth > interface.capacity:
                 int_res_bw_too_high.add(interface)
-            if (round(interface.reserved_bandwidth, 1) !=
-                    round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)):
+            if (round(interface.reserved_bandwidth, 1) != int_info[interface._key]['reserved_bandwidth']):
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
         # If creation of circuits returns a dict, there are problems
