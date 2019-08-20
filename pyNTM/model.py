@@ -110,6 +110,7 @@ class Model(object):
         for interface in (interface for interface in self.interface_objects):
             if interface.reserved_bandwidth > interface.capacity:
                 int_res_bw_too_high.add(interface)
+
             if round(interface.reserved_bandwidth, 1) != int_info[interface._key]['reserved_bandwidth']:
                 int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
