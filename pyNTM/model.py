@@ -35,6 +35,8 @@ class Model(object):
 
         - RSVP LSP objects: RSVP LSPs
 
+        - Circuit objects are created by matching Interface objects
+
     """
 
     def __init__(self, interface_objects=set(), node_objects=set(),
