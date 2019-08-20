@@ -66,7 +66,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         return self._failed
 
     @failed.setter
-    def failed(self, status):
+    def failed(self, status):  # TODO - add check for SRLG
         """
         Puts logical guardrails on conditions of interface failure status
         :param status: boolean; input by user
@@ -215,3 +215,5 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             return 'Int is down'
         else:
             return (self.traffic / self.capacity)*100
+
+    # TODO - add srlg call to show what SRLGs interface's circuit is part of

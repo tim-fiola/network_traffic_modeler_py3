@@ -43,7 +43,7 @@ class Node(object):
         return self._failed
 
     @failed.setter
-    def failed(self, status):
+    def failed(self, status):  # TODO - add check for SRLG
         if isinstance(status, bool):
             self._failed = status
         else:
@@ -79,3 +79,5 @@ class Node(object):
             adjacent_nodes.add(adjacency.remote_node_object)
 
         return adjacent_nodes
+
+    # TODO - add srlg call to show what SRLGs Node is part of

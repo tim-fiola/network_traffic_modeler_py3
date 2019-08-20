@@ -1,6 +1,5 @@
 "A Class to represent Shared Risk Link Groups (SRLGs) in a Model"
 
-from .exceptions import ModelException
 
 class SRLG(object):
     """
@@ -36,4 +35,3 @@ class SRLG(object):
             interfaces.add(ints[1])
 
         return interfaces
-
