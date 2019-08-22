@@ -1,11 +1,11 @@
-"""A class to represent a router in the Model"""
+"""A class to represent a layer 3 device in the Model"""
 
 from .exceptions import ModelException
 
 
 class Node(object):
     """
-    A class to represent a router in the model
+    A class to represent a layer 3 device in the model
     """
 
     def __init__(self, name, lat=0, lon=0):
@@ -13,6 +13,7 @@ class Node(object):
         self._failed = False
         self.lat = lat
         self.lon = lon
+        self.srlgs = set()
 
         # Validate lat, lon values
         if (lat > 90 or lat < -90):
@@ -44,10 +45,19 @@ class Node(object):
 
     @failed.setter
     def failed(self, status):  # TODO - add check for SRLG
-        if isinstance(status, bool):
-            self._failed = status
-        else:
+        if not isinstance(status, bool):
             raise ModelException('must be boolean')
+
+        # If not failed (if True)
+        if status is False:
+            # Check for any SRLGs with self as a member and get status
+            # of each SRLG
+            failed_srlgs = [srlg for srlg in self.srlgs if srlg.failed == True]
+            if len(failed_srlgs) > 0:
+                self._failed = True
+
+            self._failed = status
+
 
     def interfaces(self, model):
         """
@@ -80,4 +90,14 @@ class Node(object):
 
         return adjacent_nodes
 
-    # TODO - add srlg call to show what SRLGs Node is part of
+    # def srlgs(self, model):
+    #     """
+    #     Returns list of SRLGs in the Model that the Node is a member of.
+    #     :param model: Model objevt
+    #     :return: List of SRLGs that Node is a member of
+    #     """
+    #
+    #     srlgs = [srlg for srlg in model.srlg_objects if self in srlg]
+    #
+    #     return srlgs
+

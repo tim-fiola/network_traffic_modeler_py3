@@ -14,6 +14,8 @@ from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
 
+# TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
+
 
 class Model(object):
     """A network model object consisting of the following base components:
@@ -44,8 +46,9 @@ class Model(object):
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
-        self.circuit_objects = set([])
+        self.circuit_objects = set()
         self.rsvp_lsp_objects = rsvp_lsp_objects
+        self.srlg_objects = set()
 
     def __repr__(self):
         return 'Model(Interfaces: %s, Nodes: %s, Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),

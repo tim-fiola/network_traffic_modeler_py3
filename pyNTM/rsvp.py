@@ -287,6 +287,7 @@ class RSVP_LSP(object):
         transits."""
         if 'Unrouted' in self.path:
             metric = 'Unrouted'
+
         else:
             metric = sum([interface.cost for interface in self.path['interfaces']])
 

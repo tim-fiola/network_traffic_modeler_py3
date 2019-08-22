@@ -1,4 +1,5 @@
-"A Class to represent Shared Risk Link Groups (SRLGs) in a Model"
+"""A Class to represent Shared Risk Link Groups (SRLGs) in a Model"""
+from .exceptions import ModelException
 
 
 class SRLG(object):
@@ -8,7 +9,9 @@ class SRLG(object):
     Nodes
     Circuits
 
-    The name
+    When self.failed = True, the members will go to a failed state as well.
+    When self.failed returns to False, the members will also return to
+    failed = False.
 
     """
 
@@ -16,6 +19,7 @@ class SRLG(object):
         self.circuit_objects = circuit_objects
         self.node_objects = node_objects
         self.name = name
+        self._failed = False
 
     def __repr__(self):
         return "SRLG(Name: {}, Circuits: {}, Nodes: {})".format(self.name,
@@ -35,3 +39,14 @@ class SRLG(object):
             interfaces.add(ints[1])
 
         return interfaces
+
+    @property
+    def failed(self):
+        return self._failed
+
+    @failed.setter
+    def failed(self, status):
+        if isinstance(status, bool):
+            self._failed = status
+        else:
+            raise ModelException('must be boolean')

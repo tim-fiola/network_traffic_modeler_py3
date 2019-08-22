@@ -75,7 +75,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         if not (isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
-        # if not Failed (if True)
+        # If not Failed (if True)
         if not status:
             # Check to see if both nodes are failed = False
             if self.node_object.failed is False and self.remote_node_object.failed is False:
