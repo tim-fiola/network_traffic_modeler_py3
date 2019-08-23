@@ -1,6 +1,7 @@
 """A class to represent a layer 3 device in the Model"""
 
 from .exceptions import ModelException
+from .srlg import SRLG
 
 
 class Node(object):
@@ -13,12 +14,11 @@ class Node(object):
         self._failed = False
         self.lat = lat
         self.lon = lon
-        self.srlgs = set()
 
         # Validate lat, lon values
-        if (lat > 90 or lat < -90):
+        if lat > 90 or lat < -90:
             raise ValueError('lat must be in range -90 to +90')
-        if (lon > 180 or lon < -180):
+        if lon > 180 or lon < -180:
             raise ValueError('lon must be in range -180 to +180')
 
     def __repr__(self):
@@ -44,20 +44,22 @@ class Node(object):
         return self._failed
 
     @failed.setter
-    def failed(self, status):  # TODO - add check for SRLG
+    def failed(self, status):
         if not isinstance(status, bool):
             raise ModelException('must be boolean')
 
-        # If not failed (if True)
-        if status is False:
+        if status is False:  # False means Node would not be failed
             # Check for any SRLGs with self as a member and get status
             # of each SRLG
-            failed_srlgs = [srlg for srlg in self.srlgs if srlg.failed == True]
+            failed_srlgs = [srlg for srlg in self.srlgs if srlg.failed is True]
             if len(failed_srlgs) > 0:
                 self._failed = True
+                raise ModelException("Node must be failed since it is a member of an SRLG that is failed")
+            else:
+                self._failed = False
 
-            self._failed = status
-
+        else:
+            self._failed = True
 
     def interfaces(self, model):
         """
@@ -90,14 +92,44 @@ class Node(object):
 
         return adjacent_nodes
 
-    # def srlgs(self, model):
-    #     """
-    #     Returns list of SRLGs in the Model that the Node is a member of.
-    #     :param model: Model objevt
-    #     :return: List of SRLGs that Node is a member of
-    #     """
-    #
-    #     srlgs = [srlg for srlg in model.srlg_objects if self in srlg]
-    #
-    #     return srlgs
+    def add_to_srlg(self, srlg_name, model, create_if_not_present=False):
+        """
+        Adds self to an SRLG with name=srlg_name in model.
+        :param srlg_name: name of srlg
+        :param model: Model object
+        :param create_if_not_present: Boolean.  Create the SRLG if it
+        does not exist in model already.  True will create SRLG in
+        model; False will raise ModelException
+        :return: None
+        """
 
+        # See if model has existing SRLG with name='srlg_name'
+        try:
+            get_srlg = model.get_srlg_object(srlg_name)
+        except ModelException:
+            get_srlg = False
+
+        if get_srlg is False:
+            # SRLG does not exist
+            if create_if_not_present is True:
+                new_srlg = SRLG(srlg_name)
+                new_srlg.node_objects.add(self)
+                model.srlg_objects.add(new_srlg)
+            else:
+                msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+                raise ModelException(msg)
+        else:
+            # SRLG does exist in model; add self to that SRLG
+            get_srlg.node_objects.add(self)
+
+    def get_srlgs_with_self(self, model):
+        """
+        Gets SRLG objects from model which have self as a member
+        :param model: Model object
+        :return: List of SRLGs from model with self as a member
+        """
+
+        # Check model's SRLGs for self in Node members
+        srlgs_with_self = [srlg for srlg in model.srlg_objects if self in srlg.node_objects]
+
+        return srlgs_with_self

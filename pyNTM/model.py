@@ -1496,3 +1496,39 @@ class Model(object):
                 demand_list.append(demand)
 
         return demand_list
+
+    def get_srlg_object(self, srlg_name, raise_exception=True):
+        """
+        Returns SRLG in self with srlg_name
+        :param srlg_name:
+        :return:
+        """
+
+        srlg_already_in_model = [srlg for srlg in self.srlg_objects if srlg.name == srlg_name]
+
+        if len(srlg_already_in_model) == 1:
+            return srlg_already_in_model[0]
+        else:
+            if raise_exception:
+                msg = "No SRLG with name {} exists in Model".format(srlg_name)
+                raise ModelException(msg)
+            else:
+                return None
+
+    def fail_srlg(self, srlg_name):
+        """
+        Fails SRLG with name srlg_name
+        :param srlg_name:
+        :return:
+        """
+
+        srlg_to_fail = self.get_srlg_object(srlg_name)
+
+        # Find SRLG's Nodes
+        nodes_to_fail_iterator = (node for node in self.node_objects if node in srlg_to_fail.node_objects)
+
+        for node in nodes_to_fail_iterator:
+            self.fail_node(node.name)
+
+        # Change the failed property on the specified srlg
+        srlg_to_fail.failed = True

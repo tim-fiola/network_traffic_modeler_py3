@@ -75,7 +75,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         if not (isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
-        # If not Failed (if True)
+        # If not False (if True)
         if not status:
             # Check to see if both nodes are failed = False
             if self.node_object.failed is False and self.remote_node_object.failed is False:
@@ -139,7 +139,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             self.failed = False
             remote_interface.failed = False
         else:
-            message = ("Local and/or remote node are failed; cannot have unfailed interface on failed node")
+            message = "Local and/or remote node are failed; cannot have unfailed interface on failed node"
             raise ModelException(message)
 
     def get_remote_interface(self, model):
@@ -150,10 +150,13 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
                 remote_interface = interface
                 break
 
-        # sanity check
+        # Sanity check
         if remote_interface.remote_node_object.interfaces(model) == self.node_object.interfaces(model):
             return remote_interface
         else:
+            print("Interface validation debug info follows:")
+            print(remote_interface.remote_node_object.interfaces(model))
+            print(self.node_object.interfaces(model))
             message = 'Internal Validation Error {} and {} fail validation checks'.format(remote_interface, self)
             raise ModelException(message)
 
