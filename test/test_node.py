@@ -153,7 +153,25 @@ class TestNode(unittest.TestCase):
         node_a.failed = False
         self.assertFalse(node_a.failed)
 
-    # TODO - test node unfail when node is in SRLG that is not failed
-    # TODO - test node unfail when node is in SRLG that is failed
-    # TODO - test node.failed when node is in SRLG that is failed
-    # TODO - test node uniqueness (node in model.srlg_objects.node_objects)
+    # Test that a node added to an SRLG is unique within Model's SRLG
+    # node_objects
+    def test_node_uniqueness_in_model_srlg(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+        model.update_simulation()
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+
+        self.assertTrue(node_a in new_srlg.node_objects)
+
+    # Test that a node added to an SRLG updates its srlgs' SRLG objects
+    def test_srlg_uniqueness_in_node_srlgs(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+        model.update_simulation()
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+
+        self.assertTrue(new_srlg in node_a.srlgs)

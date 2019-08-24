@@ -16,6 +16,7 @@ from .rsvp import RSVP_LSP
 from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
+# TODO - add model argument to node, interface, srlg instantiation
 
 
 class Model(object):
@@ -1534,6 +1535,8 @@ class Model(object):
 
         # Change the failed property on the specified srlg
         srlg_to_fail.failed = True
+
+    # TODO - add unfail_srlg
 
     def add_srlg(self, srlg_name):
         """

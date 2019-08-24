@@ -43,6 +43,11 @@ class Node(object):
 
     @property
     def failed(self):
+        """
+        Is node failed?  Boolean.  It is NOT recommended to directly
+        modify this property.  Rather, use Node.fail or Node.unfail.
+        :return: Boolean - is node failed?
+        """
         return self._failed
 
     @failed.setter
@@ -140,3 +145,5 @@ class Node(object):
         srlgs_with_self = [srlg for srlg in model.srlg_objects if self in srlg.node_objects]
 
         return srlgs_with_self
+
+    # TODO add node.fail and node.unfail

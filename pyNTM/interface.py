@@ -60,8 +60,9 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
     @property
     def failed(self):
         """
-        Is Interface failed
-        :return: True|False
+        Is interface failed?  Boolean.  It is NOT recommended to directly
+        modify this property.  Rather, use Interface.fail or Interface.unfail.
+        :return: Boolean - is Interface failed?
         """
         return self._failed
 

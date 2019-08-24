@@ -50,3 +50,5 @@ class SRLG(object):
             self._failed = status
         else:
             raise ModelException('must be boolean')
+
+    # TODO - add srlg.fail and srlg.unfail
