@@ -117,6 +117,42 @@ class TestNode(unittest.TestCase):
 
         self.assertTrue(node_a.failed)
 
+    # Test that a Node in a failed SRLG will stay failed
+    def test_node_in_failed_srlg_stays_failed(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+        model.update_simulation()
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+
+        model.fail_srlg('new_srlg')
+        model.update_simulation()
+        self.assertTrue(new_srlg.failed)
+        self.assertTrue(node_a.failed)
+
+        err_msg = 'Node must be failed since it is a member of an SRLG that is failed'
+        with self.assertRaises(ModelException) as context:
+            node_a.failed = False
+        self.assertTrue(err_msg in context.exception.args[0])
+
+    # Test that a Node in a non-failed SRLG can be unfailed
+    def test_node_in_unfailed_srlg(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+        model.update_simulation()
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+        node_a.failed = True
+        model.update_simulation()
+        self.assertFalse(new_srlg.failed)
+        self.assertTrue(node_a.failed)
+
+        # Now unfail node_a
+        node_a.failed = False
+        self.assertFalse(node_a.failed)
+
     # TODO - test node unfail when node is in SRLG that is not failed
     # TODO - test node unfail when node is in SRLG that is failed
     # TODO - test node.failed when node is in SRLG that is failed

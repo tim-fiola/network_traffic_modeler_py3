@@ -14,6 +14,7 @@ class Node(object):
         self._failed = False
         self.lat = lat
         self.lon = lon
+        self.srlgs = set()
 
         # Validate lat, lon values
         if lat > 90 or lat < -90:
@@ -34,7 +35,8 @@ class Node(object):
         return self.__dict__ == other_node.__dict__
 
     def __hash__(self):
-        return hash(tuple(sorted(self.__dict__.items())))
+        # return hash(tuple(sorted(self.__dict__.items())))
+        return hash(self.name)
 
     def _key(self):
         return self.name
@@ -104,6 +106,9 @@ class Node(object):
         """
 
         # See if model has existing SRLG with name='srlg_name'
+        # get_srlg will be the SRLG object with name=srlg_name in model
+        # or it will be False if the SRLG with name=srlg_name does not
+        # exist in model
         try:
             get_srlg = model.get_srlg_object(srlg_name)
         except ModelException:
@@ -115,12 +120,14 @@ class Node(object):
                 new_srlg = SRLG(srlg_name)
                 new_srlg.node_objects.add(self)
                 model.srlg_objects.add(new_srlg)
+                self.srlgs.add(new_srlg)
             else:
                 msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
                 raise ModelException(msg)
         else:
             # SRLG does exist in model; add self to that SRLG
             get_srlg.node_objects.add(self)
+            self.srlgs.add(get_srlg)
 
     def get_srlgs_with_self(self, model):
         """

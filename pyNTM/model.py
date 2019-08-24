@@ -13,6 +13,7 @@ from .exceptions import ModelException
 from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
+from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 
@@ -1497,6 +1498,7 @@ class Model(object):
 
         return demand_list
 
+    # ### SRLG Calls ### #
     def get_srlg_object(self, srlg_name, raise_exception=True):
         """
         Returns SRLG in self with srlg_name
@@ -1532,3 +1534,14 @@ class Model(object):
 
         # Change the failed property on the specified srlg
         srlg_to_fail.failed = True
+
+    def add_srlg(self, srlg_name):
+        """
+        Adds SRLG object to Model
+        :param srlg_name: name of SRLG
+        :return:
+        """
+
+        srlg = SRLG(srlg_name)
+
+        self.srlg_objects.add(srlg)
