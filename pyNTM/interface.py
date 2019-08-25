@@ -156,7 +156,9 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             print("Interface validation debug info follows:")
             print(remote_interface.remote_node_object.interfaces(model))
             print(self.node_object.interfaces(model))
-            message = 'Internal Validation Error {} and {} fail validation checks'.format(remote_interface, self)
+            message = ('Internal Validation Error {} and {} fail validation checks; did you '
+                       'forget to run update_simulation() on the model after making a change or '
+                       'loading a model file?'.format(remote_interface, self))
             raise ModelException(message)
 
     def get_circuit_object(self, model):

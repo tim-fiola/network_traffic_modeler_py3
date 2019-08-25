@@ -282,11 +282,23 @@ class TestInterface(unittest.TestCase):
         model = Model.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         int_a_b = model.get_interface_object('A-to-B', 'A')
-        dmd_a_d_2 = model.get_demand_object('A', 'D', 'dmd_a_d_2')
-        dmd_a_d_1 = model.get_demand_object('A', 'D', 'dmd_a_d_1')
-        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+        dmd_a_d_2 = model.get_demand_object('A', 'D', 'dmd_a_d_2')  # Rides an LSP
+        dmd_a_d_1 = model.get_demand_object('A', 'D', 'dmd_a_d_1')  # Rides an LSP
+        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')  # IGP routed
 
         self.assertEqual(len(int_a_b.demands(model)), 3)
         self.assertTrue(dmd_a_d_1 in int_a_b.demands(model))
         self.assertTrue(dmd_a_d_2 in int_a_b.demands(model))
         self.assertTrue(dmd_a_f_1 in int_a_b.demands(model))
+
+    def test_thing(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        err_msg = ('fail validation checks; did you forget to run update_simulation() on the model '
+                   'after making a change or loading a model file?')
+        # Not running update_simulation on model after loading a
+        # model file will trigger Exception
+        with self.assertRaises(ModelException) as context:
+            int_a_b.get_remote_interface(model)
+        self.assertTrue(err_msg in context.exception.args[0])
