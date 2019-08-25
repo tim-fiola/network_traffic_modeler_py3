@@ -18,9 +18,13 @@ class SRLG(object):
     def __init__(self, name, model, circuit_objects=set(), node_objects=set()):
         # self.circuit_objects = circuit_objects
         # self.node_objects = node_objects
-        self.name = name
-        self.model = model
-        self._failed = False
+        if name in set([srlg.name for srlg in model.srlg_objects]):
+            raise ModelException("SRLG with name {} already exists in Model".format(name))
+        else:
+            self.name = name
+            self.model = model
+            self._failed = False
+            model.srlg_objects.add(self)
 
     def __repr__(self):
         return "SRLG(Name: {})".format(self.name)

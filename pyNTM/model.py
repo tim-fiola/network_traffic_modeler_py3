@@ -1563,6 +1563,8 @@ class Model(object):
         :return:
         """
 
-        srlg = SRLG(srlg_name, self)
-
-        self.srlg_objects.add(srlg)
+        if srlg_name in set([srlg.name for srlg in self.srlg_objects]):
+            raise ModelException("SRLG with name {} already exists in Model".format(srlg_name))
+        else:
+            srlg = SRLG(srlg_name, self)
+            self.srlg_objects.add(srlg)

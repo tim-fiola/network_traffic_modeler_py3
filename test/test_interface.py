@@ -241,3 +241,5 @@ class TestInterface(unittest.TestCase):
         ckt_1 = model.get_circuit_object_from_interface('A-to-B', 'A')
 
         self.assertFalse(ckt_1.failed(model))
+
+    # TODO - test interface equality
