@@ -290,15 +290,3 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(dmd_a_d_1 in int_a_b.demands(model))
         self.assertTrue(dmd_a_d_2 in int_a_b.demands(model))
         self.assertTrue(dmd_a_f_1 in int_a_b.demands(model))
-
-    def test_thing(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
-        int_a_b = model.get_interface_object('A-to-B', 'A')
-
-        err_msg = ('fail validation checks; did you forget to run update_simulation() on the model '
-                   'after making a change or loading a model file?')
-        # Not running update_simulation on model after loading a
-        # model file will trigger Exception
-        with self.assertRaises(ModelException) as context:
-            int_a_b.get_remote_interface(model)
-        self.assertTrue(err_msg in context.exception.args[0])

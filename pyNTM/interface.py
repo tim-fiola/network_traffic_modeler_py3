@@ -152,7 +152,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         # Sanity check
         if remote_interface.remote_node_object.interfaces(model) == self.node_object.interfaces(model):
             return remote_interface
-        else:
+        else:  # pragma: no cover
             print("Interface validation debug info follows:")
             print(remote_interface.remote_node_object.interfaces(model))
             print(self.node_object.interfaces(model))
