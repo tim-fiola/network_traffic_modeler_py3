@@ -6,7 +6,7 @@ from pyNTM import ModelException
 
 class TestSRLG(unittest.TestCase):
 
-    def test_failed(self):
+    def test_failed_boolen(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()

@@ -122,8 +122,8 @@ class Node(object):
         if get_srlg is False:
             # SRLG does not exist
             if create_if_not_present is True:
-                new_srlg = SRLG(srlg_name)
-                new_srlg.node_objects.add(self)
+                new_srlg = SRLG(srlg_name, model)
+                # new_srlg.node_objects.add(self)
                 model.srlg_objects.add(new_srlg)
                 self.srlgs.add(new_srlg)
             else:

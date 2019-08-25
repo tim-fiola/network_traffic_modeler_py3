@@ -86,8 +86,8 @@ class TestNode(unittest.TestCase):
 
         node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
 
-        self.assertEqual(model.get_srlg_object('new_srlg').__repr__(), "SRLG(Name: new_srlg, Circuits: 0, Nodes: 1)")
         self.assertTrue(node_a in model.get_srlg_object('new_srlg').node_objects)
+        # TODO - test length of SRLG to ensure no duplicate nodes
 
     # Test get_srlgs_with_self call
     def test_srlgs_with_self(self):
@@ -98,6 +98,7 @@ class TestNode(unittest.TestCase):
         new_srlg = model.get_srlg_object('new_srlg')
 
         self.assertEqual(node_a.get_srlgs_with_self(model), [new_srlg])
+        self.assertEqual(len(new_srlg.node_objects), 1)
 
     # Test that a failed srlg brings a member node to failed = True
     def test_node_in_failed_srlg(self):

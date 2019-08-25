@@ -17,6 +17,8 @@ from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add model argument to node, interface, srlg instantiation
+# TODO - add step in validate model to check that SRLGs in model having specific
+#  nodes to ensure the nodes have the SRLG in their srlgs set
 
 
 class Model(object):
@@ -161,6 +163,22 @@ class Model(object):
                 circuits_with_mismatched_interface_capacity
             }
             error_data.append(int_status_error_dict)
+
+        # Validate Nodes in each SRLG have the SRLG in their srlgs set
+        # Dict of node names as keys and a list of SRLGs that node is in in the model
+        # but that the SRLG is not in node.srlgs
+        srlg_errors = {}
+
+        for srlg in self.srlg_objects:
+            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
+            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
+                try:
+                    srlg_errors[node.name].append(srlg.name)
+                except KeyError:
+                    srlg_errors[node.name] = []
+
+        if len(srlg_errors) > 0:
+            error_data.append(srlg_errors)
 
         # Verify no duplicate nodes
         node_names = set([node.name for node in self.node_objects])
@@ -1545,6 +1563,6 @@ class Model(object):
         :return:
         """
 
-        srlg = SRLG(srlg_name)
+        srlg = SRLG(srlg_name, self)
 
         self.srlg_objects.add(srlg)
