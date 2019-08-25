@@ -242,4 +242,51 @@ class TestInterface(unittest.TestCase):
 
         self.assertFalse(ckt_1.failed(model))
 
-    # TODO - test interface equality
+    def test_equality(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        ckt_1 = model.get_circuit_object_from_interface('A-to-B', 'A')
+        int_a, int_b = ckt_1.get_circuit_interfaces(model)
+
+        self.assertNotEqual(int_a, int_b)
+
+    def test_reserved_bw_failed(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+
+        model.fail_node('A')
+        model.update_simulation()
+
+        int_a_b.failed = False
+        self.assertTrue(int_a_b.failed)
+        self.assertEqual(int_a_b.reserved_bandwidth, 0)
+
+    def test_unfail_interface(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = model.get_interface_object('B-to-A', 'B')
+
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        self.assertTrue(int_b_a.failed)
+        self.assertTrue(int_a_b.failed)
+
+        int_a_b.unfail_interface(model)
+        model.update_simulation()
+        self.assertFalse(int_a_b.failed)
+
+    def test_demands_on_interface_via_lsps(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        dmd_a_d_2 = model.get_demand_object('A', 'D', 'dmd_a_d_2')
+        dmd_a_d_1 = model.get_demand_object('A', 'D', 'dmd_a_d_1')
+        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+
+        self.assertEqual(len(int_a_b.demands(model)), 3)
+        self.assertTrue(dmd_a_d_1 in int_a_b.demands(model))
+        self.assertTrue(dmd_a_d_2 in int_a_b.demands(model))
+        self.assertTrue(dmd_a_f_1 in int_a_b.demands(model))

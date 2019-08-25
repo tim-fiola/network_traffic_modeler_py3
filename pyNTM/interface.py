@@ -133,10 +133,8 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         remote_interface = Interface.get_remote_interface(self, model)
 
         # check to see if the local and remote node are failed
-        if self.node_object.failed is False and \
-                self.remote_node_object.failed is False:
-
-            # set the 2 interfaces to failed = False
+        if self.node_object.failed is False and self.remote_node_object.failed is False:
+            # Set the 2 interfaces to failed = False
             self.failed = False
             remote_interface.failed = False
         else:
@@ -171,7 +169,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
     def demands(self, model):
         """Returns list of demands that egress the interface"""
         dmd_set = set()
-        demands = (demand for demand in model.demand_objects)
+        demands = (demand for demand in model.demand_objects)  # TODO - add path != 'Unrouted' to this to remove 'if'
         for demand in demands:
 
             # Counter for total number of paths for each demand
