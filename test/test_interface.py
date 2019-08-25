@@ -221,3 +221,23 @@ class TestInterface(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             int_a_b.cost = 14.1
         self.assertTrue(err_msg in context.exception.args[0])
+
+    # Test failed interface makes circuit.failed=True
+    def test_ckt_failure(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        ckt_1 = model.get_circuit_object_from_interface('A-to-B', 'A')
+
+        self.assertTrue(ckt_1.failed(model))
+
+    def test_ckt_non_failure(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        ckt_1 = model.get_circuit_object_from_interface('A-to-B', 'A')
+
+        self.assertFalse(ckt_1.failed(model))

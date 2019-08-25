@@ -167,18 +167,18 @@ class Model(object):
         # Validate Nodes in each SRLG have the SRLG in their srlgs set
         # Dict of node names as keys and a list of SRLGs that node is in in the model
         # but that the SRLG is not in node.srlgs
-        srlg_errors = {}
-
-        for srlg in self.srlg_objects:
-            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
-            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
-                try:
-                    srlg_errors[node.name].append(srlg.name)
-                except KeyError:
-                    srlg_errors[node.name] = []
-
-        if len(srlg_errors) > 0:
-            error_data.append(srlg_errors)
+        # srlg_errors = {}
+        #
+        # for srlg in self.srlg_objects:
+        #     nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
+        #     for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
+        #         try:
+        #             srlg_errors[node.name].append(srlg.name)
+        #         except KeyError:
+        #             srlg_errors[node.name] = []
+        #
+        # if len(srlg_errors) > 0:
+        #     error_data.append(srlg_errors)
 
         # Verify no duplicate nodes
         node_names = set([node.name for node in self.node_objects])
