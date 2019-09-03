@@ -290,3 +290,63 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(dmd_a_d_1 in int_a_b.demands(model))
         self.assertTrue(dmd_a_d_2 in int_a_b.demands(model))
         self.assertTrue(dmd_a_f_1 in int_a_b.demands(model))
+
+    # Test adding interface to SRLG
+    def test_add_interface_to_srlg(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = int_a_b.get_remote_interface(model)
+
+        model.add_srlg('new_srlg')
+        model.update_simulation()
+
+        int_a_b.add_to_srlg('new_srlg', model)
+        model.update_simulation()
+
+        srlg = model.get_srlg_object('new_srlg')
+
+        self.assertIn(int_a_b, srlg.interface_objects)
+        self.assertIn(int_b_a, srlg.interface_objects)
+        self.assertIn(srlg, int_a_b.srlgs)
+        self.assertIn(srlg, int_b_a.srlgs)
+
+    # Test removing interface from SRLG
+    def test_remove_interface_from_srlg(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = int_a_b.get_remote_interface(model)
+
+        model.add_srlg('new_srlg')
+        model.update_simulation()
+
+        int_a_b.add_to_srlg('new_srlg', model)
+        model.update_simulation()
+
+        srlg = model.get_srlg_object('new_srlg')
+
+        self.assertIn(int_a_b, srlg.interface_objects)
+        self.assertIn(int_b_a, srlg.interface_objects)
+        self.assertIn(srlg, int_a_b.srlgs)
+        self.assertIn(srlg, int_b_a.srlgs)
+
+        int_b_a.remove_from_srlg('new_srlg', model)
+        model.update_simulation()
+
+        self.assertNotIn(int_a_b, srlg.interface_objects)
+        self.assertNotIn(int_b_a, srlg.interface_objects)
+        self.assertNotIn(srlg, int_a_b.srlgs)
+        self.assertNotIn(srlg, int_b_a.srlgs)
+
+    # Test removing interface from SRLG that does not exist throws error
+    def test_remove_interface_from_bad_srlg(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = int_a_b.get_remote_interface(model)
+
+        err_msg = "An SRLG with name bad_srlg does not exist in the Model"
+        with self.assertRaises(ModelException) as context:
+            int_b_a.remove_from_srlg('bad_srlg', model)
+        self.assertTrue(err_msg in context.exception.args[0])

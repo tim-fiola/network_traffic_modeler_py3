@@ -59,4 +59,9 @@ class SRLG(object):
         nodes = set([node for node in self.model.node_objects if self in node.srlgs])
         return nodes
 
+    @property
+    def interface_objects(self):
+        interfaces = set([interface for interface in self.model.interface_objects if self in interface.srlgs])
+        return interfaces
+
     # TODO - add srlg.fail and srlg.unfail
