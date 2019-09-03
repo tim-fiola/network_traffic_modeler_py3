@@ -284,7 +284,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
 
     def remove_from_srlg(self, srlg_name, model):
         """
-        Removes self from SRLG with srlg_name in model
+        Removes self and remote interface object from SRLG with srlg_name in model.
         :param srlg_name: name of SRLG
         :param model: Model object
         :return: none

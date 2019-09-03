@@ -157,7 +157,6 @@ class Node(object):
             get_srlg.node_objects.remove(self)
             self._srlgs.remove(get_srlg)
 
-
     @property
     def srlgs(self):
         return self._srlgs

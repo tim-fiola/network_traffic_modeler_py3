@@ -176,3 +176,29 @@ class TestNode(unittest.TestCase):
         new_srlg = model.get_srlg_object('new_srlg')
 
         self.assertTrue(new_srlg in node_a.srlgs)
+
+    # Test that a node can be removed from an SRLG
+    def test_remove_node_from_srlg(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+
+        self.assertTrue(node_a in model.get_srlg_object('new_srlg').node_objects)
+
+        node_a.remove_from_srlg('new_srlg', model)
+
+        model.update_simulation()
+
+        self.assertNotIn(node_a, model.get_srlg_object('new_srlg').node_objects)
+
+    # Test that removing a node from an srlg that does not exist throws error
+    def test_remove_node_bad_srlg(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+
+        err_msg = 'An SRLG with name bad_srlg does not exist in the Model'
+
+        with self.assertRaises(ModelException) as context:
+            node_a.remove_from_srlg('bad_srlg', model)
+        self.assertTrue(err_msg in context.exception.args[0])
