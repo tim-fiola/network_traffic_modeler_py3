@@ -2,6 +2,7 @@
 
 from .exceptions import ModelException
 from .rsvp import RSVP_LSP
+from .srlg import SRLG
 
 
 class Interface(object):
@@ -17,6 +18,7 @@ class Interface(object):
         self.traffic = 0.0
         self._failed = False
         self.reserved_bandwidth = 0
+        self._srlgs = set()
 
     @property
     def _key(self):
@@ -40,7 +42,8 @@ class Interface(object):
                                                  other_object.capacity, other_object.address]
 
     def __hash__(self):
-        return hash(tuple(sorted(self.__dict__.items())))
+        # return hash(tuple(sorted(self.__dict__.items())))
+        return hash(self.name+self.node_object.name)
 
     def __repr__(self):
         return '%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
@@ -76,8 +79,19 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         if not (isinstance(status, bool)):
             raise ModelException('must be boolean value')
 
+        # Check for membership in any failed SRLGs
+
         # If not False (if True)
         if not status:
+            # Check for membership in any failed SRLGs
+            failed_srlgs = set([srlg for srlg in self.srlgs if srlg.failed is True])
+
+            if len(failed_srlgs) > 0:
+                self._failed = True
+                self.reserved_bandwidth = 0
+                raise ModelException("Interface must be failed since it is a member "
+                                     "of one or more SRLGs that are failed")
+
             # Check to see if both nodes are failed = False
             if self.node_object.failed is False and self.remote_node_object.failed is False:
                 self._failed = False
@@ -220,4 +234,79 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         else:
             return (self.traffic / self.capacity)*100
 
-    # TODO - add srlg call to show what SRLGs interface's circuit is part of
+    @property
+    def srlgs(self):
+        return self._srlgs
+
+    def add_to_srlg(self, srlg_name, model, create_if_not_present=False):
+        """
+        Adds self to an SRLG with name=srlg_name in model.  Also finds the
+        remote Interface object and adds that to the SRLG.
+        :param srlg_name: name of srlg
+        :param model: Model object
+        :param create_if_not_present: Boolean.  Create the SRLG if it
+        does not exist in model already.  True will create SRLG in
+        model; False will raise ModelException
+        :return: None
+        """
+
+        # See if model has existing SRLG with name='srlg_name'
+        # get_srlg will be the SRLG object with name=srlg_name in model
+        # or it will be False if the SRLG with name=srlg_name does not
+        # exist in model
+        try:
+            get_srlg = model.get_srlg_object(srlg_name)
+        except ModelException:
+            get_srlg = False
+
+        if get_srlg is False:
+            # SRLG does not exist
+            if create_if_not_present is True:
+                new_srlg = SRLG(srlg_name, model)
+                model.srlg_objects.add(new_srlg)
+                self._srlgs.add(new_srlg)
+
+                # Add remote interface
+                remote_int = self.get_remote_interface(model)
+                remote_int._srlgs.add(new_srlg)
+            else:
+                msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+                raise ModelException(msg)
+        else:
+            # SRLG does exist in model; add self to that SRLG
+            get_srlg.interface_objects.add(self)
+            self._srlgs.add(get_srlg)
+
+            # Add remote interface
+            remote_int = self.get_remote_interface(model)
+            get_srlg.interface_objects.add(remote_int)
+            remote_int._srlgs.add(get_srlg)
+
+    def remove_from_srlg(self, srlg_name, model):
+        """
+        Removes self from SRLG with srlg_name in model
+        :param srlg_name: name of SRLG
+        :param model: Model object
+        :return: none
+        """
+        # See if model has existing SRLG with name='srlg_name'
+        # get_srlg will be the SRLG object with name=srlg_name in model
+        # or it will be False if the SRLG with name=srlg_name does not
+        # exist in model
+        try:
+            get_srlg = model.get_srlg_object(srlg_name)
+        except ModelException:
+            get_srlg = False
+
+        if get_srlg is False:
+            msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+            raise ModelException(msg)
+        else:
+            # Remove self from SRLG
+            get_srlg.interface_objects.remove(self)
+            self._srlgs.remove(get_srlg)
+
+            # Remove remote interface from SRLG
+            remote_int = self.get_remote_interface(model)
+            get_srlg.interface_objects.remove(remote_int)
+            return remote_int._srlgs.remove(self)

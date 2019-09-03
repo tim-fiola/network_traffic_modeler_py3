@@ -16,15 +16,15 @@ from .rsvp import RSVP_LSP
 from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
-# TODO - add model argument to node, interface, srlg instantiation
-# TODO - add step in validate model to check that SRLGs in model having specific
-#  nodes to ensure the nodes have the SRLG in their srlgs set
+# TODO - add show_debug flag to update_simulation to see info like lsp routing status
+# TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
+#  routed lsp/demands in dict form
 
 
 class Model(object):
     """A network model object consisting of the following base components:
 
-        - Interface objects: network node interfaces.  Interfaces have a
+        - Interface objects: layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
           interface addresses
@@ -39,7 +39,7 @@ class Model(object):
           is carrying.  The demand's magnitude will apply against each
           interface's available capacity
 
-        - RSVP LSP objects: RSVP LSPs
+        - RSVP LSP objects: RSVP LSPs in the Model
 
         - Circuit objects are created by matching Interface objects
 
@@ -164,21 +164,21 @@ class Model(object):
             }
             error_data.append(int_status_error_dict)
 
-        # Validate Nodes in each SRLG have the SRLG in their srlgs set
-        # Dict of node names as keys and a list of SRLGs that node is in in the model
-        # but that the SRLG is not in node.srlgs
-        # srlg_errors = {}
-        #
-        # for srlg in self.srlg_objects:
-        #     nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
-        #     for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
-        #         try:
-        #             srlg_errors[node.name].append(srlg.name)
-        #         except KeyError:
-        #             srlg_errors[node.name] = []
-        #
-        # if len(srlg_errors) > 0:
-        #     error_data.append(srlg_errors)
+        # Validate Nodes in each SRLG have the SRLG in their srlgs set.
+        # srlg_errors is a dict of node names as keys and a list of SRLGs that node is
+        # a member of in the model but that the SRLG is not in node.srlgs
+        srlg_errors = {}
+
+        for srlg in self.srlg_objects:
+            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
+            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
+                try:
+                    srlg_errors[node.name].append(srlg.name)
+                except KeyError:
+                    srlg_errors[node.name] = []
+
+        if len(srlg_errors) > 0:
+            error_data.append(srlg_errors)
 
         # Verify no duplicate nodes
         node_names = set([node.name for node in self.node_objects])

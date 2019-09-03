@@ -14,7 +14,7 @@ class Node(object):
         self._failed = False
         self.lat = lat
         self.lon = lon
-        self.srlgs = set()
+        self._srlgs = set()
 
         # Validate lat, lon values
         if lat > 90 or lat < -90:
@@ -61,7 +61,7 @@ class Node(object):
             failed_srlgs = [srlg for srlg in self.srlgs if srlg.failed is True]
             if len(failed_srlgs) > 0:
                 self._failed = True
-                raise ModelException("Node must be failed since it is a member of an SRLG that is failed")
+                raise ModelException("Node must be failed since it is a member of one or more SRLGs that are failed")
             else:
                 self._failed = False
 
@@ -123,27 +123,55 @@ class Node(object):
             # SRLG does not exist
             if create_if_not_present is True:
                 new_srlg = SRLG(srlg_name, model)
-                # new_srlg.node_objects.add(self)
                 model.srlg_objects.add(new_srlg)
-                self.srlgs.add(new_srlg)
+                self._srlgs.add(new_srlg)
             else:
                 msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
                 raise ModelException(msg)
         else:
             # SRLG does exist in model; add self to that SRLG
             get_srlg.node_objects.add(self)
-            self.srlgs.add(get_srlg)
+            self._srlgs.add(get_srlg)
 
-    def get_srlgs_with_self(self, model):
+    def remove_from_srlg(self, srlg_name, model):
         """
-        Gets SRLG objects from model which have self as a member
+        Removes self from SRLG with srlg_name in model
+        :param srlg_name: name of SRLG
         :param model: Model object
-        :return: List of SRLGs from model with self as a member
+        :return: none
         """
+        # See if model has existing SRLG with name='srlg_name'
+        # get_srlg will be the SRLG object with name=srlg_name in model
+        # or it will be False if the SRLG with name=srlg_name does not
+        # exist in model
+        try:
+            get_srlg = model.get_srlg_object(srlg_name)
+        except ModelException:
+            get_srlg = False
 
-        # Check model's SRLGs for self in Node members
-        srlgs_with_self = [srlg for srlg in model.srlg_objects if self in srlg.node_objects]
+        if get_srlg is False:
+            msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+            raise ModelException(msg)
+        else:
+            # Remove self from SRLG
+            get_srlg.node_objects.remove(self)
+            self._srlgs.remove(get_srlg)
 
-        return srlgs_with_self
+
+    @property
+    def srlgs(self):
+        return self._srlgs
+
+    # def get_srlgs_with_self(self, model):  # TODO - remove this when working
+    #     """
+    #     Gets SRLG objects from model which have self as a member
+    #     :param model: Model object
+    #     :return: List of SRLGs from model with self as a member
+    #     """
+    #
+    #     # Check model's SRLGs for self in Node members
+    #     srlgs_with_self = set([srlg for srlg in model.srlg_objects if self in srlg.node_objects])
+    #
+    #     return srlgs_with_self
 
     # TODO add node.fail and node.unfail
