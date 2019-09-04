@@ -70,7 +70,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         return self._failed
 
     @failed.setter
-    def failed(self, status):  # TODO - add check for SRLG
+    def failed(self, status):
         """
         Puts logical guardrails on conditions of interface failure status
         :param status: boolean; input by user
@@ -81,8 +81,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
 
         # Check for membership in any failed SRLGs
 
-        # If not False (if True)
-        if not status:
+        if status is False:
             # Check for membership in any failed SRLGs
             failed_srlgs = set([srlg for srlg in self.srlgs if srlg.failed is True])
 

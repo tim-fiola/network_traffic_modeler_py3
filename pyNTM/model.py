@@ -1552,6 +1552,12 @@ class Model(object):
         for node in nodes_to_fail_iterator:
             self.fail_node(node.name)
 
+        interfaces_to_fail_iterator = (interface for interface in self.interface_objects if
+                                       interface in srlg_to_fail.interface_objects)
+
+        for interface in interfaces_to_fail_iterator:
+            self.fail_interface(interface.name, interface.node_object.name)
+
         # Change the failed property on the specified srlg
         srlg_to_fail.failed = True
 

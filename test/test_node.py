@@ -85,20 +85,10 @@ class TestNode(unittest.TestCase):
         node_a = model.get_node_object('A')
 
         node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        srlg = model.get_srlg_object('new_srlg')
 
         self.assertTrue(node_a in model.get_srlg_object('new_srlg').node_objects)
-        # TODO - test length of SRLG to ensure no duplicate nodes
-
-    # Test get_srlgs_with_self call # TODO - remove this when working
-    # def test_srlgs_with_self(self):
-    #     model = Model.load_model_file('test/igp_routing_topology.csv')
-    #     node_a = model.get_node_object('A')
-    #
-    #     node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
-    #     new_srlg = model.get_srlg_object('new_srlg')
-    #
-    #     self.assertEqual(node_a.get_srlgs_with_self(model), {new_srlg})
-    #     self.assertEqual(len(new_srlg.node_objects), 1)
+        self.assertIn(srlg, node_a.srlgs)
 
     # Test that a failed srlg brings a member node to failed = True
     def test_node_in_failed_srlg(self):
