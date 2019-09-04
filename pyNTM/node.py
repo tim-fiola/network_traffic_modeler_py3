@@ -161,16 +161,4 @@ class Node(object):
     def srlgs(self):
         return self._srlgs
 
-    # def get_srlgs_with_self(self, model):  # TODO - remove this when working
-    #     """
-    #     Gets SRLG objects from model which have self as a member
-    #     :param model: Model object
-    #     :return: List of SRLGs from model with self as a member
-    #     """
-    #
-    #     # Check model's SRLGs for self in Node members
-    #     srlgs_with_self = set([srlg for srlg in model.srlg_objects if self in srlg.node_objects])
-    #
-    #     return srlgs_with_self
-
     # TODO add node.fail and node.unfail

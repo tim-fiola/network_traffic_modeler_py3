@@ -184,25 +184,22 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
     def demands(self, model):
         """Returns list of demands that egress the interface"""
         dmd_set = set()
-        demands = (demand for demand in model.demand_objects)  # TODO - add path != 'Unrouted' to this to remove 'if'
-        for demand in demands:
+        routed_demands = (demand for demand in model.demand_objects if demand.path != 'Unrouted')
+        for demand in routed_demands:
 
-            # Counter for total number of paths for each demand
-            # num_paths = 0
-            if 'Unrouted' not in demand.path:
-                for dmd_path in demand.path:
-                    # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
-                    # look at the LSP path and get demands on the LSP and add them to dmd_set
-                    if isinstance(dmd_path, RSVP_LSP):
-                        if self in dmd_path.path['interfaces']:
-                            dmd_set.add(demand)
-
-                    # If path is not an LSP, then it's a list of Interface
-                    # objects; look for self in dmd_path
-
-                    elif self in dmd_path:
-                        # num_paths += 1
+            for dmd_path in demand.path:
+                # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
+                # look at the LSP path and get demands on the LSP and add them to dmd_set
+                if isinstance(dmd_path, RSVP_LSP):
+                    if self in dmd_path.path['interfaces']:
                         dmd_set.add(demand)
+
+                # If path is not an LSP, then it's a list of Interface
+                # objects; look for self in dmd_path
+
+                elif self in dmd_path:
+                    # num_paths += 1
+                    dmd_set.add(demand)
 
         dmd_list = list(dmd_set)
 

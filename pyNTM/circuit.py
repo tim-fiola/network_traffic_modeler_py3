@@ -22,7 +22,7 @@ class Circuit(object):
         """
         return (self.interface_a, self.interface_b)
 
-    def failed(self, model):  # TODO - add check for SRLG?
+    def failed(self, model):
         """
         Is Circuit failed?
         :param model: Model containing circuit
@@ -33,5 +33,3 @@ class Circuit(object):
             return True
         else:
             return False
-
-    # TODO - add srlg call to show what SRLGs circuit is part of?
