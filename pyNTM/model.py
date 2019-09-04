@@ -42,6 +42,7 @@ class Model(object):
         - RSVP LSP objects (set): RSVP LSPs in the Model
 
         - Circuit objects are created by matching Interface objects
+
     """
 
     def __init__(self, interface_objects=set(), node_objects=set(),
@@ -107,20 +108,19 @@ class Model(object):
         # create circuits table, flags ints that are not part of a circuit
         circuits = self._make_circuits(return_exception=True)
 
-        # Make dict to hold interface data
+        # Make dict to hold interface data, each entry has the following
+        # format:
+        # {'lsps': [], 'reserved_bandwidth': 0}
         int_info = self._make_int_info_dict()
 
-        error_data = []  # list of all errored checks
-
+        # Interface reserved bandwidth error sets
         int_res_bw_too_high = set([])
         int_res_bw_sum_error = set([])
 
-        for interface in (interface for interface in self.interface_objects):  # pragma: no cover
-            if interface.reserved_bandwidth > interface.capacity:
-                int_res_bw_too_high.add(interface)
+        error_data = []  # list of all errored checks
 
-            if round(interface.reserved_bandwidth, 1) != int_info[interface._key]['reserved_bandwidth']:  # pragma: no cover  # noqa
-                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
+        for interface in (interface for interface in self.interface_objects):  # pragma: no cover
+            self._reserved_bw_error_checks(int_info, int_res_bw_sum_error, int_res_bw_too_high, interface)
 
         # If creation of circuits returns a dict, there are problems
         if isinstance(circuits, dict):  # pragma: no cover
@@ -144,17 +144,7 @@ class Model(object):
         # on the interfaces and matching interface capacity
         circuits_with_mismatched_interface_capacity = []
         for ckt in (ckt for ckt in self.circuit_objects):
-            int1 = ckt.get_circuit_interfaces(self)[0]
-            int2 = ckt.get_circuit_interfaces(self)[1]
-
-            # Match the failed status to True if they are different
-            if int1.failed != int2.failed:
-                int1.failed = True  # pragma: no cover
-                int2.failed = True  # pragma: no cover
-
-            # Make sure the interface capacities in the circuit match
-            if int1.capacity != int2.capacity:
-                circuits_with_mismatched_interface_capacity.append(ckt)
+            self._validate_circuit_interface_capacity(circuits_with_mismatched_interface_capacity, ckt)
 
         if len(circuits_with_mismatched_interface_capacity) > 0:
             int_status_error_dict = {
@@ -194,6 +184,56 @@ class Model(object):
             raise ModelException((message, error_data))
         else:
             return self
+
+    def _validate_circuit_interface_capacity(self, circuits_with_mismatched_interface_capacity, ckt):
+        """
+        Checks ckt's component Interfaces for matching capacity
+        :param circuits_with_mismatched_interface_capacity: list that will store
+        Circuits that have mismatched Interface capacity
+        :param ckt: Circuit object to check
+        :return: None
+        """
+        int1 = ckt.get_circuit_interfaces(self)[0]
+        int2 = ckt.get_circuit_interfaces(self)[1]
+        # Match the failed status to True if they are different
+        if int1.failed != int2.failed:
+            int1.failed = True  # pragma: no cover
+            int2.failed = True  # pragma: no cover
+        # Make sure the interface capacities in the circuit match
+        if int1.capacity != int2.capacity:
+            circuits_with_mismatched_interface_capacity.append(ckt)
+
+    def _reserved_bw_error_checks(self, int_info, int_res_bw_sum_error, int_res_bw_too_high, interface):
+        """
+        Checks interface for the following:
+        - Is reserved_bandwidth > capacity?
+        - Does reserved_bandwidth for interface match the sum of the
+        reserved_bandwidth for the LSPs egressing interface?
+
+        :param int_info: dict that holds int_res_bw_sum_error and
+        int_res_bw_too_high sets.  Has the following format for a given
+        entry:
+
+        int_info[interface._key] = {'lsps': [], 'reserved_bandwidth': 0}
+
+        Where 'lsps' is a list of RSVP LSPs egressing the Interface and
+        'reserved_bandwidth' is the reserved_bandwidth value generated
+        by the simulation
+
+        :param int_res_bw_sum_error: set that will hold Interface objects
+        whose reserved_bandwidth does not match the sum of the
+        reserved_bandwidth for the LSPs egressing interface
+        :param int_res_bw_too_high: set that will hold Interface objects
+        whose reserved_bandwidth is > the capacity of the Interface
+        :param interface: Interface object to inspect
+        :return: None
+        """
+
+        if interface.reserved_bandwidth > interface.capacity:
+            int_res_bw_too_high.add(interface)
+        if round(interface.reserved_bandwidth, 1) != int_info[interface._key][
+            'reserved_bandwidth']:  # pragma: no cover  # noqa
+            int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
     def _demand_traffic_per_int(self, demand):
         """
@@ -1372,11 +1412,125 @@ class Model(object):
 
         lines = data.splitlines()
 
-        # Define the interfaces info
+        # Define the Interfaces from the data and extract the presence of
+        # Nodes from the Interface data
         int_info_begin_index = 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
-        interface_lines = lines[int_info_begin_index:int_info_end_index]
+        interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
+                                                                                int_info_end_index, lines)
 
+        # Define the explicit nodes info from the file
+        nodes_info_begin_index = int_info_end_index + 3
+        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
+        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
+        for node_line in node_lines:
+            cls._add_node_from_data(demand_set, interface_set, lines, lsp_set, node_line, node_set)
+
+        # Define the demands info
+        demands_info_begin_index = nodes_info_end_index + 3
+        demands_info_end_index = find_end_index(demands_info_begin_index, lines)
+        # There may or may not be LSPs in the model, so if there are not,
+        # set the demands_info_end_index as the last line in the file
+        if not demands_info_end_index:
+            demands_info_end_index = len(lines)
+
+        demands_lines = lines[demands_info_begin_index:demands_info_end_index]
+
+        for demand_line in demands_lines:
+            cls._add_demand_from_data(demand_line, demand_set, lines, node_set)
+
+        # Define the LSP info
+
+        # If the demands_info_end_index is the same as the length of the
+        # lines list, then there is no LSP section
+        if demands_info_end_index != len(lines):
+            cls._add_lsp_from_data(demands_info_end_index, lines, lsp_set, node_set)
+
+        return cls(interface_set, node_set, demand_set, lsp_set)
+
+    @classmethod
+    def _add_lsp_from_data(cls, demands_info_end_index, lines, lsp_set, node_set):
+        lsp_info_begin_index = demands_info_end_index + 3
+        lsp_lines = lines[lsp_info_begin_index:]
+        for lsp_line in lsp_lines:
+            lsp_info = lsp_line.split()
+            source = lsp_info[0]
+            source_node = [node for node in node_set if node.name == source][0]
+            dest = lsp_info[1]
+            dest_node = [node for node in node_set if node.name == dest][0]
+            name = lsp_info[2]
+            try:
+                configured_setup_bw = lsp_info[3]
+            except IndexError:
+                configured_setup_bw = None
+            new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
+
+            if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
+                lsp_set.add(new_lsp)
+            else:
+                print("{} already exists in model; disregarding line {}".format(new_lsp,
+                                                                                lines.index(lsp_line)))
+
+    @classmethod
+    def _add_demand_from_data(cls, demand_line, demand_set, lines, node_set):
+        demand_info = demand_line.split()
+        source = demand_info[0]
+        source_node = [node for node in node_set if node.name == source][0]
+        dest = demand_info[1]
+        dest_node = [node for node in node_set if node.name == dest][0]
+        traffic = int(demand_info[2])
+        name = demand_info[3]
+        if name == '':
+            demand_name = 'none'
+        else:
+            demand_name = name
+        new_demand = Demand(source_node, dest_node, traffic, demand_name)
+        if new_demand._key not in set([dmd._key for dmd in demand_set]):
+            demand_set.add(new_demand)
+        else:
+            print("{} already exists in model; disregarding line {}".format(new_demand,
+                                                                            lines.index(demand_line)))
+
+    @classmethod
+    def _add_node_from_data(cls, demand_set, interface_set, lines, lsp_set, node_line, node_set):
+        node_info = node_line.split()
+        node_name = node_info[0]
+        try:
+            node_lat = int(node_info[2])
+        except (ValueError, IndexError):
+            node_lat = 0
+        try:
+            node_lon = int(node_info[1])
+        except (ValueError, IndexError):
+            node_lon = 0
+        new_node = Node(node_name)
+        if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
+            node_set.add(new_node)
+            new_node.lat = node_lat
+            new_node.lon = node_lon
+        else:
+            print("{} on line {} already exists in model, "
+                  "updating lat/lon values if they are specified".format(new_node,
+                                                                         lines.index(node_line)))
+            existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
+            existing_node.lat = node_lat
+            existing_node.lon = node_lon
+
+    @classmethod
+    def _extract_interface_data_and_implied_nodes(cls, int_info_begin_index, int_info_end_index, lines):
+        """
+        Extracts interface data from lines and adds Interface objects to a set.
+        Also extracts the implied Nodes from the Interfaces and adds those Nodes to a set.
+
+        :param int_info_begin_index: Index position in lines where interface info begins
+        :param int_info_end_index:  Index position in lines where interface info ends
+        :param lines: lines of data describing a Model objects
+        :return: set of Interface objects, set of Node objects created from lines
+        """
+
+        interface_set = set()
+        node_set = set()
+        interface_lines = lines[int_info_begin_index:int_info_end_index]
         # Add the Interfaces to a set
         for interface_line in interface_lines:
             # Read interface characteristics
@@ -1402,94 +1556,7 @@ class Model(object):
             if remote_node_name not in set([node.name for node in node_set]):
                 node_set.add(new_interface.remote_node_object)
 
-        # Define the explicit nodes info from the file
-        nodes_info_begin_index = int_info_end_index + 3
-        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
-        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
-        for node_line in node_lines:
-            node_info = node_line.split()
-            node_name = node_info[0]
-            try:
-                node_lat = int(node_info[2])
-            except (ValueError, IndexError):
-                node_lat = 0
-            try:
-                node_lon = int(node_info[1])
-            except (ValueError, IndexError):
-                node_lon = 0
-
-            new_node = Node(node_name)
-            if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
-                node_set.add(new_node)
-                new_node.lat = node_lat
-                new_node.lon = node_lon
-            else:
-                print("{} on line {} already exists in model, "
-                      "updating lat/lon values if they are specified".format(new_node,
-                                                                             lines.index(node_line)))
-                existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
-                existing_node.lat = node_lat
-                existing_node.lon = node_lon
-
-        # Define the demands info
-        demands_info_begin_index = nodes_info_end_index + 3
-        demands_info_end_index = find_end_index(demands_info_begin_index, lines)
-        # There may or may not be LSPs in the model, so if there are not,
-        # set the demands_info_end_index as the last line in the file
-        if not demands_info_end_index:
-            demands_info_end_index = len(lines)
-
-        demands_lines = lines[demands_info_begin_index:demands_info_end_index]
-
-        for demand_line in demands_lines:
-            demand_info = demand_line.split()
-            source = demand_info[0]
-            source_node = [node for node in node_set if node.name == source][0]
-            dest = demand_info[1]
-            dest_node = [node for node in node_set if node.name == dest][0]
-            traffic = int(demand_info[2])
-            name = demand_info[3]
-            if name == '':
-                demand_name = 'none'
-            else:
-                demand_name = name
-
-            new_demand = Demand(source_node, dest_node, traffic, demand_name)
-
-            if new_demand._key not in set([dmd._key for dmd in demand_set]):
-                demand_set.add(new_demand)
-            else:
-                print("{} already exists in model; disregarding line {}".format(new_demand,
-                                                                                lines.index(demand_line)))
-
-        # Define the LSP info
-
-        # If the demands_info_end_index is the same as the length of the
-        # lines list, then there is no LSP section
-        if demands_info_end_index != len(lines):
-            lsp_info_begin_index = demands_info_end_index + 3
-            lsp_lines = lines[lsp_info_begin_index:]
-
-            for lsp_line in lsp_lines:
-                lsp_info = lsp_line.split()
-                source = lsp_info[0]
-                source_node = [node for node in node_set if node.name == source][0]
-                dest = lsp_info[1]
-                dest_node = [node for node in node_set if node.name == dest][0]
-                name = lsp_info[2]
-                try:
-                    configured_setup_bw = lsp_info[3]
-                except IndexError:
-                    configured_setup_bw = None
-                new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
-
-                if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
-                    lsp_set.add(new_lsp)
-                else:
-                    print("{} already exists in model; disregarding line {}".format(new_lsp,
-                                                                                    lines.index(lsp_line)))
-
-        return cls(interface_set, node_set, demand_set, lsp_set)
+        return interface_set, node_set
 
     def get_demand_objects_source_node(self, source_node_name):
         """
