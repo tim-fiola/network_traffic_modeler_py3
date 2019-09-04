@@ -1522,14 +1522,16 @@ class Model(object):
     def get_srlg_object(self, srlg_name, raise_exception=True):
         """
         Returns SRLG in self with srlg_name
-        :param srlg_name:
-        :return:
+        :param srlg_name: name of SRLG
+        :param raise_exception: raise an exception if SRLG with name=srlg_name does not
+        exist in self
+        :return: None
         """
 
         srlg_already_in_model = [srlg for srlg in self.srlg_objects if srlg.name == srlg_name]
 
         if len(srlg_already_in_model) == 1:
-            return srlg_already_in_model[0]
+            return srlg_already_in_model[0]  # There will only be one SRLG with srlg_name
         else:
             if raise_exception:
                 msg = "No SRLG with name {} exists in Model".format(srlg_name)
@@ -1539,19 +1541,20 @@ class Model(object):
 
     def fail_srlg(self, srlg_name):
         """
-        Fails SRLG with name srlg_name
-        :param srlg_name:
-        :return:
+        Sets SRLG with name srlg_name to failed = True
+        :param srlg_name: name of SRLG to fail
+        :return: none
         """
 
         srlg_to_fail = self.get_srlg_object(srlg_name)
 
-        # Find SRLG's Nodes
+        # Find SRLG's Nodes to fail
         nodes_to_fail_iterator = (node for node in self.node_objects if node in srlg_to_fail.node_objects)
 
         for node in nodes_to_fail_iterator:
             self.fail_node(node.name)
 
+        # Find SRLG's Interfaces to fail
         interfaces_to_fail_iterator = (interface for interface in self.interface_objects if
                                        interface in srlg_to_fail.interface_objects)
 
@@ -1561,7 +1564,30 @@ class Model(object):
         # Change the failed property on the specified srlg
         srlg_to_fail.failed = True
 
-    # TODO - add unfail_srlg
+    def unfail_srlg(self, srlg_name):
+        """
+        Sets SRLG with srlg_name to failed = False
+        :param srlg_name: name of SRLG to unfail
+        :return: none
+        """
+
+        srlg_to_unfail = self.get_srlg_object(srlg_name)
+
+        # Find SRLG's Nodes to unfail
+        nodes_to_unfail_iterator = (node for node in self.node_objects if node in srlg_to_unfail.node_objects)
+
+        for node in nodes_to_unfail_iterator:
+            self.unfail_node(node.name)
+
+        # Find SRLG's Interfaces to unfail
+        interfaces_to_unfail_iterator = (interface for interface in self.interface_objects if
+                                         interface in srlg_to_unfail.interface_objects)
+
+        for interface in interfaces_to_unfail_iterator:
+            self.unfail_interface(interface.name, interface.node_object.name)
+
+        # Change the failed property on the specified srlg
+        srlg_to_unfail.failed = False
 
     def add_srlg(self, srlg_name):
         """
