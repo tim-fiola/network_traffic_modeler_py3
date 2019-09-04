@@ -321,3 +321,107 @@ class TestSRLG(unittest.TestCase):
         bad_srlg = model.get_srlg_object('bad_srlg', raise_exception=False)
 
         self.assertEqual(bad_srlg, None)
+
+    # Test unfailing SRLG containing Interface in SRLG but
+    # Interface's Node is still failed; Interface should stay failed
+    def test_failed_int_node_srlg(self):
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = int_a_b.get_remote_interface(model)
+        node_a = model.get_node_object('A')
+
+        model.add_srlg('new_srlg')
+        model.update_simulation()
+
+        int_a_b.add_to_srlg('new_srlg', model)
+        model.update_simulation()
+
+        srlg = model.get_srlg_object('new_srlg')
+
+        model.fail_node('A')
+        model.fail_srlg('new_srlg')
+        model.update_simulation()
+
+        self.assertTrue(int_a_b.failed)
+        self.assertTrue(int_b_a.failed)
+
+        # Unfail the SRLG, int_a_b and int_b_a should stay failed
+        model.unfail_srlg('new_srlg')
+        model.update_simulation()
+
+        self.assertFalse(srlg.failed)
+        self.assertTrue(node_a.failed)
+        self.assertTrue(int_a_b.failed)
+        self.assertTrue(int_b_a.failed)
+
+    # Test that a failed srlg unfails when removed from the SRLG
+    def test_node_in_failed_srlg_unfails_when_removed(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+        model.update_simulation()
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+
+        self.assertFalse(node_a.failed)
+        self.assertTrue(node_a in new_srlg.node_objects)
+
+        model.fail_srlg('new_srlg')
+        self.assertTrue(new_srlg.failed)
+        model.update_simulation()
+
+        self.assertTrue(node_a.failed)
+
+        node_a.remove_from_srlg('new_srlg', model)
+        model.update_simulation()
+
+        self.assertNotIn(node_a, new_srlg.node_objects)
+
+        self.assertFalse(node_a.failed)
+
+    # Test that a node in a failed SRLG unfails when the SRLG unfails
+    def test_node_unfails_when_srlg_unfails(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+        model.update_simulation()
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+
+        model.fail_srlg('new_srlg')
+        model.update_simulation()
+
+        self.assertTrue(new_srlg.failed)
+        self.assertTrue(node_a.failed)
+
+        model.unfail_srlg('new_srlg')
+        model.update_simulation()
+
+        self.assertFalse(node_a.failed)
+
+    # Test that a node in 2 failed SRLGs stays failed when one SRLG unfails
+    def test_node_in_two_srlgs(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        node_a = model.get_node_object('A')
+        model.update_simulation()
+
+        node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        node_a.add_to_srlg('new_srlg_2', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+        new_srlg_2 = model.get_srlg_object('new_srlg_2')
+
+        model.fail_srlg('new_srlg')
+        model.fail_srlg('new_srlg_2')
+        model.update_simulation()
+
+        self.assertTrue(new_srlg.failed)
+        self.assertTrue(new_srlg_2.failed)
+        self.assertTrue(node_a.failed)
+
+        model.unfail_srlg('new_srlg')
+        model.update_simulation()
+
+        # node_a should stay failed since it's part of another SRLG
+        # that is still failed
+        self.assertTrue(node_a.failed)

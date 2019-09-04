@@ -157,6 +157,18 @@ class Node(object):
             get_srlg.node_objects.remove(self)
             self._srlgs.remove(get_srlg)
 
+            # If SRLG was failed, change self.failed = False when removed.  If
+            # setting self.failed = False generates a ModelException, pass.  The
+            # ModelException would happen if the Node was part of a different SRLG
+            # that was still failed
+            # if get_srlg.failed:
+            #     try:
+            #         self.failed = False
+            #     except ModelException:
+            #         pass
+
+            self.failed = False
+
     @property
     def srlgs(self):
         return self._srlgs

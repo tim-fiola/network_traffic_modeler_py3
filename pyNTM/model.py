@@ -1170,14 +1170,10 @@ class Model(object):
         self.get_node_object(node_name).failed = True
 
     def unfail_node(self, node_name):
-        """Unfails the specified node"""
+        """Unfails the Node with name=node_name"""
 
-        # Change the failed property on the specified node
-        self.get_node_object(node_name)._failed = False
-
-        # Find node's interfaces and unfail them
-        ints_to_unfail_iterator = (interface for interface in
-                                   self.get_node_interfaces(node_name))
+        # Change the failed property on the specified node;
+        self.get_node_object(node_name).failed = False
 
         # Find node's interfaces and unfail them
         ints_to_unfail_iterator = (interface for interface in self.get_node_interfaces(node_name))
@@ -1573,11 +1569,19 @@ class Model(object):
 
         srlg_to_unfail = self.get_srlg_object(srlg_name)
 
+        # Change the failed property on the specified srlg
+        srlg_to_unfail.failed = False
+
         # Find SRLG's Nodes to unfail
         nodes_to_unfail_iterator = (node for node in self.node_objects if node in srlg_to_unfail.node_objects)
 
+        # Node will stay failed if it's part of another SRLG that is still failed;
+        # in that case, the unfail_node will create an exception; ignore that exception
         for node in nodes_to_unfail_iterator:
-            self.unfail_node(node.name)
+            try:
+                self.unfail_node(node.name)
+            except ModelException:
+                pass
 
         # Find SRLG's Interfaces to unfail
         interfaces_to_unfail_iterator = (interface for interface in self.interface_objects if
@@ -1585,9 +1589,6 @@ class Model(object):
 
         for interface in interfaces_to_unfail_iterator:
             self.unfail_interface(interface.name, interface.node_object.name)
-
-        # Change the failed property on the specified srlg
-        srlg_to_unfail.failed = False
 
     def add_srlg(self, srlg_name):
         """

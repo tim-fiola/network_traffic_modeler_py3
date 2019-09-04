@@ -16,15 +16,6 @@ class TestRSVPLSPPathSelection(unittest.TestCase):
 
         self.model.update_simulation()
 
-    def test_choose_random_path_selection(self):
-        lsp_a_d_1_path_info = [(interface.name, interface.node_object.name)
-                               for interface in self.lsp_a_d_1.path['interfaces']]
-
-        path_list = [[('A-to-B', 'A'), ('B-to-D', 'B')],
-                     [('A-to-C', 'A'), ('C-to-D', 'C')]]
-
-        self.assertIn(lsp_a_d_1_path_info, path_list)
-
     def test_lsp_no_route(self):
         self.assertEqual(self.lsp_e_a_1.path, 'Unrouted')
 
@@ -34,6 +25,14 @@ class TestRSVPLSPPathSelection(unittest.TestCase):
     def test_single_demand_on_lsp(self):
         self.assertEqual(self.lsp_a_d_1.traffic_on_lsp(self.model), 40)
 
-    # def test_get_feasible_paths(self):
-    #     pdb.set_trace()
-    #     self.assertIn(self.int_a_d, self.lsp_a_d_1.path['interfaces'])
+    def test_random_path_selection(self):
+        model = Model.load_model_file('test/multiple_rsvp_paths.csv')
+        model.update_simulation()
+
+        lsp_a_d_1_path_info = [(interface.name, interface.node_object.name)
+                               for interface in self.lsp_a_d_1.path['interfaces']]
+
+        path_list = [[('A-to-B', 'A'), ('B-to-D', 'B')],
+                     [('A-to-C', 'A'), ('C-to-D', 'C')]]
+
+        self.assertIn(lsp_a_d_1_path_info, path_list)
