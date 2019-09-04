@@ -29,20 +29,6 @@ class SRLG(object):
     def __repr__(self):
         return "SRLG(Name: {})".format(self.name)
 
-    # def interfaces(self, model):  # TODO - use interfaces or circuits?
-    #     """
-    #     Returns set of Interface objects, derived from Circuits in the SRLG
-    #     :param model: Model object
-    #     :return: set of Interface objects
-    #     """
-    #     interfaces = set()
-    #     for ckt in (ckt for ckt in self.circuit_objects):
-    #         ints = ckt.get_circuit_interfaces(model)
-    #         interfaces.add(ints[0])
-    #         interfaces.add(ints[1])
-    #
-    #     return interfaces
-
     @property
     def failed(self):
         return self._failed
@@ -63,5 +49,3 @@ class SRLG(object):
     def interface_objects(self):
         interfaces = set([interface for interface in self.model.interface_objects if self in interface.srlgs])
         return interfaces
-
-    # TODO - add srlg.fail and srlg.unfail

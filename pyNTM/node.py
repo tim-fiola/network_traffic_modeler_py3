@@ -173,4 +173,5 @@ class Node(object):
     def srlgs(self):
         return self._srlgs
 
-    # TODO add node.fail and node.unfail
+    # TODO add node.fail and node.unfail - low priority - not really
+    #  necessary since Model has fail_/unfail_node

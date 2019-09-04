@@ -306,3 +306,5 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
             remote_int = self.get_remote_interface(model)
             get_srlg.interface_objects.remove(remote_int)
             remote_int._srlgs.remove(get_srlg)
+
+        self.failed = False

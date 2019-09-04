@@ -425,3 +425,57 @@ class TestSRLG(unittest.TestCase):
         # node_a should stay failed since it's part of another SRLG
         # that is still failed
         self.assertTrue(node_a.failed)
+
+    # Test that an interface in 2 failed SRLGs stays failed when
+    # one SRLG unfails
+    def test_int_in_two_SRLGs(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        model.update_simulation()
+
+        int_a_b.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        int_a_b.add_to_srlg('new_srlg_2', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+        new_srlg_2 = model.get_srlg_object('new_srlg_2')
+
+        model.fail_srlg('new_srlg')
+        model.fail_srlg('new_srlg_2')
+        model.update_simulation()
+
+        self.assertTrue(new_srlg.failed)
+        self.assertTrue(new_srlg_2.failed)
+        self.assertTrue(int_a_b.failed)
+
+        model.unfail_srlg('new_srlg')
+        model.update_simulation()
+
+        # node_a should stay failed since it's part of another SRLG
+        # that is still failed
+        self.assertTrue(int_a_b.failed)
+
+    # Test that an interface in 1 failed SRLG stays failed when
+    # SRLG unfails if its local node is also failed
+    def test_int_in_SRLG_failed_node(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        int_a_b = model.get_interface_object('A-to-B', 'A')
+        int_b_a = int_a_b.get_remote_interface(model)
+
+        int_a_b.add_to_srlg('new_srlg', model, create_if_not_present=True)
+        int_a_b.add_to_srlg('new_srlg_2', model, create_if_not_present=True)
+        new_srlg = model.get_srlg_object('new_srlg')
+
+        model.fail_node('A')
+        model.fail_srlg('new_srlg')
+        model.update_simulation()
+
+        self.assertTrue(new_srlg.failed)
+        self.assertTrue(int_a_b.failed)
+
+        model.unfail_srlg('new_srlg')
+        model.update_simulation()
+
+        # int_a_b and int_b_a should stay failed since Node('A') is also failed
+        self.assertTrue(int_a_b.failed)
+        self.assertTrue(int_b_a.failed)

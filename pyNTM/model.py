@@ -24,22 +24,22 @@ from .srlg import SRLG
 class Model(object):
     """A network model object consisting of the following base components:
 
-        - Interface objects: layer 3 Node interfaces.  Interfaces have a
+        - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
           interface addresses
 
-        - Node objects: vertices on the network (aka 'layer 3 devices')
+        - Node objects (set): vertices on the network (aka 'layer 3 devices')
           that contain Interface objects.  Nodes are connected to each other
           via a pair of matched Interfaces (Circuits)
 
-        - Demand objects: traffic loads on the network.  Each demand starts
+        - Demand objects (set): traffic loads on the network.  Each demand starts
           from a source node and transits the network to a destination node.
           A demand also has a magnitude, representing how much traffic it
           is carrying.  The demand's magnitude will apply against each
           interface's available capacity
 
-        - RSVP LSP objects: RSVP LSPs in the Model
+        - RSVP LSP objects (set): RSVP LSPs in the Model
 
         - Circuit objects are created by matching Interface objects
 
@@ -1587,8 +1587,14 @@ class Model(object):
         interfaces_to_unfail_iterator = (interface for interface in self.interface_objects if
                                          interface in srlg_to_unfail.interface_objects)
 
+        # Interface will stay failed if it's part of another SRLG that is still failed or
+        # if the local/remote Node is failed;  in that case, the unfail_interface
+        # will create an exception; ignore that exception
         for interface in interfaces_to_unfail_iterator:
-            self.unfail_interface(interface.name, interface.node_object.name)
+            try:
+                self.unfail_interface(interface.name, interface.node_object.name)
+            except ModelException:
+                pass
 
     def add_srlg(self, srlg_name):
         """
