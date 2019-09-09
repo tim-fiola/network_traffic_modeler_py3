@@ -24,6 +24,6 @@ setup(
     author_email='timothy.fiola@gmail.com',
     url='https://github.com/tim-fiola/network_traffic_modeler_py3',
     download_url='https://github.com/tim-fiola/network_traffic_modeler_py3/tarball/%s' % version,
-    keywords=['networking', 'layer3', 'failover', 'modeling', 'model'],
+    keywords=['networking', 'layer3', 'failover', 'modeling', 'model', 'pyNTM'],
     classifiers=[],
 )
