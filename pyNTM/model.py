@@ -13,26 +13,35 @@ from .exceptions import ModelException
 from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
+from .srlg import SRLG
+
+# TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
+# TODO - add show_debug flag to update_simulation to see info like lsp routing status
+# TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
+#  routed lsp/demands in dict form
 
 
 class Model(object):
     """A network model object consisting of the following base components:
-        - Interface objects: network node interfaces.  Interfaces have a
+
+        - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
           interface addresses
 
-        - Node objects: vertices on the network (aka 'layer 3 devices')
+        - Node objects (set): vertices on the network (aka 'layer 3 devices')
           that contain Interface objects.  Nodes are connected to each other
           via a pair of matched Interfaces (Circuits)
 
-        - Demand objects: traffic loads on the network.  Each demand starts
+        - Demand objects (set): traffic loads on the network.  Each demand starts
           from a source node and transits the network to a destination node.
           A demand also has a magnitude, representing how much traffic it
           is carrying.  The demand's magnitude will apply against each
           interface's available capacity
 
-        - RSVP LSP objects: RSVP LSPs
+        - RSVP LSP objects (set): RSVP LSPs in the Model
+
+        - Circuit objects are created by matching Interface objects
 
     """
 
@@ -41,8 +50,9 @@ class Model(object):
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
-        self.circuit_objects = set([])
+        self.circuit_objects = set()
         self.rsvp_lsp_objects = rsvp_lsp_objects
+        self.srlg_objects = set()
 
     def __repr__(self):
         return 'Model(Interfaces: %s, Nodes: %s, Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
@@ -56,14 +66,16 @@ class Model(object):
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example:
 
-        network_interfaces = [
-        {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
-         'remote_node': 'B', 'address': 1, 'failed': False},
-        {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
-         'remote_node': 'B', 'address': 2, 'failed': False},
-        {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
-         'remote_node': 'C', 'address': 3, 'failed': False},]
+            network_interfaces = [
+            {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
+            'remote_node': 'B', 'address': 1, 'failed': False},
+            {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
+            'remote_node': 'B', 'address': 2, 'failed': False},
+            {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
+            'remote_node': 'C', 'address': 3, 'failed': False},]
+
         """
+
         # TODO - look at removing requirement that address be specified
         new_interface_objects, new_node_objects = \
             self._make_network_interfaces(network_interfaces)
@@ -71,6 +83,22 @@ class Model(object):
         self.interface_objects = \
             self.interface_objects.union(new_interface_objects)
         self.validate_model()
+
+    def _make_int_info_dict(self):
+        """
+        Makes dict of information for each interface.  Most of this information
+        is derived from the simulation.
+        Returns dict object.  Keys are the _key for each Interface; values are
+        dicts for each interface_ key that hold information about the Interface.
+        :return: int_info
+        """
+        keys = (interface._key for interface in self.interface_objects)
+        int_info = {key: {'lsps': [], 'reserved_bandwidth': 0} for key in keys}
+        for lsp in (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path):
+            for interface in lsp.path['interfaces']:
+                int_info[interface._key]['lsps'].append(lsp)
+                int_info[interface._key]['reserved_bandwidth'] += round(lsp.reserved_bandwidth, 1)
+        return int_info
 
     def validate_model(self):
         """
@@ -80,51 +108,43 @@ class Model(object):
         # create circuits table, flags ints that are not part of a circuit
         circuits = self._make_circuits(return_exception=True)
 
-        error_data = []  # list of all errored checks
+        # Make dict to hold interface data, each entry has the following
+        # format:
+        # {'lsps': [], 'reserved_bandwidth': 0}
+        int_info = self._make_int_info_dict()
 
+        # Interface reserved bandwidth error sets
         int_res_bw_too_high = set([])
         int_res_bw_sum_error = set([])
 
-        for interface in (interface for interface in self.interface_objects):
-            if interface.reserved_bandwidth > interface.capacity:
-                int_res_bw_too_high.add(interface)
-            if (round(interface.reserved_bandwidth, 1) !=
-                    round(sum([lsp.reserved_bandwidth for lsp in interface.lsps(self)]), 1)):
-                int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
+        error_data = []  # list of all errored checks
+
+        for interface in (interface for interface in self.interface_objects):  # pragma: no cover
+            self._reserved_bw_error_checks(int_info, int_res_bw_sum_error, int_res_bw_too_high, interface)
 
         # If creation of circuits returns a dict, there are problems
-        if isinstance(circuits, dict):
+        if isinstance(circuits, dict):  # pragma: no cover
             error_data.append({'ints_w_no_remote_int': circuits['data']})
 
         # Append any failed checks to error_data
-        if len(int_res_bw_too_high) > 0:
+        if len(int_res_bw_too_high) > 0:  # pragma: no cover
             error_data.append({'int_res_bw_too_high': int_res_bw_too_high})
 
-        if len(int_res_bw_sum_error) > 0:
+        if len(int_res_bw_sum_error) > 0:  # pragma: no cover
             error_data.append({'int_res_bw_sum_error': int_res_bw_sum_error})
 
         # Validate there are no duplicate interfaces
         unique_interfaces_per_node = self._unique_interface_per_node()
 
         # Log any duplicate interfaces on a node
-        if not unique_interfaces_per_node:
+        if not unique_interfaces_per_node:  # pragma: no cover
             error_data.append(unique_interfaces_per_node)
 
         # Make validate_model() check for matching failed statuses
         # on the interfaces and matching interface capacity
         circuits_with_mismatched_interface_capacity = []
         for ckt in (ckt for ckt in self.circuit_objects):
-            int1 = ckt.get_circuit_interfaces(self)[0]
-            int2 = ckt.get_circuit_interfaces(self)[1]
-
-            # Match the failed status to True if they are different
-            if int1.failed != int2.failed:
-                int1.failed = True
-                int2.failed = True
-
-            # Make sure the interface capacities in the circuit match
-            if int1.capacity != int2.capacity:
-                circuits_with_mismatched_interface_capacity.append(ckt)
+            self._validate_circuit_interface_capacity(circuits_with_mismatched_interface_capacity, ckt)
 
         if len(circuits_with_mismatched_interface_capacity) > 0:
             int_status_error_dict = {
@@ -133,9 +153,25 @@ class Model(object):
             }
             error_data.append(int_status_error_dict)
 
+        # Validate Nodes in each SRLG have the SRLG in their srlgs set.
+        # srlg_errors is a dict of node names as keys and a list of SRLGs that node is
+        # a member of in the model but that the SRLG is not in node.srlgs
+        srlg_errors = {}
+
+        for srlg in self.srlg_objects:
+            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
+            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
+                try:
+                    srlg_errors[node.name].append(srlg.name)
+                except KeyError:
+                    srlg_errors[node.name] = []
+
+        if len(srlg_errors) > 0:
+            error_data.append(srlg_errors)
+
         # Verify no duplicate nodes
         node_names = set([node.name for node in self.node_objects])
-        if (len(self.node_objects)) != (len(node_names)):
+        if (len(self.node_objects)) != (len(node_names)):  # pragma: no cover
             node_dict = {'len_node_objects': len(self.node_objects),
                          'len_node_names': len(node_names)}
             error_data.append(node_dict)
@@ -148,6 +184,56 @@ class Model(object):
             raise ModelException((message, error_data))
         else:
             return self
+
+    def _validate_circuit_interface_capacity(self, circuits_with_mismatched_interface_capacity, ckt):
+        """
+        Checks ckt's component Interfaces for matching capacity
+        :param circuits_with_mismatched_interface_capacity: list that will store
+        Circuits that have mismatched Interface capacity
+        :param ckt: Circuit object to check
+        :return: None
+        """
+        int1 = ckt.get_circuit_interfaces(self)[0]
+        int2 = ckt.get_circuit_interfaces(self)[1]
+        # Match the failed status to True if they are different
+        if int1.failed != int2.failed:
+            int1.failed = True  # pragma: no cover
+            int2.failed = True  # pragma: no cover
+        # Make sure the interface capacities in the circuit match
+        if int1.capacity != int2.capacity:
+            circuits_with_mismatched_interface_capacity.append(ckt)
+
+    def _reserved_bw_error_checks(self, int_info, int_res_bw_sum_error, int_res_bw_too_high, interface):
+        """
+        Checks interface for the following:
+        - Is reserved_bandwidth > capacity?
+        - Does reserved_bandwidth for interface match the sum of the
+        reserved_bandwidth for the LSPs egressing interface?
+
+        :param int_info: dict that holds int_res_bw_sum_error and
+        int_res_bw_too_high sets.  Has the following format for a given
+        entry:
+
+        int_info[interface._key] = {'lsps': [], 'reserved_bandwidth': 0}
+
+        Where 'lsps' is a list of RSVP LSPs egressing the Interface and
+        'reserved_bandwidth' is the reserved_bandwidth value generated
+        by the simulation
+
+        :param int_res_bw_sum_error: set that will hold Interface objects
+        whose reserved_bandwidth does not match the sum of the
+        reserved_bandwidth for the LSPs egressing interface
+        :param int_res_bw_too_high: set that will hold Interface objects
+        whose reserved_bandwidth is > the capacity of the Interface
+        :param interface: Interface object to inspect
+        :return: None
+        """
+
+        if interface.reserved_bandwidth > interface.capacity:
+            int_res_bw_too_high.add(interface)
+        if round(interface.reserved_bandwidth, 1) != int_info[interface._key][
+            'reserved_bandwidth']:  # pragma: no cover  # noqa
+            int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
     def _demand_traffic_per_int(self, demand):
         """
@@ -345,10 +431,10 @@ class Model(object):
         """
 
         # Find parallel LSP groups
-        parallel_lsp_groups = self.parallel_lsp_groups()
+        parallel_lsp_groups = self.parallel_lsp_groups()  # TODO - can this be optimized?
 
         # Find all the parallel demand groups
-        parallel_demand_groups = self.parallel_demand_groups()
+        parallel_demand_groups = self.parallel_demand_groups()  # TODO - can this be optimized?
 
         # Find the amount of bandwidth each LSP in each parallel group will carry
         counter = 1
@@ -371,7 +457,7 @@ class Model(object):
                 pass
 
             # Now route each LSP in the group (first routing iteration)
-            for lsp in lsps:
+            for lsp in lsps:  # TODO - can this be optimized?
                 # Route each LSP one at a time
                 lsp.route_lsp(input_model, traff_on_each_group_lsp)
 
@@ -430,7 +516,7 @@ class Model(object):
         """
         Determine LSPs with same source and dest nodes
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
-                 with matching source/dest nodes
+        with matching source/dest nodes
         """
 
         src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
@@ -456,7 +542,7 @@ class Model(object):
         """
         Determine demands with same source and dest nodes
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands
-                 with matching source/dest nodes
+        with matching source/dest nodes
         """
 
         src_node_names = set([dmd.source_node_object.name for dmd in self.demand_objects])
@@ -670,9 +756,10 @@ class Model(object):
                           node_b_object, node_a_object, address)
 
         existing_int_keys = set([interface._key for interface in self.interface_objects])
+
         if int_a._key in existing_int_keys:
             raise ModelException("interface {} on node {} already exists in model".format(int_a, node_a_object))
-        if int_b._key in existing_int_keys:
+        elif int_b._key in existing_int_keys:
             raise ModelException("interface {} on node {} already exists in model".format(int_b, node_b_object))
 
         self.interface_objects.add(int_a)
@@ -775,6 +862,7 @@ class Model(object):
         """
         Adds an RSVP LSP with name from the source node to the
         dest node and validates model.
+
         :param source_node_name: LSP source Node name
         :param dest_node_name: LSP destination Node name
         :param name: name of LSP
@@ -984,8 +1072,7 @@ class Model(object):
         :param needed_bw: the amount of reservable bandwidth required on the path
         :param cutoff: max amount of path hops
         :return: Return the shortest path in dictionary form:
-                 shortest_path = {'path': [list of shortest path routes],
-                                  'cost': path_cost}
+                 shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1016,8 +1103,7 @@ class Model(object):
         :param dest_node_name: name of destination node in path
         :param needed_bw: the amount of reservable bandwidth required on the path
         :return: Return the shortest path in dictionary form:
-                 shortest_path = {'path': [list of shortest path routes],
-                                  'cost': path_cost}
+                 shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1048,8 +1134,7 @@ class Model(object):
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available for an LSP that is already routed.
         Return the shortest path in dictionary form:
-        shortest_path = {'path': [list of shortest path routes],
-                            'cost': path_cost}
+        shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1124,14 +1209,10 @@ class Model(object):
         self.get_node_object(node_name).failed = True
 
     def unfail_node(self, node_name):
-        """Unfails the specified node"""
+        """Unfails the Node with name=node_name"""
 
-        # Change the failed property on the specified node
-        self.get_node_object(node_name)._failed = False
-
-        # Find node's interfaces and unfail them
-        ints_to_unfail_iterator = (interface for interface in
-                                   self.get_node_interfaces(node_name))
+        # Change the failed property on the specified node;
+        self.get_node_object(node_name).failed = False
 
         # Find node's interfaces and unfail them
         ints_to_unfail_iterator = (interface for interface in self.get_node_interfaces(node_name))
@@ -1331,11 +1412,125 @@ class Model(object):
 
         lines = data.splitlines()
 
-        # Define the interfaces info
+        # Define the Interfaces from the data and extract the presence of
+        # Nodes from the Interface data
         int_info_begin_index = 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
-        interface_lines = lines[int_info_begin_index:int_info_end_index]
+        interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
+                                                                                int_info_end_index, lines)
 
+        # Define the explicit nodes info from the file
+        nodes_info_begin_index = int_info_end_index + 3
+        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
+        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
+        for node_line in node_lines:
+            cls._add_node_from_data(demand_set, interface_set, lines, lsp_set, node_line, node_set)
+
+        # Define the demands info
+        demands_info_begin_index = nodes_info_end_index + 3
+        demands_info_end_index = find_end_index(demands_info_begin_index, lines)
+        # There may or may not be LSPs in the model, so if there are not,
+        # set the demands_info_end_index as the last line in the file
+        if not demands_info_end_index:
+            demands_info_end_index = len(lines)
+
+        demands_lines = lines[demands_info_begin_index:demands_info_end_index]
+
+        for demand_line in demands_lines:
+            cls._add_demand_from_data(demand_line, demand_set, lines, node_set)
+
+        # Define the LSP info
+
+        # If the demands_info_end_index is the same as the length of the
+        # lines list, then there is no LSP section
+        if demands_info_end_index != len(lines):
+            cls._add_lsp_from_data(demands_info_end_index, lines, lsp_set, node_set)
+
+        return cls(interface_set, node_set, demand_set, lsp_set)
+
+    @classmethod
+    def _add_lsp_from_data(cls, demands_info_end_index, lines, lsp_set, node_set):
+        lsp_info_begin_index = demands_info_end_index + 3
+        lsp_lines = lines[lsp_info_begin_index:]
+        for lsp_line in lsp_lines:
+            lsp_info = lsp_line.split()
+            source = lsp_info[0]
+            source_node = [node for node in node_set if node.name == source][0]
+            dest = lsp_info[1]
+            dest_node = [node for node in node_set if node.name == dest][0]
+            name = lsp_info[2]
+            try:
+                configured_setup_bw = lsp_info[3]
+            except IndexError:
+                configured_setup_bw = None
+            new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
+
+            if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
+                lsp_set.add(new_lsp)
+            else:
+                print("{} already exists in model; disregarding line {}".format(new_lsp,
+                                                                                lines.index(lsp_line)))
+
+    @classmethod
+    def _add_demand_from_data(cls, demand_line, demand_set, lines, node_set):
+        demand_info = demand_line.split()
+        source = demand_info[0]
+        source_node = [node for node in node_set if node.name == source][0]
+        dest = demand_info[1]
+        dest_node = [node for node in node_set if node.name == dest][0]
+        traffic = int(demand_info[2])
+        name = demand_info[3]
+        if name == '':
+            demand_name = 'none'
+        else:
+            demand_name = name
+        new_demand = Demand(source_node, dest_node, traffic, demand_name)
+        if new_demand._key not in set([dmd._key for dmd in demand_set]):
+            demand_set.add(new_demand)
+        else:
+            print("{} already exists in model; disregarding line {}".format(new_demand,
+                                                                            lines.index(demand_line)))
+
+    @classmethod
+    def _add_node_from_data(cls, demand_set, interface_set, lines, lsp_set, node_line, node_set):
+        node_info = node_line.split()
+        node_name = node_info[0]
+        try:
+            node_lat = int(node_info[2])
+        except (ValueError, IndexError):
+            node_lat = 0
+        try:
+            node_lon = int(node_info[1])
+        except (ValueError, IndexError):
+            node_lon = 0
+        new_node = Node(node_name)
+        if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
+            node_set.add(new_node)
+            new_node.lat = node_lat
+            new_node.lon = node_lon
+        else:
+            print("{} on line {} already exists in model, "
+                  "updating lat/lon values if they are specified".format(new_node,
+                                                                         lines.index(node_line)))
+            existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
+            existing_node.lat = node_lat
+            existing_node.lon = node_lon
+
+    @classmethod
+    def _extract_interface_data_and_implied_nodes(cls, int_info_begin_index, int_info_end_index, lines):
+        """
+        Extracts interface data from lines and adds Interface objects to a set.
+        Also extracts the implied Nodes from the Interfaces and adds those Nodes to a set.
+
+        :param int_info_begin_index: Index position in lines where interface info begins
+        :param int_info_end_index:  Index position in lines where interface info ends
+        :param lines: lines of data describing a Model objects
+        :return: set of Interface objects, set of Node objects created from lines
+        """
+
+        interface_set = set()
+        node_set = set()
+        interface_lines = lines[int_info_begin_index:int_info_end_index]
         # Add the Interfaces to a set
         for interface_line in interface_lines:
             # Read interface characteristics
@@ -1361,94 +1556,7 @@ class Model(object):
             if remote_node_name not in set([node.name for node in node_set]):
                 node_set.add(new_interface.remote_node_object)
 
-        # Define the explicit nodes info from the file
-        nodes_info_begin_index = int_info_end_index + 3
-        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
-        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
-        for node_line in node_lines:
-            node_info = node_line.split()
-            node_name = node_info[0]
-            try:
-                node_lat = int(node_info[2])
-            except (ValueError, IndexError):
-                node_lat = 0
-            try:
-                node_lon = int(node_info[1])
-            except (ValueError, IndexError):
-                node_lon = 0
-
-            new_node = Node(node_name)
-            if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
-                node_set.add(new_node)
-                new_node.lat = node_lat
-                new_node.lon = node_lon
-            else:
-                print("{} on line {} already exists in model, "
-                      "updating lat/lon values if they are specified".format(new_node,
-                                                                             lines.index(node_line)))
-                existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
-                existing_node.lat = node_lat
-                existing_node.lon = node_lon
-
-        # Define the demands info
-        demands_info_begin_index = nodes_info_end_index + 3
-        demands_info_end_index = find_end_index(demands_info_begin_index, lines)
-        # There may or may not be LSPs in the model, so if there are not,
-        # set the demands_info_end_index as the last line in the file
-        if not demands_info_end_index:
-            demands_info_end_index = len(lines)
-
-        demands_lines = lines[demands_info_begin_index:demands_info_end_index]
-
-        for demand_line in demands_lines:
-            demand_info = demand_line.split()
-            source = demand_info[0]
-            source_node = [node for node in node_set if node.name == source][0]
-            dest = demand_info[1]
-            dest_node = [node for node in node_set if node.name == dest][0]
-            traffic = int(demand_info[2])
-            name = demand_info[3]
-            if name == '':
-                demand_name = 'none'
-            else:
-                demand_name = name
-
-            new_demand = Demand(source_node, dest_node, traffic, demand_name)
-
-            if new_demand._key not in set([dmd._key for dmd in demand_set]):
-                demand_set.add(new_demand)
-            else:
-                print("{} already exists in model; disregarding line {}".format(new_demand,
-                                                                                lines.index(demand_line)))
-
-        # Define the LSP info
-
-        # If the demands_info_end_index is the same as the length of the
-        # lines list, then there is no LSP section
-        if demands_info_end_index != len(lines):
-            lsp_info_begin_index = demands_info_end_index + 3
-            lsp_lines = lines[lsp_info_begin_index:]
-
-            for lsp_line in lsp_lines:
-                lsp_info = lsp_line.split()
-                source = lsp_info[0]
-                source_node = [node for node in node_set if node.name == source][0]
-                dest = lsp_info[1]
-                dest_node = [node for node in node_set if node.name == dest][0]
-                name = lsp_info[2]
-                try:
-                    configured_setup_bw = lsp_info[3]
-                except IndexError:
-                    configured_setup_bw = None
-                new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
-
-                if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
-                    lsp_set.add(new_lsp)
-                else:
-                    print("{} already exists in model; disregarding line {}".format(new_lsp,
-                                                                                    lines.index(lsp_line)))
-
-        return cls(interface_set, node_set, demand_set, lsp_set)
+        return interface_set, node_set
 
     def get_demand_objects_source_node(self, source_node_name):
         """
@@ -1471,3 +1579,98 @@ class Model(object):
                 demand_list.append(demand)
 
         return demand_list
+
+    # ### SRLG Calls ### #
+    def get_srlg_object(self, srlg_name, raise_exception=True):
+        """
+        Returns SRLG in self with srlg_name
+        :param srlg_name: name of SRLG
+        :param raise_exception: raise an exception if SRLG with name=srlg_name does not
+        exist in self
+        :return: None
+        """
+
+        srlg_already_in_model = [srlg for srlg in self.srlg_objects if srlg.name == srlg_name]
+
+        if len(srlg_already_in_model) == 1:
+            return srlg_already_in_model[0]  # There will only be one SRLG with srlg_name
+        else:
+            if raise_exception:
+                msg = "No SRLG with name {} exists in Model".format(srlg_name)
+                raise ModelException(msg)
+            else:
+                return None
+
+    def fail_srlg(self, srlg_name):
+        """
+        Sets SRLG with name srlg_name to failed = True
+        :param srlg_name: name of SRLG to fail
+        :return: none
+        """
+
+        srlg_to_fail = self.get_srlg_object(srlg_name)
+
+        # Find SRLG's Nodes to fail
+        nodes_to_fail_iterator = (node for node in self.node_objects if node in srlg_to_fail.node_objects)
+
+        for node in nodes_to_fail_iterator:
+            self.fail_node(node.name)
+
+        # Find SRLG's Interfaces to fail
+        interfaces_to_fail_iterator = (interface for interface in self.interface_objects if
+                                       interface in srlg_to_fail.interface_objects)
+
+        for interface in interfaces_to_fail_iterator:
+            self.fail_interface(interface.name, interface.node_object.name)
+
+        # Change the failed property on the specified srlg
+        srlg_to_fail.failed = True
+
+    def unfail_srlg(self, srlg_name):
+        """
+        Sets SRLG with srlg_name to failed = False
+        :param srlg_name: name of SRLG to unfail
+        :return: none
+        """
+
+        srlg_to_unfail = self.get_srlg_object(srlg_name)
+
+        # Change the failed property on the specified srlg
+        srlg_to_unfail.failed = False
+
+        # Find SRLG's Nodes to unfail
+        nodes_to_unfail_iterator = (node for node in self.node_objects if node in srlg_to_unfail.node_objects)
+
+        # Node will stay failed if it's part of another SRLG that is still failed;
+        # in that case, the unfail_node will create an exception; ignore that exception
+        for node in nodes_to_unfail_iterator:
+            try:
+                self.unfail_node(node.name)
+            except ModelException:
+                pass
+
+        # Find SRLG's Interfaces to unfail
+        interfaces_to_unfail_iterator = (interface for interface in self.interface_objects if
+                                         interface in srlg_to_unfail.interface_objects)
+
+        # Interface will stay failed if it's part of another SRLG that is still failed or
+        # if the local/remote Node is failed;  in that case, the unfail_interface
+        # will create an exception; ignore that exception
+        for interface in interfaces_to_unfail_iterator:
+            try:
+                self.unfail_interface(interface.name, interface.node_object.name)
+            except ModelException:
+                pass
+
+    def add_srlg(self, srlg_name):
+        """
+        Adds SRLG object to Model
+        :param srlg_name: name of SRLG
+        :return:
+        """
+
+        if srlg_name in set([srlg.name for srlg in self.srlg_objects]):
+            raise ModelException("SRLG with name {} already exists in Model".format(srlg_name))
+        else:
+            srlg = SRLG(srlg_name, self)
+            self.srlg_objects.add(srlg)

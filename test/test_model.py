@@ -363,3 +363,27 @@ class TestModel(unittest.TestCase):
         model.change_interface_name('A', 'A-to-B', 'A-to-B-changed')
 
         self.assertEqual(interface.name, 'A-to-B-changed')
+
+    def test_duplicate_int_near_side(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        node_a_2 = Node('A')
+        node_b_2 = Node('B')
+        err_msg = 'already exists in model'
+
+        with self.assertRaises(ModelException) as context:
+            model.add_circuit(node_a_2, node_b_2, 'A-to-B', 'B-to-A', 40, 40, 100)
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_duplicate_int_remote_side(self):
+        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model.update_simulation()
+
+        node_d_2 = Node('D')
+        node_b_2 = Node('B')
+        err_msg = 'already exists in model'
+
+        with self.assertRaises(ModelException) as context:
+            model.add_circuit(node_d_2, node_b_2, 'D-to-B', 'B-to-A', 40, 40, 100)
+        self.assertIn(err_msg, context.exception.args[0])

@@ -1,11 +1,12 @@
-"""A class to represent a router in the Model"""
+"""A class to represent a layer 3 device in the Model"""
 
 from .exceptions import ModelException
+from .srlg import SRLG
 
 
 class Node(object):
     """
-    A class to represent a router in the model
+    A class to represent a layer 3 device in the model
     """
 
     def __init__(self, name, lat=0, lon=0):
@@ -13,11 +14,12 @@ class Node(object):
         self._failed = False
         self.lat = lat
         self.lon = lon
+        self._srlgs = set()
 
         # Validate lat, lon values
-        if (lat > 90 or lat < -90):
+        if lat > 90 or lat < -90:
             raise ValueError('lat must be in range -90 to +90')
-        if (lon > 180 or lon < -180):
+        if lon > 180 or lon < -180:
             raise ValueError('lon must be in range -180 to +180')
 
     def __repr__(self):
@@ -33,21 +35,38 @@ class Node(object):
         return self.__dict__ == other_node.__dict__
 
     def __hash__(self):
-        return hash(tuple(sorted(self.__dict__.items())))
+        # return hash(tuple(sorted(self.__dict__.items())))
+        return hash(self.name)
 
     def _key(self):
         return self.name
 
     @property
     def failed(self):
+        """
+        Is node failed?  Boolean.  It is NOT recommended to directly
+        modify this property.  Rather, use Node.fail or Node.unfail.
+        :return: Boolean - is node failed?
+        """
         return self._failed
 
     @failed.setter
     def failed(self, status):
-        if isinstance(status, bool):
-            self._failed = status
-        else:
+        if not isinstance(status, bool):
             raise ModelException('must be boolean')
+
+        if status is False:  # False means Node would not be failed
+            # Check for any SRLGs with self as a member and get status
+            # of each SRLG
+            failed_srlgs = [srlg for srlg in self.srlgs if srlg.failed is True]
+            if len(failed_srlgs) > 0:
+                self._failed = True
+                raise ModelException("Node must be failed since it is a member of one or more SRLGs that are failed")
+            else:
+                self._failed = False
+
+        else:
+            self._failed = True
 
     def interfaces(self, model):
         """
@@ -79,3 +98,80 @@ class Node(object):
             adjacent_nodes.add(adjacency.remote_node_object)
 
         return adjacent_nodes
+
+    def add_to_srlg(self, srlg_name, model, create_if_not_present=False):
+        """
+        Adds self to an SRLG with name=srlg_name in model.
+        :param srlg_name: name of srlg
+        :param model: Model object
+        :param create_if_not_present: Boolean.  Create the SRLG if it
+        does not exist in model already.  True will create SRLG in
+        model; False will raise ModelException
+        :return: None
+        """
+
+        # See if model has existing SRLG with name='srlg_name'
+        # get_srlg will be the SRLG object with name=srlg_name in model
+        # or it will be False if the SRLG with name=srlg_name does not
+        # exist in model
+        try:
+            get_srlg = model.get_srlg_object(srlg_name)
+        except ModelException:
+            get_srlg = False
+
+        if get_srlg is False:
+            # SRLG does not exist
+            if create_if_not_present is True:
+                new_srlg = SRLG(srlg_name, model)
+                model.srlg_objects.add(new_srlg)
+                self._srlgs.add(new_srlg)
+            else:
+                msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+                raise ModelException(msg)
+        else:
+            # SRLG does exist in model; add self to that SRLG
+            get_srlg.node_objects.add(self)
+            self._srlgs.add(get_srlg)
+
+    def remove_from_srlg(self, srlg_name, model):
+        """
+        Removes self from SRLG with srlg_name in model
+        :param srlg_name: name of SRLG
+        :param model: Model object
+        :return: none
+        """
+        # See if model has existing SRLG with name='srlg_name'
+        # get_srlg will be the SRLG object with name=srlg_name in model
+        # or it will be False if the SRLG with name=srlg_name does not
+        # exist in model
+        try:
+            get_srlg = model.get_srlg_object(srlg_name)
+        except ModelException:
+            get_srlg = False
+
+        if get_srlg is False:
+            msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+            raise ModelException(msg)
+        else:
+            # Remove self from SRLG
+            get_srlg.node_objects.remove(self)
+            self._srlgs.remove(get_srlg)
+
+            # If SRLG was failed, change self.failed = False when removed.  If
+            # setting self.failed = False generates a ModelException, pass.  The
+            # ModelException would happen if the Node was part of a different SRLG
+            # that was still failed
+            # if get_srlg.failed:
+            #     try:
+            #         self.failed = False
+            #     except ModelException:
+            #         pass
+
+            self.failed = False
+
+    @property
+    def srlgs(self):
+        return self._srlgs
+
+    # TODO add node.fail and node.unfail - low priority - not really
+    #  necessary since Model has fail_/unfail_node

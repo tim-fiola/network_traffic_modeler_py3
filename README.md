@@ -34,7 +34,7 @@ See the documentation on [Read the Docs](http://pyntm.readthedocs.org).
 Examples
 ========
 
-See the [example directory](./examples). 
+See the [example directory](https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples).
 
 
 Notes
