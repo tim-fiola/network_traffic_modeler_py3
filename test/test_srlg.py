@@ -199,7 +199,7 @@ class TestSRLG(unittest.TestCase):
         node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
         srlg = model.get_srlg_object('new_srlg')
 
-        self.assertTrue(node_a in model.get_srlg_object('new_srlg').node_objects)
+        self.assertIn(node_a, model.get_srlg_object('new_srlg').node_objects)
         self.assertIn(srlg, node_a.srlgs)
 
     # Test that a failed srlg brings a member node to failed = True
@@ -306,10 +306,10 @@ class TestSRLG(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     # Test getting an SRLG that does not exist in Model raises exception
-    def get_bad_srlg(self):
+    def test_get_bad_srlg(self):
         model = Model.load_model_file('test/igp_routing_topology.csv')
 
-        err_msg = 'An SRLG with name bad_srlg does not exist in the Model'
+        err_msg = 'No SRLG with name bad_srlg exists in Model'
         with self.assertRaises(ModelException) as context:
             model.get_srlg_object('bad_srlg')
         self.assertTrue(err_msg in context.exception.args[0])
