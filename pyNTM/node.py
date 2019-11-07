@@ -6,7 +6,11 @@ from .srlg import SRLG
 
 class Node(object):
     """
-    A class to represent a layer 3 device in the model
+    A class to represent a layer 3 device in the model.
+
+    Attribute lat, lon can be used as y, x values, respectively for
+    graphing purposes.
+
     """
 
     def __init__(self, name, lat=0, lon=0):
@@ -17,10 +21,10 @@ class Node(object):
         self._srlgs = set()
 
         # Validate lat, lon values
-        if lat > 90 or lat < -90:
-            raise ValueError('lat must be in range -90 to +90')
-        if lon > 180 or lon < -180:
-            raise ValueError('lon must be in range -180 to +180')
+        if not(isinstance(lat, float)):
+            raise ValueError('lat must be a float value')
+        if not(isinstance(lon, float)):
+            raise ValueError('lon must be a float value')
 
     def __repr__(self):
         return 'Node(%r)' % self.name

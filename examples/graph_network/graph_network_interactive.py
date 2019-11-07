@@ -143,14 +143,14 @@ def _prep_network_model_for_graph(model):
             int_colors[edge_2_name] = 'grey'
         else:
             for color, util in util_ranges:
-                if int1.utilization * 100 >= util:
+                if int1.utilization >= util:
                     int_colors[edge_1_name] = color
-                    int_util[edge_1_name] = int1.utilization * 100
+                    int_util[edge_1_name] = int1.utilization
                     break
             for color1, util1 in util_ranges:
-                if int2.utilization * 100 >= util1:
+                if int2.utilization >= util1:
                     int_colors[edge_2_name] = color1
-                    int_util[edge_2_name] = int2.utilization * 100
+                    int_util[edge_2_name] = int2.utilization
                     break
 
         # Get all the existing node positions

@@ -1284,9 +1284,6 @@ class Model(object):
 
         print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), 'Traffic'.ljust(12))
 
-        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12),
-              'Traffic'.ljust(12))
-
         interface_iterator = (interface for interface in self.interface_objects)
 
         for interface in interface_iterator:
@@ -1399,7 +1396,70 @@ class Model(object):
         format to produce a valid model.  This cannot be used to open
         multiple models in a single python instance - there may be
         unpredictable results in the info in the models.
+
+        The format for the file must be a tab separated value file.
+
+        The following headers must exist, with the following tab-column names:
+
+        INTERFACES_TABLE
+        node_object_name - name of node	where interface resides
+        remote_node_object_name	- name of remote node
+        name - interface name
+        cost - IGP cost/metric for interface
+        capacity - capacity
+        # The existence of Nodes will be inferred from the INTERFACES_TABLE.
+        # So a Node created from an Interface does not have to appear in the
+        # NODES_TABLE unless you want to add additional attributes for the Node
+        # such as latitude/longitude
+
+        NODES_TABLE -
+        name - name of node
+        lon	- longitude (or y-coordinate)
+        lat - latitude (or x-coordinate)
+        # The NODES_TABLE is present for 2 reasons:
+        # - to add a Node that has no interfaces
+        # - and/or to add additional attributes for a Node inferred from
+        #   the INTERFACES_TABLE
+
+        DEMANDS_TABLE
+        source - source node name
+        dest - destination node name
+        traffic	- amount of traffic on demand
+        name - name of demand
+
+        RSVP_LSP_TABLE (this is optional based on if LSPs are present)
+        source - source node name
+        dest - destination node name
+        name - name of LSP
+
+        Functional model files can be found in this directory in
+        https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
+        and/or in the 'examples' directory in this package.
+
+
+        Here is an example:
+
+        INTERFACES_TABLE
+        node_object_name	remote_node_object_name	name	cost	capacity
+        A	B	A-to-B	4	100
+        B	A	B-to-A	4	100
+
+        NODES_TABLE
+        name	lon	lat
+        A	50	0
+        B	0	-50
+
+        DEMANDS_TABLE
+        source	dest	traffic	name
+        A	B	80	dmd_a_b_1
+
+        RSVP_LSP_TABLE
+        source	dest	name
+        A	B	lsp_a_d_1
+
         """
+        # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
+        # TODO - add column in RSVP_LSP_TABLE about fixed_bandwidth where a value there is the fixed bandwidth
 
         interface_set = set()
         node_set = set()
