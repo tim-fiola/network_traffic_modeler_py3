@@ -23,7 +23,7 @@ class Node(object):
         # Validate lat, lon values
         if not(isinstance(lat, float)) and not(isinstance(lat, int)):
             raise ValueError('lat must be a float value')
-        if not(isinstance(lon, float)) and not(isinstance(lat, int)):
+        if not(isinstance(lon, float)) and not(isinstance(lon, int)):
             raise ValueError('lon must be a float value')
 
     def __repr__(self):

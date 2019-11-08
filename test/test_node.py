@@ -39,6 +39,16 @@ class TestNode(unittest.TestCase):
         with self.assertRaises(ValueError):
             Node(name='nodeC', lat=0, lon='the number two')
 
+    def test_lat_error_2(self):
+        node_a = self.model.get_node_object('A')
+        with self.assertRaises(ValueError):
+            node_a.lat = 'twelve'
+
+    def test_lon_error_2(self):
+        node_a = self.model.get_node_object('A')
+        with self.assertRaises(ValueError):
+            node_a.lon = 'twelve'
+
     def test_set_failed(self):
         self.node_a.failed = True
         self.assertEqual(True, self.node_a.failed)
