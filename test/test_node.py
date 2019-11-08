@@ -37,7 +37,7 @@ class TestNode(unittest.TestCase):
 
     def test_lon_error(self):
         with self.assertRaises(ValueError):
-            Node(name='nodeC', lat=0, lon='89')
+            Node(name='nodeC', lat=0, lon='the number two')
 
     def test_set_failed(self):
         self.node_a.failed = True
