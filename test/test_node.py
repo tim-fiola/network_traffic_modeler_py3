@@ -33,11 +33,11 @@ class TestNode(unittest.TestCase):
 
     def test_lat_error(self):
         with self.assertRaises(ValueError):
-            Node(name='nodeC', lat=100, lon=0)
+            Node(name='nodeC', lat='twelve', lon=0)
 
     def test_lon_error(self):
         with self.assertRaises(ValueError):
-            Node(name='nodeC', lat=0, lon=200)
+            Node(name='nodeC', lat=0, lon='89')
 
     def test_set_failed(self):
         self.node_a.failed = True

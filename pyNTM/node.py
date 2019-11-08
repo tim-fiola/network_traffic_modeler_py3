@@ -13,7 +13,7 @@ class Node(object):
 
     """
 
-    def __init__(self, name, lat = 0, lon = 0):
+    def __init__(self, name, lat=0, lon=0):
         self.name = name
         self._failed = False
         self._lat = lat
@@ -82,7 +82,7 @@ class Node(object):
         if isinstance(status, float) or isinstance(status, int):
             self._lat = status
         else:
-            raise ModelException("lat attribute must be integer or float.")
+            raise ValueError("lat attribute must be integer or float.")
 
     @property
     def lon(self):
@@ -94,7 +94,7 @@ class Node(object):
         if isinstance(status, float) or isinstance(status, int):
             self._lon = status
         else:
-            raise ModelException("lon attribute must be integer or float.")
+            raise ValueError("lon attribute must be integer or float.")
 
     def interfaces(self, model):
         """
