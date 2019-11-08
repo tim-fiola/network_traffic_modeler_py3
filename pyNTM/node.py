@@ -13,17 +13,17 @@ class Node(object):
 
     """
 
-    def __init__(self, name, lat=0, lon=0):
+    def __init__(self, name, lat = 0, lon = 0):
         self.name = name
         self._failed = False
-        self.lat = lat
-        self.lon = lon
+        self._lat = lat
+        self._lon = lon
         self._srlgs = set()
 
         # Validate lat, lon values
-        if not(isinstance(lat, float)):
+        if not(isinstance(lat, float)) and not(isinstance(lat, int)):
             raise ValueError('lat must be a float value')
-        if not(isinstance(lon, float)):
+        if not(isinstance(lon, float)) and not(isinstance(lat, int)):
             raise ValueError('lon must be a float value')
 
     def __repr__(self):
@@ -71,6 +71,30 @@ class Node(object):
 
         else:
             self._failed = True
+
+    @property
+    def lat(self):
+        """Latitude or y-coordinate of Node on a plot"""
+        return self._lat
+
+    @lat.setter
+    def lat(self, status):
+        if isinstance(status, float) or isinstance(status, int):
+            self._lat = status
+        else:
+            raise ModelException("lat attribute must be integer or float.")
+
+    @property
+    def lon(self):
+        """Longitude or x-coordinate of Node on a plot"""
+        return self._lon
+
+    @lon.setter
+    def lon(self, status):
+        if isinstance(status, float) or isinstance(status, int):
+            self._lon = status
+        else:
+            raise ModelException("lon attribute must be integer or float.")
 
     def interfaces(self, model):
         """

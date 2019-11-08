@@ -609,7 +609,7 @@ class Model(object):
         print("Routing the LSPs . . . ")
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
-        print("LSPs routed; routing demands now . . .")
+        print("LSPs routed (if present); routing demands now . . .")
         # Route the demands
         self = self._route_demands(self.demand_objects,
                                    non_failed_interfaces_model)
@@ -1569,9 +1569,6 @@ class Model(object):
             new_node.lat = node_lat
             new_node.lon = node_lon
         else:
-            print("{} on line {} already exists in model, "
-                  "updating lat/lon values if they are specified".format(new_node,
-                                                                         lines.index(node_line)))
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
             existing_node.lat = node_lat
             existing_node.lon = node_lon

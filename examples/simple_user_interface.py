@@ -1,6 +1,7 @@
 """Simple, menu-driven UI for network_modeling module.
 Allows users to interact with and relate between associated
 demands, interfaces, and nodes."""
+
 # This is a temp hack to get this to see pyNTM and let it import
 import sys  # noqa
 sys.path.append('../')  # noqa
@@ -21,6 +22,7 @@ import re
 background_color = 'tan'
 
 # TODO - have this support RSVP LSPs
+# TODO - have button to find all paths on path explorer and warn it may take a while
 
 
 def open_file():
@@ -404,7 +406,7 @@ def examine_selected_node(*args):
     node_intf_frame = LabelFrame(node_tab)
     node_intf_frame.grid(row=0, column=1)
 
-    interface_info = [str(round((interface.utilization * 100), 1)) + '%   ' + interface.__repr__() for
+    interface_info = [str(round((interface.utilization), 1)) + '%   ' + interface.__repr__() for
                       interface in interface_choices]
 
     interface_listbox = display_interfaces("Node's Interfaces", node_intf_frame,
@@ -492,7 +494,7 @@ def examine_selected_demand(*args):
         for path in dmd_paths:
             label_info = "Demand hops ordered from source to dest"
 
-            interface_info = [str(round((interface.utilization * 100), 1))
+            interface_info = [str(round((interface.utilization), 1))
                               + '%   ' + interface.__repr__() for interface in path]
 
             display_interfaces(label_info, demand_path_frame,
@@ -529,9 +531,9 @@ utilization % greater than:")
 
     msg = "Interfaces above " + str(min_pct.get()) + "% utilization"
 
-    interface_list = [str(round((interface.utilization * 100), 1)) + '%   '
+    interface_list = [str(round((interface.utilization), 1)) + '%   '
                       + interface.__repr__() for interface in model.interface_objects if
-                      ((interface.utilization * 100) >= min_pct.get())]
+                      ((interface.utilization) >= min_pct.get())]
 
     interface_list.sort(key=lambda x: float(x.split('%')[0]))
 
