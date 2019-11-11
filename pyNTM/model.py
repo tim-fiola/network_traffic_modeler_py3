@@ -16,7 +16,6 @@ from .rsvp import RSVP_LSP
 from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
-# TODO - add show_debug flag to update_simulation to see info like lsp routing status
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
 #  routed lsp/demands in dict form
 
