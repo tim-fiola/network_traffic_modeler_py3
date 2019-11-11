@@ -786,7 +786,7 @@ open_file_tab = ttk.Frame(nb)
 nb.add(open_file_tab, text="Open Model File")
 
 # Establish a frame label
-label_frame = ttk.LabelFrame(open_file_tab, text="Select a Network Model File")
+label_frame = ttk.LabelFrame(open_file_tab, text="Select a Network Model File (models with RSVP LSPs not supported)")
 label_frame.grid(column=0, row=0, padx=8, pady=8, sticky='W')
 
 # Make a button to load a file

@@ -1430,6 +1430,8 @@ class Model(object):
         source - source node name
         dest - destination node name
         name - name of LSP
+        configured_setup_bw - if LSP is static, configured setup bandwidth, place that value here, if LSP is
+        auto-bandwidth then leave this blank
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
