@@ -1426,16 +1426,15 @@ class Model(object):
         traffic	- amount of traffic on demand
         name - name of demand
 
-        RSVP_LSP_TABLE (this is optional based on if LSPs are present)
+        RSVP_LSP_TABLE (this table is optional)
         source - source node name
         dest - destination node name
         name - name of LSP
-        configured_setup_bw - if LSP is static, configured setup bandwidth, place that value here, if LSP is
-        auto-bandwidth then leave this blank
+        configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+        if LSP is auto-bandwidth, then leave this blank for the LSP
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
-        and/or in the 'examples' directory in this package.
 
 
         Here is an example:
@@ -1455,12 +1454,13 @@ class Model(object):
         A	B	80	dmd_a_b_1
 
         RSVP_LSP_TABLE
-        source	dest	name
-        A	B	lsp_a_d_1
+        source	dest	name    configured_setup_bw
+        A	B	lsp_a_b_1   10
+        A	B	lsp_a_b_2
+
 
         """
         # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
-        # TODO - add column in RSVP_LSP_TABLE about fixed_bandwidth where a value there is the fixed bandwidth
 
         interface_set = set()
         node_set = set()
