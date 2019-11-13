@@ -1,6 +1,12 @@
 Changelog
 =========
 
+
+1.4
+---
+* updated requirements.txt to allow use of beta features
+
+
 1.3
 ---
 * improved docstring for Model load_model_file class method
