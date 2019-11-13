@@ -1,5 +1,9 @@
 """
 Client code to demonstrate how to use the pyNTM network_modeling classes
+
+Requirements:
+    - sample_network_model_file.csv be in same directory
+    - access to graph_network folder in syspath
 """
 
 # This is a temp hack to get this to see pyNTM and let it import

@@ -1,6 +1,7 @@
 """Simple, menu-driven UI for network_modeling module.
 Allows users to interact with and relate between associated
 demands, interfaces, and nodes."""
+
 # This is a temp hack to get this to see pyNTM and let it import
 import sys  # noqa
 sys.path.append('../')  # noqa
@@ -298,7 +299,7 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     Label(demands_frame, text=label_info).grid(row=0,
                                                column=0, sticky='W', padx=10)
 
-    # Horizontal scrollbar - TODO create decorator for the scrollbar?
+    # Horizontal scrollbar
     horizontal_scrollbar = Scrollbar(demands_frame, orient=HORIZONTAL)
     horizontal_scrollbar.grid(row=3, column=0, sticky=E + W)
 
@@ -336,7 +337,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
     vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
 
-    # Horizontal scrollbar - TODO create decorator for the scrollbar?
+    # Horizontal scrollbar
     horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
     horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
                               columnspan=2)
@@ -404,7 +405,7 @@ def examine_selected_node(*args):
     node_intf_frame = LabelFrame(node_tab)
     node_intf_frame.grid(row=0, column=1)
 
-    interface_info = [str(round((interface.utilization * 100), 1)) + '%   ' + interface.__repr__() for
+    interface_info = [str(round((interface.utilization), 1)) + '%   ' + interface.__repr__() for
                       interface in interface_choices]
 
     interface_listbox = display_interfaces("Node's Interfaces", node_intf_frame,
@@ -489,15 +490,19 @@ def examine_selected_demand(*args):
 
         column_num = 0
 
-        for path in dmd_paths:
-            label_info = "Demand hops ordered from source to dest"
+        if dmd_paths != 'Unrouted':
+            for path in dmd_paths:
+                label_info = "Demand hops ordered from source to dest"
 
-            interface_info = [str(round((interface.utilization * 100), 1))
-                              + '%   ' + interface.__repr__() for interface in path]
+                interface_info = ["{}% {}".format(str(round((interface.utilization), 1)),
+                                                  interface.__repr__()) for interface in path]
 
-            display_interfaces(label_info, demand_path_frame,
-                               interface_info, 0, column_num)
-            column_num += 3
+                display_interfaces(label_info, demand_path_frame, interface_info, 0, column_num)
+                column_num += 3
+        else:
+            label_info = "Demand is Unrouted"
+            interface_info = "Demand is Unrouted"
+            display_interfaces(label_info, demand_path_frame, interface_info, 0, column_num)
 
     except (IndexError, UnboundLocalError):
         pass
@@ -529,9 +534,9 @@ utilization % greater than:")
 
     msg = "Interfaces above " + str(min_pct.get()) + "% utilization"
 
-    interface_list = [str(round((interface.utilization * 100), 1)) + '%   '
+    interface_list = [str(round((interface.utilization), 1)) + '%   '
                       + interface.__repr__() for interface in model.interface_objects if
-                      ((interface.utilization * 100) >= min_pct.get())]
+                      ((interface.utilization) >= min_pct.get())]
 
     interface_list.sort(key=lambda x: float(x.split('%')[0]))
 
@@ -565,9 +570,39 @@ def examine_paths(*args):
                                             node_choices, dest_node, 1, 0)
     dest_node_select.grid(sticky='W')
 
-    #### Display shortest path(s) ####
+    # ### Display shortest path(s) ### #
 
     # Find shortest paths
+    # try:
+        # source_node_object = model.get_node_object(source_node.get())
+        # dest_node_object = model.get_node_object(dest_node.get())
+
+    #     shortest_path = model.get_shortest_path(source_node.get(),
+    #                                             dest_node.get())
+    #
+    #     paths = shortest_path['path']
+    #     cost = shortest_path['cost']
+    #
+    #     # Create a frame to hold the shortest path(s)
+    #     shortest_path_frame = LabelFrame(path_tab, text="Shortest Paths")
+    #     shortest_path_frame.grid(row=2, column=0, sticky='W', padx=10)
+    #
+    #     column_counter = 0
+    #     path_counter = 0
+    #
+    #     for path in paths:
+    #         list_of_interfaces = path
+    #         label = "Shortest Path %s, cost = %s" % (str(path_counter),
+    #                                                  str(cost))
+    #         display_interfaces(label, shortest_path_frame, list_of_interfaces,
+    #                            1, column_counter)
+    #         column_counter += 2
+    #         path_counter += 1
+    #
+    # except ModelException:
+    #     pass
+
+
     try:
         source_node_object = model.get_node_object(source_node.get())
         dest_node_object = model.get_node_object(dest_node.get())
@@ -575,67 +610,35 @@ def examine_paths(*args):
         shortest_path = model.get_shortest_path(source_node.get(),
                                                 dest_node.get())
 
-        paths = shortest_path['path']
-        cost = shortest_path['cost']
-
-        # Create a frame to hold the shortest path(s)
-        shortest_path_frame = LabelFrame(path_tab, text="Shortest Paths")
-        shortest_path_frame.grid(row=2, column=0, sticky='W', padx=10)
-
-        column_counter = 0
-        path_counter = 0
-
-        for path in paths:
-            list_of_interfaces = path
-            label = "Shortest Path %s, cost = %s" % (str(path_counter),
-                                                     str(cost))
-            display_interfaces(label, shortest_path_frame, list_of_interfaces,
-                               1, column_counter)
-            column_counter += 2
-            path_counter += 1
-
-    except ModelException:
-        pass
-
-    #### Display all paths ####
-    # Note - python, wtf?! Getting the horizontal scrollbar to work with
-    # multiple listboxes was WAY more difficult than it should have been
-    try:
-        source_node_object = model.get_node_object(source_node.get())
-        dest_node_object = model.get_node_object(dest_node.get())
-
-        all_paths = model.get_all_paths_reservable_bw(source_node.get(),
-                                             dest_node.get())
-
         # Create label frame to hold the feasible path(s) # frame_canvas
-        feasible_path_frame = LabelFrame(path_tab, text="All Paths")
-        feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
+        shortest_path_frame = LabelFrame(path_tab, text="Shortest Paths")
+        shortest_path_frame.grid(row=2, column=0, sticky='W', padx=10, pady=10)
 
-        feasible_path_frame.grid_rowconfigure(0, weight=1)
-        feasible_path_frame.grid_columnconfigure(0, weight=1)
-        feasible_path_frame.grid_propagate(False)
+        shortest_path_frame.grid_rowconfigure(0, weight=1)
+        shortest_path_frame.grid_columnconfigure(0, weight=1)
+        shortest_path_frame.grid_propagate(False)
 
         # canvas
-        feasible_path_canvas = Canvas(feasible_path_frame)
-        feasible_path_canvas.grid(row=0, column=0, sticky='news')
+        shortest_path_canvas = Canvas(shortest_path_frame)
+        shortest_path_canvas.grid(row=0, column=0, sticky='news')
 
         # Horizontal Scrollbar
-        horizontal_scrollbar = Scrollbar(feasible_path_frame, orient=HORIZONTAL,
-                                         command=feasible_path_canvas.xview)
+        horizontal_scrollbar = Scrollbar(shortest_path_frame, orient=HORIZONTAL,
+                                         command=shortest_path_canvas.xview)
         horizontal_scrollbar.grid(row=4, column=0, sticky='ew')
-        feasible_path_canvas.configure(xscrollcommand=horizontal_scrollbar.set)
+        shortest_path_canvas.configure(xscrollcommand=horizontal_scrollbar.set)
 
         # Create a frame to house the path(s)
-        path_frame = Frame(feasible_path_canvas)  # frame_buttons
-        feasible_path_canvas.create_window((0, 0), window=path_frame,
+        path_frame = Frame(shortest_path_canvas)  # frame_buttons
+        shortest_path_canvas.create_window((0, 0), window=path_frame,
                                            anchor='nw')
 
         column_counter = 0
         path_counter = 0
 
-        for path in all_paths['path']:
+        for path in shortest_path['path']:
             list_of_interfaces = path
-            label = "Feasible Path %s" % (str(path_counter))
+            label = "Shortest Path %s" % (str(path_counter))
             display_interfaces(label, path_frame, list_of_interfaces,
                                1, column_counter)
             column_counter += 2
@@ -645,11 +648,72 @@ def examine_paths(*args):
         # scrollbar for the multiple listboxes doesn't work; holy cow, python,
         # it shouldn't be this difficult
         path_frame.update_idletasks()
-        feasible_path_frame.config(width=1200, height=300)
-        feasible_path_canvas.config(scrollregion=feasible_path_canvas.bbox("all"))
+        shortest_path_frame.config(width=1200, height=300)
+        shortest_path_canvas.config(scrollregion=shortest_path_canvas.bbox("all"))
 
     except ModelException:
         pass
+
+
+    # ### Display all paths ### #
+    # Note - python, wtf?! Getting the horizontal scrollbar to work with
+    # multiple listboxes was WAY more difficult than it should have been
+
+    # all_paths_button = ttk.Button(path_tab)
+    # all_paths_button["text"] = "Push button see all possible paths"
+    # all_paths_button.grid(row=11, column=0, sticky='W')
+    # all_paths_button["command"] = TBD
+
+    # try:
+    #     source_node_object = model.get_node_object(source_node.get())
+    #     dest_node_object = model.get_node_object(dest_node.get())
+    #
+    #     all_paths = model.get_all_paths_reservable_bw(source_node.get(),
+    #                                          dest_node.get())
+    #
+    #     # Create label frame to hold the feasible path(s) # frame_canvas
+    #     feasible_path_frame = LabelFrame(path_tab, text="All Paths")
+    #     feasible_path_frame.grid(row=3, column=0, padx=10, pady=10)
+    #
+    #     feasible_path_frame.grid_rowconfigure(0, weight=1)
+    #     feasible_path_frame.grid_columnconfigure(0, weight=1)
+    #     feasible_path_frame.grid_propagate(False)
+    #
+    #     # canvas
+    #     feasible_path_canvas = Canvas(feasible_path_frame)
+    #     feasible_path_canvas.grid(row=0, column=0, sticky='news')
+    #
+    #     # Horizontal Scrollbar
+    #     horizontal_scrollbar = Scrollbar(feasible_path_frame, orient=HORIZONTAL,
+    #                                      command=feasible_path_canvas.xview)
+    #     horizontal_scrollbar.grid(row=4, column=0, sticky='ew')
+    #     feasible_path_canvas.configure(xscrollcommand=horizontal_scrollbar.set)
+    #
+    #     # Create a frame to house the path(s)
+    #     path_frame = Frame(feasible_path_canvas)  # frame_buttons
+    #     feasible_path_canvas.create_window((0, 0), window=path_frame,
+    #                                        anchor='nw')
+    #
+    #     column_counter = 0
+    #     path_counter = 0
+    #
+    #     for path in all_paths['path']:
+    #         list_of_interfaces = path
+    #         label = "Feasible Path %s" % (str(path_counter))
+    #         display_interfaces(label, path_frame, list_of_interfaces,
+    #                            1, column_counter)
+    #         column_counter += 2
+    #         path_counter += 1
+    #
+    #     # These next 3 things need to be in this order or the horizontal
+    #     # scrollbar for the multiple listboxes doesn't work; holy cow, python,
+    #     # it shouldn't be this difficult
+    #     path_frame.update_idletasks()
+    #     feasible_path_frame.config(width=1200, height=300)
+    #     feasible_path_canvas.config(scrollregion=feasible_path_canvas.bbox("all"))
+    #
+    # except ModelException:
+    #     pass
 
 
 def node_dropdown_select(label, node_choices, target_variable, row_, column_):
@@ -716,13 +780,13 @@ while rows < 70:
     ui_window.columnconfigure(rows, weight=1)
     rows += 1
 
-#### File Open Tab ####
+# ### File Open Tab ### #
 # Open a model file
 open_file_tab = ttk.Frame(nb)
 nb.add(open_file_tab, text="Open Model File")
 
 # Establish a frame label
-label_frame = ttk.LabelFrame(open_file_tab, text="Select a Network Model File")
+label_frame = ttk.LabelFrame(open_file_tab, text="Select a Network Model File (models with RSVP LSPs not supported)")
 label_frame.grid(column=0, row=0, padx=8, pady=8, sticky='W')
 
 # Make a button to load a file
@@ -731,23 +795,21 @@ load_file_button["text"] = "Push button to load network model file"
 load_file_button.grid(row=11, column=0, sticky='W')
 load_file_button["command"] = open_file
 
-#### Node Tab ####
+# ### Node Tab ### #
 # Create a new tab and add it to the notebook
 node_tab = ttk.Frame(nb)
 nb.add(node_tab, text="Node Explorer")
 
-#### Demand Tab ####
+# ### Demand Tab ### #
 # Create a new tab and add it to the notebook
 demand_tab = ttk.Frame(nb)
 nb.add(demand_tab, text="Demand Explorer")
 
-# TODO - Interface Tab with list of top utilized interfaces
-# and be able to set utilization % and see all ints that exceed it
-#### Interface Tab ####
+# ### Interface Tab ### #
 interface_tab = ttk.Frame(nb)
 nb.add(interface_tab, text="Interface Explorer")
 
-#### Create Paths Tab ####
+# ### Create Paths Tab ### #
 path_tab = ttk.Frame(nb)
 nb.add(path_tab, text="Path Explorer")
 

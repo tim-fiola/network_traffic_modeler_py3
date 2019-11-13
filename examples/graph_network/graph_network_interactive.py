@@ -143,14 +143,14 @@ def _prep_network_model_for_graph(model):
             int_colors[edge_2_name] = 'grey'
         else:
             for color, util in util_ranges:
-                if int1.utilization * 100 >= util:
+                if int1.utilization >= util:
                     int_colors[edge_1_name] = color
-                    int_util[edge_1_name] = int1.utilization * 100
+                    int_util[edge_1_name] = int1.utilization
                     break
             for color1, util1 in util_ranges:
-                if int2.utilization * 100 >= util1:
+                if int2.utilization >= util1:
                     int_colors[edge_2_name] = color1
-                    int_util[edge_2_name] = int2.utilization * 100
+                    int_util[edge_2_name] = int2.utilization
                     break
 
         # Get all the existing node positions
@@ -381,16 +381,14 @@ def _create_interactive_network_graph(json_data):
 
         # Add the tooltip labels to lines.
         # Notice we use the *LineLabelTooltip
-        mpld3.plugins.connect(fig, mpld3.plugins.LineLabelTooltip(line[0],
-                                                                  label=line_labels))
+        mpld3.plugins.connect(fig, mpld3.plugins.LineLabelTooltip(line[0], label=line_labels))
 
         # Drag plugin for nodes
         mpld3.plugins.connect(fig, LinkedDragPlugin(nodes_on_plot[0], line[0]))
 
         # Add the tooltip node labels
         # Notice we use the *PointLabelTooltip
-        mpld3.plugins.connect(fig, mpld3.plugins.PointLabelTooltip(nodes_on_plot[0],
-                                                                   labels=node_tool_tip_labels))
+        mpld3.plugins.connect(fig, mpld3.plugins.PointLabelTooltip(nodes_on_plot[0], labels=node_tool_tip_labels))
 
     # Plot the midpoint node labels
     for node in (node for node in json_data['nodes'] if 'midpoint' in node['id']):

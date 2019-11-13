@@ -5,7 +5,7 @@ with open("requirements.txt", "r") as fs:
     reqs = [r for r in fs.read().splitlines() if (
         len(r) > 0 and not r.startswith("#"))]
 
-version = '1.2'
+version = '1.3'
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -24,6 +24,6 @@ setup(
     author_email='timothy.fiola@gmail.com',
     url='https://github.com/tim-fiola/network_traffic_modeler_py3',
     download_url='https://github.com/tim-fiola/network_traffic_modeler_py3/tarball/%s' % version,
-    keywords=['networking', 'layer3', 'failover', 'modeling', 'model'],
+    keywords=['networking', 'layer3', 'failover', 'modeling', 'model', 'pyNTM'],
     classifiers=[],
 )

@@ -16,9 +16,10 @@ from .rsvp import RSVP_LSP
 from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
-# TODO - add show_debug flag to update_simulation to see info like lsp routing status
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
 #  routed lsp/demands in dict form
+# TODO - look at removing the requirement that Interface address be specified since the remote side
+#  can be determined because only one circuit can exist between any pair of Nodes
 
 
 class Model(object):
@@ -27,7 +28,8 @@ class Model(object):
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
-          interface addresses
+          interface addresses --> A pair of Interfaces with the same address
+          value get matched into a Circuit
 
         - Node objects (set): vertices on the network (aka 'layer 3 devices')
           that contain Interface objects.  Nodes are connected to each other
@@ -76,7 +78,6 @@ class Model(object):
 
         """
 
-        # TODO - look at removing requirement that address be specified
         new_interface_objects, new_node_objects = \
             self._make_network_interfaces(network_interfaces)
         self.node_objects = self.node_objects.union(new_node_objects)
@@ -609,7 +610,7 @@ class Model(object):
         print("Routing the LSPs . . . ")
         # Route the RSVP LSPs
         self = self._route_lsps(non_failed_interfaces_model)
-        print("LSPs routed; routing demands now . . .")
+        print("LSPs routed (if present); routing demands now . . .")
         # Route the demands
         self = self._route_demands(self.demand_objects,
                                    non_failed_interfaces_model)
@@ -1284,9 +1285,6 @@ class Model(object):
 
         print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), 'Traffic'.ljust(12))
 
-        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12),
-              'Traffic'.ljust(12))
-
         interface_iterator = (interface for interface in self.interface_objects)
 
         for interface in interface_iterator:
@@ -1399,7 +1397,72 @@ class Model(object):
         format to produce a valid model.  This cannot be used to open
         multiple models in a single python instance - there may be
         unpredictable results in the info in the models.
+
+        The format for the file must be a tab separated value file.
+
+        The following headers must exist, with the following tab-column names:
+
+        INTERFACES_TABLE
+        node_object_name - name of node	where interface resides
+        remote_node_object_name	- name of remote node
+        name - interface name
+        cost - IGP cost/metric for interface
+        capacity - capacity
+        # The existence of Nodes will be inferred from the INTERFACES_TABLE.
+        # So a Node created from an Interface does not have to appear in the
+        # NODES_TABLE unless you want to add additional attributes for the Node
+        # such as latitude/longitude
+
+        NODES_TABLE -
+        name - name of node
+        lon	- longitude (or y-coordinate)
+        lat - latitude (or x-coordinate)
+        # The NODES_TABLE is present for 2 reasons:
+        # - to add a Node that has no interfaces
+        # - and/or to add additional attributes for a Node inferred from
+        #   the INTERFACES_TABLE
+
+        DEMANDS_TABLE
+        source - source node name
+        dest - destination node name
+        traffic	- amount of traffic on demand
+        name - name of demand
+
+        RSVP_LSP_TABLE (this table is optional)
+        source - source node name
+        dest - destination node name
+        name - name of LSP
+        configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+        if LSP is auto-bandwidth, then leave this blank for the LSP
+
+        Functional model files can be found in this directory in
+        https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
+
+
+        Here is an example:
+
+        INTERFACES_TABLE
+        node_object_name	remote_node_object_name	name	cost	capacity
+        A	B	A-to-B	4	100
+        B	A	B-to-A	4	100
+
+        NODES_TABLE
+        name	lon	lat
+        A	50	0
+        B	0	-50
+
+        DEMANDS_TABLE
+        source	dest	traffic	name
+        A	B	80	dmd_a_b_1
+
+        RSVP_LSP_TABLE
+        source	dest	name    configured_setup_bw
+        A	B	lsp_a_b_1   10
+        A	B	lsp_a_b_2
+
+
         """
+        # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
 
         interface_set = set()
         node_set = set()
@@ -1509,9 +1572,6 @@ class Model(object):
             new_node.lat = node_lat
             new_node.lon = node_lon
         else:
-            print("{} on line {} already exists in model, "
-                  "updating lat/lon values if they are specified".format(new_node,
-                                                                         lines.index(node_line)))
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
             existing_node.lat = node_lat
             existing_node.lon = node_lon

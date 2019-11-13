@@ -6,21 +6,25 @@ from .srlg import SRLG
 
 class Node(object):
     """
-    A class to represent a layer 3 device in the model
+    A class to represent a layer 3 device in the model.
+
+    Attribute lat, lon can be used as y, x values, respectively for
+    graphing purposes.
+
     """
 
     def __init__(self, name, lat=0, lon=0):
         self.name = name
         self._failed = False
-        self.lat = lat
-        self.lon = lon
+        self._lat = lat
+        self._lon = lon
         self._srlgs = set()
 
         # Validate lat, lon values
-        if lat > 90 or lat < -90:
-            raise ValueError('lat must be in range -90 to +90')
-        if lon > 180 or lon < -180:
-            raise ValueError('lon must be in range -180 to +180')
+        if not(isinstance(lat, float)) and not(isinstance(lat, int)):
+            raise ValueError('lat must be a float value')
+        if not(isinstance(lon, float)) and not(isinstance(lon, int)):
+            raise ValueError('lon must be a float value')
 
     def __repr__(self):
         return 'Node(%r)' % self.name
@@ -67,6 +71,30 @@ class Node(object):
 
         else:
             self._failed = True
+
+    @property
+    def lat(self):
+        """Latitude or y-coordinate of Node on a plot"""
+        return self._lat
+
+    @lat.setter
+    def lat(self, status):
+        if isinstance(status, float) or isinstance(status, int):
+            self._lat = status
+        else:
+            raise ValueError("lat attribute must be integer or float.")
+
+    @property
+    def lon(self):
+        """Longitude or x-coordinate of Node on a plot"""
+        return self._lon
+
+    @lon.setter
+    def lon(self, status):
+        if isinstance(status, float) or isinstance(status, int):
+            self._lon = status
+        else:
+            raise ValueError("lon attribute must be integer or float.")
 
     def interfaces(self, model):
         """
