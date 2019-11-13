@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.3
+---
+* improved docstring for Model load_model_file class method
+* updated requirements
+* fixed bugs in beta features: visualization and simple UI
+* updated unit testing
+
+
 1.2
 ---
 * added shared-risk link group (SRLG) support for Nodes and Interfaces
