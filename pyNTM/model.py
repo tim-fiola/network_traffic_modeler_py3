@@ -18,6 +18,8 @@ from .srlg import SRLG
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
 #  routed lsp/demands in dict form
+# TODO - look at removing the requirement that Interface address be specified since the remote side
+#  can be determined because only one circuit can exist between any pair of Nodes
 
 
 class Model(object):
@@ -26,7 +28,8 @@ class Model(object):
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
-          interface addresses
+          interface addresses --> A pair of Interfaces with the same address
+          value get matched into a Circuit
 
         - Node objects (set): vertices on the network (aka 'layer 3 devices')
           that contain Interface objects.  Nodes are connected to each other
@@ -75,7 +78,6 @@ class Model(object):
 
         """
 
-        # TODO - look at removing requirement that address be specified
         new_interface_objects, new_node_objects = \
             self._make_network_interfaces(network_interfaces)
         self.node_objects = self.node_objects.union(new_node_objects)

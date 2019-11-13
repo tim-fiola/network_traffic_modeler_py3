@@ -299,7 +299,7 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     Label(demands_frame, text=label_info).grid(row=0,
                                                column=0, sticky='W', padx=10)
 
-    # Horizontal scrollbar - TODO create decorator for the scrollbar?
+    # Horizontal scrollbar
     horizontal_scrollbar = Scrollbar(demands_frame, orient=HORIZONTAL)
     horizontal_scrollbar.grid(row=3, column=0, sticky=E + W)
 
@@ -337,7 +337,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
     vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
 
-    # Horizontal scrollbar - TODO create decorator for the scrollbar?
+    # Horizontal scrollbar
     horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
     horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
                               columnspan=2)
