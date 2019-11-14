@@ -1401,64 +1401,81 @@ class Model(object):
 
         The format for the file must be a tab separated value file.
 
-        The following headers must exist, with the following tab-column names:
+        This docstring you are reading may not display the table info
+        explanations/examples below correctly on https://pyntm.readthedocs.io/en/latest/api.html.
+        Recommend either using help(Model.load_model_file) at the python3 cli or
+        looking at one of the sample model data_files in github:
+        https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/sample_network_model_file.csv
+        https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
 
-        INTERFACES_TABLE
-        node_object_name - name of node	where interface resides
-        remote_node_object_name	- name of remote node
-        name - interface name
-        cost - IGP cost/metric for interface
-        capacity - capacity
-        # The existence of Nodes will be inferred from the INTERFACES_TABLE.
-        # So a Node created from an Interface does not have to appear in the
-        # NODES_TABLE unless you want to add additional attributes for the Node
-        # such as latitude/longitude
+        The following headers must exist, with the following tab-column
+        names beneath:
 
-        NODES_TABLE -
-        name - name of node
-        lon	- longitude (or y-coordinate)
-        lat - latitude (or x-coordinate)
-        # The NODES_TABLE is present for 2 reasons:
-        # - to add a Node that has no interfaces
-        # - and/or to add additional attributes for a Node inferred from
-        #   the INTERFACES_TABLE
+            INTERFACES_TABLE
+            node_object_name - name of node	where interface resides
+            remote_node_object_name	- name of remote node
+            name - interface name
+            cost - IGP cost/metric for interface
+            capacity - capacity
 
-        DEMANDS_TABLE
-        source - source node name
-        dest - destination node name
-        traffic	- amount of traffic on demand
-        name - name of demand
+            Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
+            So a Node created from an Interface does not have to appear in the
+            NODES_TABLE unless you want to add additional attributes for the Node
+            such as latitude/longitude
 
-        RSVP_LSP_TABLE (this table is optional)
-        source - source node name
-        dest - destination node name
-        name - name of LSP
-        configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-        if LSP is auto-bandwidth, then leave this blank for the LSP
+            NODES_TABLE -
+            name - name of node
+            lon	- longitude (or y-coordinate)
+            lat - latitude (or x-coordinate)
+
+            Note - The NODES_TABLE is present for 2 reasons:
+            - to add a Node that has no interfaces
+            - and/or to add additional attributes for a Node inferred from
+            the INTERFACES_TABLE
+
+            DEMANDS_TABLE
+            source - source node name
+            dest - destination node name
+            traffic	- amount of traffic on demand
+            name - name of demand
+
+            RSVP_LSP_TABLE (this table is optional)
+            source - source node name
+            dest - destination node name
+            name - name of LSP
+            configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+            if LSP is auto-bandwidth, then leave this blank for the LSP
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
 
-        Here is an example:
+        Here is an example of a data file:
 
-        INTERFACES_TABLE
-        node_object_name	remote_node_object_name	name	cost	capacity
-        A	B	A-to-B	4	100
-        B	A	B-to-A	4	100
+            INTERFACES_TABLE
+            node_object_name	remote_node_object_name	name	cost	capacity
+            A	B	A-to-B	4	100
+            B	A	B-to-A	4	100
 
-        NODES_TABLE
-        name	lon	lat
-        A	50	0
-        B	0	-50
+            NODES_TABLE
+            name	lon	lat
+            A	50	0
+            B	0	-50
 
-        DEMANDS_TABLE
-        source	dest	traffic	name
-        A	B	80	dmd_a_b_1
+            DEMANDS_TABLE
+            source	dest	traffic	name
+            A	B	80	dmd_a_b_1
 
-        RSVP_LSP_TABLE
-        source	dest	name    configured_setup_bw
-        A	B	lsp_a_b_1   10
-        A	B	lsp_a_b_2
+            RSVP_LSP_TABLE
+            source	dest	name    configured_setup_bw
+            A	B	lsp_a_b_1   10
+            A	B	lsp_a_b_2
+
+
+        :param data_file: file with model info
+        :return: Model object
+
+
+
         """
         # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
         # TODO - add support for SRLGs

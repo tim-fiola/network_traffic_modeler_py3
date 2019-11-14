@@ -156,9 +156,9 @@ def _prep_network_model_for_graph(model):
         # Get all the existing node positions
         # Find midpoint between edge nodes
         # Get 1st node coordinates
-        node_A_pos = G.node[edge_1_name[0]]['pos']
+        node_A_pos = G.nodes[edge_1_name[0]]['pos']
         # Get 2nd node coordinates
-        node_B_pos = G.node[edge_1_name[1]]['pos']
+        node_B_pos = G.nodes[edge_1_name[1]]['pos']
         # Find the midpoint offset from 2nd node
         # X,Y offset
         x_offset = node_B_pos[0] - node_A_pos[0]
