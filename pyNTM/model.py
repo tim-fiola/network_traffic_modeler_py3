@@ -20,6 +20,7 @@ from .srlg import SRLG
 #  routed lsp/demands in dict form
 # TODO - look at removing the requirement that Interface address be specified since the remote side
 #  can be determined because only one circuit can exist between any pair of Nodes
+# TODO - add support for SRLGs in load_model_file
 
 
 class Model(object):
@@ -1438,7 +1439,6 @@ class Model(object):
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
 
-
         Here is an example:
 
         INTERFACES_TABLE
@@ -1459,10 +1459,9 @@ class Model(object):
         source	dest	name    configured_setup_bw
         A	B	lsp_a_b_1   10
         A	B	lsp_a_b_2
-
-
         """
         # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
+        # TODO - add support for SRLGs
 
         interface_set = set()
         node_set = set()
