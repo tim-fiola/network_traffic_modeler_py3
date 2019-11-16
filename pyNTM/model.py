@@ -21,6 +21,8 @@ from .srlg import SRLG
 # TODO - look at removing the requirement that Interface address be specified since the remote side
 #  can be determined because only one circuit can exist between any pair of Nodes
 # TODO - add support for SRLGs in load_model_file
+# TODO - add attribute for Node/Interface whereby an object can be failed by itself
+#  and not unfail when a parent SRLG unfails
 
 
 class Model(object):
@@ -901,8 +903,15 @@ class Model(object):
             raise ModelException('no matching demand')
 
     def get_rsvp_lsp(self, source_node_name, dest_node_name, lsp_name='none'):
-        """Returns the RSVP LSP from the model with the specified source node
-        name, dest node name, and LSP name."""
+        """
+        Returns the RSVP LSP from the model with the specified source node
+        name, dest node name, and LSP name.
+
+        :param source_node_name: name of source node for LSP
+        :param dest_node_name: name of destination node for LSP
+        :param lsp_name: name of LSP
+        :return: RSVP_LSP object
+        """
 
         needed_key = (source_node_name, dest_node_name, lsp_name)
 
