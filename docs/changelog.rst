@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.5
+---
+* Updated code to account for networkx
+* Improved some docstrings
+
 
 1.4
 ---
