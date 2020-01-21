@@ -746,16 +746,15 @@ class Parallel_Link_Model(object):
 
         # Using the paired interfaces (source_node, dest_node) pairs from G,
         # get the corresponding interface objects from the model to create
-        # the circuit object
+        # the Circuit object
         for interface in graph_interfaces:
             # Get each interface from model for each
 
             int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
-                                                        local_address=interface[2]['local_address'],
-                                                        remote_address=interface[2]['remote_address'])
+                                                        address=interface[2]['address'])[0]
             int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
-                                                        local_address=interface[2]['remote_address'],
-                                                        remote_address=interface[2]['local_address'])
+                                                        address=interface[2]['address'])[0]
+
 
             if int1.in_ckt is False and int2.in_ckt is False:
                 # Mark interface objects as in_ckt = True
@@ -780,22 +779,42 @@ class Parallel_Link_Model(object):
 
         self.circuit_objects = circuits
 
-    def get_interface_object_from_nodes(self, local_node_name, remote_node_name):
+    def get_interface_object_from_nodes(self, local_node_name, remote_node_name, address=None):
         """
-        Returns an Interface object with the specified local and remote node names
-        and specified interface local address and remote interface address
+        Returns a list of Interface objects with the specified
+        local and remote node names.
+
+        If 'address' is not specified, may return a list of len > 1, as
+        multiple/parallel interfaces are allowed in Parallel_Link_Model
+        objects.
+
+        If 'address' is specified, will return a list of len == 1, as specifying
+        the 'address' will narrow down any list of multiple interfaces to a single
+        interface because addresses bond interfaces on different nodes into
+        a Circuit object.
 
         :param local_node_name: Name of local node Interface resides on
         :param remote_node_name: Name of Interface's remote Node
+        :param address: address of Interface (optional)
         :return: list of Interface objects with common local node and remote node
         """
 
         interface_gen = (interface for interface in self.interface_objects)
 
-        interface_list = [interface for interface in interface_gen if
-                          interface.node_object.name == local_node_name and
-                          interface.remote_node_object.name == remote_node_name]
+        if address is None:
+            interface_list = [interface for interface in interface_gen if
+                              interface.node_object.name == local_node_name and
+                              interface.remote_node_object.name == remote_node_name]
+        else:
+            interface_list = [interface for interface in interface_gen if
+                              interface.node_object.name == local_node_name and
+                              interface.remote_node_object.name == remote_node_name and
+                              interface.address == address]
 
+            if len(interface_list) > 1:
+                msg = ("There is an internal error with addressing; Interface addresses must be unique per Node and"
+                       "the same address can only appear in a Parallel_Link_Model object twice and on separate Nodes")
+                return ModelException(msg)
         return interface_list
 
     @property
@@ -1211,8 +1230,7 @@ class Parallel_Link_Model(object):
         # each node; if there are multiple interfaces between each node, select the
         # appropriate one based on: amount of reservable_bandwidth, lowest metric,
         # or random
-        import pdb
-        pdb.set_trace()
+
         modified_digraph_shortest_paths = []
 
         try:
@@ -1434,8 +1452,7 @@ class Parallel_Link_Model(object):
             edge_names = [(interface.node_object.name,
                            interface.remote_node_object.name,
                            {'cost': interface.cost,
-                            'local_address': interface.local_address,
-                            'remote_address': interface.remote_address})
+                            'address': interface.address})
                           for interface in self.interface_objects
                           if (interface.failed is False and
                               interface.reservable_bandwidth >= needed_bw)]  # TODO - change back to generator
@@ -1444,8 +1461,7 @@ class Parallel_Link_Model(object):
             edge_names = [(interface.node_object.name,
                            interface.remote_node_object.name,
                            {'cost': interface.cost,
-                            'local_address': interface.local_address,
-                            'remote_address': interface.remote_address})
+                            'address': interface.address})
                           for interface in self.interface_objects if interface.reservable_bandwidth >= needed_bw]  # TODO - change back to generator
 
         # Add edges to networkx DiGraph
@@ -1904,17 +1920,17 @@ class Parallel_Link_Model(object):
         # Add the Interfaces to a set
         for interface_line in interface_lines:
             # Read interface characteristics
-            if len(interface_line.split()) == 7:
+            if len(interface_line.split()) == 6:
                 [node_name, remote_node_name, name, cost, capacity, \
-                 local_address, remote_address] = interface_line.split()
+                 address] = interface_line.split()
             else:
-                msg = ("node_name, remote_node_name, name, cost, capacity, local_address, remote_address "
+                msg = ("node_name, remote_node_name, name, cost, capacity, address "
                        "must be defined for line {}, line index {}".format(interface_line,
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
             new_interface = Interface(name, int(cost), int(capacity), Node(node_name),
-                                      Node(remote_node_name), local_address, remote_address)
+                                      Node(remote_node_name), address)
 
             if new_interface._key not in set([interface._key for interface in interface_set]):
                 interface_set.add(new_interface)
