@@ -114,7 +114,8 @@ for path in a_d['path']:
             for sub_path_num in range(len(sub_path_list)):
 
 
-                print("sub_path = {}".format(sub_path_list[sub_path_number]))
+                # pprint("sub_path = ")
+                # pprint(sub_path_list[sub_path_number])
 
                 # TODO - this is the messed up part - finds the first sub path that matches!  not what we want
                 #sub_path_index = sub_path_list.index(sub_path)  # 0, 1, 2, 3, 4, 5
@@ -125,7 +126,8 @@ for path in a_d['path']:
 
 
 
-
+                print()
+                print("hop_interface_index is {}; sub_path_num is {}".format(hop_interface_index, sub_path_num))
                 print("({} + {}) % {} = {}".format(hop_interface_index, sub_path_num, len(hop),
                                                    (hop_interface_index + sub_path_num) % len(hop)))
 
@@ -137,11 +139,14 @@ for path in a_d['path']:
                     # 0, 0
                     # 1, 2, 3     1, 2, 3, 4, 5, 6
 
-                    print("appending {} to {}".format(hop_interface, sub_path_list[sub_path_number]))
-                    sub_path_list[sub_path_number].append(hop_interface)
-                    print()
-                    print()
+                    print("hit {}".format(hop_interface))
+                    sub_path_list[sub_path_num].append(hop_interface)
+                    pprint(sub_path_list[sub_path_num])
 
+                    # print("appending {} to {}".format(hop_interface, sub_path_list[sub_path_number]))
+                    # sub_path_list[sub_path_number].append(hop_interface)
+                    # print()
+                    # print()
 
     normalized_paths.append(sub_path_list)
 
