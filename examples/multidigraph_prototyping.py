@@ -7,6 +7,48 @@ from pprint import pprint
 from pyNTM import Parallel_Link_Model
 
 def normalize_multidigraph_paths(multidigraph_path_info):
+    """
+    Takes the multidigraph_path_info and normalizes it to create all the
+    path combos that only have one link between each node.
+
+    :param multidigraph_path_info: Dict of path information from a source node
+    to a destination node.  Keys are 'cost' and 'path'.
+
+    'cost': Cost of shortest path from source (integer)
+    'path': List of of interface hops from a source
+    node to a destination node.  Each hop in the path
+    is a list of all the interfaces from the current node
+    to the next node.
+
+    multidigraph_path_info example:
+    {'cost': 40,
+    'path': [[[Interface(name = 'A-to-D', cost = 40, capacity = 10, node_object = Node('A'),
+           remote_node_object = Node('D'), address = '7')]],
+          [[Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'),
+          remote_node_object = Node('B'), address = '2'),
+            Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+            remote_node_object = Node('B'), address = '1')],
+           [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+           remote_node_object = Node('D'), address = '3')]],
+          [[Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'),
+          remote_node_object = Node('B'), address = '2'),
+            Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+            remote_node_object = Node('B'), address = '1')],
+           [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+           remote_node_object = Node('G'), address = '18'),
+            Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+            remote_node_object = Node('G'), address = '28'),
+            Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+            remote_node_object = Node('G'), address = '8')],
+           [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+           remote_node_object = Node('D'), address = '9')]]]}
+
+    :return:
+
+
+    """
+
+
 
     # This will be a list of path info that has
     normalized_paths = []
@@ -20,42 +62,17 @@ def normalize_multidigraph_paths(multidigraph_path_info):
         for sub_path_number in range(max_sub_paths):
             sub_path_list.append([])
 
-        # This is the max length of any possible sub-path
-        max_hops = len(path)
-
-        # EXAMPLE
-        # [[Interface(name='A-to-B_2', cost=20, capacity=150, node_object=Node('A'), remote_node_object=Node('B'),
-        #             address='2'),
-        #   Interface(name='A-to-B', cost=20, capacity=125, node_object=Node('A'), remote_node_object=Node('B'),
-        #             address='1')],
-
-        # for hop in path:
-        #     for hop_interface in hop:
-        #         if hop.index(hop_interface)%max_sub_paths == 0:
-        #             sub_path_list.index()
-
         for hop in path:
             for hop_interface in hop:
                 hop_interface_index = hop.index(hop_interface)
 
                 for sub_path_num in range(len(sub_path_list)):
-
-                    # pprint("sub_path = ")
-                    # pprint(sub_path_list[sub_path_number])
-
-                    # print()
-                    # print("hop_interface_index is {}; sub_path_num is {}".format(hop_interface_index, sub_path_num))
-                    # print("({} + {}) % {} = {}".format(hop_interface_index, sub_path_num, len(hop),
-                    #                                    (hop_interface_index + sub_path_num) % len(hop)))
-
                     if (hop_interface_index + sub_path_num) % len(hop) == 0:
-                        # print("hit {}".format(hop_interface))
                         sub_path_list[sub_path_num].append(hop_interface)
-                        # pprint(sub_path_list[sub_path_num])
 
         normalized_paths.append(sub_path_list)
 
-    return normalized_paths
+    return {'cost': multidigraph_path_info['cost'], 'normalized_paths': normalized_paths}
 
 model = Parallel_Link_Model.load_model_file_multidigraph('model_test_topology_multidigraph.csv')
 model.validate_model()
@@ -70,7 +87,7 @@ pprint(a_d)
 
 normalized_paths = normalize_multidigraph_paths(a_d)
 
-for path in normalized_paths:
+for path in normalized_paths['normalized_paths']:
     print(len(path))
     pprint(path)
     print()
