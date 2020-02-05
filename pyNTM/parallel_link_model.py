@@ -11,6 +11,7 @@ and Demands.
 from pprint import pprint
 
 import networkx as nx
+import numpy
 
 from .circuit import Circuit
 from .demand import Demand
@@ -755,7 +756,6 @@ class Parallel_Link_Model(object):
             int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
                                                         address=interface[2]['address'])[0]
 
-
             if int1.in_ckt is False and int2.in_ckt is False:
                 # Mark interface objects as in_ckt = True
                 int1.in_ckt = True
@@ -1226,21 +1226,105 @@ class Parallel_Link_Model(object):
                                                        dest_node_name,
                                                        weight='cost')
 
-        # Check each path in digraph_shortest_paths for multiple interfaces between
-        # each node; if there are multiple interfaces between each node, select the
-        # appropriate one based on: amount of reservable_bandwidth, lowest metric,
-        # or random
-
-        modified_digraph_shortest_paths = []
-
+        # Get shortest path(s) from source to destination; this may include paths
+        # that have multiple links between nodes
         try:
             for path in digraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path)
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
-            return converted_path
         except BaseException as e:
             return converted_path, e
+
+        # Normalize the path info to make sure each path only has one link
+        # between each node
+        return self._normalize_multidigraph_paths(converted_path)
+
+    def _normalize_multidigraph_paths(self, multidigraph_path_info):
+        """
+        Takes the multidigraph_path_info and normalizes it to create all the
+        path combos that only have one link between each node.
+
+        :param multidigraph_path_info: Dict of path information from a source node
+        to a destination node.  Keys are 'cost' and 'path'.
+
+        'cost': Cost of shortest path from source (integer)
+        'path': List of of interface hops from a source
+        node to a destination node.  Each hop in the path
+        is a list of all the interfaces from the current node
+        to the next node.
+
+        multidigraph_path_info example from source node 'B' to destination node 'D':
+        {'cost': 20,
+         'path': [
+                    [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                            remote_node_object = Node('D'), address = '3')]], # 1 interface from B to D and a
+                            complete path
+                    [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                            remote_node_object = Node('G'), address = '28'),
+                      Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                            remote_node_object = Node('G'), address = '8'),
+                      Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                            remote_node_object = Node('G'), address = '18')], # 3 interfaces from B to G
+                    [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                            remote_node_object = Node('D'), address = '9')]]  # 1 interface from G to D; end of 2nd path
+         ]}
+
+
+
+        :return: dict with keys:
+         ['cost'], which is the cost of the shortest path(s) from source to dest
+         ['normalized_paths'], which is a list with all the Interface combinations of all interface
+         hops for the shortest path(s) from source to destination
+
+
+        example:
+        {'cost': 20,
+         'normalized_paths': [
+                                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                                    remote_node_object = Node('D'), address = '3')], # this is a path with one hop
+                                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                                    remote_node_object = Node('G'), address = '28'),
+                                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                                    remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+                                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                                    remote_node_object = Node('G'), address = '18'),
+                                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                                    remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+                                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                                    remote_node_object = Node('G'), address = '8'),
+                                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                                    remote_node_object = Node('D'), address = '9')]  # this is a path with 2 hops
+                            ]
+         }
+
+        """
+
+        # This will be a list of path info that has
+        normalized_paths = []
+        for path in multidigraph_path_info['path']:
+            # print("************** path {} *************".format(path))
+            interfaces_in_each_hop = [len(hop) for hop in path]
+            max_sub_paths = numpy.prod(interfaces_in_each_hop)
+
+            # This is a list of all the created sub-paths
+            sub_path_list = []
+            for sub_path_number in range(max_sub_paths):
+                sub_path_list.append([])
+
+            for hop in path:
+                for hop_interface in hop:
+                    hop_interface_index = hop.index(hop_interface)
+
+                    for sub_path_num in range(len(sub_path_list)):
+                        if (hop_interface_index + sub_path_num) % len(hop) == 0:
+                            sub_path_list[sub_path_num].append(hop_interface)
+
+            for path in sub_path_list:
+                normalized_paths.append(path)
+
+        return {'cost': multidigraph_path_info['cost'], 'normalized_paths': normalized_paths}
+
 
     def get_shortest_path_for_routed_lsp(self, source_node_name, dest_node_name, lsp, needed_bw):
         """
@@ -1921,8 +2005,7 @@ class Parallel_Link_Model(object):
         for interface_line in interface_lines:
             # Read interface characteristics
             if len(interface_line.split()) == 6:
-                [node_name, remote_node_name, name, cost, capacity, \
-                 address] = interface_line.split()
+                [node_name, remote_node_name, name, cost, capacity, address] = interface_line.split()
             else:
                 msg = ("node_name, remote_node_name, name, cost, capacity, address "
                        "must be defined for line {}, line index {}".format(interface_line,
