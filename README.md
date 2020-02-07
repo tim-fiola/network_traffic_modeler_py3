@@ -37,12 +37,6 @@ Examples
 See the [example directory](https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples).
 
 
-Notes
-=====
-
-The previous py2 version is located [here](https://github.com/tim-fiola/network_traffic_modeler) but won't be maintained any further in favor of the py3 version in this repository.
-
-
 License
 =======
 
