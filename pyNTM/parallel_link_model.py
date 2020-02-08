@@ -6,6 +6,7 @@ A class that defines the network being modeled and that contains all
 modeled objects in the network such as Nodes, Interfaces, Circuits,
 and Demands.
 
+
 """
 
 from pprint import pprint
