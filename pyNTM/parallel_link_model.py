@@ -9,6 +9,7 @@ and Demands.
 
 from pprint import pprint
 
+import itertools
 import networkx as nx
 import numpy
 
@@ -1299,30 +1300,120 @@ class Parallel_Link_Model(object):
 
         """
 
-        # This will be a list of path info that has
-        normalized_paths = []
+        path_list = []
+
         for path in multidigraph_path_info['path']:
-            # print("************** path {} *************".format(path))
-            interfaces_in_each_hop = [len(hop) for hop in path]
-            max_sub_paths = numpy.prod(interfaces_in_each_hop)
+            pprint("path =")
+            pprint(path)
+            print()
 
-            # This is a list of all the created sub-paths
-            sub_path_list = []
-            for sub_path_number in range(max_sub_paths):
-                sub_path_list.append([])
+            path = list(itertools.product(*path))
+            path_list.append(path)
 
-            for hop in path:
-                for hop_interface in hop:
-                    hop_interface_index = hop.index(hop_interface)
+        return {'path': path_list, 'cost': multidigraph_path_info['cost']}
 
-                    for sub_path_num in range(len(sub_path_list)):
-                        if (hop_interface_index + sub_path_num) % len(hop) == 0:
-                            sub_path_list[sub_path_num].append(hop_interface)
 
-            for path in sub_path_list:
-                normalized_paths.append(path)
-
-        return {'cost': multidigraph_path_info['cost'], 'normalized_paths': normalized_paths}
+    # def _normalize_multidigraph_paths_old(self, multidigraph_path_info):  # TODO - remove this
+    #     """
+    #     Takes the multidigraph_path_info and normalizes it to create all the
+    #     path combos that only have one link between each node.
+    #
+    #     :param multidigraph_path_info: Dict of path information from a source node
+    #     to a destination node.  Keys are 'cost' and 'path'.
+    #
+    #     'cost': Cost of shortest path from source (integer)
+    #     'path': List of of interface hops from a source
+    #     node to a destination node.  Each hop in the path
+    #     is a list of all the interfaces from the current node
+    #     to the next node.
+    #
+    #     multidigraph_path_info example from source node 'B' to destination node 'D':
+    #     {'cost': 20,
+    #      'path': [
+    #                 [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+    #                         remote_node_object = Node('D'), address = '3')]], # 1 interface from B to D and a
+    #                         complete path
+    #                 [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+    #                         remote_node_object = Node('G'), address = '28'),
+    #                   Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+    #                         remote_node_object = Node('G'), address = '8'),
+    #                   Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+    #                         remote_node_object = Node('G'), address = '18')], # 3 interfaces from B to G
+    #                 [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+    #                         remote_node_object = Node('D'), address = '9')]]  # 1 interface from G to D; end of 2nd path
+    #      ]}
+    #
+    #
+    #
+    #     :return: dict with keys:
+    #      ['cost'], which is the cost of the shortest path(s) from source to dest
+    #      ['normalized_paths'], which is a list with all the Interface combinations of all interface
+    #      hops for the shortest path(s) from source to destination
+    #
+    #
+    #     example:
+    #     {'cost': 20,
+    #      'normalized_paths': [
+    #                             [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+    #                                 remote_node_object = Node('D'), address = '3')], # this is a path with one hop
+    #                             [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+    #                                 remote_node_object = Node('G'), address = '28'),
+    #                              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+    #                                 remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+    #                             [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+    #                                 remote_node_object = Node('G'), address = '18'),
+    #                              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+    #                                 remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+    #                             [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+    #                                 remote_node_object = Node('G'), address = '8'),
+    #                              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+    #                                 remote_node_object = Node('D'), address = '9')]  # this is a path with 2 hops
+    #                         ]
+    #      }
+    #
+    #     """
+    #
+    #     # This will be a list of path info that has
+    #     normalized_paths = []
+    #     for path in multidigraph_path_info['path']:
+    #         """
+    #         [[Interface(name = 'A-to-B_2', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), address = '2'),
+    #         Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), address = '1')],
+    #        [Interface(name = 'B-to-D_2', cost = 4, capacity = 200, node_object = Node('B'), remote_node_object = Node('D'), address = '6'),
+    #         Interface(name = 'B-to-D', cost = 4, capacity = 200, node_object = Node('B'), remote_node_object = Node('D'), address = '5')]]
+    #         """
+    #         interfaces_in_each_hop = [len(hop) for hop in path]
+    #         max_sub_paths = numpy.prod(interfaces_in_each_hop)
+    #
+    #         # This is a list of all the created sub-paths
+    #         sub_path_list = []
+    #         for sub_path_number in range(max_sub_paths):  # 0 to 4
+    #             sub_path_list.append([]) # ([], [], [], [])
+    #
+    #         for hop in path:
+    #             """
+    #             [Interface(name = 'A-to-B_2', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), address = '2'),
+    #              Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), address = '1')]
+    #             """
+    #             for hop_interface in hop: # Interface(name = 'A-to-B_2', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), address = '2')
+    #                 hop_interface_index = hop.index(hop_interface)  # 0
+    #
+    #                 for sub_path_num in range(len(sub_path_list)): # 0, 1, 2, 3
+    #                     if (hop_interface_index + sub_path_num) % len(hop) == 0:  # (0+0)/2, (1+0)/2, (2+0)/2, (3+0)/2
+    #                          sub_path_list[sub_path_num].append(hop_interface)
+    #
+    #         """
+    #         [[Interface(name = 'A-to-B_2', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), address = '2'),
+    #         Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), address = '1')],
+    #        [Interface(name = 'B-to-D_2', cost = 4, capacity = 200, node_object = Node('B'), remote_node_object = Node('D'), address = '6'),
+    #         Interface(name = 'B-to-D', cost = 4, capacity = 200, node_object = Node('B'), remote_node_object = Node('D'), address = '5')]]
+    #         """
+    #
+    #
+    #         for path in sub_path_list:
+    #             normalized_paths.append(path)
+    #
+    #     return {'cost': multidigraph_path_info['cost'], 'normalized_paths': normalized_paths}
 
 
     def get_shortest_path_for_routed_lsp(self, source_node_name, dest_node_name, lsp, needed_bw):
@@ -1803,7 +1894,7 @@ class Parallel_Link_Model(object):
 
         Here is an example of a data file:
 
-            INTERFACES_TABLE
+            INTERFACES_TABLE # TODO - add addresses to exampls
             node_object_name	remote_node_object_name	name	cost	capacity
             A	B	A-to-B	4	100
             B	A	B-to-A	4	100
