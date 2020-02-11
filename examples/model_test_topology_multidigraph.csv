@@ -2,8 +2,8 @@ INTERFACES_TABLE
 node_object_name	remote_node_object_name	name	cost	capacity    address
 A	B	A-to-B	4	100 1
 B	A	B-to-A	4	100 1
-A	B	A-to-B_2	4	100 2
-B	A	B-to-A_2	4	100 2
+A	B	A-to-B_2	4	50 2
+B	A	B-to-A_2	4	50 2
 A	C	A-to-C	1	200 3
 C	A	C-to-A	1	200 3
 A	D	A-to-D	8	150 4

@@ -1238,7 +1238,8 @@ class Parallel_Link_Model(object):
 
         # Normalize the path info to make sure each path only has one link
         # between each node
-        return self._normalize_multidigraph_paths(converted_path)
+        path_info = self._normalize_multidigraph_paths(converted_path)
+        return path_info
 
     def _normalize_multidigraph_paths(self, multidigraph_path_info):
         """
@@ -1299,19 +1300,16 @@ class Parallel_Link_Model(object):
          }
 
         """
-
+        # List to hold unique path(s)
         path_list = []
 
         for path in multidigraph_path_info['path']:
-            pprint("path =")
-            pprint(path)
-            print()
-
             path = list(itertools.product(*path))
-            path_list.append(path)
+            print("len(path) = {}".format(len(path)))
+            for path_option in path:
+                path_list.append(list(path_option))
 
         return {'path': path_list, 'cost': multidigraph_path_info['cost']}
-
 
     # def _normalize_multidigraph_paths_old(self, multidigraph_path_info):  # TODO - remove this
     #     """

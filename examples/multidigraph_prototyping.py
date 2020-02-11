@@ -205,7 +205,7 @@ def normalize_multidigraph_paths(multidigraph_path_info):
 model = Parallel_Link_Model.load_model_file_multidigraph('model_test_topology_multidigraph.csv')
 model.validate_model()
 
-a_d = model.get_shortest_path('A', 'D')  # TODO - this returns duplicate paths
+a_d = model.get_shortest_path('A', 'D')
 
 pprint(a_d)
 
