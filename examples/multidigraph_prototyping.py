@@ -209,6 +209,8 @@ a_d = model.get_shortest_path('A', 'D')
 
 pprint(a_d)
 
+
+
 # # test = normalize_multiple_links(a_d)
 #
 # ##################### def prototyping #####################
