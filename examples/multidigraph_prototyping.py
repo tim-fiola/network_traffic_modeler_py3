@@ -208,6 +208,10 @@ model.validate_model()
 a_d = model.get_shortest_path('A', 'D')
 
 pprint(a_d)
+print()
+
+a_d_75 = model.get_shortest_path('A', 'D', needed_bw=75)
+pprint(a_d_75)
 
 
 
