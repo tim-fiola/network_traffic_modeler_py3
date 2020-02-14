@@ -265,7 +265,6 @@ class Parallel_Link_Model(object):
          Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
          remote_node_object = Node('E'), address = '17'): 8.0}
 
-
         """
 
         shortest_path_int_list = []
@@ -285,22 +284,73 @@ class Parallel_Link_Model(object):
             unique_next_hops[interface.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
                                                             if intf.node_object.name == interface.node_object.name]
 
+        # TODO - can shortest_path_info be simplified?
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path
         # - a dict of cumulative splits for each interface at that point in the path
         # - the amount of traffic on the path
         # Example:
         # shortest_path_info =
-        # {'path_0': {'interfaces': ['E-A', 'A-D', 'D-F'],
-        #            'path_traffic': 20.0,
-        #            'splits': {'A-D': 2, 'D-F': 2, 'E-A': 1}},
-        # 'path_1': {'interfaces': ['E-A', 'A-B', 'B-D', 'D-F'],
-        #            'path_traffic': 10.0,
-        #            'splits': {'A-B': 2, 'B-D': 4, 'D-F': 4, 'E-A': 1}},
-        # 'path_2': {'interfaces': ['E-A', 'A-B', 'B-G', 'G-D', 'D-F'],
-        #            'path_traffic': 10.0,
-        #            'splits': {'A-B': 2, 'B-G': 4, 'D-F': 4, 'E-A': 1, 'G-D': 4}}}
-
+        # {'path_0': {'interfaces': [
+        #     Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
+        #               address='2'),
+        #     Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #               address='17')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), address='17'): 6}},
+        #  'path_1': {'interfaces': [
+        #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
+        #                address='2'),
+        #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                address='7')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), address='7'): 6}},
+        #  'path_2': {'interfaces': [
+        #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
+        #                address='2'),
+        #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                address='27')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), address='27'): 6}},
+        #  'path_3': {'interfaces': [
+        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
+        #                address='1'),
+        #      Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                address='17')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), address='17'): 6}},
+        #  'path_4': {'interfaces': [
+        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
+        #                address='1'),
+        #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                address='7')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), address='7'): 6}},
+        #  'path_5': {'interfaces': [
+        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
+        #                address='1'),
+        #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                address='27')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), address='27'): 6}}}
         shortest_path_info = {}
         path_counter = 0
 
@@ -337,8 +387,6 @@ class Parallel_Link_Model(object):
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
 
-        import pdb
-        pdb.set_trace()
         return traff_per_int
 
     def _update_interface_utilization(self):  #
@@ -403,10 +451,7 @@ class Parallel_Link_Model(object):
 
                 # Get the interface objects and update them with the traffic
                 for interface, traffic_from_demand in demand_traffic_per_int.items():
-                    from_node = interface.split('-')[0]
-                    to_node = interface.split('-')[1]
-                    interface_to_update = self.get_interface_object_from_nodes(from_node, to_node)
-                    interface_to_update.traffic += traffic_from_demand
+                    interface.traffic += traffic_from_demand
 
         return self
 
