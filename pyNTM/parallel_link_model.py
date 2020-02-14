@@ -258,28 +258,31 @@ class Parallel_Link_Model(object):
 
         """
 
-        # Find node names
-        source_node_name = demand.source_node_object.name
-        dest_node_name = demand.dest_node_object.name
-
-        # Define a networkx DiGraph to find the path
-        G = self._make_weighted_network_graph(include_failed_circuits=False)
-
-        # Get networkx shortest paths from source_node to dest_node
-        shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                               dest_node_name, weight='cost')
-
-        # Create shortest path list showing node to node connections
-        shortest_path_list = []
-        for path in shortest_paths:
-            int_path = []
-            for x in range(0, len(path) - 1):
-                int_path.append(path[x] + '-' + path[x + 1])
-            shortest_path_list.append(int_path)
+        # # Find node names
+        # source_node_name = demand.source_node_object.name
+        # dest_node_name = demand.dest_node_object.name
+        #
+        # # Define a networkx DiGraph to find the path
+        # G = self._make_weighted_network_graph(include_failed_circuits=False)
+        #
+        # # Get networkx shortest paths from source_node to dest_node
+        # shortest_paths = nx.all_shortest_paths(G, source_node_name,
+        #                                        dest_node_name, weight='cost')
+        #
+        # # Create shortest path list showing node to node connections
+        # shortest_path_list = []
+        # for path in shortest_paths:
+        #     int_path = []
+        #     for x in range(0, len(path) - 1):
+        #         int_path.append(path[x] + '-' + path[x + 1])
+        #     shortest_path_list.append(int_path)
 
         # All interfaces in shortest_path_list
+        # TODO - use _normalize_multidigraph_paths call here
+        # TODO - use self.get_shortest_paths?
+        # TODO - add this change to Model object?
         shortest_path_int_list = []
-        for path in shortest_path_list:
+        for path in demand.path:
             shortest_path_int_list += path
 
         # Unique interfaces across all shortest paths
@@ -287,9 +290,13 @@ class Parallel_Link_Model(object):
 
         # Dict to store how many unique next hops each node has in the shortest paths
         unique_next_hops = {}
+
+        # Iterate through all the interfaces
         for interface in shortest_path_int_set:
-            unique_next_hops[interface[0]] = [intf for intf in shortest_path_int_set if
-                                              intf[0] == interface[0]]
+            # For a given Interface's node_object, determine how many
+            # Interfaces on that Node are facing next hops
+            unique_next_hops[interface.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
+                                                            if intf.node_object.name == interface.node_object.name]
 
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path
@@ -309,7 +316,10 @@ class Parallel_Link_Model(object):
 
         shortest_path_info = {}
         path_counter = 0
-        for path in shortest_path_list:
+        for path in demand.path:
+            import pdb
+            pdb.set_trace()
+
             traffic_splits_per_interface = {}  # Dict of cumulative splits per interface
 
             path_key = 'path_' + str(path_counter)
@@ -370,7 +380,6 @@ class Parallel_Link_Model(object):
             # to the LSP's path interfaces.
 
             # Can demand take LSP?
-
             routed_lsp_generator = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
             lsps_for_demand = []
             for lsp in routed_lsp_generator:

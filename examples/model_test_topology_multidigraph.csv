@@ -61,3 +61,10 @@ A	H	20	''
 C	E	20	''
 B	G	30	''
 E	C	20	''
+
+RSVP_LSP_TABLE
+source	dest	name
+A	D	lsp_a_d_1
+A	D	lsp_a_d_2
+F	E	lsp_f_e_1
+A   F   lsp_a_f_1
