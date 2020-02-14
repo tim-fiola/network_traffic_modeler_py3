@@ -246,41 +246,28 @@ class Parallel_Link_Model(object):
 
     def _demand_traffic_per_int(self, demand):
         """
-        Given a Demand object, return key, value pairs for how much traffic each
-        interface gets from the routing of the traffic load over Model interfaces.
+        Given a Demand object, return the (key, value) pairs for how much traffic each
+        Interface gets from the routing of the traffic load over Model Interfaces.
 
         : demand: Demand object
-        : return: dict of ('source_node_name-dest_node_name': <traffic from demand> ) k, v pairs
+        : return: dict of (Interface: <traffic from demand> ) k, v pairs
 
         Example: The interface from node G to node D below has 2.5 units of traffic from 'demand';
                  the interface from A to B has 10.0, etc.
-        {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
+        {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
+        remote_node_object = Node('B'), address = '1'): 12.0,
+         Interface(name = 'A-to-B_2', cost = 4, capacity = 50, node_object = Node('A'),
+         remote_node_object = Node('B'), address = '2'): 12.0,
+         Interface(name = 'B-to-E', cost = 3, capacity = 200, node_object = Node('B'),
+         remote_node_object = Node('E'), address = '7'): 8.0,
+         Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
+         remote_node_object = Node('E'), address = '27'): 8.0,
+         Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
+         remote_node_object = Node('E'), address = '17'): 8.0}
+
 
         """
 
-        # # Find node names
-        # source_node_name = demand.source_node_object.name
-        # dest_node_name = demand.dest_node_object.name
-        #
-        # # Define a networkx DiGraph to find the path
-        # G = self._make_weighted_network_graph(include_failed_circuits=False)
-        #
-        # # Get networkx shortest paths from source_node to dest_node
-        # shortest_paths = nx.all_shortest_paths(G, source_node_name,
-        #                                        dest_node_name, weight='cost')
-        #
-        # # Create shortest path list showing node to node connections
-        # shortest_path_list = []
-        # for path in shortest_paths:
-        #     int_path = []
-        #     for x in range(0, len(path) - 1):
-        #         int_path.append(path[x] + '-' + path[x + 1])
-        #     shortest_path_list.append(int_path)
-
-        # All interfaces in shortest_path_list
-        # TODO - use _normalize_multidigraph_paths call here
-        # TODO - use self.get_shortest_paths?
-        # TODO - add this change to Model object?
         shortest_path_int_list = []
         for path in demand.path:
             shortest_path_int_list += path
@@ -316,30 +303,27 @@ class Parallel_Link_Model(object):
 
         shortest_path_info = {}
         path_counter = 0
-        for path in demand.path:
-            import pdb
-            pdb.set_trace()
 
-            traffic_splits_per_interface = {}  # Dict of cumulative splits per interface
+        # Iterate thru each path for the demand
+        for path in demand.path:
+            # Dict of cumulative splits per interface
+            traffic_splits_per_interface = {}
 
             path_key = 'path_' + str(path_counter)
 
             shortest_path_info[path_key] = {}
 
-            # Create interfaces list
-            interfaces_list = path
-
             # Create cumulative path splits for each interface
             total_splits = 1
             for interface in path:
-                total_splits = total_splits * len(unique_next_hops[interface[0]])
+                total_splits = total_splits * len(unique_next_hops[interface.node_object.name])
                 traffic_splits_per_interface[interface] = total_splits
 
             # Find path traffic
             max_split = max([split for split in traffic_splits_per_interface.values()])
             path_traffic = float(demand.traffic) / float(max_split)
 
-            shortest_path_info[path_key]['interfaces'] = interfaces_list
+            shortest_path_info[path_key]['interfaces'] = path
             shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
             shortest_path_info[path_key]['path_traffic'] = path_traffic
             path_counter += 1
@@ -353,6 +337,8 @@ class Parallel_Link_Model(object):
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
 
+        import pdb
+        pdb.set_trace()
         return traff_per_int
 
     def _update_interface_utilization(self):  #
