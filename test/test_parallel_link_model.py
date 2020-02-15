@@ -141,10 +141,10 @@ class TestModel(unittest.TestCase):
         model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 2, 0)
-        self.assertEqual(len(all_paths['path']), 3)
+        self.assertEqual(len(all_paths['path']), 6)
         path_lengths = [len(path) for path in all_paths['path']]
         path_lengths.sort()
-        self.assertEqual(path_lengths, [1, 2, 2])
+        self.assertEqual(path_lengths, [1, 2, 2, 2, 2, 2])
 
     # Find all simple paths from A to D with at least 10 unit of
     # reservable bandwidth

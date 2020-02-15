@@ -1225,8 +1225,8 @@ class Parallel_Link_Model(object):
         :param include_failed_circuits: include failed circuits in the topology
         :param needed_bw: the amount of reservable bandwidth required on the path
         :param cutoff: max amount of path hops
-        :return: Return the shortest path in dictionary form:
-                 shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
+        :return: Return the path(s) in dictionary form:
+                 path = {'path': [list of shortest path routes]}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1237,17 +1237,23 @@ class Parallel_Link_Model(object):
         converted_path['path'] = []
 
         # Find the simple paths in G between source and dest
-        digraph_shortest_paths = nx.all_simple_paths(G, source_node_name, dest_node_name, cutoff=cutoff)
+        digraph_all_paths = nx.all_simple_paths(G, source_node_name, dest_node_name, cutoff=cutoff)
+
+        # Remove duplicate paths from digraph_all_paths
+        # (duplicates can be caused by multiple links between nodes)
+        digraph_unique_paths = [list(path) for path in set(tuple(path) for path in digraph_all_paths)]
 
         try:
-            for path in digraph_shortest_paths:
+            for path in digraph_unique_paths:
                 model_path = self._convert_nx_path_to_model_path(path, needed_bw)
                 converted_path['path'].append(model_path)
         except BaseException:
             return converted_path
 
+        # Normalize the path info to get all combinations of with parallel
+        # interfaces
         path_info = self._normalize_multidigraph_paths(converted_path['path'])
-        return path_info
+        return {'path': path_info}
 
     def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
         """
