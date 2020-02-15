@@ -895,7 +895,7 @@ class Parallel_Link_Model(object):
             if len(addresses) == 0:
                 address = 1
             else:
-                address = max(addresses) + 1
+                address = max({int(address) for address in addresses}) + 1
 
         int_a = Interface(node_a_interface_name, cost_intf_a, capacity,
                           node_a_object, node_b_object, address)
@@ -905,9 +905,11 @@ class Parallel_Link_Model(object):
         existing_int_keys = set([interface._key for interface in self.interface_objects])
 
         if int_a._key in existing_int_keys:
-            raise ModelException("interface {} on node {} already exists in model".format(int_a, node_a_object))
+            raise ModelException("interface {} on node {} - "
+                                 "interface already exists in model".format(int_a, node_a_object))
         elif int_b._key in existing_int_keys:
-            raise ModelException("interface {} on node {} already exists in model".format(int_b, node_b_object))
+            raise ModelException("interface {} on node {} - "
+                                 "interface already exists in model".format(int_b, node_b_object))
 
         self.interface_objects.add(int_a)
         self.interface_objects.add(int_b)

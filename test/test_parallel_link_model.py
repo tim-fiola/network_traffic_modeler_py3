@@ -31,7 +31,8 @@ class TestModel(unittest.TestCase):
     def test_demand_add(self):
         self.model.add_demand('A', 'B', 40, 'dmd_a_b')
         self.model.update_simulation()
-        self.assertEqual(self.model.__repr__(), 'Model(Interfaces: 18, Nodes: 7, Demands: 5, RSVP_LSPs: 3)')
+        self.assertEqual(self.model.__repr__(),
+                         'Parallel_Link_Model(Interfaces: 40, Nodes: 10, Demands: 15, RSVP_LSPs: 4)')
 
     def test_rsvp_lsp_add(self):
         self.model.add_rsvp_lsp('A', 'B', 'lsp_a_b_1')
@@ -196,7 +197,7 @@ class TestModel(unittest.TestCase):
 
     def test_ckt_mismatch_int_capacity_file_load(self):
         err_msg = 'circuits_with_mismatched_interface_capacity'
-        model = Parallel_Link_Model.load_model_file('test/mismatched_ckt_int_capacity_topology_file.csv')
+        model = Parallel_Link_Model.load_model_file('test/mismatched_ckt_int_capacity_topology_parallel_links.csv')
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
         self.assertTrue(err_msg in context.exception.args[0][1][0].keys())
@@ -330,12 +331,10 @@ class TestModel(unittest.TestCase):
         node_a = model.get_node_object('A')
         node_b = model.get_node_object('B')
 
-        model.add_circuit(node_a, node_b, 'A-to-B', 'B-to-A_2', 20, 20, 1000)
-
-        err_msg = 'network interface validation failed'
+        err_msg = ') - interface already exists in model'
 
         with self.assertRaises(ModelException) as context:
-            model.update_simulation()
+            model.add_circuit(node_a, node_b, 'A-to-B', 'B-to-A', 20, 20, 1000)
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_add_orphan_interface(self):
