@@ -100,7 +100,7 @@ class TestModel(unittest.TestCase):
         model.update_simulation()
         model.fail_node('A')
         model.update_simulation()
-        self.assertEqual(len(model.get_failed_interface_objects()), 8)
+        self.assertEqual(len(model.get_failed_interface_objects()), 10)
 
     # When a Node is failed, all of its Interfaces must stay failed
     # until the Node is unfailed

@@ -219,6 +219,8 @@ print("all_paths = ")
 all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 3, 80)
 pprint(all_paths['path'])
 
+model.fail_node('A')
+model.update_simulation()
 
 
 

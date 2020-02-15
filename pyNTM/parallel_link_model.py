@@ -1290,11 +1290,12 @@ class Parallel_Link_Model(object):
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
         except BaseException as e:
-            return converted_path, e  # TODO - try removing the e from the return value
+            return converted_path
 
         # Normalize the path info to get all combinations of with parallel
         # interfaces
         path_info = self._normalize_multidigraph_paths(converted_path['path'])
+
         return {'cost': converted_path['cost'], 'path': path_info}
 
     # TODO - this looks like the same thing as get_shortest_path now since the former also has needed_bw
