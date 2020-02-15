@@ -1247,7 +1247,7 @@ class Parallel_Link_Model(object):
             return converted_path
 
         path_info = self._normalize_multidigraph_paths(converted_path['path'])
-        return {'cost': converted_path['cost'], 'path': path_info}
+        return path_info
 
     def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
         """
@@ -1286,8 +1286,8 @@ class Parallel_Link_Model(object):
 
         # Normalize the path info to get all combinations of with parallel
         # interfaces
-        path_info = self._normalize_multidigraph_paths(converted_path)
-        return path_info
+        path_info = self._normalize_multidigraph_paths(converted_path['path'])
+        return {'cost': converted_path['cost'], 'path': path_info}
 
     # TODO - this looks like the same thing as get_shortest_path now since the former also has needed_bw
     def get_shortest_path_for_routed_lsp(self, source_node_name, dest_node_name, lsp, needed_bw):
@@ -1380,9 +1380,6 @@ class Parallel_Link_Model(object):
         """
         # List to hold unique path(s)
         path_list = []
-
-        import pdb
-        pdb.set_trace()
 
         for path in path_info:
             path = list(itertools.product(*path))
