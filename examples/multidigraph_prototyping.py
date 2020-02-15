@@ -216,8 +216,8 @@ pprint(a_d_75)
 print()
 
 print("all_paths = ")
-all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 2, 0)
-pprint(all_paths)
+all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 3, 80)
+pprint(all_paths['path'])
 
 
 

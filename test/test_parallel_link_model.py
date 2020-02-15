@@ -146,16 +146,16 @@ class TestModel(unittest.TestCase):
         path_lengths.sort()
         self.assertEqual(path_lengths, [1, 2, 2, 2, 2, 2])
 
-    # Find all simple paths from A to D with at least 10 unit of
+    # Find all simple paths from A to D with at least 80 units of
     # reservable bandwidth
     def test_all_paths_needed_bw(self):
         model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
-        all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 10)
-        self.assertEqual(len(all_paths['path']), 4)
+        all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 3, 80)
+        self.assertEqual(len(all_paths['path']), 7)
         path_lengths = [len(path) for path in all_paths['path']]
         path_lengths.sort()
-        self.assertEqual(path_lengths, [1, 2, 2, 3])  # TODO - need to look at this after adding parallel links
+        self.assertEqual(path_lengths, [1, 2, 2, 2, 3, 3, 3])
 
     def test_get_failed_nodes(self):
         model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
