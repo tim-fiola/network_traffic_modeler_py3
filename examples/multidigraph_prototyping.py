@@ -202,7 +202,7 @@ from pyNTM import Parallel_Link_Model
 #     return {'cost': multidigraph_path_info['cost'], 'normalized_paths': normalized_paths}
 
 
-model = Parallel_Link_Model.load_model_file_multidigraph('model_test_topology_multidigraph.csv')
+model = Parallel_Link_Model.load_model_file('model_test_topology_multidigraph.csv')
 model.validate_model()
 
 a_d = model.get_shortest_path('A', 'D')

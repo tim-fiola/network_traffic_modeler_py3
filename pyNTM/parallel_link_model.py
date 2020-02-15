@@ -1646,144 +1646,7 @@ class Parallel_Link_Model(object):
         return G
 
     @classmethod
-    def load_model_file(cls, data_file):
-        """
-        Opens a network_modeling data file and returns a model containing
-        the info in the data file.  The data file must be of the appropriate
-        format to produce a valid model.  This cannot be used to open
-        multiple models in a single python instance - there may be
-        unpredictable results in the info in the models.
-
-        The format for the file must be a tab separated value file.
-
-        This docstring you are reading may not display the table info
-        explanations/examples below correctly on https://pyntm.readthedocs.io/en/latest/api.html.
-        Recommend either using help(Model.load_model_file) at the python3 cli or
-        looking at one of the sample model data_files in github:
-        https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/sample_network_model_file.csv
-        https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
-
-        The following headers must exist, with the following tab-column
-        names beneath:
-
-            INTERFACES_TABLE
-            node_object_name - name of node	where interface resides
-            remote_node_object_name	- name of remote node
-            name - interface name
-            cost - IGP cost/metric for interface
-            capacity - capacity
-
-            Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
-            So a Node created from an Interface does not have to appear in the
-            NODES_TABLE unless you want to add additional attributes for the Node
-            such as latitude/longitude
-
-            NODES_TABLE -
-            name - name of node
-            lon	- longitude (or y-coordinate)
-            lat - latitude (or x-coordinate)
-
-            Note - The NODES_TABLE is present for 2 reasons:
-            - to add a Node that has no interfaces
-            - and/or to add additional attributes for a Node inferred from
-            the INTERFACES_TABLE
-
-            DEMANDS_TABLE
-            source - source node name
-            dest - destination node name
-            traffic	- amount of traffic on demand
-            name - name of demand
-
-            RSVP_LSP_TABLE (this table is optional)
-            source - source node name
-            dest - destination node name
-            name - name of LSP
-            configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-            if LSP is auto-bandwidth, then leave this blank for the LSP
-
-        Functional model files can be found in this directory in
-        https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
-
-        Here is an example of a data file:
-
-            INTERFACES_TABLE
-            node_object_name	remote_node_object_name	name	cost	capacity
-            A	B	A-to-B	4	100
-            B	A	B-to-A	4	100
-
-            NODES_TABLE
-            name	lon	lat
-            A	50	0
-            B	0	-50
-
-            DEMANDS_TABLE
-            source	dest	traffic	name
-            A	B	80	dmd_a_b_1
-
-            RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw
-            A	B	lsp_a_b_1   10
-            A	B	lsp_a_b_2
-
-
-        :param data_file: file with model info
-        :return: Model object
-
-
-
-        """
-        # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
-        # TODO - add support for SRLGs
-
-        interface_set = set()
-        node_set = set()
-        demand_set = set()
-        lsp_set = set()
-
-        # Open the file with the data, read it, and split it into lines
-        with open(data_file, 'r') as f:
-            data = f.read()
-
-        lines = data.splitlines()
-
-        # Define the Interfaces from the data and extract the presence of
-        # Nodes from the Interface data
-        int_info_begin_index = 2
-        int_info_end_index = find_end_index(int_info_begin_index, lines)
-        interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
-                                                                                int_info_end_index, lines)
-
-        # Define the explicit nodes info from the file
-        nodes_info_begin_index = int_info_end_index + 3
-        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
-        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
-        for node_line in node_lines:
-            cls._add_node_from_data(demand_set, interface_set, lines, lsp_set, node_line, node_set)
-
-        # Define the demands info
-        demands_info_begin_index = nodes_info_end_index + 3
-        demands_info_end_index = find_end_index(demands_info_begin_index, lines)
-        # There may or may not be LSPs in the model, so if there are not,
-        # set the demands_info_end_index as the last line in the file
-        if not demands_info_end_index:
-            demands_info_end_index = len(lines)
-
-        demands_lines = lines[demands_info_begin_index:demands_info_end_index]
-
-        for demand_line in demands_lines:
-            cls._add_demand_from_data(demand_line, demand_set, lines, node_set)
-
-        # Define the LSP info
-
-        # If the demands_info_end_index is the same as the length of the
-        # lines list, then there is no LSP section
-        if demands_info_end_index != len(lines):
-            cls._add_lsp_from_data(demands_info_end_index, lines, lsp_set, node_set)
-
-        return cls(interface_set, node_set, demand_set, lsp_set)
-
-    @classmethod
-    def load_model_file_multidigraph(cls, data_file):  # TODO - normalize this name to load_model_file
+    def load_model_file(cls, data_file):  # TODO - normalize this name to load_model_file
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
@@ -1887,8 +1750,8 @@ class Parallel_Link_Model(object):
         # Nodes from the Interface data
         int_info_begin_index = 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
-        interface_set, node_set = cls._extract_interface_data_and_implied_nodes_multidigraph(int_info_begin_index,
-                                                                                             int_info_end_index, lines)
+        interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
+                                                                                int_info_end_index, lines)
 
         # Define the explicit nodes info from the file
         nodes_info_begin_index = int_info_end_index + 3
@@ -1985,48 +1848,6 @@ class Parallel_Link_Model(object):
 
     @classmethod
     def _extract_interface_data_and_implied_nodes(cls, int_info_begin_index, int_info_end_index, lines):
-        """
-        Extracts interface data from lines and adds Interface objects to a set.
-        Also extracts the implied Nodes from the Interfaces and adds those Nodes to a set.
-
-        :param int_info_begin_index: Index position in lines where interface info begins
-        :param int_info_end_index:  Index position in lines where interface info ends
-        :param lines: lines of data describing a Model objects
-        :return: set of Interface objects, set of Node objects created from lines
-        """
-
-        interface_set = set()
-        node_set = set()
-        interface_lines = lines[int_info_begin_index:int_info_end_index]
-        # Add the Interfaces to a set
-        for interface_line in interface_lines:
-            # Read interface characteristics
-            if len(interface_line.split()) == 5:
-                node_name, remote_node_name, name, cost, capacity = interface_line.split()
-            else:
-                msg = ("node_name, remote_node_name, name, cost, and capacity "
-                       "must be defined for line {}, line index {}".format(interface_line,
-                                                                           lines.index(interface_line)))
-                raise ModelException(msg)
-
-            new_interface = Interface(name, int(cost), int(capacity), Node(node_name), Node(remote_node_name))
-
-            if new_interface._key not in set([interface._key for interface in interface_set]):
-                interface_set.add(new_interface)
-            else:
-                print("{} already exists in model; disregarding line {}".format(new_interface,
-                                                                                lines.index(interface_line)))
-
-            # Derive Nodes from the Interface data
-            if node_name not in set([node.name for node in node_set]):
-                node_set.add(new_interface.node_object)
-            if remote_node_name not in set([node.name for node in node_set]):
-                node_set.add(new_interface.remote_node_object)
-
-        return interface_set, node_set
-
-    @classmethod
-    def _extract_interface_data_and_implied_nodes_multidigraph(cls, int_info_begin_index, int_info_end_index, lines):
         """
         Extracts interface data from lines and adds Interface objects to a set.
         Also extracts the implied Nodes from the Interfaces and adds those Nodes to a set.

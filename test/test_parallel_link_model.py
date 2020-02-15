@@ -224,7 +224,7 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_add_node(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         node_z = Node('Z')
@@ -235,7 +235,7 @@ class TestModel(unittest.TestCase):
         self.assertIn(node_z, model.node_objects)
 
     def test_get_bad_interface(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         with self.assertRaises(ModelException) as context:
@@ -243,7 +243,7 @@ class TestModel(unittest.TestCase):
         self.assertTrue('specified interface does not exist' in context.exception.args[0])
 
     def test_bad_ckt(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         with self.assertRaises(ModelException) as context:
@@ -251,7 +251,7 @@ class TestModel(unittest.TestCase):
         self.assertTrue('specified interface does not exist' in context.exception.args[0])
 
     def test_get_ckt(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         ckt = model.get_circuit_object_from_interface('A-to-B', 'A')
