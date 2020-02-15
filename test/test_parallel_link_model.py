@@ -212,7 +212,7 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_add_duplicate_node(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         node_a = Node('A')
@@ -259,16 +259,16 @@ class TestModel(unittest.TestCase):
         self.assertIn(ckt, model.circuit_objects)
 
     def test_get_unrouted_dmds(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
-        model.fail_node('D')
+        model.fail_node('X')
         model.update_simulation()
-        dmd_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+        dmd_a_y = model.get_demand_object('A', 'Y', 'dmd_a_y_1')
 
-        self.assertTrue(dmd_a_f, model.get_unrouted_demand_objects())
+        self.assertTrue(dmd_a_y, model.get_unrouted_demand_objects())
 
     def test_get_bad_dmd(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         with self.assertRaises(ModelException) as context:
@@ -276,7 +276,7 @@ class TestModel(unittest.TestCase):
         self.assertIn('no matching demand', context.exception.args[0])
 
     def test_get_bad_lsp(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         err_msg = "LSP with source node A, dest node B, and name bad_lsp does not exist in model"
@@ -296,7 +296,7 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_node_orphan(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         zz = Node('ZZ')
@@ -308,7 +308,7 @@ class TestModel(unittest.TestCase):
         self.assertFalse(model.is_node_an_orphan(node_a))
 
     def test_ckt_add(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         node_zz = Node('ZZ')
@@ -324,23 +324,40 @@ class TestModel(unittest.TestCase):
 
         self.assertTrue(isinstance(ckt, Circuit))
 
-    def test_add_duplicate_int(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+    def test_duplicate_ckt(self):
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
+        model.update_simulation()
+        node_a = model.get_node_object('A')
+        node_b = model.get_node_object('B')
+
+        model.add_circuit(node_a, node_b, 'A-to-B', 'B-to-A_2', 20, 20, 1000)
+
+        err_msg = 'network interface validation failed'
+
+        with self.assertRaises(ModelException) as context:
+            model.update_simulation()
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_add_orphan_interface(self):
+        """
+        Tests adding an unpaired Interface to the model's interface_objects set
+        """
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         node_a = model.get_node_object('A')
         node_b = model.get_node_object('B')
-        duplicate_int = Interface('A-to-B', 100, 100, node_a, node_b, 80)
-        model.interface_objects.add(duplicate_int)
+        orphan_int = Interface('A-to-B', 100, 100, node_a, node_b, address=80)
+        model.interface_objects.add(orphan_int)
 
-        err_msg = "Interface names must be unique per node."
+        err_msg = "There is no Interface from Node"
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_int_not_in_ckt(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         node_f = model.get_node_object('F')
@@ -355,7 +372,7 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_int_name_change(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         interface = model.get_interface_object('A-to-B', 'A')
@@ -365,7 +382,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(interface.name, 'A-to-B-changed')
 
     def test_duplicate_int_near_side(self):
-        model = Parallel_Link_Model.load_model_file('test/igp_routing_topology.csv')
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
         node_a_2 = Node('A')

@@ -203,7 +203,7 @@ from pyNTM import Parallel_Link_Model
 
 
 model = Parallel_Link_Model.load_model_file('model_test_topology_multidigraph.csv')
-model.validate_model()
+model.update_simulation()
 
 a_d = model.get_shortest_path('A', 'D')
 
@@ -213,28 +213,11 @@ print()
 a_d_75 = model.get_shortest_path('A', 'D', needed_bw=75)
 pprint(a_d_75)
 
-model.update_simulation()
+print()
 
-# # test = normalize_multiple_links(a_d)
-#
-# ##################### def prototyping #####################
-#
-# normalized_paths = normalize_multidigraph_paths(a_d)
+print("all_paths = ")
+pprint(model.get_all_paths_reservable_bw('A', 'D', False, 2, 0))
 
-# for path_option in normalized_paths['normalized_paths']:
-#     print(len(path_option))
-#     pprint(path_option)
-#     print()
-#
-#
-# paths_to_return = {}
-# paths_to_return['cost'] = a_d['cost']
-# paths_to_return['path'] = []
-#
-#
-# for path_option in normalized_paths['normalized_paths']:
-#     for path in path_option:
-#         paths_to_return['path'].append(path)
 
 
 

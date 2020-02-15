@@ -36,6 +36,10 @@ E	F	E-to-F	3	100 15
 F	E	F-to-E	3	100 15
 H	D	H-to-D	4	100 16
 D	H	D-to-H	4	100 16
+A   X   A-to-X  10  100 38
+X   A   X-to-A  10  100 38
+Y   X   Y-to-X  10  100 39
+X   Y   X-to-Y  10  100 39
 
 NODES_TABLE
 name	lon	lat
@@ -63,6 +67,7 @@ E	C	20	dmd_e_c_1
 A   D   20  dmd_a_d_1
 A   D   20  dmd_a_d_2
 A   D   20  dmd_a_d_3
+A   Y   20  dmd_a_y_1
 
 RSVP_LSP_TABLE
 source	dest	name
