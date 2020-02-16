@@ -243,7 +243,7 @@ class Parallel_Link_Model(object):
             'reserved_bandwidth']:  # pragma: no cover  # noqa
             int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
-    def _demand_traffic_per_int(self, demand):
+    def _demand_traffic_per_int(self, demand):  # common between model and parallel_link_model
         """
         Given a Demand object, return the (key, value) pairs for how much traffic each
         Interface gets from the routing of the traffic load over Model Interfaces.
@@ -388,7 +388,7 @@ class Parallel_Link_Model(object):
 
         return traff_per_int
 
-    def _update_interface_utilization(self):  #
+    def _update_interface_utilization(self):  # common between model and parallel_link_model
         """Updates each interface's utilization; returns Model object with
         updated interface utilization."""
 
