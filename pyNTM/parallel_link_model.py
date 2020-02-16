@@ -283,7 +283,7 @@ class Parallel_Link_Model(object):
             unique_next_hops[interface.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
                                                             if intf.node_object.name == interface.node_object.name]
 
-        # TODO - can shortest_path_info be simplified?
+        # TODO - find shorter example here
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path
         # - a dict of cumulative splits for each interface at that point in the path
@@ -692,8 +692,7 @@ class Parallel_Link_Model(object):
         else:
             return True
 
-    def _make_circuits(self, return_exception=True,
-                       include_failed_circuits=True):
+    def _make_circuits_multidigraph(self, return_exception=True, include_failed_circuits=True):
         """
         Matches interface objects into circuits and returns the circuits list
         :param return_exception: Should an exception be returned if not all the
@@ -708,72 +707,6 @@ class Parallel_Link_Model(object):
         G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits)
 
         # Determine which interfaces pair up into good circuits in G
-        paired_interfaces = ((local_node_name, remote_node_name, data) for
-                             (local_node_name, remote_node_name, data) in
-                             G.edges(data=True) if G.has_edge(remote_node_name,
-                                                              local_node_name))
-
-        # Set interface object in_ckt = False and baseline the address
-        for interface in (interface for interface in self.interface_objects):
-            interface.in_ckt = False
-        address_number = 1
-        circuits = set([])
-
-        # Using the paired interfaces (source_node, dest_node) pairs from G,
-        # get the corresponding interface objects from the model to create
-        # the circuit object
-        for interface in (interface for interface in paired_interfaces):
-            # Get each interface from model for each
-            int1 = self.get_interface_object_from_nodes(interface[0],
-                                                        interface[1])
-            int2 = self.get_interface_object_from_nodes(interface[1],
-                                                        interface[0])
-
-            if int1.in_ckt is False and int2.in_ckt is False:
-                # Mark interface objects as in_ckt = True
-                int1.in_ckt = True
-                int2.in_ckt = True
-
-                # Add address to interface objects
-                int1.address = address_number
-                int2.address = address_number
-                address_number = address_number + 1
-
-                ckt = Circuit(int1, int2)
-                circuits.add(ckt)
-
-        # Find any interfaces that don't have counterpart
-        exception_ints_not_in_ckt = [(local_node_name, remote_node_name, data)
-                                     for (local_node_name, remote_node_name, data) in
-                                     G.edges(data=True) if not (G.has_edge(remote_node_name, local_node_name))]
-
-        if len(exception_ints_not_in_ckt) > 0:
-            exception_msg = ('WARNING: These interfaces were not matched '
-                             'into a circuit {}'.format(exception_ints_not_in_ckt))
-            if return_exception:
-                raise ModelException(exception_msg)
-            else:
-                return {'data': exception_ints_not_in_ckt}
-
-        self.circuit_objects = circuits
-
-    def _make_circuits_multidigraph(self, return_exception=True,
-                                    include_failed_circuits=True):
-        """
-        Matches interface objects into circuits and returns the circuits list
-        :param return_exception: Should an exception be returned if not all the
-                                 interfaces can be matched into a circuit?
-        :param include_failed_circuits:  Should circuits that will be in a
-                                         failed state be created?
-
-        :return: a set of Circuit objects in the Model, each Circuit
-                 comprised of two Interface objects
-        """
-
-        G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits)
-
-        # Determine which interfaces pair up into good circuits in G
-        # TODO - change to from list to generator when multidigraph dev is done
         graph_interfaces = ((local_node_name, remote_node_name, data) for
                             (local_node_name, remote_node_name, data) in
                             G.edges(data=True) if G.has_edge(remote_node_name, local_node_name))
@@ -1650,7 +1583,7 @@ class Parallel_Link_Model(object):
         return G
 
     @classmethod
-    def load_model_file(cls, data_file):  # TODO - normalize this name to load_model_file
+    def load_model_file(cls, data_file):
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
