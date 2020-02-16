@@ -1,5 +1,5 @@
 INTERFACES_TABLE
-node_object_name	remote_node_object_name	name	cost	capacity    address
+node_object_name	remote_node_object_name	name	cost	capacity    circuit_id
 A	B	A-to-B	4	100 1
 B	A	B-to-A	4	100 1
 A	B	A-to-B_2	4	50 2

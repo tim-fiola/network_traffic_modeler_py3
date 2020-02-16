@@ -18,7 +18,7 @@ from .srlg import SRLG
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
 #  routed lsp/demands in dict form
-# TODO - look at removing the requirement that Interface address be specified since the remote side
+# TODO - look at removing the requirement that Interface circuit_id be specified since the remote side
 #  can be determined because only one circuit can exist between any pair of Nodes
 # TODO - add support for SRLGs in load_model_file
 # TODO - add attribute for Node/Interface whereby an object can be failed by itself
@@ -31,7 +31,7 @@ class Model(object):
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
-          interface addresses --> A pair of Interfaces with the same address
+          interface circuit_ids --> A pair of Interfaces with the same circuit_id
           value get matched into a Circuit
 
         - Node objects (set): vertices on the network (aka 'layer 3 devices')
@@ -74,11 +74,11 @@ class Model(object):
 
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
-            'remote_node': 'B', 'address': 1, 'failed': False},
+            'remote_node': 'B', 'circuit_id': 1, 'failed': False},
             {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
-            'remote_node': 'B', 'address': 2, 'failed': False},
+            'remote_node': 'B', 'circuit_id': 2, 'failed': False},
             {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
-            'remote_node': 'C', 'address': 3, 'failed': False},]
+            'remote_node': 'C', 'circuit_id': 3, 'failed': False},]
 
         """
 
@@ -251,15 +251,15 @@ class Model(object):
         Example: The interface from node G to node D below has 2.5 units of traffic from 'demand';
                  the interface from A to B has 10.0, etc.
         {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
-        remote_node_object = Node('B'), address = '1'): 12.0,
+        remote_node_object = Node('B'), circuit_id = '1'): 12.0,
          Interface(name = 'A-to-B_2', cost = 4, capacity = 50, node_object = Node('A'),
-         remote_node_object = Node('B'), address = '2'): 12.0,
+         remote_node_object = Node('B'), circuit_id = '2'): 12.0,
          Interface(name = 'B-to-E', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), address = '7'): 8.0,
+         remote_node_object = Node('E'), circuit_id = '7'): 8.0,
          Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), address = '27'): 8.0,
+         remote_node_object = Node('E'), circuit_id = '27'): 8.0,
          Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), address = '17'): 8.0}
+         remote_node_object = Node('E'), circuit_id = '17'): 8.0}
 
         """
 
@@ -289,64 +289,64 @@ class Model(object):
         # shortest_path_info =
         # {'path_0': {'interfaces': [
         #     Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
-        #               address='2'),
+        #               circuit_id='2'),
         #     Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #               address='17')],
+        #               circuit_id='17')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='17'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='17'): 6}},
         #  'path_1': {'interfaces': [
         #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='2'),
+        #                circuit_id='2'),
         #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='7')],
+        #                circuit_id='7')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='7'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
         #  'path_2': {'interfaces': [
         #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='2'),
+        #                circuit_id='2'),
         #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='27')],
+        #                circuit_id='27')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='27'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}},
         #  'path_3': {'interfaces': [
         #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='1'),
+        #                circuit_id='1'),
         #      Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='17')],
+        #                circuit_id='17')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
         #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='17'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='17'): 6}},
         #  'path_4': {'interfaces': [
         #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='1'),
+        #                circuit_id='1'),
         #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='7')],
+        #                circuit_id='7')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
         #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='7'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
         #  'path_5': {'interfaces': [
         #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='1'),
+        #                circuit_id='1'),
         #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='27')],
+        #                circuit_id='27')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
         #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='27'): 6}}}
+        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}}}
         shortest_path_info = {}
         path_counter = 0
 
@@ -717,10 +717,10 @@ class Model(object):
                              G.edges(data=True) if G.has_edge(remote_node_name,
                                                               local_node_name))
 
-        # Set interface object in_ckt = False and baseline the address
+        # Set interface object in_ckt = False and baseline the circuit_id
         for interface in (interface for interface in self.interface_objects):
             interface.in_ckt = False
-        address_number = 1
+        circuit_id_number = 1
         circuits = set([])
 
         # Using the paired interfaces (source_node, dest_node) pairs from G,
@@ -738,10 +738,10 @@ class Model(object):
                 int1.in_ckt = True
                 int2.in_ckt = True
 
-                # Add address to interface objects
-                int1.address = address_number
-                int2.address = address_number
-                address_number = address_number + 1
+                # Add circuit_id to interface objects
+                int1.circuit_id = circuit_id_number
+                int2.circuit_id = circuit_id_number
+                circuit_id_number = circuit_id_number + 1
 
                 ckt = Circuit(int1, int2)
                 circuits.add(ckt)
@@ -770,15 +770,15 @@ class Model(object):
                 return interface
 
     @property
-    def all_interface_addresses(self):
+    def all_interface_circuit_ids(self):
         """
-        Returns all interface addresses
+        Returns all interface circuit_ids
         """
-        return set(interface.address for interface in self.interface_objects)
+        return set(interface.circuit_id for interface in self.interface_objects)
 
     def add_circuit(self, node_a_object, node_b_object, node_a_interface_name,
                     node_b_interface_name, cost_intf_a=1, cost_intf_b=1,
-                    capacity=1000, failed=False, address=None):
+                    capacity=1000, failed=False, circuit_id=None):
         """
         Creates component Interface objects for a new Circuit in the Model.
         The Circuit object will then be created during the validate_model() call.
@@ -791,21 +791,21 @@ class Model(object):
         :param cost_intf_b: metric/cost of node_b_interface component Interface
         :param capacity: Circuit's capacity
         :param failed: Should the Circuit be created in a Failed state?
-        :param address: Optional.  Will be auto-assigned unless specified
+        :param circuit_id: Optional.  Will be auto-assigned unless specified
         :return: Model with new Circuit comprised of 2 new Interfaces
         """
 
-        if address is None:
-            addresses = self.all_interface_addresses
-            if len(addresses) == 0:
-                address = 1
+        if circuit_id is None:
+            circuit_ids = self.all_interface_circuit_ids
+            if len(circuit_ids) == 0:
+                circuit_id = 1
             else:
-                address = max(addresses) + 1
+                circuit_id = max(circuit_ids) + 1
 
         int_a = Interface(node_a_interface_name, cost_intf_a, capacity,
-                          node_a_object, node_b_object, address)
+                          node_a_object, node_b_object, circuit_id)
         int_b = Interface(node_b_interface_name, cost_intf_b, capacity,
-                          node_b_object, node_a_object, address)
+                          node_b_object, node_a_object, circuit_id)
 
         existing_int_keys = set([interface._key for interface in self.interface_objects])
 
@@ -876,7 +876,7 @@ class Model(object):
             intf = Interface(interface['name'], interface['cost'],
                              interface['capacity'], Node(interface['node']),
                              Node(interface['remote_node']),
-                             interface['address'])
+                             interface['circuit_id'])
             network_interface_objects.add(intf)
 
             # Check to see if the Interface's Node already exists, if not, add it
@@ -1226,13 +1226,13 @@ class Model(object):
 
         The corresponding model style path would be:
         [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-            remote_node_object = Node('B'), address = 9),
+            remote_node_object = Node('B'), circuit_id = 9),
         Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-            remote_node_object = Node('G'), address = 6),
+            remote_node_object = Node('G'), circuit_id = 6),
         Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-            remote_node_object = Node('D'), address = 2),
+            remote_node_object = Node('D'), circuit_id = 2),
         Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
-            remote_node_object = Node('F'), address = 1)]
+            remote_node_object = Node('F'), circuit_id = 1)]
         """
 
         # Define a model-style path to build

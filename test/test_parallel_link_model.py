@@ -200,7 +200,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(model.get_non_failed_node_objects()), set(unfailed_node_list))
 
     def test_interface_fields_missing_model_file_load(self):
-        err_msg = 'node_name, remote_node_name, name, cost, capacity, address must be defined for line'
+        err_msg = 'node_name, remote_node_name, name, cost, capacity, circuit_id must be defined for line'
         with self.assertRaises(ModelException) as context:
             Parallel_Link_Model.load_model_file('test/interface_field_info_missing_routing_topology_multidigraph.csv')
         self.assertTrue(err_msg in err_msg in context.exception.args[0])
@@ -356,7 +356,7 @@ class TestModel(unittest.TestCase):
 
         node_a = model.get_node_object('A')
         node_b = model.get_node_object('B')
-        orphan_int = Interface('A-to-B', 100, 100, node_a, node_b, address=80)
+        orphan_int = Interface('A-to-B', 100, 100, node_a, node_b, circuit_id=80)
         model.interface_objects.add(orphan_int)
 
         err_msg = "There is no Interface from Node"

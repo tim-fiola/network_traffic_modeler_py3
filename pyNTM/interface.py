@@ -8,13 +8,13 @@ from .srlg import SRLG
 class Interface(object):
     """An object representing a Node interface"""
 
-    def __init__(self, name, cost, capacity, node_object, remote_node_object, address=0):
+    def __init__(self, name, cost, capacity, node_object, remote_node_object, circuit_id=0):
         self.name = name
         self.cost = cost
         self.capacity = capacity
         self.node_object = node_object
         self.remote_node_object = remote_node_object
-        self.address = address
+        self.circuit_id = circuit_id
         self.traffic = 0.0
         self._failed = False
         self.reserved_bandwidth = 0
@@ -31,15 +31,15 @@ class Interface(object):
         #     return NotImplemented
 
         return [self.node_object, self.remote_node_object, self.name,
-                self.capacity, self.address] == [other_object.node_object,
-                                                 other_object.remote_node_object, other_object.name,
-                                                 other_object.capacity, other_object.address]
+                self.capacity, self.circuit_id] == [other_object.node_object,
+                                                    other_object.remote_node_object, other_object.name,
+                                                    other_object.capacity, other_object.circuit_id]
 
     def __ne__(self, other_object):
         return [self.node_object, self.remote_node_object, self.name,
-                self.capacity, self.address] != [other_object.node_object,
-                                                 other_object.remote_node_object, other_object.name,
-                                                 other_object.capacity, other_object.address]
+                self.capacity, self.circuit_id] != [other_object.node_object,
+                                                    other_object.remote_node_object, other_object.name,
+                                                    other_object.capacity, other_object.circuit_id]
 
     def __hash__(self):
         # return hash(tuple(sorted(self.__dict__.items())))
@@ -47,13 +47,13 @@ class Interface(object):
 
     def __repr__(self):
         return '%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
-remote_node_object = %r, address = %r)' % (self.__class__.__name__,
-                                           self.name,
-                                           self.cost,
-                                           self.capacity,
-                                           self.node_object,
-                                           self.remote_node_object,
-                                           self.address)
+remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
+                                              self.name,
+                                              self.cost,
+                                              self.capacity,
+                                              self.node_object,
+                                              self.remote_node_object,
+                                              self.circuit_id)
 
     @property
     def reservable_bandwidth(self):
@@ -158,7 +158,7 @@ remote_node_object = %r, address = %r)' % (self.__class__.__name__,
         """Searches the model and returns the remote interface"""
 
         for interface in (interface for interface in model.interface_objects):
-            if interface.node_object.name == self.remote_node_object.name and interface.address == self.address:
+            if interface.node_object.name == self.remote_node_object.name and interface.circuit_id == self.circuit_id:
                 remote_interface = interface
                 break
 

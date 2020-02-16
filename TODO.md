@@ -59,7 +59,7 @@ API TO DO:
 - increasing/decreasing the magnitude of an existing demand in the traffic matrix failover       
 
 NOTES:
-- interface addresses are only used to match interfaces into circuits and do
+- interface circuit_ids are only used to match interfaces into circuits and do
 not have any practical bearing on the simulation results
 
 

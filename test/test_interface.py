@@ -14,12 +14,12 @@ class TestInterface(unittest.TestCase):
         self.node_a = Node(name='nodeA', lat=0, lon=0)
         self.node_b = Node(name='nodeB', lat=0, lon=0)
         self.interface_a = Interface(name='inerfaceA-to-B', cost=4, capacity=100,
-                                     node_object=self.node_a, remote_node_object=self.node_b, address=1)
+                                     node_object=self.node_a, remote_node_object=self.node_b, circuit_id=1)
         self.interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
-                                     node_object=self.node_b, remote_node_object=self.node_a, address=1)
+                                     node_object=self.node_b, remote_node_object=self.node_a, circuit_id=1)
 
     # def test_repr(self):
-    #     self.assertEqual(repr(self.interface_a), "Interface(name = 'inerfaceA-to-B', cost = 4, capacity = 100, node_object = Node('nodeA'), remote_node_object = Node('nodeB'), address = 1)")  # noqa E501
+    #     self.assertEqual(repr(self.interface_a), "Interface(name = 'inerfaceA-to-B', cost = 4, capacity = 100, node_object = Node('nodeA'), remote_node_object = Node('nodeB'), circuit_id = 1)")  # noqa E501
 
     def test_bad_int_cost(self):
         with self.assertRaises(ModelException) as context:
@@ -36,12 +36,12 @@ class TestInterface(unittest.TestCase):
     def test_init_fail_neg_cost(self):
         with self.assertRaises(ModelException):
             Interface(name='inerfaceA-to-B', cost=-1, capacity=100,
-                      node_object=self.node_a, remote_node_object=self.node_b, address=1)
+                      node_object=self.node_a, remote_node_object=self.node_b, circuit_id=1)
 
     def test_init_fail_neg_capacity(self):
         with self.assertRaises(ModelException):
             Interface(name='inerfaceA-to-B', cost=4, capacity=-1,
-                      node_object=self.node_a, remote_node_object=self.node_b, address=1)
+                      node_object=self.node_a, remote_node_object=self.node_b, circuit_id=1)
 
     def test_reservable_bandwidth(self):
         self.assertEqual(100, self.interface_a.reservable_bandwidth)
@@ -178,12 +178,12 @@ class TestInterface(unittest.TestCase):
         model.update_simulation()
 
         int_a_b = model.get_interface_object('A-to-B', 'A')
-        address = int_a_b.address
+        circuit_id = int_a_b.circuit_id
 
         node_a_prime = Node('A')
         node_b_prime = Node('B')
 
-        int_a_b_prime = Interface('A-to-B', 20, 125, node_a_prime, node_b_prime, address)
+        int_a_b_prime = Interface('A-to-B', 20, 125, node_a_prime, node_b_prime, circuit_id)
 
         self.assertFalse(int_a_b == int_a_b_prime)
 

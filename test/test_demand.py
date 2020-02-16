@@ -15,9 +15,9 @@ class TestDemand(unittest.TestCase):
         self.node_a = Node(name='nodeA', lat=0, lon=0)
         self.node_b = Node(name='nodeB', lat=0, lon=0)
         self.interface_a = Interface(name='inerfaceA-to-B', cost=4, capacity=100,
-                                     node_object=self.node_a, remote_node_object=self.node_b, address=1)
+                                     node_object=self.node_a, remote_node_object=self.node_b, circuit_id=1)
         self.interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
-                                     node_object=self.node_b, remote_node_object=self.node_a, address=1)
+                                     node_object=self.node_b, remote_node_object=self.node_a, circuit_id=1)
         self.rsvp_lsp_a = RSVP_LSP(source_node_object=self.node_a, dest_node_object=self.node_b, lsp_name='A-to-B')
         self.model = Model(interface_objects=set([self.interface_a, self.interface_b]),
                            node_objects=set([self.node_a, self.node_b]), demand_objects=set([]),
@@ -80,9 +80,9 @@ class TestDemand(unittest.TestCase):
         node_b = Node(name='nodeB', lat=0, lon=0)
         node_d = Node(name='nodeD')
         interface_a = Interface(name='inerfaceA-to-B', cost=4, capacity=100,
-                                     node_object=node_a, remote_node_object=node_b, address=1)
+                                     node_object=node_a, remote_node_object=node_b, circuit_id=1)
         interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
-                                     node_object=node_b, remote_node_object=node_a, address=1)
+                                     node_object=node_b, remote_node_object=node_a, circuit_id=1)
         dmd_a_d = Demand(node_a, node_d, traffic=10)
         model = Model(interface_objects=set([interface_a, interface_b]),
                       node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_d]),
@@ -100,9 +100,9 @@ class TestDemand(unittest.TestCase):
         node_b = Node(name='nodeB', lat=0, lon=0)
         node_d = Node(name='nodeD')
         interface_a = Interface(name='inerfaceA-to-B', cost=4, capacity=100,
-                                node_object=node_a, remote_node_object=node_b, address=1)
+                                node_object=node_a, remote_node_object=node_b, circuit_id=1)
         interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
-                                node_object=node_b, remote_node_object=node_a, address=1)
+                                node_object=node_b, remote_node_object=node_a, circuit_id=1)
         dmd_a_b = Demand(node_a, node_b, traffic=10)
 
         lsp_a_b = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b')

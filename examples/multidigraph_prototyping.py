@@ -23,25 +23,25 @@ from pyNTM import Parallel_Link_Model
 #     multidigraph_path_info example:
 #     {'cost': 40,
 #     'path': [[[Interface(name = 'A-to-D', cost = 40, capacity = 10, node_object = Node('A'),
-#            remote_node_object = Node('D'), address = '7')]],
+#            remote_node_object = Node('D'), circuit_id = '7')]],
 #           [[Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'),
-#           remote_node_object = Node('B'), address = '2'),
+#           remote_node_object = Node('B'), circuit_id = '2'),
 #             Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-#             remote_node_object = Node('B'), address = '1')],
+#             remote_node_object = Node('B'), circuit_id = '1')],
 #            [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-#            remote_node_object = Node('D'), address = '3')]],
+#            remote_node_object = Node('D'), circuit_id = '3')]],
 #           [[Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'),
-#           remote_node_object = Node('B'), address = '2'),
+#           remote_node_object = Node('B'), circuit_id = '2'),
 #             Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-#             remote_node_object = Node('B'), address = '1')],
+#             remote_node_object = Node('B'), circuit_id = '1')],
 #            [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-#            remote_node_object = Node('G'), address = '18'),
+#            remote_node_object = Node('G'), circuit_id = '18'),
 #             Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-#             remote_node_object = Node('G'), address = '28'),
+#             remote_node_object = Node('G'), circuit_id = '28'),
 #             Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-#             remote_node_object = Node('G'), address = '8')],
+#             remote_node_object = Node('G'), circuit_id = '8')],
 #            [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-#            remote_node_object = Node('D'), address = '9')]]]}
+#            remote_node_object = Node('D'), circuit_id = '9')]]]}
 #
 #     :return: dict
 #
@@ -49,41 +49,41 @@ from pyNTM import Parallel_Link_Model
 #
 #     {'cost': 40,
 #      'path': [[Interface(name = 'A-to-D', cost = 40, capacity = 10, node_object = Node('A'),
-#      remote_node_object = Node('D'), address = '7')],
+#      remote_node_object = Node('D'), circuit_id = '7')],
 #           [Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'),
-#           remote_node_object = Node('B'), address = '2'),
+#           remote_node_object = Node('B'), circuit_id = '2'),
 #            Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-#            remote_node_object = Node('D'), address = '3')],
+#            remote_node_object = Node('D'), circuit_id = '3')],
 #           [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-#           remote_node_object = Node('B'), address = '1'),
+#           remote_node_object = Node('B'), circuit_id = '1'),
 #            Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-#            remote_node_object = Node('D'), address = '3')],
+#            remote_node_object = Node('D'), circuit_id = '3')],
 #           [Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'),
-#           remote_node_object = Node('B'), address = '2'),
+#           remote_node_object = Node('B'), circuit_id = '2'),
 #            Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-#            remote_node_object = Node('G'), address = '18'),
+#            remote_node_object = Node('G'), circuit_id = '18'),
 #            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-#            remote_node_object = Node('D'), address = '9')],
+#            remote_node_object = Node('D'), circuit_id = '9')],
 #           [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-#           remote_node_object = Node('B'), address = '1'),
+#           remote_node_object = Node('B'), circuit_id = '1'),
 #            Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-#            remote_node_object = Node('G'), address = '8'),
+#            remote_node_object = Node('G'), circuit_id = '8'),
 #            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-#            remote_node_object = Node('D'), address = '9')],
+#            remote_node_object = Node('D'), circuit_id = '9')],
 #           [Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'),
-#           remote_node_object = Node('B'), address = '2'),
+#           remote_node_object = Node('B'), circuit_id = '2'),
 #            Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-#            remote_node_object = Node('G'), address = '28'),
-#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), address = '9')],
-#           [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'), remote_node_object = Node('B'), address = '1'),
-#            Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'), remote_node_object = Node('G'), address = '18'),
-#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), address = '9')],
-#           [Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'), remote_node_object = Node('B'), address = '2'),
-#            Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'), remote_node_object = Node('G'), address = '8'),
-#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), address = '9')],
-#           [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'), remote_node_object = Node('B'), address = '1'),
-#            Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'), remote_node_object = Node('G'), address = '28'),
-#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), address = '9')]]}
+#            remote_node_object = Node('G'), circuit_id = '28'),
+#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), circuit_id = '9')],
+#           [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'), remote_node_object = Node('B'), circuit_id = '1'),
+#            Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'), remote_node_object = Node('G'), circuit_id = '18'),
+#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), circuit_id = '9')],
+#           [Interface(name = 'A-to-B_2', cost = 20, capacity = 150, node_object = Node('A'), remote_node_object = Node('B'), circuit_id = '2'),
+#            Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'), remote_node_object = Node('G'), circuit_id = '8'),
+#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), circuit_id = '9')],
+#           [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'), remote_node_object = Node('B'), circuit_id = '1'),
+#            Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'), remote_node_object = Node('G'), circuit_id = '28'),
+#            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'), remote_node_object = Node('D'), circuit_id = '9')]]}
 #
 #
 #
@@ -135,15 +135,15 @@ from pyNTM import Parallel_Link_Model
 #     {'cost': 20,
 #      'path': [
 #                 [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-#                         remote_node_object = Node('D'), address = '3')]], # 1 interface from B to D and a complete path
+#                         remote_node_object = Node('D'), circuit_id = '3')]], # 1 interface from B to D and a complete path
 #                 [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-#                         remote_node_object = Node('G'), address = '28'),
+#                         remote_node_object = Node('G'), circuit_id = '28'),
 #                   Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-#                         remote_node_object = Node('G'), address = '8'),
+#                         remote_node_object = Node('G'), circuit_id = '8'),
 #                   Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-#                         remote_node_object = Node('G'), address = '18')], # 3 interfaces from B to G
+#                         remote_node_object = Node('G'), circuit_id = '18')], # 3 interfaces from B to G
 #                 [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-#                         remote_node_object = Node('D'), address = '9')]]  # 1 interface from G to D; end of 2nd path
+#                         remote_node_object = Node('D'), circuit_id = '9')]]  # 1 interface from G to D; end of 2nd path
 #      ]}
 #
 #
@@ -158,19 +158,19 @@ from pyNTM import Parallel_Link_Model
 #     {'cost': 20,
 #      'normalized_paths': [
 #                             [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-#                                 remote_node_object = Node('D'), address = '3')], # this is a path with one hop
+#                                 remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
 #                             [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-#                                 remote_node_object = Node('G'), address = '28'),
+#                                 remote_node_object = Node('G'), circuit_id = '28'),
 #                              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-#                                 remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+#                                 remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
 #                             [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-#                                 remote_node_object = Node('G'), address = '18'),
+#                                 remote_node_object = Node('G'), circuit_id = '18'),
 #                              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-#                                 remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+#                                 remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
 #                             [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-#                                 remote_node_object = Node('G'), address = '8'),
+#                                 remote_node_object = Node('G'), circuit_id = '8'),
 #                              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-#                                 remote_node_object = Node('D'), address = '9')]  # this is a path with 2 hops
+#                                 remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
 #                         ]
 #      }
 #

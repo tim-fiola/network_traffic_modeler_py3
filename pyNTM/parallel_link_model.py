@@ -35,7 +35,7 @@ class Parallel_Link_Model(object):
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
-          interface addresses --> A pair of Interfaces with the same address
+          interface circuit_ids --> A pair of Interfaces with the same circuit_id
           value get matched into a Circuit
 
         - Node objects (set): vertices on the network (aka 'layer 3 devices')
@@ -78,11 +78,11 @@ class Parallel_Link_Model(object):
 
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
-            'remote_node': 'B', 'address': 1, 'failed': False},
+            'remote_node': 'B', 'circuit_id': 1, 'failed': False},
             {'name':'A-to-Bv2', 'cost':40,'capacity':150, 'node':'A',
-            'remote_node': 'B', 'address': 2, 'failed': False},
+            'remote_node': 'B', 'circuit_id': 2, 'failed': False},
             {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
-            'remote_node': 'C', 'address': 3, 'failed': False},]
+            'remote_node': 'C', 'circuit_id': 3, 'failed': False},]
 
         """
 
@@ -254,15 +254,15 @@ class Parallel_Link_Model(object):
         Example: The interface from node G to node D below has 2.5 units of traffic from 'demand';
                  the interface from A to B has 10.0, etc.
         {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
-        remote_node_object = Node('B'), address = '1'): 12.0,
+        remote_node_object = Node('B'), circuit_id = '1'): 12.0,
          Interface(name = 'A-to-B_2', cost = 4, capacity = 50, node_object = Node('A'),
-         remote_node_object = Node('B'), address = '2'): 12.0,
+         remote_node_object = Node('B'), circuit_id = '2'): 12.0,
          Interface(name = 'B-to-E', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), address = '7'): 8.0,
+         remote_node_object = Node('E'), circuit_id = '7'): 8.0,
          Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), address = '27'): 8.0,
+         remote_node_object = Node('E'), circuit_id = '27'): 8.0,
          Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), address = '17'): 8.0}
+         remote_node_object = Node('E'), circuit_id = '17'): 8.0}
 
         """
 
@@ -292,64 +292,64 @@ class Parallel_Link_Model(object):
         # shortest_path_info =
         # {'path_0': {'interfaces': [
         #     Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
-        #               address='2'),
+        #               circuit_id='2'),
         #     Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #               address='17')],
+        #               circuit_id='17')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='17'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='17'): 6}},
         #  'path_1': {'interfaces': [
         #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='2'),
+        #                circuit_id='2'),
         #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='7')],
+        #                circuit_id='7')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='7'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
         #  'path_2': {'interfaces': [
         #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='2'),
+        #                circuit_id='2'),
         #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='27')],
+        #                circuit_id='27')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='2'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='27'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}},
         #  'path_3': {'interfaces': [
         #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='1'),
+        #                circuit_id='1'),
         #      Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='17')],
+        #                circuit_id='17')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
         #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='17'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='17'): 6}},
         #  'path_4': {'interfaces': [
         #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='1'),
+        #                circuit_id='1'),
         #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='7')],
+        #                circuit_id='7')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
         #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='7'): 6}},
+        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
         #  'path_5': {'interfaces': [
         #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                address='1'),
+        #                circuit_id='1'),
         #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                address='27')],
+        #                circuit_id='27')],
         #             'path_traffic': 4.0,
         #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), address='1'): 2,
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
         #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), address='27'): 6}}}
+        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}}}
         shortest_path_info = {}
         path_counter = 0
 
@@ -724,13 +724,13 @@ class Parallel_Link_Model(object):
             # Get each interface from model for each
             try:
                 int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
-                                                            address=interface[2]['address'])[0]
+                                                            circuit_id=interface[2]['circuit_id'])[0]
             except IndexError:
                 msg = "There is no Interface from Node({}) to Node({})".format(interface[0], interface[1])
                 raise ModelException(msg)
             try:
                 int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
-                                                            address=interface[2]['address'])[0]
+                                                            circuit_id=interface[2]['circuit_id'])[0]
             except IndexError:
                 msg = "There is no Interface from Node({}) to Node({})".format(interface[1], interface[0])
                 raise ModelException(msg)
@@ -758,29 +758,29 @@ class Parallel_Link_Model(object):
 
         self.circuit_objects = circuits
 
-    def get_interface_object_from_nodes(self, local_node_name, remote_node_name, address=None):
+    def get_interface_object_from_nodes(self, local_node_name, remote_node_name, circuit_id=None):
         """
         Returns a list of Interface objects with the specified
         local and remote node names.
 
-        If 'address' is not specified, may return a list of len > 1, as
+        If 'circuit_id' is not specified, may return a list of len > 1, as
         multiple/parallel interfaces are allowed in Parallel_Link_Model
         objects.
 
-        If 'address' is specified, will return a list of len == 1, as specifying
-        the 'address' will narrow down any list of multiple interfaces to a single
-        interface because addresses bond interfaces on different nodes into
+        If 'circuit_id' is specified, will return a list of len == 1, as specifying
+        the 'circuit_id' will narrow down any list of multiple interfaces to a single
+        interface because circuit_ids bond interfaces on different nodes into
         a Circuit object.
 
         :param local_node_name: Name of local node Interface resides on
         :param remote_node_name: Name of Interface's remote Node
-        :param address: address of Interface (optional)
+        :param circuit_id: circuit_id of Interface (optional)
         :return: list of Interface objects with common local node and remote node
         """
 
         interface_gen = (interface for interface in self.interface_objects)
 
-        if address is None:
+        if circuit_id is None:
             interface_list = [interface for interface in interface_gen if
                               interface.node_object.name == local_node_name and
                               interface.remote_node_object.name == remote_node_name]
@@ -788,24 +788,25 @@ class Parallel_Link_Model(object):
             interface_list = [interface for interface in interface_gen if
                               interface.node_object.name == local_node_name and
                               interface.remote_node_object.name == remote_node_name and
-                              interface.address == address]
+                              interface.circuit_id == circuit_id]
 
             if len(interface_list) > 1:
-                msg = ("There is an internal error with addressing; Interface addresses must be unique per Node and"
-                       "the same address can only appear in a Parallel_Link_Model object twice and on separate Nodes")
+                msg = ("There is an internal error with circuit_iding; Interface circuit_ids must be unique"
+                       " per Node and the same circuit_id can only appear in a Parallel_Link_Model object "
+                       "twice and on separate Nodes")
                 return ModelException(msg)
         return interface_list
 
     @property
-    def all_interface_addresses(self):
+    def all_interface_circuit_ids(self):
         """
-        Returns all interface addresses
+        Returns all interface circuit_ids
         """
-        return set(interface.address for interface in self.interface_objects)
+        return set(interface.circuit_id for interface in self.interface_objects)
 
     def add_circuit(self, node_a_object, node_b_object, node_a_interface_name,
                     node_b_interface_name, cost_intf_a=1, cost_intf_b=1,
-                    capacity=1000, failed=False, address=None):
+                    capacity=1000, failed=False, circuit_id=None):
         """
         Creates component Interface objects for a new Circuit in the Model.
         The Circuit object will then be created during the validate_model() call.
@@ -818,21 +819,21 @@ class Parallel_Link_Model(object):
         :param cost_intf_b: metric/cost of node_b_interface component Interface
         :param capacity: Circuit's capacity
         :param failed: Should the Circuit be created in a Failed state?
-        :param address: Optional.  Will be auto-assigned unless specified
+        :param circuit_id: Optional.  Will be auto-assigned unless specified
         :return: Model with new Circuit comprised of 2 new Interfaces
         """
 
-        if address is None:
-            addresses = self.all_interface_addresses
-            if len(addresses) == 0:
-                address = 1
+        if circuit_id is None:
+            circuit_ids = self.all_interface_circuit_ids
+            if len(circuit_ids) == 0:
+                circuit_id = 1
             else:
-                address = max({int(address) for address in addresses}) + 1
+                circuit_id = max({int(circuit_id) for circuit_id in circuit_ids}) + 1
 
         int_a = Interface(node_a_interface_name, cost_intf_a, capacity,
-                          node_a_object, node_b_object, address)
+                          node_a_object, node_b_object, circuit_id)
         int_b = Interface(node_b_interface_name, cost_intf_b, capacity,
-                          node_b_object, node_a_object, address)
+                          node_b_object, node_a_object, circuit_id)
 
         existing_int_keys = set([interface._key for interface in self.interface_objects])
 
@@ -905,7 +906,7 @@ class Parallel_Link_Model(object):
             intf = Interface(interface['name'], interface['cost'],
                              interface['capacity'], Node(interface['node']),
                              Node(interface['remote_node']),
-                             interface['address'])
+                             interface['circuit_id'])
             network_interface_objects.add(intf)
 
             # Check to see if the Interface's Node already exists, if not, add it
@@ -1284,17 +1285,17 @@ class Parallel_Link_Model(object):
         path_info example from source node 'B' to destination node 'D':
         [
             [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), address = '3')]], # there is 1 interface from B to D and a
+                    remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
                     complete path
             [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), address = '28'),
+                    remote_node_object = Node('G'), circuit_id = '28'),
               Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), address = '8'),
+                    remote_node_object = Node('G'), circuit_id = '8'),
               Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), address = '18')], # there are 3 interfaces from B to G
+                    remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
             [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), address = '9')]] # there is 1 interface from G to D; end of 2nd path
-         ]
+                    remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of 2nd path
+        ]
 
 
 
@@ -1304,19 +1305,19 @@ class Parallel_Link_Model(object):
 
             [
                 [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), address = '3')], # this is a path with one hop
+                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
                 [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), address = '28'),
+                    remote_node_object = Node('G'), circuit_id = '28'),
                  Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
                 [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), address = '18'),
+                    remote_node_object = Node('G'), circuit_id = '18'),
                  Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), address = '9')], # this is a path with 2 hops
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
                 [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), address = '8'),
+                    remote_node_object = Node('G'), circuit_id = '8'),
                  Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), address = '9')]  # this is a path with 2 hops
+                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
             ]
         """
         # List to hold unique path(s)
@@ -1339,13 +1340,13 @@ class Parallel_Link_Model(object):
 
         The corresponding model style path would be:
         [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-            remote_node_object = Node('B'), address = 9),
+            remote_node_object = Node('B'), circuit_id = 9),
         Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-            remote_node_object = Node('G'), address = 6),
+            remote_node_object = Node('G'), circuit_id = 6),
         Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-            remote_node_object = Node('D'), address = 2),
+            remote_node_object = Node('D'), circuit_id = 2),
         Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
-            remote_node_object = Node('F'), address = 1)]
+            remote_node_object = Node('F'), circuit_id = 1)]
 
         :param nx_graph_path: list of node names
         :param needed_bw: needed reservable bandwidth on the requested path
@@ -1513,7 +1514,7 @@ class Parallel_Link_Model(object):
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name,
                            {'cost': interface.cost,
-                            'address': interface.address})
+                            'circuit_id': interface.circuit_id})
                           for interface in self.interface_objects
                           if (interface.failed is False and
                               interface.reservable_bandwidth >= needed_bw))
@@ -1522,7 +1523,7 @@ class Parallel_Link_Model(object):
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name,
                            {'cost': interface.cost,
-                            'address': interface.address})
+                            'circuit_id': interface.circuit_id})
                           for interface in self.interface_objects if interface.reservable_bandwidth >= needed_bw)
         # Add edges to networkx DiGraph
         G.add_edges_from(edge_names)
@@ -1644,7 +1645,7 @@ class Parallel_Link_Model(object):
         Here is an example of a data file:
 
             INTERFACES_TABLE #
-            node_object_name	remote_node_object_name	name	cost	capacity address
+            node_object_name	remote_node_object_name	name	cost	capacity circuit_id
             A	B	A-to-B	4	100 1
             B	A	B-to-A	4	100 1
 
@@ -1802,15 +1803,15 @@ class Parallel_Link_Model(object):
         for interface_line in interface_lines:
             # Read interface characteristics
             if len(interface_line.split()) == 6:
-                [node_name, remote_node_name, name, cost, capacity, address] = interface_line.split()
+                [node_name, remote_node_name, name, cost, capacity, circuit_id] = interface_line.split()
             else:
-                msg = ("node_name, remote_node_name, name, cost, capacity, address "
+                msg = ("node_name, remote_node_name, name, cost, capacity, circuit_id "
                        "must be defined for line {}, line index {}".format(interface_line,
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
             new_interface = Interface(name, int(cost), int(capacity), Node(node_name),
-                                      Node(remote_node_name), address)
+                                      Node(remote_node_name), circuit_id)
 
             if new_interface._key not in set([interface._key for interface in interface_set]):
                 interface_set.add(new_interface)
