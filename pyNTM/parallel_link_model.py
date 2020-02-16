@@ -11,7 +11,6 @@ from pprint import pprint
 
 import itertools
 import networkx as nx
-import numpy
 
 from .circuit import Circuit
 from .demand import Demand
@@ -775,9 +774,9 @@ class Parallel_Link_Model(object):
 
         # Determine which interfaces pair up into good circuits in G
         # TODO - change to from list to generator when multidigraph dev is done
-        graph_interfaces = [(local_node_name, remote_node_name, data) for
+        graph_interfaces = ((local_node_name, remote_node_name, data) for
                             (local_node_name, remote_node_name, data) in
-                            G.edges(data=True) if G.has_edge(remote_node_name, local_node_name)]
+                            G.edges(data=True) if G.has_edge(remote_node_name, local_node_name))
 
         # Set interface object in_ckt = False
         for interface in (interface for interface in self.interface_objects):
@@ -794,13 +793,13 @@ class Parallel_Link_Model(object):
                 int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
                                                             address=interface[2]['address'])[0]
             except IndexError:
-                msg = "There is no Interface from Node({}) to Node({})".format(interface[0],interface[1])
+                msg = "There is no Interface from Node({}) to Node({})".format(interface[0], interface[1])
                 raise ModelException(msg)
             try:
                 int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
                                                             address=interface[2]['address'])[0]
             except IndexError:
-                msg = "There is no Interface from Node({}) to Node({})".format(interface[1],interface[0])
+                msg = "There is no Interface from Node({}) to Node({})".format(interface[1], interface[0])
                 raise ModelException(msg)
 
             if int1.in_ckt is False and int2.in_ckt is False:
@@ -1289,7 +1288,7 @@ class Parallel_Link_Model(object):
                 model_path = self._convert_nx_path_to_model_path(path, needed_bw)
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
-        except BaseException as e:
+        except BaseException:
             return converted_path
 
         # Normalize the path info to get all combinations of with parallel
@@ -1361,7 +1360,7 @@ class Parallel_Link_Model(object):
               Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
                     remote_node_object = Node('G'), address = '18')], # there are 3 interfaces from B to G
             [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), address = '9')]]  # there is 1 interface from G to D; end of 2nd path
+                    remote_node_object = Node('D'), address = '9')]] # there is 1 interface from G to D; end of 2nd path
          ]
 
 
@@ -1578,21 +1577,20 @@ class Parallel_Link_Model(object):
 
         if not include_failed_circuits:
             # Get non-failed edge names
-            edge_names = [(interface.node_object.name,
+            edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name,
                            {'cost': interface.cost,
                             'address': interface.address})
                           for interface in self.interface_objects
                           if (interface.failed is False and
-                              interface.reservable_bandwidth >= needed_bw)]  # TODO - change back to generator
+                              interface.reservable_bandwidth >= needed_bw))
         elif include_failed_circuits:
             # Get all edge names
-            edge_names = [(interface.node_object.name,
+            edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name,
                            {'cost': interface.cost,
                             'address': interface.address})
-                          for interface in self.interface_objects if interface.reservable_bandwidth >= needed_bw]  # TODO - change back to generator
-
+                          for interface in self.interface_objects if interface.reservable_bandwidth >= needed_bw)
         # Add edges to networkx DiGraph
         G.add_edges_from(edge_names)
 
@@ -1712,10 +1710,10 @@ class Parallel_Link_Model(object):
 
         Here is an example of a data file:
 
-            INTERFACES_TABLE # TODO - add addresses to exampls
-            node_object_name	remote_node_object_name	name	cost	capacity
-            A	B	A-to-B	4	100
-            B	A	B-to-A	4	100
+            INTERFACES_TABLE #
+            node_object_name	remote_node_object_name	name	cost	capacity address
+            A	B	A-to-B	4	100 1
+            B	A	B-to-A	4	100 1
 
             NODES_TABLE
             name	lon	lat
@@ -1863,7 +1861,7 @@ class Parallel_Link_Model(object):
         :param lines: lines of data describing a Model objects
         :return: set of Interface objects, set of Node objects created from lines
         """
-        # TODO - normalize name to _extract_interface_data_and_implied_node if multidigraph works
+
         interface_set = set()
         node_set = set()
         interface_lines = lines[int_info_begin_index:int_info_end_index]
