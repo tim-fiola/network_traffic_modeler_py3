@@ -163,7 +163,7 @@ class Model(object):
         # a member of in the model but that the SRLG is not in node.srlgs
         srlg_errors = {}
 
-        for srlg in self.srlg_objects:
+        for srlg in self.srlg_objects:  # pragma: no cover  # noqa  # TODO - perhaps cover this later in unit testing
             nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
             for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
                 try:
@@ -236,8 +236,8 @@ class Model(object):
 
         if interface.reserved_bandwidth > interface.capacity:
             int_res_bw_too_high.add(interface)
-        if round(interface.reserved_bandwidth, 1) != int_info[interface._key][
-            'reserved_bandwidth']:  # pragma: no cover  # noqa
+        if round(interface.reserved_bandwidth, 1) != \
+                (int_info[interface._key]['reserved_bandwidth']):  # pragma: no cover  # noqa
             int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
     def _demand_traffic_per_int(self, demand):
