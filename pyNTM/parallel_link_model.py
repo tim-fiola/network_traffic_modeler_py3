@@ -1231,6 +1231,46 @@ class Parallel_Link_Model(object):
 
         return {'cost': converted_path['cost'], 'path': path_info}
 
+    def get_shortest_path_for_routed_lsp(self, source_node_name, dest_node_name, lsp, needed_bw):
+        """
+        For a source and dest node name pair, find the shortest path(s) with at
+        least needed_bw available for an LSP that is already routed.
+        Return the shortest path in dictionary form:
+        shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
+
+        :param source_node_name: name of source node
+        :param dest_node_name: name of destination node
+        :param lsp: LSP object
+        :param needed_bw: reserved bandwidth for LSPs
+        :return: dict {'path': [list of shortest path routes], 'cost': path_cost}
+        """
+
+        # Define a networkx DiGraph to find the path
+        G = self._make_weighted_network_graph_routed_lsp(lsp, needed_bw=needed_bw)
+
+        # Define the Model-style path to be built
+        converted_path = dict()
+        converted_path['path'] = []
+        converted_path['cost'] = None
+
+        # Find the shortest paths in G between source and dest
+        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
+                                                       dest_node_name,
+                                                       weight='cost')
+
+        try:
+            for path in digraph_shortest_paths:
+                model_path = self._convert_nx_path_to_model_path(path, needed_bw)
+                converted_path['path'].append(model_path)
+                converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
+        except BaseException:
+            return converted_path
+
+        # Normalize the path info to get all combinations of with parallel
+        # interfaces
+        path_info = self._normalize_multidigraph_paths(converted_path['path'])
+        return {'cost': converted_path['cost'], 'path': path_info}
+
     def _normalize_multidigraph_paths(self, path_info):
         """
         Takes the multidigraph_path_info and normalizes it to create all the
