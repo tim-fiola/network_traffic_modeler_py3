@@ -74,7 +74,7 @@ class RSVP_LSP(object):
 
             # Find the path cost and reservable bandwidth on each path.
             # If the path you are examining has an interface that is on
-            # the LSP's current path, don't count (or add back in) the
+            # the LSP's current path, add back in the
             # reserved bandwidth for the LSP to that interface
             proto_reservable_bw = {}
             for interface in path:
@@ -83,8 +83,9 @@ class RSVP_LSP(object):
                 else:
                     proto_reservable_bw[interface] = interface.reservable_bandwidth
 
-            # baseline_path_reservable_bw is the max amount of traffic that the path
-            # can handle without saturating a component interface
+            # baseline_path_reservable_bw is the max amount of traffic
+            # that the path can handle without using more than a component
+            # interface's reservable_bandwidth
             baseline_path_reservable_bw = min(proto_reservable_bw.values())
 
             path_info = {'interfaces': path, 'path_cost': path_cost,

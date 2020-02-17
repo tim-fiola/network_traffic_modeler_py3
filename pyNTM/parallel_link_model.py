@@ -536,12 +536,13 @@ class Parallel_Link_Model(object):
         # as it would allow the LSP to reserve bandwidth for the amount
         # of traffic it carries
         setup_bandwidth_optimized = traffic_in_demand_group / len(routed_lsps_in_group)
+
         # Determine if any of the LSPs can signal for the amount of
         # traffic they would carry (setup_bandwidth_optimized)
         for lsp in routed_lsps_in_group:
             # traffic_in_demand_group will ECMP split over routed_lsps_in_group
             # For each lsp in routed_lsp_group, see if it can signal for
-            # a setup_bandwidth_optimized setup_bandwidth
+            # a 'setup_bandwidth_optimized' amount of setup_bandwidth
 
             lsp_path_interfaces_before = lsp.path['interfaces']
             lsp_res_bw_before = lsp.reserved_bandwidth
@@ -659,8 +660,7 @@ class Parallel_Link_Model(object):
         self = self._route_lsps(non_failed_interfaces_model)
         print("LSPs routed (if present); routing demands now . . .")
         # Route the demands
-        self = self._route_demands(self.demand_objects,
-                                   non_failed_interfaces_model)
+        self = self._route_demands(self.demand_objects, non_failed_interfaces_model)
         print("Demands routed; validating model . . . ")
 
         self.validate_model()
@@ -1254,13 +1254,14 @@ class Parallel_Link_Model(object):
         converted_path['cost'] = None
 
         # Find the shortest paths in G between source and dest
-        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                                       dest_node_name,
-                                                       weight='cost')
+        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
 
         try:
             for path in digraph_shortest_paths:
-                model_path = self._convert_nx_path_to_model_path(path, needed_bw)
+                # TODO - the problem with the test_rsvp_3rd_lsp_two_paths_parallel_links.py is here!
+                import pdb
+                pdb.set_trace()
+                model_path = self._convert_nx_path_to_model_path_routed_lsp(path, needed_bw)
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
         except BaseException:
@@ -1330,6 +1331,46 @@ class Parallel_Link_Model(object):
         return path_list
 
     def _convert_nx_path_to_model_path(self, nx_graph_path, needed_bw):
+        """
+        Given a path from an networkx DiGraph, converts that
+        path to a Model style path and returns that Model style path
+
+        A networkx path is a list of nodes in order of transit.
+        ex: ['A', 'B', 'G', 'D', 'F']
+
+        The corresponding model style path would be:
+        [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = 9),
+        Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+            remote_node_object = Node('G'), circuit_id = 6),
+        Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+            remote_node_object = Node('D'), circuit_id = 2),
+        Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
+            remote_node_object = Node('F'), circuit_id = 1)]
+
+        :param nx_graph_path: list of node names
+        :param needed_bw: needed reservable bandwidth on the requested path
+        :return: List of Model Interfaces from source to destination
+        """
+
+        # Define a model-style path to build
+        model_path = []
+
+        # look at each hop in the path
+        for hop in nx_graph_path:
+            current_hop_index = nx_graph_path.index(hop)
+            next_hop_index = current_hop_index + 1
+            if next_hop_index < len(nx_graph_path):
+                next_hop = nx_graph_path[next_hop_index]
+
+                interface = [interface for interface in self.get_interface_object_from_nodes(hop, next_hop) if
+                             interface.reservable_bandwidth >= needed_bw]
+
+                model_path.append(interface)
+
+        return model_path
+
+    def _convert_nx_path_to_model_path_routed_lsp(self, nx_graph_path, needed_bw):
         """
         Given a path from an networkx DiGraph, converts that
         path to a Model style path and returns that Model style path
@@ -1546,7 +1587,6 @@ class Parallel_Link_Model(object):
         to be added to the graph
         :return:
         """
-        G = nx.DiGraph()
 
         # The Interfaces that the lsp is routed over currently
         lsp_path_interfaces = lsp.path['interfaces']
@@ -1573,7 +1613,11 @@ class Parallel_Link_Model(object):
                        interface.remote_node_object.name, interface.cost)
                       for interface in eligible_interfaces)
 
-        # Add edges to networkx DiGraph
+        # Make a new graph with the eligible interfaces (interfaces
+        # with enough effective_reservable_bw)
+        G = nx.MultiDiGraph()
+
+        # Add edges to networkx MultiDiGraph
         G.add_weighted_edges_from(edge_names, weight='cost')
 
         # Add all the nodes
