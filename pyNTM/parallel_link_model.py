@@ -1247,7 +1247,7 @@ class Parallel_Link_Model(object):
         :param dest_node_name: name of destination node
         :param lsp: LSP object
         :param needed_bw: reserved bandwidth for LSPs
-        :return: dict {'path': [list of shortest path routes], 'cost': path_cost}
+        :return: dict {'path': [list of lists, each list a shortest path route], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -1272,6 +1272,7 @@ class Parallel_Link_Model(object):
         # Normalize the path info to get all combinations of with parallel
         # interfaces
         path_info = self._normalize_multidigraph_paths(converted_path['path'])
+
         return {'cost': converted_path['cost'], 'path': path_info}
 
     def _normalize_multidigraph_paths(self, path_info):
@@ -1426,7 +1427,6 @@ class Parallel_Link_Model(object):
 
                     if len(hop_interface_list) > 0:
                         model_path.append(hop_interface_list)
-        # TODO - fix this to return a single path and update reserved_bandwidth
         return model_path
 
     # NODE CALLS ######

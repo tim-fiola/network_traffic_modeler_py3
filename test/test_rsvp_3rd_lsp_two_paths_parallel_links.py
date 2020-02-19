@@ -29,3 +29,7 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
         self.assertEqual([self.lsp_a_e_1.reserved_bandwidth,
                           self.lsp_a_e_2.reserved_bandwidth,
                           self.lsp_a_e_3.reserved_bandwidth].count(135.0), 2)
+        int_a_b_1 = self.model.get_interface_object('A-to-B_1', 'A')
+        int_a_b_2 = self.model.get_interface_object('A-to-B_2', 'A')
+        self.assertEqual(int_a_b_1.reserved_bandwidth, 135.0)
+        self.assertEqual(int_a_b_2.reserved_bandwidth, 135.0)
