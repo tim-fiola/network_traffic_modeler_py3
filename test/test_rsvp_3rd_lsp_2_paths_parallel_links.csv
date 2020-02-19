@@ -10,8 +10,8 @@ A   C   A-to-C_2    10  90  4
 C   A   C-to-A_2    10  90  4
 C   D   C-to-D_1    10  50  5
 D   C   D-to-C_1    10  50  5
-C   D   C-to-D_2    10  50  6
-D   C   D-to-C_2    10  50  6
+C   D   C-to-D_2    10  70  6
+D   C   D-to-C_2    10  70  6
 B   D   B-to-D_1    10  300 7
 D   B   D-to-B_1    10  300 7
 D   E   D-to-E_1    10  300 8
