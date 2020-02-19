@@ -1380,7 +1380,11 @@ class Parallel_Link_Model(object):
         A networkx path is a list of nodes in order of transit.
         ex: ['A', 'B', 'G', 'D', 'F']
 
-        The corresponding model style path would be:
+        Because a networkx path does not show the edges used, this def
+        examines the interface(s) from each hop to the next hop and adds them
+        to a hop_interface_list
+
+        The corresponding model style path could be:
         [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
             remote_node_object = Node('B'), circuit_id = 9),
         Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
@@ -1399,37 +1403,30 @@ class Parallel_Link_Model(object):
         # Define a model-style path to build
         model_path = []
 
-        # Determine the additional needed bandwidth for the LSP to
-        # signal for needed_bw
-        lsp_current_setup_bandwidth = lsp.setup_bandwidth
-        additional_needed_bandwidth = needed_bw - lsp_current_setup_bandwidth
-
         # look at each hop in the path
         for hop in nx_graph_path:
             current_hop_index = nx_graph_path.index(hop)
             next_hop_index = current_hop_index + 1
             if next_hop_index < len(nx_graph_path):
                 next_hop = nx_graph_path[next_hop_index]
-                # TODO - the problem with the test_rsvp_3rd_lsp_two_paths_parallel_links.py is here!
-                import pdb
-                pdb.set_trace()
-
-                # Look at all the interfaces from (current) hop to next_hop; see if
-                # any of those interfaces are in the current path for lsp; if they are,
-                # see if any of them could handle the additional_needed_bandwidth for lsp
                 for interface in self.get_interface_object_from_nodes(hop, next_hop):
+                    # Look at all the interface(s) from (current) hop to next_hop; see if
+                    # any of those interfaces are in the current path for lsp; if they are,
+                    # see if any of them could handle the additional_needed_bandwidth for lsp
+                    hop_interface_list = []
                     if (interface in lsp.path['interfaces'] and
                             (interface.reservable_bandwidth + lsp.reserved_bandwidth >= needed_bw)):
-                        model_path.append(interface)
+                        hop_interface_list.append(interface)
 
+                    elif interface.reservable_bandwidth >= needed_bw:
+                        # If the interface is not in the current path but can
+                        # accommodate the needed_bw, then add that interface
+                        # to model_path
+                        hop_interface_list.append(interface)
 
-
-
-                # interface = [interface for interface in self.get_interface_object_from_nodes(hop, next_hop) if
-                #              interface.reservable_bandwidth >= needed_bw]
-
-                model_path.append(interface)
-
+                    if len(hop_interface_list) > 0:
+                        model_path.append(hop_interface_list)
+        # TODO - fix this to return a single path and update reserved_bandwidth
         return model_path
 
     # NODE CALLS ######
