@@ -266,7 +266,7 @@ class RSVP_LSP(object):
         """
 
         # Find all LSPs with same source and dest as self
-        parallel_routed_lsp_groups = model.parallel_lsp_groups()
+        parallel_routed_lsp_groups = model.parallel_lsp_groups()  # TODO - cache this!! OPTIMIZATION! <-----!!
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
@@ -274,6 +274,9 @@ class RSVP_LSP(object):
 
         traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
 
+        import pdb
+        pdb.set_trace()
+        # TODO - the parallel_routed_lsp_groups are using all LSPs, not just the routed ones
         return traffic_on_lsp
 
     def effective_metric(self, model):

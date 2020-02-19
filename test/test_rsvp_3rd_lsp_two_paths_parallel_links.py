@@ -69,7 +69,7 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
         model.update_simulation()
 
         # Add more traffic from A to E; total now is 270 + 60 units
-        model.add_demand('A', 'E', 60)
+        model.add_demand('A', 'E', 60, 'dmd_a_e_2')
         model.update_simulation()
 
         lsp_a_e_1 = model.get_rsvp_lsp('A', 'E', 'lsp_a_e_1')
@@ -101,7 +101,7 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
         # The 330 units of traffic from A to E will load balance
         # over those 2 LSPs, so each LSP will carry 165 units of
         # traffic
-        self.assertEqual([lsp_a_e_1.traffic_on_lsp(self.model),
-                          lsp_a_e_2.traffic_on_lsp(self.model),
-                          lsp_a_e_3.traffic_on_lsp(self.model),
-                          lsp_a_e_4.traffic_on_lsp(self.model)].count(165.0), 2)
+        self.assertEqual([lsp_a_e_1.traffic_on_lsp(model),
+                          lsp_a_e_2.traffic_on_lsp(model),
+                          lsp_a_e_3.traffic_on_lsp(model),
+                          lsp_a_e_4.traffic_on_lsp(model)].count(165.0), 2)

@@ -923,8 +923,7 @@ class Parallel_Link_Model(object):
 
         return (network_interface_objects, network_node_objects)
 
-    def add_demand(self, source_node_name, dest_node_name, traffic=0,
-                   name='none'):
+    def add_demand(self, source_node_name, dest_node_name, traffic=0, name='none'):
         """
         Adds a traffic load (Demand) from point A to point B in the
         model and validates model.
@@ -936,8 +935,7 @@ class Parallel_Link_Model(object):
         """
         source_node_object = self.get_node_object(source_node_name)
         dest_node_object = self.get_node_object(dest_node_name)
-        added_demand = Demand(source_node_object, dest_node_object,
-                              traffic, name)
+        added_demand = Demand(source_node_object, dest_node_object, traffic, name)
         if added_demand._key in set([demand._key for demand in self.demand_objects]):
             message = '{} already exists in demand_objects'.format(added_demand)
             raise ModelException(message)
