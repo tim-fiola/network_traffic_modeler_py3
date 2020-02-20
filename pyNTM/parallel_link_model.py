@@ -62,6 +62,7 @@ class Parallel_Link_Model(object):
         self.circuit_objects = set()
         self.rsvp_lsp_objects = rsvp_lsp_objects
         self.srlg_objects = set()
+        self._parallel_lsp_groups = {}
 
     def __repr__(self):
         return 'Parallel_Link_Model(Interfaces: %s, Nodes: %s, ' \
@@ -573,24 +574,29 @@ class Parallel_Link_Model(object):
         with matching source/dest nodes
         """
 
-        src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
-        dest_node_names = set([lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects])
+        if self._parallel_lsp_groups == {}:
+            src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
+            dest_node_names = set([lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects])
 
-        parallel_lsp_groups = {}
+            parallel_lsp_groups = {}
 
-        for src_node_name in src_node_names:
-            for dest_node_name in dest_node_names:
-                key = '{}-{}'.format(src_node_name, dest_node_name)
-                parallel_lsp_groups[key] = []
-                for lsp in self.rsvp_lsp_objects:
-                    if (lsp.source_node_object.name == src_node_name and
-                            lsp.dest_node_object.name == dest_node_name):
-                        parallel_lsp_groups[key].append(lsp)
+            for src_node_name in src_node_names:
+                for dest_node_name in dest_node_names:
+                    key = '{}-{}'.format(src_node_name, dest_node_name)
+                    parallel_lsp_groups[key] = []
+                    for lsp in self.rsvp_lsp_objects:
+                        if (lsp.source_node_object.name == src_node_name and
+                                lsp.dest_node_object.name == dest_node_name):
+                            parallel_lsp_groups[key].append(lsp)
 
-                if parallel_lsp_groups[key] == []:
-                    del parallel_lsp_groups[key]
+                    if parallel_lsp_groups[key] == []:
+                        del parallel_lsp_groups[key]
 
-        return parallel_lsp_groups
+            self._parallel_lsp_groups = parallel_lsp_groups
+            return parallel_lsp_groups
+
+        else:
+            return self._parallel_lsp_groups
 
     def parallel_demand_groups(self):
         """
@@ -627,6 +633,8 @@ class Parallel_Link_Model(object):
         This call does not carry forward any state from the previous simulation
         results.
         """
+
+        self._parallel_lsp_groups = {}  # Reset the attribute
 
         # This set of interfaces can be used to route traffic
         non_failed_interfaces = set()

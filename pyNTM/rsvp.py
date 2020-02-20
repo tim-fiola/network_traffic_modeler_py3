@@ -266,7 +266,7 @@ class RSVP_LSP(object):
         """
 
         # Find all LSPs with same source and dest as self
-        parallel_lsp_groups = model.parallel_lsp_groups()  # TODO - cache this!! OPTIMIZATION! <-----!!
+        parallel_lsp_groups = model.parallel_lsp_groups()
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
