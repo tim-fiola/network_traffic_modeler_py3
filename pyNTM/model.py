@@ -1806,3 +1806,18 @@ class Model(object):
         else:
             srlg = SRLG(srlg_name, self)
             self.srlg_objects.add(srlg)
+
+    # def single_interface_to_destination_node(self):
+    #     """
+    #     Ensures there is no more than a single interface facing a
+    #     given remote node (that there are no parallel interfaces
+    #     between nodes)
+    #     :return: True|False, parallel_interfaces
+    #     """
+    #
+    #     connected_nodes_list = [(interface.node_object.name + '-' + interface.remote_node_object.name) for interface
+    #                             in self.interface_objects]
+    #
+    #     connected_nodes_set = set(connected_nodes_list)
+    #
+    #     if len(connected_nodes_list) != len(connected_nodes_set):

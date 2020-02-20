@@ -598,7 +598,7 @@ class Parallel_Link_Model(object):
         else:
             return self._parallel_lsp_groups
 
-    def parallel_demand_groups(self): # TODO - common with model.py Model
+    def parallel_demand_groups(self):
         """
         Determine demands with same source and dest nodes
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands
