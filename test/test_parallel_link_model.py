@@ -359,7 +359,7 @@ class TestModel(unittest.TestCase):
         orphan_int = Interface('A-to-B', 100, 100, node_a, node_b, circuit_id=80)
         model.interface_objects.add(orphan_int)
 
-        err_msg = "There is no Interface from Node"
+        err_msg = "Interface names must be unique per node."
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
@@ -374,7 +374,7 @@ class TestModel(unittest.TestCase):
         new_int = Interface('F-to-B', 100, 100, node_f, node_b, 80)
         model.interface_objects.add(new_int)
 
-        err_msg = "There is no Interface from Node(B) to Node(F)"
+        err_msg = "Interface names must be unique per node."
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
@@ -400,4 +400,20 @@ class TestModel(unittest.TestCase):
 
         with self.assertRaises(ModelException) as context:
             model.add_circuit(node_a_2, node_b_2, 'A-to-B', 'B-to-A', 40, 40, 100)
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_duplicate_interface(self):
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
+        model.update_simulation()
+
+        node_a = model.get_node_object('A')
+        node_b = model.get_node_object('B')
+
+        int_a_b = Interface('A-to-B', 4, 100, node_a, node_b, 67)
+
+        err_msg = "Interface names must be unique per node"
+
+        model.interface_objects.add(int_a_b)
+        with self.assertRaises(ModelException) as context:
+            model._unique_interface_per_node()
         self.assertIn(err_msg, context.exception.args[0])

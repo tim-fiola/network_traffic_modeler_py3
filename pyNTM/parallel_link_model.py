@@ -681,7 +681,7 @@ class Parallel_Link_Model(object):
     def _unique_interface_per_node(self):
         """
         Checks that the interface names on each node are unique; returns
-        a message if a duplicate interface name is found on the same node
+        a ModelException if a duplicate interface name is found on the same node
         """
 
         exception_interfaces = set()  # duplicate interfaces
@@ -739,15 +739,14 @@ class Parallel_Link_Model(object):
                 int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
                                                             circuit_id=interface[2]['circuit_id'])[0]
             except IndexError:
-                msg = "There is no Interface from Node({}) to Node({})".format(interface[0], interface[1])
-                raise ModelException(msg)
+                pass
             try:
                 int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
                                                             circuit_id=interface[2]['circuit_id'])[0]
             except IndexError:
-                msg = "There is no Interface from Node({}) to Node({})".format(interface[1], interface[0])
-                raise ModelException(msg)
+                pass
 
+            # Mark the interfaces as in ckt
             if int1.in_ckt is False and int2.in_ckt is False:
                 # Mark interface objects as in_ckt = True
                 int1.in_ckt = True
@@ -1499,7 +1498,7 @@ class Parallel_Link_Model(object):
         return non_failed_nodes
 
     # Display calls #########
-    def display_interface_status(self):
+    def display_interface_status(self):  # pragma: no cover
         """Returns failed = True/False for each interface"""
 
         print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), end=' ')
@@ -1512,7 +1511,7 @@ class Parallel_Link_Model(object):
             print(interface.remote_node_object.name.ljust(12), end=' ')
             print(str(interface.failed).ljust(12))
 
-    def display_node_status(self):
+    def display_node_status(self):  # pragma: no cover
         """Returns failed = True/False for each node"""
 
         print('Node'.ljust(12), 'Failed'.ljust(12))
@@ -1522,7 +1521,7 @@ class Parallel_Link_Model(object):
         for node in node_iterator:
             print(node.name.ljust(12), str(node.failed).ljust(12))
 
-    def display_interfaces_traffic(self):
+    def display_interfaces_traffic(self):  # pragma: no cover
         """
         A human-readable(-ish) display of interfaces and traffic on each
         """
@@ -1536,7 +1535,7 @@ class Parallel_Link_Model(object):
             print(interface.remote_node_object.name.ljust(12), end=' ')
             print(repr(interface.traffic).ljust(12))
 
-    def display_demand_paths(self):
+    def display_demand_paths(self):  # pragma: no cover
         """
         Displays each demand and its path(s) across the network
         """
@@ -1552,7 +1551,7 @@ class Parallel_Link_Model(object):
             print()
             print()
 
-    def display_interface_objects(self):
+    def display_interface_objects(self):  # pragma: no cover
         """Displays interface objects in a more human readable manner"""
 
         for interface in self.interface_objects:

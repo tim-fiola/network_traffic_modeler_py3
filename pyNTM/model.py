@@ -713,8 +713,7 @@ class Model(object):
         else:
             return True
 
-    def _make_circuits(self, return_exception=True,
-                       include_failed_circuits=True):
+    def _make_circuits(self, return_exception=True, include_failed_circuits=True):
         """
         Matches interface objects into circuits and returns the circuits list
         :param return_exception: Should an exception be returned if not all the
@@ -1329,7 +1328,7 @@ class Model(object):
         return non_failed_nodes
 
     # Display calls #########
-    def display_interface_status(self):
+    def display_interface_status(self):  # pragma: no cover
         """Returns failed = True/False for each interface"""
 
         print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), end=' ')
@@ -1342,7 +1341,7 @@ class Model(object):
             print(interface.remote_node_object.name.ljust(12), end=' ')
             print(str(interface.failed).ljust(12))
 
-    def display_node_status(self):
+    def display_node_status(self):  # pragma: no cover
         """Returns failed = True/False for each node"""
 
         print('Node'.ljust(12), 'Failed'.ljust(12))
@@ -1352,7 +1351,7 @@ class Model(object):
         for node in node_iterator:
             print(node.name.ljust(12), str(node.failed).ljust(12))
 
-    def display_interfaces_traffic(self):
+    def display_interfaces_traffic(self):  # pragma: no cover
         """
         A human-readable(-ish) display of interfaces and traffic on each
         """
@@ -1366,7 +1365,7 @@ class Model(object):
             print(interface.remote_node_object.name.ljust(12), end=' ')
             print(repr(interface.traffic).ljust(12))
 
-    def display_demand_paths(self):
+    def display_demand_paths(self):  # pragma: no cover
         """
         Displays each demand and its path(s) across the network
         """
@@ -1382,7 +1381,7 @@ class Model(object):
             print()
             print()
 
-    def display_interface_objects(self):
+    def display_interface_objects(self):  # pragma: no cover
         """Displays interface objects in a more human readable manner"""
 
         for interface in self.interface_objects:
