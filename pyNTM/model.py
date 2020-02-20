@@ -158,18 +158,14 @@ class Model(object):
             }
             error_data.append(int_status_error_dict)
 
-        # Validate Nodes in each SRLG have the SRLG in their srlgs set.
-        # srlg_errors is a dict of node names as keys and a list of SRLGs that node is
-        # a member of in the model but that the SRLG is not in node.srlgs
-        srlg_errors = {}
+        # Look for multiple links between nodes (not allowed in Model)
+        if len(self.multiple_links_between_nodes()) > 0:
+            multiple_links_between_nodes = {}
+            multiple_links_between_nodes['multiple links between nodes detected; not allowed in Model object'
+                                         '(use Parallel_Link_Model)'] = self.multiple_links_between_nodes()
+            error_data.append(multiple_links_between_nodes)
 
-        for srlg in self.srlg_objects:  # pragma: no cover  # noqa  # TODO - perhaps cover this later in unit testing
-            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
-            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
-                try:
-                    srlg_errors[node.name].append(srlg.name)
-                except KeyError:
-                    srlg_errors[node.name] = []
+        srlg_errors = self.validate_srlg_nodes()
 
         if len(srlg_errors) > 0:
             error_data.append(srlg_errors)
@@ -189,6 +185,27 @@ class Model(object):
             raise ModelException((message, error_data))
         else:
             return self
+
+    def validate_srlg_nodes(self):
+        """
+        Validate that Nodes in each SRLG have the SRLG in their srlgs set.
+        srlg_errors is a dict of node names as keys and a list of SRLGs that node is
+        a member of in the model but that the SRLG is not in node.srlgs
+
+        :return: dict where keys are Node names and values are lists of SRLG names;
+        each value will be a single list of SRLG names missing that Node in the
+        SRLG node set
+        """
+
+        srlg_errors = {}
+        for srlg in self.srlg_objects:  # pragma: no cover  # noqa  # TODO - perhaps cover this later in unit testing
+            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
+            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
+                try:
+                    srlg_errors[node.name].append(srlg.name)
+                except KeyError:
+                    srlg_errors[node.name] = []
+        return srlg_errors
 
     def _validate_circuit_interface_capacity(self, circuits_with_mismatched_interface_capacity, ckt):
         """
@@ -1807,17 +1824,28 @@ class Model(object):
             srlg = SRLG(srlg_name, self)
             self.srlg_objects.add(srlg)
 
-    # def single_interface_to_destination_node(self):
-    #     """
-    #     Ensures there is no more than a single interface facing a
-    #     given remote node (that there are no parallel interfaces
-    #     between nodes)
-    #     :return: True|False, parallel_interfaces
-    #     """
-    #
-    #     connected_nodes_list = [(interface.node_object.name + '-' + interface.remote_node_object.name) for interface
-    #                             in self.interface_objects]
-    #
-    #     connected_nodes_set = set(connected_nodes_list)
-    #
-    #     if len(connected_nodes_list) != len(connected_nodes_set):
+    def multiple_links_between_nodes(self):
+        """
+        Ensures there is no more than a single interface facing a
+        given remote node (that there are no parallel interfaces
+        between nodes)
+        :return: a list of parallel interfaces; if
+        there are no parallel interfaces, the list is empty
+        """
+
+        connected_nodes_list = [(interface.node_object.name + '-' + interface.remote_node_object.name) for interface
+                                in self.interface_objects]
+
+        connected_nodes_set = set(connected_nodes_list)
+
+        # If there are parallel links between nodes, create a list of the
+        # parallel links, sort it, and return the list
+        if len(connected_nodes_list) != len(connected_nodes_set):
+            parallel_links = [connection for connection in connected_nodes_list if
+                              connected_nodes_list.count(connection) > 1]
+            parallel_links.sort()
+
+            return parallel_links
+
+        else:
+            return []
