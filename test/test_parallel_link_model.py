@@ -365,7 +365,7 @@ class TestModel(unittest.TestCase):
             model.update_simulation()
         self.assertIn(err_msg, context.exception.args[0])
 
-    def test_int_not_in_ckt(self):
+    def test_non_unique_interface_name(self):
         model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -416,4 +416,26 @@ class TestModel(unittest.TestCase):
         model.interface_objects.add(int_a_b)
         with self.assertRaises(ModelException) as context:
             model._unique_interface_per_node()
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_implied_node(self):
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
+
+        node_x = model.get_node_object('X')
+
+        self.assertTrue(node_x in model.node_objects)
+
+    def test_int_not_in_ckt(self):
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
+        model.update_simulation()
+
+        node_f = model.get_node_object('F')
+        node_x = model.get_node_object('X')
+        new_int = Interface('F-to-X', 100, 100, node_f, node_x, 90)
+        model.interface_objects.add(new_int)
+
+        err_msg = "WARNING: These interfaces were not matched"
+
+        with self.assertRaises(ModelException) as context:
+            model.update_simulation()
         self.assertIn(err_msg, context.exception.args[0])
