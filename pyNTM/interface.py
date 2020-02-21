@@ -8,7 +8,8 @@ from .srlg import SRLG
 class Interface(object):
     """An object representing a Node interface"""
 
-    def __init__(self, name, cost, capacity, node_object, remote_node_object, circuit_id=0):
+    def __init__(self, name, cost, capacity, node_object, remote_node_object,
+                 circuit_id=0, rsvp_enabled=True, percent_reservable_bandwidth = 100):
         self.name = name
         self.cost = cost
         self.capacity = capacity
@@ -19,6 +20,8 @@ class Interface(object):
         self._failed = False
         self.reserved_bandwidth = 0
         self._srlgs = set()
+        self.rsvp_enabled = rsvp_enabled
+        self.percent_reservable_bandwidth = percent_reservable_bandwidth
 
     @property
     def _key(self):
