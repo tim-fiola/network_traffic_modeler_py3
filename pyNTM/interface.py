@@ -9,16 +9,16 @@ class Interface(object):
     """An object representing a Node interface"""
 
     def __init__(self, name, cost, capacity, node_object, remote_node_object,
-                 circuit_id=0, rsvp_enabled=True, percent_reservable_bandwidth = 100):
+                 circuit_id=None, rsvp_enabled=True, percent_reservable_bandwidth=100):
         self.name = name
         self.cost = cost
         self.capacity = capacity
         self.node_object = node_object
         self.remote_node_object = remote_node_object
-        self.circuit_id = circuit_id
+        self.circuit_id = circuit_id  # Has no function in Model object, only in Parallel_Model_Object
         self.traffic = 0.0
         self._failed = False
-        self.reserved_bandwidth = 0
+        self.reserved_bandwidth = 0.0
         self._srlgs = set()
         self.rsvp_enabled = rsvp_enabled
         self.percent_reservable_bandwidth = percent_reservable_bandwidth
@@ -59,9 +59,17 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
                                               self.circuit_id)
 
     @property
-    def reservable_bandwidth(self):
-        """Amount of bandwidth available for rsvp lsp reservation"""
-        return self.capacity - self.reserved_bandwidth
+    def reservable_bandwidth(self):  # TODO - use setter here?
+        """
+        Amount of bandwidth available for rsvp lsp reservation.  If interface is
+        not rsvp_enabled, then reservable_bandwidth is set to -1
+        """
+
+        if self.rsvp_enabled is True:
+            res_bw = (self.capacity * (self.percent_reservable_bandwidth / 100)) - self.reserved_bandwidth
+            return res_bw
+        else:
+            return -1.0
 
     @property
     def failed(self):
