@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.6
+---
+* Added support for multiple links between nodes (Parallel_Link_Model)
+* Cached parallel_lsp_groups in Model and Parallel_Link_Model objects (performance optimization)
+* Added check for multiple links between nodes in Model object (not allowed)
+
+
+
 1.5
 ---
 * Updated code to account for networkx
