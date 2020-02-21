@@ -8,7 +8,7 @@
 pyNTM: network_traffic_modeler_py3
 ==================================
 
-This is a network traffic modeler written in python 3. This library allows users to define a layer 3 network topology, define a traffic matrix, and then run a simulation to determine how the traffic will traverse the topology, traverse a modified topology, and fail over. If you've used Cariden MATE or WANDL, this code solves for some of the same basic use cases those do.  IGP and RSVP auto-bandwidth routing is supported. 
+This is a network traffic modeler written in python 3. This library allows users to define a layer 3 network topology, define a traffic matrix, and then run a simulation to determine how the traffic will traverse the topology, traverse a modified topology, and fail over. If you've used Cariden MATE or WANDL, this code solves for some of the same basic use cases those do.  This package is in no way related to those, or any, commercial products.  IGP and RSVP auto-bandwidth routing is supported. 
 
 
 Install
@@ -24,6 +24,10 @@ For upgrade:
 pip3 install --upgrade pyNTM
 ```
 
+Training
+=========
+See the training modules on this repo's wiki page at https://github.com/tim-fiola/network_traffic_modeler_py3.git
+
 
 Documentation
 =============
@@ -35,12 +39,6 @@ Examples
 ========
 
 See the [example directory](https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples).
-
-
-Notes
-=====
-
-The previous py2 version is located [here](https://github.com/tim-fiola/network_traffic_modeler) but won't be maintained any further in favor of the py3 version in this repository.
 
 
 License
