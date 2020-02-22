@@ -1388,23 +1388,37 @@ class Model(object):
             pprint(interface)
             print()
 
-    def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0):
-        """Returns a networkx weighted network directional graph from
-        the input Model object"""
+    def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
+        """
+        Returns a networkx weighted network directional graph from
+        the input Model object
+        :param include_failed_circuits: include interfaces from currently failed
+        circuits in the graph?
+        :param needed_bw: how much reservable_bandwidth is required?
+        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+        :return: networkx digraph with edges that conform to the needed_bw and
+        rsvp_required parameters
+        """
         G = nx.DiGraph()
 
-        if not include_failed_circuits:
-            # Get non-failed edge names
+        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
+        if include_failed_circuits is False:
+            considered_interfaces = (interface for interface in self.interface_objects
+                                     if (interface.failed is False and
+                                         interface.reservable_bandwidth >= needed_bw))
+        elif include_failed_circuits is True:
+            considered_interfaces = (interface for interface in self.interface_objects
+                                     if interface.reservable_bandwidth >= needed_bw)
+
+        if rsvp_required is True:
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name, interface.cost)
-                          for interface in self.interface_objects
-                          if (interface.failed is False and
-                              interface.reservable_bandwidth >= needed_bw))
-        elif include_failed_circuits:
-            # Get all edge names
+                          for interface in considered_interfaces
+                          if interface.rsvp_enabled is True)
+        else:
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name, interface.cost)
-                          for interface in self.interface_objects if interface.reservable_bandwidth >= needed_bw)
+                          for interface in considered_interfaces)
 
         # Add edges to networkx DiGraph
         G.add_weighted_edges_from(edge_names, weight='cost')
@@ -1417,14 +1431,17 @@ class Model(object):
 
     def _make_weighted_network_graph_routed_lsp(self, lsp, needed_bw=0):
         """
+        Looks for a new path with needed_bw reservable bandwidth for an RSVP LSP
+        that is currently routed.
+
         Returns a networkx weighted network directional graph from the input Model object.
+
         Considers edges with needed_bw of reservable_bandwidth and also takes into account
         reserved_bandwidth by the lsp on Interfaces in the existing LSP path
-        :param self:
-        :param include_failed_circuits:
-        :param lsp:
-        :param needed_bw:
-        :return:
+        :param lsp: RSVP LSP that is currently routed
+        :param needed_bw: how much bandwidth is needed for the RSVP LSP's new path
+
+        :return: networkx DiGraph with eligible edges
         """
         G = nx.DiGraph()
 
@@ -1432,7 +1449,7 @@ class Model(object):
         lsp_path_interfaces = lsp.path['interfaces']
 
         eligible_interface_generator = (interface for interface in self.interface_objects if
-                                        interface.failed is False)
+                                        interface.failed is False and interface.rsvp_enabled is True)
 
         eligible_interfaces = set()
 
@@ -1704,7 +1721,7 @@ class Model(object):
                 raise ModelException(msg)
 
             new_interface = Interface(name, int(cost), float(capacity), Node(node_name), Node(remote_node_name),
-                                      0, rsvp_enabled, float(percent_reservable_bandwidth))
+                                      None, rsvp_enabled, float(percent_reservable_bandwidth))
 
             if new_interface._key not in set([interface._key for interface in interface_set]):
                 interface_set.add(new_interface)
