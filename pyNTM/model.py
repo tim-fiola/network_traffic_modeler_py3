@@ -27,27 +27,21 @@ from .srlg import SRLG
 
 class Model(object):
     """A network model object consisting of the following base components:
-
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
           interface circuit_ids --> A pair of Interfaces with the same circuit_id
           value get matched into a Circuit
-
         - Node objects (set): vertices on the network (aka 'layer 3 devices')
           that contain Interface objects.  Nodes are connected to each other
           via a pair of matched Interfaces (Circuits)
-
         - Demand objects (set): traffic loads on the network.  Each demand starts
           from a source node and transits the network to a destination node.
           A demand also has a magnitude, representing how much traffic it
           is carrying.  The demand's magnitude will apply against each
           interface's available capacity
-
         - RSVP LSP objects (set): RSVP LSPs in the Model
-
         - Circuit objects are created by matching Interface objects
-
     """
 
     def __init__(self, interface_objects=set(), node_objects=set(),
@@ -71,7 +65,6 @@ class Model(object):
         A tool that reads network interface info and updates an *existing* model.
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example:
-
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
             'remote_node': 'B', 'circuit_id': 1, 'failed': False},
@@ -79,7 +72,6 @@ class Model(object):
             'remote_node': 'B', 'circuit_id': 2, 'failed': False},
             {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
             'remote_node': 'C', 'circuit_id': 3, 'failed': False},]
-
         """
 
         new_interface_objects, new_node_objects = \
@@ -191,7 +183,6 @@ class Model(object):
         Validate that Nodes in each SRLG have the SRLG in their srlgs set.
         srlg_errors is a dict of node names as keys and a list of SRLGs that node is
         a member of in the model but that the SRLG is not in node.srlgs
-
         :return: dict where keys are Node names and values are lists of SRLG names;
         each value will be a single list of SRLG names missing that Node in the
         SRLG node set
@@ -231,17 +222,13 @@ class Model(object):
         - Is reserved_bandwidth > capacity?
         - Does reserved_bandwidth for interface match the sum of the
         reserved_bandwidth for the LSPs egressing interface?
-
         :param int_info: dict that holds int_res_bw_sum_error and
         int_res_bw_too_high sets.  Has the following format for a given
         entry:
-
         int_info[interface._key] = {'lsps': [], 'reserved_bandwidth': 0}
-
         Where 'lsps' is a list of RSVP LSPs egressing the Interface and
         'reserved_bandwidth' is the reserved_bandwidth value generated
         by the simulation
-
         :param int_res_bw_sum_error: set that will hold Interface objects
         whose reserved_bandwidth does not match the sum of the
         reserved_bandwidth for the LSPs egressing interface
@@ -261,10 +248,8 @@ class Model(object):
         """
         Given a Demand object, return the (key, value) pairs for how much traffic each
         Interface gets from the routing of the traffic load over Model Interfaces.
-
         : demand: Demand object
         : return: dict of (Interface: <traffic from demand> ) k, v pairs
-
         Example: The interface from node G to node D below has 2.5 units of traffic from 'demand';
                  the interface from A to B has 10.0, etc.
         {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
@@ -277,7 +262,6 @@ class Model(object):
          remote_node_object = Node('E'), circuit_id = '27'): 8.0,
          Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
          remote_node_object = Node('E'), circuit_id = '17'): 8.0}
-
         """
 
         shortest_path_int_list = []
@@ -483,11 +467,8 @@ class Model(object):
     def _route_lsps(self, input_model):
         """Route the LSPs in the model
         1.  Get LSPs into groups with matching source/dest
-
         2.  Find all the demands that take the LSP group
-
         3.  Route the LSP group, one at a time
-
         :param input_model: Model object; this may have different parameters than 'self'
         :return: self, with updated LSP paths
         """
@@ -539,7 +520,6 @@ class Model(object):
         """
         If not all LSPs in a parallel LSP group can route, some of the LSPs that did
         route may be able to signal for their setup_bandwidth.
-
         :param input_model: Model object containing the parallel LSP group
         :param routed_lsps_in_group: LSPs in parallel LSP group with a path
         :param traffic_in_demand_group: aggregate traffic for all demands with
@@ -636,7 +616,6 @@ class Model(object):
         Updates the simulation state; this needs to be run any time there is
         a change to the state of the Model, such as failing an interface, adding
         a Demand, adding/removing and LSP, etc.
-
         This call does not carry forward any state from the previous simulation
         results.
         """
@@ -720,7 +699,6 @@ class Model(object):
                                  interfaces can be matched into a circuit?
         :param include_failed_circuits:  Should circuits that will be in a
                                          failed state be created?
-
         :return: a set of Circuit objects in the Model, each Circuit
                  comprised of two Interface objects
         """
@@ -798,7 +776,6 @@ class Model(object):
         """
         Creates component Interface objects for a new Circuit in the Model.
         The Circuit object will then be created during the validate_model() call.
-
         :param node_a_object: Node object
         :param node_b_object: Node object
         :param node_a_interface_name: name of component Interface on node_a
@@ -879,7 +856,6 @@ class Model(object):
         """
         Returns set of Interface objects and a set of Node objects for Nodes
         that are not already in the Model.
-
         :param interface_info_list: list of dicts with interface specs;
         :return: Set of Interface objects and set of Node objects for the
                  new Interfaces for Nodes that are not already in the model
@@ -930,7 +906,6 @@ class Model(object):
         """
         Adds an RSVP LSP with name from the source node to the
         dest node and validates model.
-
         :param source_node_name: LSP source Node name
         :param dest_node_name: LSP destination Node name
         :param name: name of LSP
@@ -970,7 +945,6 @@ class Model(object):
         """
         Returns the RSVP LSP from the model with the specified source node
         name, dest node name, and LSP name.
-
         :param source_node_name: name of source node for LSP
         :param dest_node_name: name of destination node for LSP
         :param lsp_name: name of LSP
@@ -1088,7 +1062,6 @@ class Model(object):
     def unfail_interface(self, interface_name, node_name, raise_exception=False):
         """
         Unfails the Interface object for the interface_name, node_name pair.
-
         :param interface_name:
         :param node_name:
         :param raise_exception: If raise_excecption=True, an exception
@@ -1135,12 +1108,10 @@ class Model(object):
         For a source and dest node name pair, find all simple path(s) with at
         least needed_bw reservable bandwidth available less than or equal to
         cutoff hops long.
-
         The amount of simple paths (paths that don't have repeating nodes) can
         be very large for larger topologies and so this call can be very expensive.
         Use the cutoff argument to limit the path length to consider to cut down on
         the time it takes to run this call.
-
         :param source_node_name: name of source node in path
         :param dest_node_name: name of destination node in path
         :param include_failed_circuits: include failed circuits in the topology
@@ -1168,11 +1139,10 @@ class Model(object):
         except BaseException:
             return converted_path
 
-    def get_shortest_path(self, source_node_name, dest_node_name, rsvp_required=False, needed_bw=0):
+    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
         """
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
-
         :param source_node_name: name of source node in path
         :param dest_node_name: name of destination node in path
         :param needed_bw: the amount of reservable bandwidth required on the path
@@ -1181,8 +1151,7 @@ class Model(object):
         """
 
         # Define a networkx DiGraph to find the path
-        G = self._make_weighted_network_graph(include_failed_circuits=False, rsvp_required=rsvp_required,
-                                              needed_bw=needed_bw)
+        G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
         converted_path = dict()
@@ -1190,7 +1159,9 @@ class Model(object):
         converted_path['cost'] = None
 
         # Find the shortest paths in G between source and dest
-        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
+        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
+                                                       dest_node_name,
+                                                       weight='cost')
 
         try:
             for path in digraph_shortest_paths:
@@ -1234,10 +1205,8 @@ class Model(object):
     def _convert_nx_path_to_model_path(self, nx_graph_path):
         """Given a path from an networkx DiGraph, converts that
         path to a Model style path and returns that Model style path
-
         A networkx path is a list of nodes in order of transit.
         ex: ['A', 'B', 'G', 'D', 'F']
-
         The corresponding model style path would be:
         [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
             remote_node_object = Node('B'), circuit_id = 9),
@@ -1431,14 +1400,11 @@ class Model(object):
         """
         Looks for a new path with needed_bw reservable bandwidth for an RSVP LSP
         that is currently routed.
-
         Returns a networkx weighted network directional graph from the input Model object.
-
         Considers edges with needed_bw of reservable_bandwidth and also takes into account
         reserved_bandwidth by the lsp on Interfaces in the existing LSP path
         :param lsp: RSVP LSP that is currently routed
         :param needed_bw: how much bandwidth is needed for the RSVP LSP's new path
-
         :return: networkx DiGraph with eligible edges
         """
         G = nx.DiGraph()
@@ -1485,19 +1451,15 @@ class Model(object):
         format to produce a valid model.  This cannot be used to open
         multiple models in a single python instance - there may be
         unpredictable results in the info in the models.
-
         The format for the file must be a tab separated value file.
-
         This docstring you are reading may not display the table info
         explanations/examples below correctly on https://pyntm.readthedocs.io/en/latest/api.html.
         Recommend either using help(Model.load_model_file) at the python3 cli or
         looking at one of the sample model data_files in github:
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/sample_network_model_file.csv
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
-
         The following headers must exist, with the following tab-column
         names beneath:
-
         INTERFACES_TABLE
         node_object_name - name of node	where interface resides
         remote_node_object_name	- name of remote node
@@ -1507,65 +1469,49 @@ class Model(object):
         rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
         percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
         value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
-
         Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
         So a Node created from an Interface does not have to appear in the
         NODES_TABLE unless you want to add additional attributes for the Node
         such as latitude/longitude
-
         NODES_TABLE -
         name - name of node
         lon	- longitude (or y-coordinate)
         lat - latitude (or x-coordinate)
-
         Note - The NODES_TABLE is present for 2 reasons:
         - to add a Node that has no interfaces
         - and/or to add additional attributes for a Node inferred from
         the INTERFACES_TABLE
-
         DEMANDS_TABLE
         source - source node name
         dest - destination node name
         traffic	- amount of traffic on demand
         name - name of demand
-
         RSVP_LSP_TABLE (this table is optional)
         source - source node name
         dest - destination node name
         name - name of LSP
         configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
         if LSP is auto-bandwidth, then leave this blank for the LSP
-
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
-
         Here is an example of a data file:
-
     INTERFACES_TABLE
     node_object_name	remote_node_object_name	name	cost	capacity    rsvp_enabled    percent_reservable_bandwidth
     A	B	A-to-B	4	100
     B	A	B-to-A	4	100
-
     NODES_TABLE
     name	lon	lat
     A	50	0
     B	0	-50
-
     DEMANDS_TABLE
     source	dest	traffic	name
     A	B	80	dmd_a_b_1
-
     RSVP_LSP_TABLE
     source	dest	name    configured_setup_bw
     A	B	lsp_a_b_1   10
     A	B	lsp_a_b_2
-
-
         :param data_file: file with model info
         :return: Model object
-
-
-
         """
         # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
         # TODO - add support for SRLGs
@@ -1687,7 +1633,6 @@ class Model(object):
         """
         Extracts interface data from lines and adds Interface objects to a set.
         Also extracts the implied Nodes from the Interfaces and adds those Nodes to a set.
-
         :param int_info_begin_index: Index position in lines where interface info begins
         :param int_info_end_index:  Index position in lines where interface info ends
         :param lines: lines of data describing a Model objects
