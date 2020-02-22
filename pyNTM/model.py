@@ -1168,7 +1168,7 @@ class Model(object):
         except BaseException:
             return converted_path
 
-    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
+    def get_shortest_path(self, source_node_name, dest_node_name, rsvp_required=False, needed_bw=0):
         """
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
@@ -1181,7 +1181,8 @@ class Model(object):
         """
 
         # Define a networkx DiGraph to find the path
-        G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)
+        G = self._make_weighted_network_graph(include_failed_circuits=False, rsvp_required=rsvp_required,
+                                              needed_bw=needed_bw)
 
         # Define the Model-style path to be built
         converted_path = dict()
@@ -1189,9 +1190,7 @@ class Model(object):
         converted_path['cost'] = None
 
         # Find the shortest paths in G between source and dest
-        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                                       dest_node_name,
-                                                       weight='cost')
+        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
 
         try:
             for path in digraph_shortest_paths:
