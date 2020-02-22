@@ -1558,37 +1558,43 @@ class Parallel_Link_Model(object):
             pprint(interface)
             print()
 
-    def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0):
+    def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
         """
-        Returns a networkx weighted network directional graph from
-        the input Model object.  Considers edges with needed_bw of
-        reservable_bandwidth
+        Returns a networkx weighted networkx multidigraph object from
+        the input Model object
 
-        :param include_failed_circuits: failed circuits can be included in
-        the graph as functional edges
-        :param needed_bw: amount of reservable bandwidth an interface must have
-        to be added to the graph
-        :return: A networkx graph whose edges have a minimum of needed_bw
-        reservable bandwidth
+        :param include_failed_circuits: include interfaces from currently failed
+        circuits in the graph?
+        :param needed_bw: how much reservable_bandwidth is required?
+        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+
+        :return: networkx multidigraph with edges that conform to the needed_bw and
+        rsvp_required parameters
         """
+
         G = nx.MultiDiGraph()
 
-        if not include_failed_circuits:
-            # Get non-failed edge names
+        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
+        if include_failed_circuits is False:
+            considered_interfaces = (interface for interface in self.interface_objects
+                                     if (interface.failed is False and
+                                         interface.reservable_bandwidth >= needed_bw))
+        elif include_failed_circuits is True:
+            considered_interfaces = (interface for interface in self.interface_objects
+                                     if interface.reservable_bandwidth >= needed_bw)
+
+        if rsvp_required is True:
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name,
-                           {'cost': interface.cost,
-                            'circuit_id': interface.circuit_id})
-                          for interface in self.interface_objects
-                          if (interface.failed is False and
-                              interface.reservable_bandwidth >= needed_bw))
-        elif include_failed_circuits:
-            # Get all edge names
+                           {'cost': interface.cost, 'circuit_id': interface.circuit_id})
+                          for interface in considered_interfaces
+                          if interface.rsvp_enabled is True)
+        else:
             edge_names = ((interface.node_object.name,
                            interface.remote_node_object.name,
-                           {'cost': interface.cost,
-                            'circuit_id': interface.circuit_id})
-                          for interface in self.interface_objects if interface.reservable_bandwidth >= needed_bw)
+                           {'cost': interface.cost, 'circuit_id': interface.circuit_id})
+                          for interface in considered_interfaces)
+
         # Add edges to networkx DiGraph
         G.add_edges_from(edge_names)
 

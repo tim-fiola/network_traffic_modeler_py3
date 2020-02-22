@@ -1357,15 +1357,18 @@ class Model(object):
 
     def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
         """
-        Returns a networkx weighted network directional graph from
+        Returns a networkx weighted networkx digraph from
         the input Model object
+
         :param include_failed_circuits: include interfaces from currently failed
         circuits in the graph?
         :param needed_bw: how much reservable_bandwidth is required?
         :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+
         :return: networkx digraph with edges that conform to the needed_bw and
         rsvp_required parameters
         """
+
         G = nx.DiGraph()
 
         # Get all the edges that meet 'failed' and 'reservable_bw' criteria
@@ -1412,6 +1415,8 @@ class Model(object):
         # The Interfaces that the lsp is routed over currently
         lsp_path_interfaces = lsp.path['interfaces']
 
+        # Since this is for a routed LSP, rsvp_enabled must be True and interface must
+        # not be failed
         eligible_interface_generator = (interface for interface in self.interface_objects if
                                         interface.failed is False and interface.rsvp_enabled is True)
 
