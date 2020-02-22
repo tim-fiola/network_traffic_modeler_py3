@@ -1197,8 +1197,7 @@ class Model(object):
             for path in digraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path)
                 converted_path['path'].append(model_path)
-                converted_path['cost'] = nx.shortest_path_length(G, source_node_name,
-                                                                 dest_node_name, weight='cost')
+                converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
             return converted_path
         except BaseException:
             return converted_path
