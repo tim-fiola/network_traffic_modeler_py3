@@ -1652,16 +1652,22 @@ class Model(object):
             # Read interface characteristics
             if len(interface_line.split()) == 5:
                 node_name, remote_node_name, name, cost, capacity = interface_line.split()
-                rsvp_enabled = True
+                rsvp_enabled_bool = True
                 percent_reservable_bandwidth = 100
             elif len(interface_line.split()) == 6:
                 node_name, remote_node_name, name, cost, capacity, rsvp_enabled = interface_line.split()
-                rsvp_enabled = bool(rsvp_enabled)
+                if rsvp_enabled in [True, 'T', 'True', 'true']:
+                    rsvp_enabled_bool = True
+                else:
+                    rsvp_enabled_bool = False
                 percent_reservable_bandwidth = 100
             elif len(interface_line.split()) >= 7:
                 node_name, remote_node_name, name, cost, capacity, \
                     rsvp_enabled, percent_reservable_bandwidth = interface_line.split()
-                rsvp_enabled = bool(rsvp_enabled)
+                if rsvp_enabled in [True, 'T', 'True', 'true']:
+                    rsvp_enabled_bool = True
+                else:
+                    rsvp_enabled_bool = False
             else:
                 msg = ("node_name, remote_node_name, name, cost, and capacity "
                        "must be defined for line {}, line index {}".format(interface_line,
@@ -1669,7 +1675,7 @@ class Model(object):
                 raise ModelException(msg)
 
             new_interface = Interface(name, int(cost), float(capacity), Node(node_name), Node(remote_node_name),
-                                      None, rsvp_enabled, float(percent_reservable_bandwidth))
+                                      None, rsvp_enabled_bool, float(percent_reservable_bandwidth))
 
             if new_interface._key not in set([interface._key for interface in interface_set]):
                 interface_set.add(new_interface)
