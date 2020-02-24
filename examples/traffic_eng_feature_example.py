@@ -33,8 +33,14 @@ dmd_a_e_2 = model.get_demand_object('A', 'E', 'dmd_a_e_2')
 # int_a_d is not rsvp_enabled, so it should have no RSVP LSPs
 print("int_a_d is rsvp_enabled: {}".format(int_a_d.rsvp_enabled))
 print("int_a_d has {} RSVP LSPs".format(len(int_a_d.lsps(model))))
-
-
+print()
+# int_a_b has 50% of capacity reservable
+print("int_a_b percent_reservable_bandwidth = {}".format(int_a_b.percent_reservable_bandwidth))
+print("int_a_b capacity = {}".format(int_a_b.capacity))
+print("int_a_b reserved_bandwidth is {}".format(int_a_b.reserved_bandwidth))
+print("int_a_b reservable_bandwidth is {}".format(int_a_b.reservable_bandwidth))
+print("int_a_b reserved_bandwidth + reservable_bandwidth = {}".format(int_a_b.reserved_bandwidth
+                                                                      + int_a_b.reservable_bandwidth))
 
 
 

@@ -18,7 +18,7 @@ class Interface(object):
         self.circuit_id = circuit_id  # Has no function in Model object, only in Parallel_Model_Object
         self.traffic = 0.0
         self._failed = False
-        self.reserved_bandwidth = 0.0
+        self._reserved_bandwidth = 0.0
         self._srlgs = set()
         self.rsvp_enabled = rsvp_enabled
         self.percent_reservable_bandwidth = percent_reservable_bandwidth
@@ -59,7 +59,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
                                               self.circuit_id)
 
     @property
-    def reservable_bandwidth(self):  # TODO - use setter here?
+    def reservable_bandwidth(self):
         """
         Amount of bandwidth available for rsvp lsp reservation.  If interface is
         not rsvp_enabled, then reservable_bandwidth is set to -1
@@ -70,6 +70,25 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
             return res_bw
         else:
             return -1.0
+
+    @property
+    def reserved_bandwidth(self):
+        """
+        Amount of interface capacity reserved by RSVP LSPs
+        """
+        return self._reserved_bandwidth
+
+    @reserved_bandwidth.setter
+    def reserved_bandwidth(self, value):
+        """
+        Puts logical guardrails on what reserved_bandwidth value can be
+        :param value: value of reserved_bandwidth
+        :return: None
+        """
+        if isinstance(value, float) or isinstance(value, int):
+            self._reserved_bandwidth = value
+        else:
+            raise ModelException("Interface reserved_bandwidth must be a float or integer")
 
     @property
     def failed(self):
@@ -91,7 +110,6 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
             raise ModelException('must be boolean value')
 
         # Check for membership in any failed SRLGs
-
         if status is False:
             # Check for membership in any failed SRLGs
             failed_srlgs = set([srlg for srlg in self.srlgs if srlg.failed is True])
