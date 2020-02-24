@@ -439,3 +439,30 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
         self.assertIn(err_msg, context.exception.args[0])
+
+    def test_mismatched_circuit_id(self):
+        """
+        Check that each circuit_id value appears exactly twice in the model file
+        """
+        msg = ("Each circuit_id value must appear exactly twice; the following circuit_id values do not meet "
+               "that criteria: [{'circuit_id': '2', 'appearances': 1}, {''circuit_id': '1', 'appearances': 3}]")
+
+        with self.assertRaises(ModelException) as context:
+            Parallel_Link_Model.load_model_file('test/parallel_link_model_bad_circuit_id.csv')
+        self.assertTrue(msg, context.exception.args[0])
+
+    def test_add_ckt_duplicate_circuit_id(self):
+        """
+        Add a circuit to model, specifying a circuit_id value that
+        already exists
+        """
+        model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
+        model.update_simulation()
+        node_a = model.get_node_object('A')
+        node_x = model.get_node_object('X')
+
+        err_msg = 'circuit_id value 1 is already exists in model'
+
+        with self.assertRaises(ModelException) as context:
+            model.add_circuit(node_a, node_x, 'A-to-X_2', 'X-to-A_2', 10, 10, 1000, circuit_id='1')
+        self.assertTrue(err_msg, context.exception.args[0])

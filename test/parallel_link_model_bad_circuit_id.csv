@@ -1,0 +1,30 @@
+INTERFACES_TABLE
+node_object_name	remote_node_object_name	name	cost	capacity    circuit_id
+A	B	A-to-B	4	100 1
+B	A	B-to-A	4	100 1
+A	B	A-to-B_2	4	50  1
+B	A	B-to-A_2	4	50  2
+A	C	A-to-C	1	200 3
+C	A	C-to-A	1	200 3
+A	D	A-to-D	8	150 4
+D	A	D-to-A	8	150 4
+B	D	B-to-D	4	200 5
+D	B	D-to-B	4	200 5
+B	D	B-to-D_2	4	200 6
+D	B	D-to-B_2	4	200 6
+
+NODES_TABLE
+name	lon	lat
+A	25	0
+B	31	-177
+C	60	-63
+D	62	37
+E	-60	124
+F	2	35
+G	30	90
+H	52	124
+
+DEMANDS_TABLE
+source	dest	traffic	name
+A	B	50	dmd_a_b_1
+A	F	22	dmd_a_f_1

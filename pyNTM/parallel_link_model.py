@@ -740,12 +740,19 @@ class Parallel_Link_Model(object):
                                                             circuit_id=interface[2]['circuit_id'])[0]
             except IndexError:
                 pass
+            except TypeError:
+                msg = ("No matching Interface Object found: source node {}, dest node {} "
+                       "circuit_id {} ".format(interface[0], interface[1], interface[2]['circuit_id']))
+                raise ModelException(msg)
             try:
                 int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
                                                             circuit_id=interface[2]['circuit_id'])[0]
             except IndexError:
                 pass
-
+            except TypeError:
+                msg = ("No matching Interface Object found: source node {}, dest node {} "
+                       "circuit_id {} ".format(interface[1], interface[0], interface[2]['circuit_id']))
+                raise ModelException(msg)
             # Mark the interfaces as in ckt
             if int1.in_ckt is False and int2.in_ckt is False:
                 # Mark interface objects as in_ckt = True
@@ -836,11 +843,13 @@ class Parallel_Link_Model(object):
         """
 
         if circuit_id is None:
-            circuit_ids = self.all_interface_circuit_ids
-            if len(circuit_ids) == 0:
-                circuit_id = 1
-            else:
-                circuit_id = max({int(circuit_id) for circuit_id in circuit_ids}) + 1
+            raise ModelException("circuit_id must be specified explicitly")
+
+        circuit_ids = self.all_interface_circuit_ids
+
+        if circuit_id in circuit_ids:
+            err_msg = "circuit_id value {} is already exists in model".format(circuit_id)
+            raise ModelException(err_msg)
 
         int_a = Interface(node_a_interface_name, cost_intf_a, capacity,
                           node_a_object, node_b_object, circuit_id)
@@ -1761,6 +1770,24 @@ class Parallel_Link_Model(object):
         # Nodes from the Interface data
         int_info_begin_index = 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
+
+        # Check that each circuit_id appears exactly 2 times
+        circuit_id_list = []
+        for line in lines[int_info_begin_index:int_info_end_index]:
+            try:
+                circuit_id_item = line.split()[5]
+                circuit_id_list.append(circuit_id_item)
+            except IndexError:
+                pass
+
+        bad_circuit_ids = [{'circuit_id': item, 'appearances': circuit_id_list.count(item)} for item
+                           in set(circuit_id_list) if circuit_id_list.count(item) != 2]
+
+        if len(bad_circuit_ids) != 0:
+            msg = ("Each circuit_id value must appear exactly twice; the following circuit_id values "
+                   "do not meet that criteria: {}".format(bad_circuit_ids))
+            raise ModelException(msg)
+
         interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
                                                                                 int_info_end_index, lines)
 
