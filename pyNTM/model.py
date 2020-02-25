@@ -1465,6 +1465,7 @@ class Model(object):
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
         The following headers must exist, with the following tab-column
         names beneath:
+
         INTERFACES_TABLE
         node_object_name - name of node	where interface resides
         remote_node_object_name	- name of remote node
@@ -1474,18 +1475,22 @@ class Model(object):
         rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
         percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
         value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+
         Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
         So a Node created from an Interface does not have to appear in the
         NODES_TABLE unless you want to add additional attributes for the Node
         such as latitude/longitude
+
         NODES_TABLE -
         name - name of node
         lon	- longitude (or y-coordinate)
         lat - latitude (or x-coordinate)
+
         Note - The NODES_TABLE is present for 2 reasons:
         - to add a Node that has no interfaces
         - and/or to add additional attributes for a Node inferred from
         the INTERFACES_TABLE
+
         DEMANDS_TABLE
         source - source node name
         dest - destination node name
@@ -1497,24 +1502,27 @@ class Model(object):
         name - name of LSP
         configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
         if LSP is auto-bandwidth, then leave this blank for the LSP
+
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
         Here is an example of a data file:
-    INTERFACES_TABLE
-    node_object_name	remote_node_object_name	name	cost	capacity    rsvp_enabled    percent_reservable_bandwidth
-    A	B	A-to-B	4	100
-    B	A	B-to-A	4	100
-    NODES_TABLE
-    name	lon	lat
-    A	50	0
-    B	0	-50
-    DEMANDS_TABLE
-    source	dest	traffic	name
-    A	B	80	dmd_a_b_1
-    RSVP_LSP_TABLE
-    source	dest	name    configured_setup_bw
-    A	B	lsp_a_b_1   10
-    A	B	lsp_a_b_2
+
+        INTERFACES_TABLE
+        node_object_name	remote_node_object_name	name	cost	capacity    rsvp_enabled    percent_reservable_bandwidth  # noqa E501
+        A	B	A-to-B	4	100
+        B	A	B-to-A	4	100
+        NODES_TABLE
+        name	lon	lat
+        A	50	0
+        B	0	-50
+        DEMANDS_TABLE
+        source	dest	traffic	name
+        A	B	80	dmd_a_b_1
+        RSVP_LSP_TABLE
+        source	dest	name    configured_setup_bw
+        A	B	lsp_a_b_1   10
+        A	B	lsp_a_b_2
+
         :param data_file: file with model info
         :return: Model object
         """

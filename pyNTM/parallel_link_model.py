@@ -1683,11 +1683,16 @@ class Parallel_Link_Model(object):
         names beneath:
 
             INTERFACES_TABLE
-            node_object_name - name of node	where interface resides
-            remote_node_object_name	- name of remote node
-            name - interface name
-            cost - IGP cost/metric for interface
-            capacity - capacity
+            - node_object_name - name of node	where interface resides
+            - remote_node_object_name	- name of remote node
+            - name - interface name
+            - cost - IGP cost/metric for interface
+            - capacity - capacity
+            - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
+            - each circuit_id can only appear twice in the model
+            - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+            - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+            value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
             Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
             So a Node created from an Interface does not have to appear in the
@@ -1695,9 +1700,9 @@ class Parallel_Link_Model(object):
             such as latitude/longitude
 
             NODES_TABLE -
-            name - name of node
-            lon	- longitude (or y-coordinate)
-            lat - latitude (or x-coordinate)
+            - name - name of node
+            - lon	- longitude (or y-coordinate)
+            - lat - latitude (or x-coordinate)
 
             Note - The NODES_TABLE is present for 2 reasons:
             - to add a Node that has no interfaces
@@ -1705,47 +1710,49 @@ class Parallel_Link_Model(object):
             the INTERFACES_TABLE
 
             DEMANDS_TABLE
-            source - source node name
-            dest - destination node name
-            traffic	- amount of traffic on demand
-            name - name of demand
+            - source - source node name
+            - dest - destination node name
+            - traffic	- amount of traffic on demand
+            - name - name of demand
 
             RSVP_LSP_TABLE (this table is optional)
-            source - source node name
-            dest - destination node name
-            name - name of LSP
-            configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-            if LSP is auto-bandwidth, then leave this blank for the LSP
+            - source - source node name
+            - dest - destination node name
+            - name - name of LSP
+            - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+            if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
 
         Here is an example of a data file:
 
-            INTERFACES_TABLE #
-            node_object_name	remote_node_object_name	name	cost	capacity circuit_id
-            A	B	A-to-B	4	100 1
-            B	A	B-to-A	4	100 1
+        INTERFACES_TABLE
+        node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth   # noqa E501
+        A	B	A-to-B_1    20	120 1   True  50
+        B	A	B-to-A_1    20	120 1   True  50
+        A   B   A-to-B_2    20  150 2
+        B   A   B-to-A_2    20  150 2
+        A   B   A-to-B_3    10  200 3   False
+        B   A   B-to-A_3    10  200 3   False
 
-            NODES_TABLE
-            name	lon	lat
-            A	50	0
-            B	0	-50
+        NODES_TABLE
+        name	lon	lat
+        A	50	0
+        B	0	-50
 
-            DEMANDS_TABLE
-            source	dest	traffic	name
-            A	B	80	dmd_a_b_1
+        DEMANDS_TABLE
+        source	dest	traffic	name
+        A	B	80	dmd_a_b_1
 
-            RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw
-            A	B	lsp_a_b_1   10
-            A	B	lsp_a_b_2
+        RSVP_LSP_TABLE
+        source	dest	name    configured_setup_bw
+        A	B	lsp_a_b_1   10
+        A	B	lsp_a_b_2
 
 
         :param data_file: file with model info
         :return: Model object
-
-
 
         """
         # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
@@ -1900,6 +1907,22 @@ class Parallel_Link_Model(object):
             # Read interface characteristics
             if len(interface_line.split()) == 6:
                 [node_name, remote_node_name, name, cost, capacity, circuit_id] = interface_line.split()
+                rsvp_enabled_bool = True
+                percent_reservable_bandwidth = 100
+            elif len(interface_line.split()) == 7:
+                [node_name, remote_node_name, name, cost, capacity, circuit_id, rsvp_enabled] = interface_line.split()
+                if rsvp_enabled in [True, 'T', 'True', 'true']:
+                    rsvp_enabled_bool = True
+                else:
+                    rsvp_enabled_bool = False
+                percent_reservable_bandwidth = 100
+            elif len(interface_line.split()) >= 8:
+                [node_name, remote_node_name, name, cost, capacity, circuit_id, rsvp_enabled,
+                 percent_reservable_bandwidth] = interface_line.split()
+                if rsvp_enabled in [True, 'T', 'True', 'true']:
+                    rsvp_enabled_bool = True
+                else:
+                    rsvp_enabled_bool = False
             else:
                 msg = ("node_name, remote_node_name, name, cost, capacity, circuit_id "
                        "must be defined for line {}, line index {}".format(interface_line,
@@ -1907,7 +1930,8 @@ class Parallel_Link_Model(object):
                 raise ModelException(msg)
 
             new_interface = Interface(name, int(cost), int(capacity), Node(node_name),
-                                      Node(remote_node_name), circuit_id)
+                                      Node(remote_node_name), circuit_id, rsvp_enabled_bool,
+                                      float(percent_reservable_bandwidth))
 
             if new_interface._key not in set([interface._key for interface in interface_set]):
                 interface_set.add(new_interface)
