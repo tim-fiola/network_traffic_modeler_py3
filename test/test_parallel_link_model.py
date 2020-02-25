@@ -328,7 +328,7 @@ class TestModel(unittest.TestCase):
 
         node_a = model.get_node_object('A')
 
-        model.add_circuit(node_a, node_zz, 'A-to-ZZ', 'ZZ-to-A', 20, 20, 1000)
+        model.add_circuit(node_a, node_zz, 'A-to-ZZ', 'ZZ-to-A', 20, 20, 1000, circuit_id=90)
         model.update_simulation()
 
         ckt = model.get_circuit_object_from_interface('ZZ-to-A', 'ZZ')
@@ -344,7 +344,7 @@ class TestModel(unittest.TestCase):
         err_msg = ') - interface already exists in model'
 
         with self.assertRaises(ModelException) as context:
-            model.add_circuit(node_a, node_b, 'A-to-B', 'B-to-A', 20, 20, 1000)
+            model.add_circuit(node_a, node_b, 'A-to-B', 'B-to-A', 20, 20, 1000, circuit_id=90)
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_add_orphan_interface(self):
@@ -359,7 +359,7 @@ class TestModel(unittest.TestCase):
         orphan_int = Interface('A-to-B', 100, 100, node_a, node_b, circuit_id=80)
         model.interface_objects.add(orphan_int)
 
-        err_msg = "Interface names must be unique per node."
+        err_msg = "No matching Interface Object found"
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
@@ -374,7 +374,7 @@ class TestModel(unittest.TestCase):
         new_int = Interface('F-to-B', 100, 100, node_f, node_b, 80)
         model.interface_objects.add(new_int)
 
-        err_msg = "Interface names must be unique per node."
+        err_msg = "No matching Interface Object found"
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
@@ -399,7 +399,7 @@ class TestModel(unittest.TestCase):
         err_msg = 'already exists in model'
 
         with self.assertRaises(ModelException) as context:
-            model.add_circuit(node_a_2, node_b_2, 'A-to-B', 'B-to-A', 40, 40, 100)
+            model.add_circuit(node_a_2, node_b_2, 'A-to-B', 'B-to-A', 40, 40, circuit_id=100)
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_duplicate_interface(self):

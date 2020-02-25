@@ -738,18 +738,14 @@ class Parallel_Link_Model(object):
             try:
                 int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
                                                             circuit_id=interface[2]['circuit_id'])[0]
-            except IndexError:
-                pass
-            except TypeError:
+            except (TypeError, IndexError):
                 msg = ("No matching Interface Object found: source node {}, dest node {} "
                        "circuit_id {} ".format(interface[0], interface[1], interface[2]['circuit_id']))
                 raise ModelException(msg)
             try:
                 int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
                                                             circuit_id=interface[2]['circuit_id'])[0]
-            except IndexError:
-                pass
-            except TypeError:
+            except (TypeError, IndexError):
                 msg = ("No matching Interface Object found: source node {}, dest node {} "
                        "circuit_id {} ".format(interface[1], interface[0], interface[2]['circuit_id']))
                 raise ModelException(msg)
