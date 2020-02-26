@@ -445,11 +445,11 @@ class TestModel(unittest.TestCase):
         Check that each circuit_id value appears exactly twice in the model file
         """
         msg = ("Each circuit_id value must appear exactly twice; the following circuit_id values do not meet "
-               "that criteria: [{'circuit_id': '2', 'appearances': 1}, {''circuit_id': '1', 'appearances': 3}]")
+               "that criteria: [{'circuit_id': '2', 'appearances': 1}, {'circuit_id': '1', 'appearances': 3}]")
 
         with self.assertRaises(ModelException) as context:
             Parallel_Link_Model.load_model_file('test/parallel_link_model_bad_circuit_id.csv')
-        self.assertTrue(msg, context.exception.args[0])
+        self.assertEqual(msg, context.exception.args[0])
 
     def test_add_ckt_duplicate_circuit_id(self):
         """
@@ -465,4 +465,20 @@ class TestModel(unittest.TestCase):
 
         with self.assertRaises(ModelException) as context:
             model.add_circuit(node_a, node_x, 'A-to-X_2', 'X-to-A_2', 10, 10, 1000, circuit_id='1')
-        self.assertTrue(err_msg, context.exception.args[0])
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_for_bad_node_in_demand_data(self):
+
+        err_msg = "No Node with name Y in Model"
+
+        with self.assertRaises(ModelException) as context:
+            Parallel_Link_Model.load_model_file('test/parallel_link_model_bad_node_in_demand.csv')
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_for_bad_node_in_lsp_data(self):
+
+        err_msg = "No Node with name Y in Model"
+
+        with self.assertRaises(ModelException) as context:
+            Parallel_Link_Model.load_model_file('test/parallel_link_model_bad_node_in_lsp.csv')
+        self.assertIn(err_msg, context.exception.args[0])

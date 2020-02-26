@@ -387,3 +387,19 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             model.add_circuit(node_d_2, node_b_2, 'D-to-B', 'B-to-A', 40, 40, 100)
         self.assertIn(err_msg, context.exception.args[0])
+
+    def test_for_bad_node_in_demand_data(self):
+
+        err_msg = "No Node with name Y in Model"
+
+        with self.assertRaises(ModelException) as context:
+            Model.load_model_file('test/model_bad_node_in_demand.csv')
+        self.assertIn(err_msg, context.exception.args[0])
+
+    def test_for_bad_node_in_lsp_data(self):
+
+        err_msg = "No Node with name Y in Model"
+
+        with self.assertRaises(ModelException) as context:
+            Model.load_model_file('test/model_bad_node_in_lsp.csv')
+        self.assertIn(err_msg, context.exception.args[0])
