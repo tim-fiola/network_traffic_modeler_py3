@@ -1565,27 +1565,42 @@ class Model(object):
         demands_lines = lines[demands_info_begin_index:demands_info_end_index]
 
         for demand_line in demands_lines:
-            cls._add_demand_from_data(demand_line, demand_set, lines, node_set)
+            try:
+                cls._add_demand_from_data(demand_line, demand_set, lines, node_set)
+            except ModelException as e:
+                err_msg = e.args[0]
+                raise ModelException(err_msg)
 
-        # Define the LSP info
-
+        # Define the LSP info (if present)
         # If the demands_info_end_index is the same as the length of the
         # lines list, then there is no LSP section
         if demands_info_end_index != len(lines):
-            cls._add_lsp_from_data(demands_info_end_index, lines, lsp_set, node_set)
+            try:
+                cls._add_lsp_from_data(demands_info_end_index, lines, lsp_set, node_set)
+            except ModelException as e:
+                err_msg = e.args[0]
+                raise ModelException(err_msg)
 
         return cls(interface_set, node_set, demand_set, lsp_set)
 
     @classmethod
-    def _add_lsp_from_data(cls, demands_info_end_index, lines, lsp_set, node_set):
+    def _add_lsp_from_data(cls, demands_info_end_index, lines, lsp_set, node_set):  # TODO - same as parallel_link_model
         lsp_info_begin_index = demands_info_end_index + 3
         lsp_lines = lines[lsp_info_begin_index:]
         for lsp_line in lsp_lines:
             lsp_info = lsp_line.split()
             source = lsp_info[0]
-            source_node = [node for node in node_set if node.name == source][0]
+            try:
+                source_node = [node for node in node_set if node.name == source][0]
+            except IndexError:
+                err_msg = "No Node with name {} in Model; {}".format(source, lsp_info)
+                raise ModelException(err_msg)
             dest = lsp_info[1]
-            dest_node = [node for node in node_set if node.name == dest][0]
+            try:
+                dest_node = [node for node in node_set if node.name == dest][0]
+            except IndexError:
+                err_msg = "No Node with name {} in Model; {}".format(dest, lsp_info)
+                raise ModelException(err_msg)
             name = lsp_info[2]
             try:
                 configured_setup_bw = lsp_info[3]
@@ -1600,12 +1615,20 @@ class Model(object):
                                                                                 lines.index(lsp_line)))
 
     @classmethod
-    def _add_demand_from_data(cls, demand_line, demand_set, lines, node_set):
+    def _add_demand_from_data(cls, demand_line, demand_set, lines, node_set):  # same as Parallel_Link_Model call
         demand_info = demand_line.split()
         source = demand_info[0]
-        source_node = [node for node in node_set if node.name == source][0]
+        try:
+            source_node = [node for node in node_set if node.name == source][0]
+        except IndexError:
+            err_msg = "No Node with name {} in Model; {}".format(source, demand_info)
+            raise ModelException(err_msg)
         dest = demand_info[1]
-        dest_node = [node for node in node_set if node.name == dest][0]
+        try:
+            dest_node = [node for node in node_set if node.name == dest][0]
+        except IndexError:
+            err_msg = "No Node with name {} in Model; {}".format(dest, demand_info)
+            raise ModelException(err_msg)
         traffic = int(demand_info[2])
         name = demand_info[3]
         if name == '':
