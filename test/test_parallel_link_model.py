@@ -445,11 +445,11 @@ class TestModel(unittest.TestCase):
         Check that each circuit_id value appears exactly twice in the model file
         """
         msg = ("Each circuit_id value must appear exactly twice; the following circuit_id values do not meet "
-               "that criteria: [{'circuit_id': '2', 'appearances': 1}, {'circuit_id': '1', 'appearances': 3}]")
+               "that criteria:")
 
         with self.assertRaises(ModelException) as context:
             Parallel_Link_Model.load_model_file('test/parallel_link_model_bad_circuit_id.csv')
-        self.assertEqual(msg, context.exception.args[0])
+        self.assertIn(msg, context.exception.args[0])
 
     def test_add_ckt_duplicate_circuit_id(self):
         """
