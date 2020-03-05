@@ -240,8 +240,8 @@ class Parallel_Link_Model(object):
 
         if interface.reserved_bandwidth > interface.capacity:
             int_res_bw_too_high.add(interface)
-        if round(interface.reserved_bandwidth, 1) != int_info[interface._key][
-            'reserved_bandwidth']:  # pragma: no cover  # noqa
+        if round(interface.reserved_bandwidth, 1) != round(int_info[interface._key][
+            'reserved_bandwidth'], 1):  # pragma: no cover  # noqa
             int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
     def _demand_traffic_per_int(self, demand):  # common between model and parallel_link_model
@@ -386,6 +386,9 @@ class Parallel_Link_Model(object):
         for path, info in shortest_path_info.items():
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
+
+        # Round all traffic values to 1 decimal place
+        traff_per_int = {interface: round(traffic, 1) for interface, traffic in traff_per_int.items()}
 
         return traff_per_int
 
@@ -1689,7 +1692,8 @@ class Parallel_Link_Model(object):
             - cost - IGP cost/metric for interface
             - capacity - capacity
             - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
-            - each circuit_id can only appear twice in the model
+                - each circuit_id can only appear twice in the model
+                - circuit_id can be string or integer
             - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
             - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
             value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100

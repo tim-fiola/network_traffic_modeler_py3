@@ -67,7 +67,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
         if self.rsvp_enabled is True:
             res_bw = (self.capacity * (self.percent_reservable_bandwidth / 100)) - self.reserved_bandwidth
-            return res_bw
+            return round(res_bw, 1)
         else:
             return -1.0
 
@@ -76,7 +76,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         """
         Amount of interface capacity reserved by RSVP LSPs
         """
-        return self._reserved_bandwidth
+        return round(self._reserved_bandwidth, 1)
 
     @reserved_bandwidth.setter
     def reserved_bandwidth(self, value):
@@ -257,7 +257,8 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         if self.traffic == 'Down':
             return 'Int is down'
         else:
-            return (self.traffic / self.capacity)*100
+            util = (self.traffic / self.capacity)*100
+            return float('%.2f' % util)
 
     @property
     def srlgs(self):

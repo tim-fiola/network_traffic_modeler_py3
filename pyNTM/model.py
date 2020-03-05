@@ -240,8 +240,8 @@ class Model(object):
 
         if interface.reserved_bandwidth > interface.capacity:
             int_res_bw_too_high.add(interface)
-        if round(interface.reserved_bandwidth, 1) != \
-                (int_info[interface._key]['reserved_bandwidth']):  # pragma: no cover  # noqa
+        if round(interface.reserved_bandwidth, 1) != round(int_info[interface._key][
+            'reserved_bandwidth'], 1):  # pragma: no cover  # noqa
             int_res_bw_sum_error.add((interface, interface.reserved_bandwidth, tuple(interface.lsps(self))))
 
     def _demand_traffic_per_int(self, demand):
@@ -383,6 +383,9 @@ class Model(object):
         for path, info in shortest_path_info.items():
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
+
+        # Round all traffic values to 1 decimal place
+        traff_per_int = {interface: round(traffic, 1) for interface, traffic in traff_per_int.items()}
 
         return traff_per_int
 
