@@ -91,16 +91,6 @@ for demand in model.demand_objects:
 print()
 print("Here is the interface utilization:")
 model.display_interfaces_traffic()
-# Validate utilization
-traffic_values = [interface.traffic for interface in model.interface_objects]
-expected_traffic = [40.0, 266.6666666666667, 0.0, 20.0, 133.33333333333334,
-                    400.0, 133.33333333333334, 0.0, 75.0, 85.0, 95.0, 0.0,
-                    400.0, 75.0, 10.0, 133.33333333333334, 133.33333333333334, 10.0]
-traffic_values.sort()
-expected_traffic.sort()
-if traffic_values != expected_traffic:
-    msg = "error in traffic engine"
-    raise Exception(msg)
 print()
 a_to_b = model.get_interface_object('A-to-B', 'A')
 a_to_c = model.get_interface_object('A-to-C', 'A')
