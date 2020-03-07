@@ -7,7 +7,10 @@ import sys  # noqa
 sys.path.append('../')  # noqa
 
 from pyNTM import Model
+# from pyNTM import Parallel_Link_Model
 from pyNTM import ModelException
+from pyNTM import RSVP_LSP
+
 from graph_network import graph_network
 from graph_network import graph_network_interactive
 
@@ -123,6 +126,7 @@ def set_active_interface_from_listbox(event):
     examine_selected_node()
     examine_selected_demand()
     examine_selected_interface()
+    examine_selected_lsp()
 
 
 def set_active_lsp_from_listbox(event):
@@ -215,7 +219,8 @@ def get_lsp_object_from_repr(lsp_repr):
         lsp_info = re.split(', | |\)', lsp_repr)
         lsp_source = lsp_info[2]
         lsp_dest = lsp_info[5]
-        lsp_name = lsp_info[8]
+        lsp_name = lsp_info[8][1:-1]
+
         lsp_object = model.get_rsvp_lsp(lsp_source, lsp_dest, lsp_name)
 
         return lsp_object
@@ -416,8 +421,7 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
 
 
-def display_interfaces(label_info, canvas_object, list_of_interfaces,
-                       row_, column_):
+def display_interfaces(label_info, canvas_object, list_of_interfaces, row_, column_):
     """Displays interfaces from list of interfaces in single selectable listbox.
     A label with label_info will appear above the listbox."""
     # Display Node's Interfaces Label
@@ -453,6 +457,44 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     interfaces_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox)
 
     return interfaces_listbox
+
+
+def display_lsps(label_info, canvas_object, lsp_list, row_, column_):
+    """Displays lsps in single selectable listbox.
+    A label with label_info will appear above the listbox."""
+    # Display Node's Interfaces Label
+    Label(canvas_object, text=label_info).grid(row=row_, column=column_,
+                                               sticky='W', padx=5)
+
+    # Vertical scrollbar
+    vertical_scrollbar = Scrollbar(canvas_object, orient=VERTICAL)
+    vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
+
+    # Horizontal scrollbar
+    horizontal_scrollbar = Scrollbar(canvas_object, orient=HORIZONTAL)
+    horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
+                              columnspan=2)
+
+    # Create a listbox with the available interfaces for the Node
+    lsps_listbox = Listbox(canvas_object, selectmode='single',
+                                 height=8, width=40, xscrollcommand=horizontal_scrollbar.set,
+                                 yscrollcommand=vertical_scrollbar.set)
+    lsps_listbox.grid(row=row_ + 1, column=column_, columnspan=2,
+                            sticky='W', padx=5)
+
+    horizontal_scrollbar.config(command=lsps_listbox.xview)
+    vertical_scrollbar.config(command=lsps_listbox.yview)
+
+    lsp_counter = 1
+
+    for lsp_name in lsp_list:
+        lsps_listbox.insert(lsp_counter, lsp_name)
+        lsp_counter += 1
+
+    lsps_listbox.bind("<<ListBoxSelect>>", set_active_lsp_from_listbox)
+    lsps_listbox.bind("<Double-Button-1>", set_active_lsp_from_listbox)
+
+    return lsps_listbox
 
 
 def examine_selected_node(*args):
@@ -603,8 +645,7 @@ def examine_selected_lsp(*args):
 
     demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
-    lsps_on_int = display_demands("LSPs Egressing Selected Interface", lsp_tab,
-                                     lsps_on_interface, 4, 3)
+    lsps_on_int = display_demands("LSPs Egressing Selected Interface", lsp_tab, demands_on_lsp, 4, 3)
 
 
 def examine_selected_demand(*args):
@@ -648,13 +689,17 @@ def examine_selected_demand(*args):
 
         if dmd_paths != 'Unrouted':
             for path in dmd_paths:
+
                 label_info = "Demand hops ordered from source to dest"
 
-                interface_info = ["{}% {}".format(str(round((interface.utilization), 1)),
-                                                  interface.__repr__()) for interface in path]
+                if isinstance(path, RSVP_LSP):
+                    display_lsps(label_info, demand_path_frame, [path], 0, column_num)
+                else:
+                    interface_info = ["{}% {}".format(str(round((interface.utilization), 1)),
+                                                      interface.__repr__()) for interface in path]
 
-                display_interfaces(label_info, demand_path_frame, interface_info, 0, column_num)
-                column_num += 3
+                    display_interfaces(label_info, demand_path_frame, interface_info, 0, column_num)
+                    column_num += 3
         else:
             label_info = "Demand is Unrouted"
             interface_info = "Demand is Unrouted"
@@ -665,9 +710,7 @@ def examine_selected_demand(*args):
 
     demands_on_interface = get_demands_on_interface(selected_interface.get())
 
-    demands_on_int = display_demands("Demands Egressing Selected Interface", demand_tab,
-                                     demands_on_interface, 4, 3)
-
+    demands_on_int = display_demands("Demands Egressing Selected Interface", demand_tab, demands_on_interface, 4, 3)
 
 def examine_selected_interface(*args):
     """Allows user to explore interfaces with different characteristics"""
