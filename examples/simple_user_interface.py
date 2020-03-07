@@ -6,7 +6,6 @@ demands, interfaces, and nodes."""
 import sys  # noqa
 sys.path.append('../')  # noqa
 
-
 from pyNTM import Model
 from pyNTM import ModelException
 from graph_network import graph_network
