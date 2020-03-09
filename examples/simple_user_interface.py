@@ -599,7 +599,6 @@ def examine_selected_node(*args):
                     source_demand_choices, 0, 0)
 
     # Display Demands Destined To Node
-
     dest_demand_choices = model.get_demand_objects_dest_node(selected_node.get())
 
     display_demands("Demands destined to node", demands_frame,
@@ -607,8 +606,7 @@ def examine_selected_node(*args):
 
     #### Create a frame to show interface demand info ####
     intf_demands_frame = LabelFrame(node_tab, text="Interface Demand Info")
-    intf_demands_frame.grid(column=5, row=4, columnspan=2, sticky='W',
-                            padx=15, pady=15)
+    intf_demands_frame.grid(column=4, row=4, columnspan=2, sticky='W', padx=15, pady=15)
 
     # Display demands on interface
     try:
@@ -660,12 +658,9 @@ def examine_selected_lsp(*args):   # TODO - add reserved bandwidth, setup bandwi
     # Display the selected objects
     display_selected_objects(lsp_tab, 0, 3)
 
-    #### Display the selected LSP's path ####
-
-    lsp_path_frame = LabelFrame(lsp_tab,
-                                   text=("RSVP LSP Path Info (Ordered hops from source to destination)"))
-    lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W',
-                           padx=10, pady=10)
+    # ### Display the selected LSP's path ### #
+    lsp_path_frame = LabelFrame(lsp_tab, text="RSVP LSP Path Info (Ordered hops from source to destination)")
+    lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W', padx=10, pady=10)
 
     try:
 
@@ -694,9 +689,32 @@ def examine_selected_lsp(*args):   # TODO - add reserved bandwidth, setup bandwi
     except (IndexError, UnboundLocalError):
         pass
 
+    # Display reserved bandwidth, setup bandwidth, and traffic for selected LSP
+    lsp_info_frame = LabelFrame(lsp_tab, text="RSVP LSP Info")
+    lsp_info_frame.grid(row=3, column=2, columnspan=10, sticky='W', padx=10, pady=10)
+    reserved_bandwidth = lsp_object.reserved_bandwidth
+    setup_bandwidth = lsp_object.setup_bandwidth
+    traffic = lsp_object.traffic_on_lsp(model)
+
+    Label(lsp_info_frame, text='Selected LSP reserved bandwidth').grid(column=0, row=0)
+    Label(lsp_info_frame, text=reserved_bandwidth).grid(column=1, row=0)
+
+    Label(lsp_info_frame, text='Selected LSP setup bandwidth').grid(column=0, row=1)
+    Label(lsp_info_frame, text=setup_bandwidth).grid(column=1, row=1)
+
+    Label(lsp_info_frame, text='Selected LSP traffic bandwidth').grid(column=0, row=2)
+    Label(lsp_info_frame, text=traffic).grid(column=1, row=2)
+
+
+    # Display demands on LSP
+    import pdb
+    pdb.set_trace()
     demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
     display_demands("Demands on selected LSP", lsp_tab, demands_on_lsp, 4, 3)
+
+
+
 
 
 def examine_selected_demand(*args):
