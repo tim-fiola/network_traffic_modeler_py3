@@ -7,7 +7,7 @@ import sys  # noqa
 sys.path.append('../')  # noqa
 
 from pyNTM import Model
-# from pyNTM import Parallel_Link_Model
+from pyNTM import Parallel_Link_Model
 from pyNTM import ModelException
 from pyNTM import RSVP_LSP
 
@@ -41,8 +41,7 @@ def open_file():
                                     text="Network Model file is:")
     selected_file_label.grid(row=1, column=0, sticky='W')
     selected_file_display = ttk.Label(label_frame, text=' ' * 30)
-    selected_file_display = ttk.Label(label_frame,
-                                      text=selected_model_file.get())
+    selected_file_display = ttk.Label(label_frame, text=selected_model_file.get())
     selected_file_display.grid(row=6, column=0)
 
     if selected_model_file.get() != '':
@@ -81,6 +80,48 @@ def open_file():
         graph_label_text = "Graph file saved at: " + network_graph_file.get()
         graph_file_label = Label(label_frame, text=graph_label_text)
         graph_file_label.grid(row=13, column=0, sticky='W')
+
+
+def open_parallel_link_model_file():
+    """Opens the file that describes the Parallel_Link_Model"""
+    if selected_model_file.get() == '':
+        selected_model_file.set(filedialog.askopenfilename(initialdir="/",
+                                                           title="Select file",
+                                                           filetypes=(("csv files", "*.csv"),
+                                                                      ("all files", "*.*"))))
+
+    global model
+
+    selected_file_label = ttk.Label(label_frame,
+                                    text="Network Parallel Link Model file is:")
+    selected_file_label.grid(row=1, column=0, sticky='W')
+    selected_file_display = ttk.Label(label_frame, text=' ' * 30)
+    selected_file_display = ttk.Label(label_frame, text=selected_model_file.get())
+    selected_file_display.grid(row=6, column=0)
+
+    if selected_model_file.get() != '':
+        model = Parallel_Link_Model.load_model_file(selected_model_file.get())
+        model.update_simulation()
+
+        model_status_label = ttk.Label(label_frame, text="Parallel Link Model is:")
+        model_status_label.grid(row=8, column=0, sticky='W')
+        model_file_display = ttk.Label(label_frame, text=model)
+        model_file_display.grid(row=9, column=0, sticky='W')
+
+        # Update the Node Explorer tab
+        examine_selected_node()
+
+        # Update the Demand Explorer tab
+        examine_selected_demand()
+
+        # Update the Interface Explorer tab
+        examine_selected_interface()
+
+        # Update the Path Explorer tab
+        examine_paths()
+
+        # Update the LSP Explorer tab
+        examine_selected_lsp()
 
 
 def create_network_graph():
@@ -599,7 +640,7 @@ def examine_selected_node(*args):
 
     # TODO - fail selected interface or node
 
-def examine_selected_lsp(*args):
+def examine_selected_lsp(*args):   # TODO - add reserved bandwidth, setup bandwidth, and traffic
     """Examine selected_lsp object"""
 
     # Label for choosing lsp
@@ -1001,9 +1042,15 @@ label_frame.grid(column=0, row=0, padx=8, pady=8, sticky='W')
 
 # Make a button to load a file
 load_file_button = ttk.Button(open_file_tab)
-load_file_button["text"] = "Push button to load network model file"
+load_file_button["text"] = "Push button to load network model file (only single links allowed between nodes)"
 load_file_button.grid(row=11, column=0, sticky='W')
 load_file_button["command"] = open_file
+
+load_file_button = ttk.Button(open_file_tab)
+load_file_button["text"] = "Push button to load network parallel model file (multiple links allowed between nodes)"
+load_file_button.grid(row=13, column=0, sticky='W')
+load_file_button["command"] = open_parallel_link_model_file
+
 
 # ### Node Tab ### #
 # Create a new tab and add it to the notebook
