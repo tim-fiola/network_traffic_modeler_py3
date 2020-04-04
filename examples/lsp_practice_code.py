@@ -90,7 +90,11 @@ for demand in model.demand_objects:
 # dmd2 = model.get_demand_object('E', 'F', 'test2')
 print()
 print("Here is the interface utilization:")
-model.display_interfaces_traffic()
+print("Interface name\tInterface source node\tInterface dest node\ttraffic")
+for interface in model.interface_objects:
+    print(interface.name, '\t\t\t',interface.node_object.name, '\t\t\t',
+          interface.remote_node_object.name, '\t\t\t', interface.traffic)
+
 print()
 a_to_b = model.get_interface_object('A-to-B', 'A')
 a_to_c = model.get_interface_object('A-to-C', 'A')
