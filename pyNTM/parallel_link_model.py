@@ -15,7 +15,6 @@ import networkx as nx
 from .circuit import Circuit
 from .demand import Demand
 from .interface import Interface
-from .master_model import MasterModel
 from .exceptions import ModelException
 from .utilities import find_end_index
 from .node import Node
@@ -30,7 +29,7 @@ from .srlg import SRLG
 #  and not unfail when a parent SRLG unfails
 
 
-class Parallel_Link_Model(MasterModel):
+class Parallel_Link_Model(object):
     """A network model object consisting of the following base components:
 
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a

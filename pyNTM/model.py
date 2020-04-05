@@ -6,7 +6,6 @@ from pprint import pprint
 
 import networkx as nx
 
-from .master_model import MasterModel
 from .circuit import Circuit
 from .demand import Demand
 from .interface import Interface
@@ -24,7 +23,7 @@ from .srlg import SRLG
 #  and not unfail when a parent SRLG unfails
 
 
-class Model(MasterModel):
+class Model(object):
     """A network model object consisting of the following base components:
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
@@ -43,17 +42,15 @@ class Model(MasterModel):
         - Circuit objects are created by matching Interface objects
     """
 
-    def __init__(self, interface_objects, node_objects,
-                 demand_objects, rsvp_lsp_objects):
-        # self.interface_objects = interface_objects
-        # self.node_objects = node_objects
-        # self.demand_objects = demand_objects
-        # self.circuit_objects = set()
-        # self.rsvp_lsp_objects = rsvp_lsp_objects
-        # self.srlg_objects = set()
-        # self._parallel_lsp_groups = {}
-        super().__init__(self, set(), set(),
-                         set(), set())
+    def __init__(self, interface_objects=set(), node_objects=set(),
+                 demand_objects=set(), rsvp_lsp_objects=set()):
+        self.interface_objects = interface_objects
+        self.node_objects = node_objects
+        self.demand_objects = demand_objects
+        self.circuit_objects = set()
+        self.rsvp_lsp_objects = rsvp_lsp_objects
+        self.srlg_objects = set()
+        self._parallel_lsp_groups = {}
 
     def __repr__(self):
         return 'Model(Interfaces: %s, Nodes: %s, Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
