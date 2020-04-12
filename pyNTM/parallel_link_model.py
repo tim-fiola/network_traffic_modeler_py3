@@ -2091,3 +2091,61 @@ class Parallel_Link_Model(object):
         else:
             srlg = SRLG(srlg_name, self)
             self.srlg_objects.add(srlg)
+
+    def simulation_diagnostics(self):  # TODO - make unit test for this
+        """
+        Analyzes simulation results and looks for the following:
+        - Number of routed LSPs carrying Demands
+        - Number of routed LSPs with no Demands
+        - Number of Demands riding LSPs
+        - Number of Demands not riding LSPs
+        - Number of unrouted LSPs
+        - Number of unrouted Demands
+
+        :return: dict with the above as keys and the quantity of each for values and list of generators for
+        routed LSPs with no Demands, routed LSPs carrying Demands, Demands riding LSPs
+        """
+
+        simulation_data = {'Number of routed LSPs carrying Demands': 'Model is Unconverged',
+                           'Number of routed LSPs with no Demands': 'Model is Unconverged',
+                           'Number of Demands riding LSPs': 'Model is Unconverged',
+                           'Number of Demands not riding LSPs': 'Model is Unconverged',
+                           'Number of unrouted LSPs': 'Model is Unconverged',
+                           'Number of unrouted Demands': 'Model is Unconverged'}
+
+        lsps_routed_no_demands = [lsp for lsp in self.rsvp_lsp_objects if lsp.path != 'Unrouted' and
+                                  lsp.demands_on_lsp(self) == []]
+
+        lsps_routed_no_demands_gen = (lsp for lsp in lsps_routed_no_demands)
+
+        simulation_data['Number of routed LSPs with no Demands'] = len(lsps_routed_no_demands)
+
+        lsps_routed_with_demands = [lsp for lsp in self.rsvp_lsp_objects if lsp.path != 'Unrouted' and
+                                    lsp.demands_on_lsp(self) != []]
+
+        lsps_routed_with_demands_gen = (lsp for lsp in lsps_routed_with_demands)
+
+        simulation_data['Number of routed LSPs carrying Demands'] = len(lsps_routed_with_demands)
+
+        dmds_riding_lsps = set()
+
+        for dmd in (dmd for dmd in self.demand_objects):
+            for object in dmd.path:
+                if isinstance(object, RSVP_LSP):
+                    dmds_riding_lsps.add(dmd)
+
+        dmds_riding_lsps_gen = (dmd for dmd in dmds_riding_lsps)
+
+        simulation_data['Number of Demands riding LSPs'] = len(dmds_riding_lsps)
+
+        simulation_data['Number of Demands not riding LSPs'] = len(self.rsvp_lsp_objects) - len(dmds_riding_lsps)
+
+        unrouted_lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.path == 'Unrouted']
+
+        simulation_data['Number of unrouted LSPs'] = len(unrouted_lsps)
+
+        simulation_data['Number of unrouted Demands'] = len(self.get_unrouted_demand_objects())
+
+        simulation_data['generators'] = [lsps_routed_no_demands_gen, lsps_routed_with_demands_gen, dmds_riding_lsps_gen]
+
+        return simulation_data

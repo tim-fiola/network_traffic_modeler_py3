@@ -1,6 +1,6 @@
 """
 This will be the common defs used by both model.py and parallel_link_model.py
-TODO - move defs to here
+TODO - move defs to here; create MasterModel parent class with these defs
 Common defs - use parallel_link_model versions
 
 __repr__
@@ -24,4 +24,5 @@ add_demand - use parallel_link_model version
 get_all_paths_reservable_bw
 _add_lsp_from_data
 _add_demand_from_data
+simulation_diagnostics
 """

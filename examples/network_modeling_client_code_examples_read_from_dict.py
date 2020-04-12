@@ -169,7 +169,10 @@ int_to_fail.fail_interface(model1)
 # the new traffic after the failure
 print('Here is the traffic after the failure:')
 model1.update_simulation()
-model1.display_interfaces_traffic()
+print("Interface Name\tInterface Node\tRemote Node\tTraffic")
+for interface in model1.interface_objects:
+    print("{}\t\t{}\t\t{}\t\t{}".format(interface.name, interface.node_object.name,
+                                  interface.remote_node_object.name, interface.traffic))
 print()
 
 # Add a node to the model
