@@ -15,7 +15,7 @@ class Interface(object):
         self.capacity = capacity
         self.node_object = node_object
         self.remote_node_object = remote_node_object
-        self.circuit_id = circuit_id  # Has no function in Model object, only in Parallel_Model_Object
+        self.circuit_id = circuit_id  # Has no role in Model object, only in Parallel_Model_Object
         self.traffic = 0.0
         self._failed = False
         self._reserved_bandwidth = 0.0
