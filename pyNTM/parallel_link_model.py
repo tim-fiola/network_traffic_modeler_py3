@@ -2102,50 +2102,59 @@ class Parallel_Link_Model(object):
         - Number of unrouted LSPs
         - Number of unrouted Demands
 
-        :return: dict with the above as keys and the quantity of each for values and list of generators for
+        :return: dict with the above as keys and the quantity of each for values and generators for
         routed LSPs with no Demands, routed LSPs carrying Demands, Demands riding LSPs
+
+        This is not cached currently and my be expensive to (re)run on a very large model.  Current best
+        practice is to assign the output of this to a variable:
+
+        ex: sim_diag1 = model1.simulation_diagnostics()
+
         """
 
-        simulation_data = {'Number of routed LSPs carrying Demands': 'Model is Unconverged',
-                           'Number of routed LSPs with no Demands': 'Model is Unconverged',
-                           'Number of Demands riding LSPs': 'Model is Unconverged',
-                           'Number of Demands not riding LSPs': 'Model is Unconverged',
-                           'Number of unrouted LSPs': 'Model is Unconverged',
-                           'Number of unrouted Demands': 'Model is Unconverged'}
+        simulation_data = {'Number of routed LSPs carrying Demands': 'TBD',
+                           'Number of routed LSPs with no Demands': 'TBD',
+                           'Number of Demands riding LSPs': 'TBD',
+                           'Number of Demands not riding LSPs': 'TBD',
+                           'Number of unrouted LSPs': 'TBD',
+                           'Number of unrouted Demands': 'TBD',
+                           'routed LSPs with no demands generator': 'TBD',
+                           'routed LSPs with demands generator': 'TBD',
+                           'demands riding LSPs generator': 'TBD'}
 
+        # Find LSPs with and without demands
         lsps_routed_no_demands = [lsp for lsp in self.rsvp_lsp_objects if lsp.path != 'Unrouted' and
                                   lsp.demands_on_lsp(self) == []]
-
-        lsps_routed_no_demands_gen = (lsp for lsp in lsps_routed_no_demands)
-
-        simulation_data['Number of routed LSPs with no Demands'] = len(lsps_routed_no_demands)
 
         lsps_routed_with_demands = [lsp for lsp in self.rsvp_lsp_objects if lsp.path != 'Unrouted' and
                                     lsp.demands_on_lsp(self) != []]
 
-        lsps_routed_with_demands_gen = (lsp for lsp in lsps_routed_with_demands)
-
-        simulation_data['Number of routed LSPs carrying Demands'] = len(lsps_routed_with_demands)
-
+        # Find demands riding LSPs
         dmds_riding_lsps = set()
 
+        # Find unrouted LSPs
         for dmd in (dmd for dmd in self.demand_objects):
             for object in dmd.path:
                 if isinstance(object, RSVP_LSP):
                     dmds_riding_lsps.add(dmd)
-
-        dmds_riding_lsps_gen = (dmd for dmd in dmds_riding_lsps)
-
-        simulation_data['Number of Demands riding LSPs'] = len(dmds_riding_lsps)
-
-        simulation_data['Number of Demands not riding LSPs'] = len(self.rsvp_lsp_objects) - len(dmds_riding_lsps)
-
         unrouted_lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.path == 'Unrouted']
 
+        # Update the quantities in simulation_data
+        simulation_data['Number of routed LSPs carrying Demands'] = len(lsps_routed_with_demands)
+        simulation_data['Number of routed LSPs with no Demands'] = len(lsps_routed_no_demands)
+        simulation_data['Number of Demands riding LSPs'] = len(dmds_riding_lsps)
+        simulation_data['Number of Demands not riding LSPs'] = len(self.demand_objects) - len(dmds_riding_lsps)
         simulation_data['Number of unrouted LSPs'] = len(unrouted_lsps)
-
         simulation_data['Number of unrouted Demands'] = len(self.get_unrouted_demand_objects())
 
-        simulation_data['generators'] = [lsps_routed_no_demands_gen, lsps_routed_with_demands_gen, dmds_riding_lsps_gen]
+        # Create generators to be returned
+        dmds_riding_lsps_gen = (dmd for dmd in dmds_riding_lsps)
+        lsps_routed_no_demands_gen = (lsp for lsp in lsps_routed_no_demands)
+        lsps_routed_with_demands_gen = (lsp for lsp in lsps_routed_with_demands)
+
+        # Update generators in simulation_data
+        simulation_data['routed LSPs with no demands generator'] = lsps_routed_no_demands_gen
+        simulation_data['routed LSPs with demands generator'] = lsps_routed_with_demands_gen
+        simulation_data['demands riding LSPs generator'] = dmds_riding_lsps_gen
 
         return simulation_data

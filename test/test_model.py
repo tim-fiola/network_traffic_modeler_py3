@@ -403,3 +403,40 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelException) as context:
             Model.load_model_file('test/model_bad_node_in_lsp.csv')
         self.assertIn(err_msg, context.exception.args[0])
+
+    def test_sim_diagnostics(self):
+        """
+        Validates data returned by simulation_diagnostics() call
+        """
+        model = Model.load_model_file('test/model_test_topology.csv')
+        model.update_simulation()
+
+        sim_diags = model.simulation_diagnostics()
+
+        # Expand the generators into lists
+        dmds_riding_lsps = [lsp for lsp in sim_diags['demands riding LSPs generator']]
+        routed_lsps_w_demands = [lsp for lsp in sim_diags['routed LSPs with demands generator']]
+        routed_lsps_no_demands = [lsp for lsp in sim_diags['routed LSPs with no demands generator']]
+
+        # Get some demands and LSPs
+        dmd_a_d_1 = model.get_demand_object('A', 'D', 'dmd_a_d_1')
+        dmd_a_d_2 = model.get_demand_object('A', 'D', 'dmd_a_d_2')
+        lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+        lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
+
+        # Validate
+        self.assertEqual(sim_diags['Number of Demands not riding LSPs'], 2)
+        self.assertEqual(sim_diags['Number of Demands riding LSPs'], 2)
+        self.assertEqual(sim_diags['Number of routed LSPs carrying Demands'], 2)
+        self.assertEqual(sim_diags['Number of routed LSPs with no Demands'], 0)
+        self.assertEqual(sim_diags['Number of unrouted Demands'], 0)
+        self.assertEqual(sim_diags['Number of unrouted LSPs'], 1)
+
+        self.assertTrue(dmd_a_d_1 in dmds_riding_lsps)
+        self.assertTrue(dmd_a_d_2 in dmds_riding_lsps)
+        self.assertEqual(len(dmds_riding_lsps), 2)
+
+        self.assertTrue(lsp_a_d_1 in routed_lsps_w_demands)
+        self.assertTrue(lsp_a_d_2 in routed_lsps_w_demands)
+        self.assertEqual(len(routed_lsps_w_demands), 2)
+        self.assertEqual(routed_lsps_no_demands, [])
