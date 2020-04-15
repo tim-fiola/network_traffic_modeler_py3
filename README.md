@@ -20,9 +20,8 @@ In some cases, it's completely valid to model multiple Circuits between Nodes as
 If it is important to keep each Circuit modeled separately because the parallel Interfaces have different metrics and/or differences in their capabilities to route RSVP, the Parallel_Link_Model is the better choice.
  
 
-There are three main areas where we are looking to optimize:
+There are two main areas where we are looking to optimize:
 - Performance - converging the model to produce a simulation, especially in a model with RSVP LSPs, is intensive.  Improving the time it takes to converge the simulation results in better productivity and improved user experience.
-- Maintainability - subclassing the Model and Parallel_Link_Model from a parent class will allow common functions between the models to be maintained in a single place.
 - Data retrieval - the simulation produces an extraordinary amount of data.  Currently, the model is only retaining a fraction of the data generated during the model convergence.  It's our goal to introduce something like an sqlite database in the model objects to hold all this information.  This will improve user experience and allow SQL queries against the model object.
 
 
