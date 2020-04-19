@@ -1,0 +1,8 @@
+INTERFACES_TABLE
+node_object_name	remote_node_object_name	name	cost	capacity
+A	B	A-to-B	20	125
+B	A	B-to-A	125
+B	D	B-to-D	20	125
+D	B	D-to-B	20	125
+A	C	A-to-C	30	150
+C	A	C-to-A	30	150

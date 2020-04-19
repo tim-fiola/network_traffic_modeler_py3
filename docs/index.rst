@@ -31,7 +31,7 @@ Full API set use cases include
   - adding a new traffic matrix entry (demand) to the traffic matrix
   - increasing/decreasing the magnitude of an existing demand in the traffic matrix failover
 
-Note: interface addresses are only used to match interfaces into circuits and do not have any practical bearing on the simulation results
+Note: interface circuit_ids are only used to match interfaces into circuits and do not have any practical bearing on the simulation results
 
 Contents
 ==========

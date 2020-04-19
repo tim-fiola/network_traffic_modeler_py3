@@ -1,17 +1,16 @@
 """
+This model type allows multiple links/parallel links between 2 nodes.
+
+There will be a performance impact in this model variant.
+
 A class that defines the network being modeled and that contains all
 modeled objects in the network such as Nodes, Interfaces, Circuits,
 and Demands.
-
-Allows a single connection (Circuit) between layer3 Nodes.  If multiple
-Circuits between Nodes is needed, use Parallel_Link_Model object.
-
-This Model object will generally perform better than Parallel_Model_Object due
-to the latter's requirement to check for multiple Circuits between Nodes.
 """
 
 from pprint import pprint
 
+import itertools
 import networkx as nx
 
 from .circuit import Circuit
@@ -26,30 +25,34 @@ from .srlg import SRLG
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
 #  routed lsp/demands in dict form
-# TODO - look at removing the requirement that Interface circuit_id be specified since the remote side
-#  can be determined because only one circuit can exist between any pair of Nodes
 # TODO - add support for SRLGs in load_model_file
 # TODO - add attribute for Node/Interface whereby an object can be failed by itself
 #  and not unfail when a parent SRLG unfails
 
 
-class Model(MasterModel):
+class Parallel_Link_Model(MasterModel):
     """A network model object consisting of the following base components:
+
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
           interface circuit_ids --> A pair of Interfaces with the same circuit_id
           value get matched into a Circuit
+
         - Node objects (set): vertices on the network (aka 'layer 3 devices')
           that contain Interface objects.  Nodes are connected to each other
           via a pair of matched Interfaces (Circuits)
+
         - Demand objects (set): traffic loads on the network.  Each demand starts
           from a source node and transits the network to a destination node.
           A demand also has a magnitude, representing how much traffic it
           is carrying.  The demand's magnitude will apply against each
           interface's available capacity
+
         - RSVP LSP objects (set): RSVP LSPs in the Model
+
         - Circuit objects are created by matching Interface objects
+
     """
 
     def __init__(self, interface_objects=set(), node_objects=set(),
@@ -65,16 +68,18 @@ class Model(MasterModel):
         super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)
 
     def __repr__(self):
-        return 'Model(Interfaces: %s, Nodes: %s, Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
-                                                                                 len(self.node_objects),
-                                                                                 len(self.demand_objects),
-                                                                                 len(self.rsvp_lsp_objects))
+        return 'Parallel_Link_Model(Interfaces: %s, Nodes: %s, ' \
+               'Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
+                                                len(self.node_objects),
+                                                len(self.demand_objects),
+                                                len(self.rsvp_lsp_objects))
 
     def add_network_interfaces_from_list(self, network_interfaces):
         """
         A tool that reads network interface info and updates an *existing* model.
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example:
+
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
             'remote_node': 'B', 'circuit_id': 1, 'failed': False},
@@ -82,13 +87,12 @@ class Model(MasterModel):
             'remote_node': 'B', 'circuit_id': 2, 'failed': False},
             {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
             'remote_node': 'C', 'circuit_id': 3, 'failed': False},]
+
         """
 
-        new_interface_objects, new_node_objects = \
-            self._make_network_interfaces(network_interfaces)
+        new_interface_objects, new_node_objects = self._make_network_interfaces(network_interfaces)
         self.node_objects = self.node_objects.union(new_node_objects)
-        self.interface_objects = \
-            self.interface_objects.union(new_interface_objects)
+        self.interface_objects = self.interface_objects.union(new_interface_objects)
         self.validate_model()
 
     def validate_model(self):
@@ -97,7 +101,7 @@ class Model(MasterModel):
         """
 
         # create circuits table, flags ints that are not part of a circuit
-        circuits = self._make_circuits(return_exception=True)
+        circuits = self._make_circuits_multidigraph(return_exception=True)
 
         # Make dict to hold interface data, each entry has the following
         # format:
@@ -144,14 +148,18 @@ class Model(MasterModel):
             }
             error_data.append(int_status_error_dict)
 
-        # Look for multiple links between nodes (not allowed in Model)
-        if len(self.multiple_links_between_nodes()) > 0:
-            multiple_links_between_nodes = {}
-            multiple_links_between_nodes['multiple links between nodes detected; not allowed in Model object'
-                                         '(use Parallel_Link_Model)'] = self.multiple_links_between_nodes()
-            error_data.append(multiple_links_between_nodes)
+        # Validate Nodes in each SRLG have the SRLG in their srlgs set.
+        # srlg_errors is a dict of node names as keys and a list of SRLGs that node is
+        # a member of in the model but that the SRLG is not in node.srlgs
+        srlg_errors = {}
 
-        srlg_errors = self.validate_srlg_nodes()
+        for srlg in self.srlg_objects:  # pragma: no cover  # noqa  # TODO - perhaps cover this later in unit testing
+            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
+            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
+                try:
+                    srlg_errors[node.name].append(srlg.name)
+                except KeyError:
+                    srlg_errors[node.name] = []
 
         if len(srlg_errors) > 0:
             error_data.append(srlg_errors)
@@ -172,31 +180,12 @@ class Model(MasterModel):
         else:
             return self
 
-    def validate_srlg_nodes(self):
-        """
-        Validate that Nodes in each SRLG have the SRLG in their srlgs set.
-        srlg_errors is a dict of node names as keys and a list of SRLGs that node is
-        a member of in the model but that the SRLG is not in node.srlgs
-        :return: dict where keys are Node names and values are lists of SRLG names;
-        each value will be a single list of SRLG names missing that Node in the
-        SRLG node set
-        """
-
-        srlg_errors = {}
-        for srlg in self.srlg_objects:  # pragma: no cover  # noqa  # TODO - perhaps cover this later in unit testing
-            nodes_in_srlg_but_srlg_not_in_node_srlgs = [node for node in srlg.node_objects if srlg not in node.srlgs]
-            for node in nodes_in_srlg_but_srlg_not_in_node_srlgs:
-                try:
-                    srlg_errors[node.name].append(srlg.name)
-                except KeyError:
-                    srlg_errors[node.name] = []
-        return srlg_errors
-
     def update_simulation(self):
         """
         Updates the simulation state; this needs to be run any time there is
         a change to the state of the Model, such as failing an interface, adding
         a Demand, adding/removing and LSP, etc.
+
         This call does not carry forward any state from the previous simulation
         results.
         """
@@ -220,9 +209,9 @@ class Model(MasterModel):
 
         # Create a model consisting only of the non-failed interfaces and
         # corresponding non-failed (available) nodes
-        non_failed_interfaces_model = Model(non_failed_interfaces,
-                                            available_nodes, self.demand_objects,
-                                            self.rsvp_lsp_objects)
+        non_failed_interfaces_model = Parallel_Link_Model(non_failed_interfaces,
+                                                          available_nodes, self.demand_objects,
+                                                          self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth, traffic on each interface
         for interface in (interface for interface in self.interface_objects):
@@ -240,19 +229,19 @@ class Model(MasterModel):
         self = self._route_lsps(non_failed_interfaces_model)
         print("LSPs routed (if present); routing demands now . . .")
         # Route the demands
-        self = self._route_demands(self.demand_objects,
-                                   non_failed_interfaces_model)
+        self = self._route_demands(self.demand_objects, non_failed_interfaces_model)
         print("Demands routed; validating model . . . ")
 
         self.validate_model()
 
-    def _make_circuits(self, return_exception=True, include_failed_circuits=True):
+    def _make_circuits_multidigraph(self, return_exception=True, include_failed_circuits=True):
         """
         Matches interface objects into circuits and returns the circuits list
         :param return_exception: Should an exception be returned if not all the
                                  interfaces can be matched into a circuit?
         :param include_failed_circuits:  Should circuits that will be in a
                                          failed state be created?
+
         :return: a set of Circuit objects in the Model, each Circuit
                  comprised of two Interface objects
         """
@@ -260,36 +249,40 @@ class Model(MasterModel):
         G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits)
 
         # Determine which interfaces pair up into good circuits in G
-        paired_interfaces = ((local_node_name, remote_node_name, data) for
-                             (local_node_name, remote_node_name, data) in
-                             G.edges(data=True) if G.has_edge(remote_node_name,
-                                                              local_node_name))
+        graph_interfaces = ((local_node_name, remote_node_name, data) for
+                            (local_node_name, remote_node_name, data) in
+                            G.edges(data=True) if G.has_edge(remote_node_name, local_node_name))
 
-        # Set interface object in_ckt = False and baseline the circuit_id
+        # Set interface object in_ckt = False
         for interface in (interface for interface in self.interface_objects):
             interface.in_ckt = False
-        circuit_id_number = 1
+
         circuits = set([])
 
         # Using the paired interfaces (source_node, dest_node) pairs from G,
         # get the corresponding interface objects from the model to create
-        # the circuit object
-        for interface in (interface for interface in paired_interfaces):
+        # the Circuit object
+        for interface in graph_interfaces:
             # Get each interface from model for each
-            int1 = self.get_interface_object_from_nodes(interface[0],
-                                                        interface[1])
-            int2 = self.get_interface_object_from_nodes(interface[1],
-                                                        interface[0])
-
+            try:
+                int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
+                                                            circuit_id=interface[2]['circuit_id'])[0]
+            except (TypeError, IndexError):
+                msg = ("No matching Interface Object found: source node {}, dest node {} "
+                       "circuit_id {} ".format(interface[0], interface[1], interface[2]['circuit_id']))
+                raise ModelException(msg)
+            try:
+                int2 = self.get_interface_object_from_nodes(interface[1], interface[0],
+                                                            circuit_id=interface[2]['circuit_id'])[0]
+            except (TypeError, IndexError):
+                msg = ("No matching Interface Object found: source node {}, dest node {} "
+                       "circuit_id {} ".format(interface[1], interface[0], interface[2]['circuit_id']))
+                raise ModelException(msg)
+            # Mark the interfaces as in ckt
             if int1.in_ckt is False and int2.in_ckt is False:
                 # Mark interface objects as in_ckt = True
                 int1.in_ckt = True
                 int2.in_ckt = True
-
-                # Add circuit_id to interface objects
-                int1.circuit_id = circuit_id_number
-                int2.circuit_id = circuit_id_number
-                circuit_id_number = circuit_id_number + 1
 
                 ckt = Circuit(int1, int2)
                 circuits.add(ckt)
@@ -309,13 +302,44 @@ class Model(MasterModel):
 
         self.circuit_objects = circuits
 
-    def get_interface_object_from_nodes(self, local_node_name, remote_node_name):
-        """Returns an Interface object with the specified local and
-        remote node names """
-        for interface in (interface for interface in self.interface_objects):
-            if interface.node_object.name == local_node_name and \
-                    interface.remote_node_object.name == remote_node_name:
-                return interface
+    def get_interface_object_from_nodes(self, local_node_name, remote_node_name, circuit_id=None):
+        """
+        Returns a list of Interface objects with the specified
+        local and remote node names.
+
+        If 'circuit_id' is not specified, may return a list of len > 1, as
+        multiple/parallel interfaces are allowed in Parallel_Link_Model
+        objects.
+
+        If 'circuit_id' is specified, will return a list of len == 1, as specifying
+        the 'circuit_id' will narrow down any list of multiple interfaces to a single
+        interface because circuit_ids bond interfaces on different nodes into
+        a Circuit object.
+
+        :param local_node_name: Name of local node Interface resides on
+        :param remote_node_name: Name of Interface's remote Node
+        :param circuit_id: circuit_id of Interface (optional)
+        :return: list of Interface objects with common local node and remote node
+        """
+
+        interface_gen = (interface for interface in self.interface_objects)
+
+        if circuit_id is None:
+            interface_list = [interface for interface in interface_gen if
+                              interface.node_object.name == local_node_name and
+                              interface.remote_node_object.name == remote_node_name]
+        else:
+            interface_list = [interface for interface in interface_gen if
+                              interface.node_object.name == local_node_name and
+                              interface.remote_node_object.name == remote_node_name and
+                              interface.circuit_id == circuit_id]
+
+            if len(interface_list) > 1:
+                msg = ("There is an internal error with circuit_iding; Interface circuit_ids must be unique"
+                       " per Node and the same circuit_id can only appear in a Parallel_Link_Model object "
+                       "twice and on separate Nodes")
+                return ModelException(msg)
+        return interface_list
 
     def add_circuit(self, node_a_object, node_b_object, node_a_interface_name,
                     node_b_interface_name, cost_intf_a=1, cost_intf_b=1,
@@ -323,6 +347,7 @@ class Model(MasterModel):
         """
         Creates component Interface objects for a new Circuit in the Model.
         The Circuit object will then be created during the validate_model() call.
+
         :param node_a_object: Node object
         :param node_b_object: Node object
         :param node_a_interface_name: name of component Interface on node_a
@@ -336,11 +361,13 @@ class Model(MasterModel):
         """
 
         if circuit_id is None:
-            circuit_ids = self.all_interface_circuit_ids
-            if len(circuit_ids) == 0:
-                circuit_id = 1
-            else:
-                circuit_id = max(circuit_ids) + 1
+            raise ModelException("circuit_id must be specified explicitly")
+
+        circuit_ids = self.all_interface_circuit_ids
+
+        if circuit_id in circuit_ids:
+            err_msg = "circuit_id value {} is already exists in model".format(circuit_id)
+            raise ModelException(err_msg)
 
         int_a = Interface(node_a_interface_name, cost_intf_a, capacity,
                           node_a_object, node_b_object, circuit_id)
@@ -350,9 +377,11 @@ class Model(MasterModel):
         existing_int_keys = set([interface._key for interface in self.interface_objects])
 
         if int_a._key in existing_int_keys:
-            raise ModelException("interface {} on node {} already exists in model".format(int_a, node_a_object))
+            raise ModelException("interface {} on node {} - "
+                                 "interface already exists in model".format(int_a, node_a_object))
         elif int_b._key in existing_int_keys:
-            raise ModelException("interface {} on node {} already exists in model".format(int_b, node_b_object))
+            raise ModelException("interface {} on node {} - "
+                                 "interface already exists in model".format(int_b, node_b_object))
 
         self.interface_objects.add(int_a)
         self.interface_objects.add(int_b)
@@ -403,6 +432,7 @@ class Model(MasterModel):
         """
         Returns set of Interface objects and a set of Node objects for Nodes
         that are not already in the Model.
+
         :param interface_info_list: list of dicts with interface specs;
         :return: Set of Interface objects and set of Node objects for the
                  new Interfaces for Nodes that are not already in the model
@@ -431,6 +461,7 @@ class Model(MasterModel):
         """
         Adds an RSVP LSP with name from the source node to the
         dest node and validates model.
+
         :param source_node_name: LSP source Node name
         :param dest_node_name: LSP destination Node name
         :param name: name of LSP
@@ -470,6 +501,7 @@ class Model(MasterModel):
         """
         Returns the RSVP LSP from the model with the specified source node
         name, dest node name, and LSP name.
+
         :param source_node_name: name of source node for LSP
         :param dest_node_name: name of destination node for LSP
         :param lsp_name: name of LSP
@@ -587,6 +619,7 @@ class Model(MasterModel):
     def unfail_interface(self, interface_name, node_name, raise_exception=False):
         """
         Unfails the Interface object for the interface_name, node_name pair.
+
         :param interface_name:
         :param node_name:
         :param raise_exception: If raise_excecption=True, an exception
@@ -633,17 +666,19 @@ class Model(MasterModel):
         For a source and dest node name pair, find all simple path(s) with at
         least needed_bw reservable bandwidth available less than or equal to
         cutoff hops long.
+
         The amount of simple paths (paths that don't have repeating nodes) can
         be very large for larger topologies and so this call can be very expensive.
         Use the cutoff argument to limit the path length to consider to cut down on
         the time it takes to run this call.
+
         :param source_node_name: name of source node in path
         :param dest_node_name: name of destination node in path
         :param include_failed_circuits: include failed circuits in the topology
         :param needed_bw: the amount of reservable bandwidth required on the path
         :param cutoff: max amount of path hops
         :return: Return the path(s) in dictionary form:
-                 path = {'path': [list of all path routes]}
+                 path = {'path': [list of shortest path routes]}
         """
 
         # Define a networkx DiGraph to find the path
@@ -656,18 +691,27 @@ class Model(MasterModel):
         # Find the simple paths in G between source and dest
         digraph_all_paths = nx.all_simple_paths(G, source_node_name, dest_node_name, cutoff=cutoff)
 
+        # Remove duplicate paths from digraph_all_paths
+        # (duplicates can be caused by multiple links between nodes)
+        digraph_unique_paths = [list(path) for path in set(tuple(path) for path in digraph_all_paths)]
+
         try:
-            for path in digraph_all_paths:
-                model_path = self._convert_nx_path_to_model_path(path)
+            for path in digraph_unique_paths:
+                model_path = self._convert_nx_path_to_model_path(path, needed_bw)
                 converted_path['path'].append(model_path)
-            return converted_path
         except BaseException:
             return converted_path
+
+        # Normalize the path info to get all combinations of with parallel
+        # interfaces
+        path_info = self._normalize_multidigraph_paths(converted_path['path'])
+        return {'path': path_info}
 
     def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
         """
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
+
         :param source_node_name: name of source node in path
         :param dest_node_name: name of destination node in path
         :param needed_bw: the amount of reservable bandwidth required on the path
@@ -688,14 +732,21 @@ class Model(MasterModel):
                                                        dest_node_name,
                                                        weight='cost')
 
+        # Get shortest path(s) from source to destination; this may include paths
+        # that have multiple links between nodes
         try:
             for path in digraph_shortest_paths:
-                model_path = self._convert_nx_path_to_model_path(path)
+                model_path = self._convert_nx_path_to_model_path(path, needed_bw)
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
-            return converted_path
         except BaseException:
             return converted_path
+
+        # Normalize the path info to get all combinations of with parallel
+        # interfaces
+        path_info = self._normalize_multidigraph_paths(converted_path['path'])
+
+        return {'cost': converted_path['cost'], 'path': path_info}
 
     def get_shortest_path_for_routed_lsp(self, source_node_name, dest_node_name, lsp, needed_bw):
         """
@@ -703,6 +754,12 @@ class Model(MasterModel):
         least needed_bw available for an LSP that is already routed.
         Return the shortest path in dictionary form:
         shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
+
+        :param source_node_name: name of source node
+        :param dest_node_name: name of destination node
+        :param lsp: LSP object
+        :param needed_bw: reserved bandwidth for LSPs
+        :return: dict {'path': [list of lists, each list a shortest path route], 'cost': path_cost}
         """
 
         # Define a networkx DiGraph to find the path
@@ -714,24 +771,88 @@ class Model(MasterModel):
         converted_path['cost'] = None
 
         # Find the shortest paths in G between source and dest
-        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                                       dest_node_name,
-                                                       weight='cost')
+        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
+
         try:
             for path in digraph_shortest_paths:
-                model_path = self._convert_nx_path_to_model_path(path)
+                model_path = self._convert_nx_path_to_model_path_routed_lsp(path, needed_bw, lsp)
                 converted_path['path'].append(model_path)
-                converted_path['cost'] = nx.shortest_path_length(G, source_node_name,
-                                                                 dest_node_name, weight='cost')
-            return converted_path
+                converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
         except BaseException:
             return converted_path
 
-    def _convert_nx_path_to_model_path(self, nx_graph_path):
-        """Given a path from an networkx DiGraph, converts that
+        # Normalize the path info to get all combinations of with parallel
+        # interfaces
+        path_info = self._normalize_multidigraph_paths(converted_path['path'])
+
+        return {'cost': converted_path['cost'], 'path': path_info}
+
+    def _normalize_multidigraph_paths(self, path_info):
+        """
+        Takes the multidigraph_path_info and normalizes it to create all the
+        path combos that only have one link between each node.
+
+        :param path_info: List of of interface hops from a source
+        node to a destination node.  Each hop in the path
+        is a list of all the interfaces from the current node
+        to the next node.
+
+        path_info example from source node 'B' to destination node 'D':
+        [
+            [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                    remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
+                    complete path
+            [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '28'),
+              Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '8'),
+              Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
+            [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of 2nd path
+        ]
+
+
+
+        :return: List of lists.  Each component list is a list with a unique
+        Interface combination for the egress Interfaces from source to destination
+        example:
+
+            [
+                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
+                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '28'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
+                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '18'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
+                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '8'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
+            ]
+        """
+        # List to hold unique path(s)
+        path_list = []
+
+        for path in path_info:
+            path = list(itertools.product(*path))
+            for path_option in path:
+                path_list.append(list(path_option))
+
+        return path_list
+
+    def _convert_nx_path_to_model_path(self, nx_graph_path, needed_bw):
+        """
+        Given a path from an networkx DiGraph, converts that
         path to a Model style path and returns that Model style path
+
         A networkx path is a list of nodes in order of transit.
         ex: ['A', 'B', 'G', 'D', 'F']
+
         The corresponding model style path would be:
         [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
             remote_node_object = Node('B'), circuit_id = 9),
@@ -741,19 +862,83 @@ class Model(MasterModel):
             remote_node_object = Node('D'), circuit_id = 2),
         Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
             remote_node_object = Node('F'), circuit_id = 1)]
+
+        :param nx_graph_path: list of node names
+        :param needed_bw: needed reservable bandwidth on the requested path
+        :return: List of Model Interfaces from source to destination
         """
 
         # Define a model-style path to build
         model_path = []
+
         # look at each hop in the path
         for hop in nx_graph_path:
             current_hop_index = nx_graph_path.index(hop)
             next_hop_index = current_hop_index + 1
             if next_hop_index < len(nx_graph_path):
                 next_hop = nx_graph_path[next_hop_index]
-                interface = self.get_interface_object_from_nodes(hop, next_hop)
+
+                interface = [interface for interface in self.get_interface_object_from_nodes(hop, next_hop) if
+                             interface.reservable_bandwidth >= needed_bw]
+
                 model_path.append(interface)
 
+        return model_path
+
+    def _convert_nx_path_to_model_path_routed_lsp(self, nx_graph_path, needed_bw, lsp):
+        """
+        Given a path from an networkx DiGraph, converts that
+        path to a Model style path and returns that Model style path
+
+        A networkx path is a list of nodes in order of transit.
+        ex: ['A', 'B', 'G', 'D', 'F']
+
+        Because a networkx path does not show the edges used, this def
+        examines the interface(s) from each hop to the next hop and adds them
+        to a hop_interface_list
+
+        The corresponding model style path could be:
+        [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = 9),
+        Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+            remote_node_object = Node('G'), circuit_id = 6),
+        Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+            remote_node_object = Node('D'), circuit_id = 2),
+        Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
+            remote_node_object = Node('F'), circuit_id = 1)]
+
+        :param nx_graph_path: list of node names
+        :param needed_bw: needed reservable bandwidth on the requested path
+        :param lsp: RSVP LSP object to be acted on
+        :return: List of Model Interfaces from source to destination
+        """
+
+        # Define a model-style path to build
+        model_path = []
+
+        # look at each hop in the path
+        for hop in nx_graph_path:
+            current_hop_index = nx_graph_path.index(hop)
+            next_hop_index = current_hop_index + 1
+            if next_hop_index < len(nx_graph_path):
+                next_hop = nx_graph_path[next_hop_index]
+                for interface in self.get_interface_object_from_nodes(hop, next_hop):
+                    # Look at all the interface(s) from (current) hop to next_hop; see if
+                    # any of those interfaces are in the current path for lsp; if they are,
+                    # see if any of them could handle the additional_needed_bandwidth for lsp
+                    hop_interface_list = []
+                    if (interface in lsp.path['interfaces'] and
+                            (interface.reservable_bandwidth + lsp.reserved_bandwidth >= needed_bw)):
+                        hop_interface_list.append(interface)
+
+                    elif interface.reservable_bandwidth >= needed_bw:
+                        # If the interface is not in the current path but can
+                        # accommodate the needed_bw, then add that interface
+                        # to model_path
+                        hop_interface_list.append(interface)
+
+                    if len(hop_interface_list) > 0:
+                        model_path.append(hop_interface_list)
         return model_path
 
     # NODE CALLS ######
@@ -882,7 +1067,7 @@ class Model(MasterModel):
 
     def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
         """
-        Returns a networkx weighted networkx digraph from
+        Returns a networkx weighted networkx multidigraph object from
         the input Model object
 
         :param include_failed_circuits: include interfaces from currently failed
@@ -890,11 +1075,11 @@ class Model(MasterModel):
         :param needed_bw: how much reservable_bandwidth is required?
         :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
 
-        :return: networkx digraph with edges that conform to the needed_bw and
+        :return: networkx multidigraph with edges that conform to the needed_bw and
         rsvp_required parameters
         """
 
-        G = nx.DiGraph()
+        G = nx.MultiDiGraph()
 
         # Get all the edges that meet 'failed' and 'reservable_bw' criteria
         if include_failed_circuits is False:
@@ -907,16 +1092,18 @@ class Model(MasterModel):
 
         if rsvp_required is True:
             edge_names = ((interface.node_object.name,
-                           interface.remote_node_object.name, interface.cost)
+                           interface.remote_node_object.name,
+                           {'cost': interface.cost, 'circuit_id': interface.circuit_id})
                           for interface in considered_interfaces
                           if interface.rsvp_enabled is True)
         else:
             edge_names = ((interface.node_object.name,
-                           interface.remote_node_object.name, interface.cost)
+                           interface.remote_node_object.name,
+                           {'cost': interface.cost, 'circuit_id': interface.circuit_id})
                           for interface in considered_interfaces)
 
         # Add edges to networkx DiGraph
-        G.add_weighted_edges_from(edge_names, weight='cost')
+        G.add_edges_from(edge_names)
 
         # Add all the nodes
         node_name_iterator = (node.name for node in self.node_objects)
@@ -926,24 +1113,23 @@ class Model(MasterModel):
 
     def _make_weighted_network_graph_routed_lsp(self, lsp, needed_bw=0):
         """
-        Looks for a new path with needed_bw reservable bandwidth for an RSVP LSP
-        that is currently routed.
         Returns a networkx weighted network directional graph from the input Model object.
         Considers edges with needed_bw of reservable_bandwidth and also takes into account
-        reserved_bandwidth by the lsp on Interfaces in the existing LSP path
-        :param lsp: RSVP LSP that is currently routed
-        :param needed_bw: how much bandwidth is needed for the RSVP LSP's new path
-        :return: networkx DiGraph with eligible edges
+        reserved_bandwidth by the lsp on Interfaces in the existing LSP path.
+
+        :param include_failed_circuits: failed circuits can be included in
+        the graph as functional edges
+        :param lsp:  LSP to be considered
+        :param needed_bw: amount of reservable bandwidth an interface must have
+        to be added to the graph
+        :return:
         """
-        G = nx.DiGraph()
 
         # The Interfaces that the lsp is routed over currently
         lsp_path_interfaces = lsp.path['interfaces']
 
-        # Since this is for a routed LSP, rsvp_enabled must be True and interface must
-        # not be failed
         eligible_interface_generator = (interface for interface in self.interface_objects if
-                                        interface.failed is False and interface.rsvp_enabled is True)
+                                        interface.failed is False)
 
         eligible_interfaces = set()
 
@@ -964,7 +1150,11 @@ class Model(MasterModel):
                        interface.remote_node_object.name, interface.cost)
                       for interface in eligible_interfaces)
 
-        # Add edges to networkx DiGraph
+        # Make a new graph with the eligible interfaces (interfaces
+        # with enough effective_reservable_bw)
+        G = nx.MultiDiGraph()
+
+        # Add edges to networkx MultiDiGraph
         G.add_weighted_edges_from(edge_names, weight='cost')
 
         # Add all the nodes
@@ -974,82 +1164,99 @@ class Model(MasterModel):
         return G
 
     @classmethod
-    def load_model_file(cls, data_file):  # TODO - make sure doc strings for this come out well in docs dir
+    def load_model_file(cls, data_file):
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
         format to produce a valid model.  This cannot be used to open
         multiple models in a single python instance - there may be
         unpredictable results in the info in the models.
+
         The format for the file must be a tab separated value file.
+
         This docstring you are reading may not display the table info
         explanations/examples below correctly on https://pyntm.readthedocs.io/en/latest/api.html.
         Recommend either using help(Model.load_model_file) at the python3 cli or
         looking at one of the sample model data_files in github:
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/sample_network_model_file.csv
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
+
         The following headers must exist, with the following tab-column
         names beneath:
 
-        INTERFACES_TABLE
-        node_object_name - name of node	where interface resides
-        remote_node_object_name	- name of remote node
-        name - interface name
-        cost - IGP cost/metric for interface
-        capacity - capacity
-        rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-        percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-        value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+            INTERFACES_TABLE
+            - node_object_name - name of node	where interface resides
+            - remote_node_object_name	- name of remote node
+            - name - interface name
+            - cost - IGP cost/metric for interface
+            - capacity - capacity
+            - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
+                - each circuit_id can only appear twice in the model
+                - circuit_id can be string or integer
+            - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+            - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+            value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
-        Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
-        So a Node created from an Interface does not have to appear in the
-        NODES_TABLE unless you want to add additional attributes for the Node
-        such as latitude/longitude
+            Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
+            So a Node created from an Interface does not have to appear in the
+            NODES_TABLE unless you want to add additional attributes for the Node
+            such as latitude/longitude
 
-        NODES_TABLE -
-        name - name of node
-        lon	- longitude (or y-coordinate)
-        lat - latitude (or x-coordinate)
+            NODES_TABLE -
+            - name - name of node
+            - lon	- longitude (or y-coordinate)
+            - lat - latitude (or x-coordinate)
 
-        Note - The NODES_TABLE is present for 2 reasons:
-        - to add a Node that has no interfaces
-        - and/or to add additional attributes for a Node inferred from
-        the INTERFACES_TABLE
+            Note - The NODES_TABLE is present for 2 reasons:
+            - to add a Node that has no interfaces
+            - and/or to add additional attributes for a Node inferred from
+            the INTERFACES_TABLE
 
-        DEMANDS_TABLE
-        source - source node name
-        dest - destination node name
-        traffic	- amount of traffic on demand
-        name - name of demand
-        RSVP_LSP_TABLE (this table is optional)
-        source - source node name
-        dest - destination node name
-        name - name of LSP
-        configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-        if LSP is auto-bandwidth, then leave this blank for the LSP
+            DEMANDS_TABLE
+            - source - source node name
+            - dest - destination node name
+            - traffic	- amount of traffic on demand
+            - name - name of demand
+
+            RSVP_LSP_TABLE (this table is optional)
+            - source - source node name
+            - dest - destination node name
+            - name - name of LSP
+            - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+            if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
+
         Here is an example of a data file:
 
         INTERFACES_TABLE
-        node_object_name	remote_node_object_name	name	cost	capacity    rsvp_enabled    percent_reservable_bandwidth  # noqa E501
-        A	B	A-to-B	4	100
-        B	A	B-to-A	4	100
+        node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth   # noqa E501
+        A	B	A-to-B_1    20	120 1   True  50
+        B	A	B-to-A_1    20	120 1   True  50
+        A   B   A-to-B_2    20  150 2
+        B   A   B-to-A_2    20  150 2
+        A   B   A-to-B_3    10  200 3   False
+        B   A   B-to-A_3    10  200 3   False
+
         NODES_TABLE
         name	lon	lat
         A	50	0
         B	0	-50
+
         DEMANDS_TABLE
         source	dest	traffic	name
         A	B	80	dmd_a_b_1
+
         RSVP_LSP_TABLE
         source	dest	name    configured_setup_bw
         A	B	lsp_a_b_1   10
         A	B	lsp_a_b_2
 
+
         :param data_file: file with model info
         :return: Model object
+
         """
         # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
         # TODO - add support for SRLGs
@@ -1069,6 +1276,24 @@ class Model(MasterModel):
         # Nodes from the Interface data
         int_info_begin_index = 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
+
+        # Check that each circuit_id appears exactly 2 times
+        circuit_id_list = []
+        for line in lines[int_info_begin_index:int_info_end_index]:
+            try:
+                circuit_id_item = line.split()[5]
+                circuit_id_list.append(circuit_id_item)
+            except IndexError:
+                pass
+
+        bad_circuit_ids = [{'circuit_id': item, 'appearances': circuit_id_list.count(item)} for item
+                           in set(circuit_id_list) if circuit_id_list.count(item) != 2]
+
+        if len(bad_circuit_ids) != 0:
+            msg = ("Each circuit_id value must appear exactly twice; the following circuit_id values "
+                   "do not meet that criteria: {}".format(bad_circuit_ids))
+            raise ModelException(msg)
+
         interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
                                                                                 int_info_end_index, lines)
 
@@ -1113,6 +1338,7 @@ class Model(MasterModel):
         """
         Extracts interface data from lines and adds Interface objects to a set.
         Also extracts the implied Nodes from the Interfaces and adds those Nodes to a set.
+
         :param int_info_begin_index: Index position in lines where interface info begins
         :param int_info_end_index:  Index position in lines where interface info ends
         :param lines: lines of data describing a Model objects
@@ -1125,32 +1351,33 @@ class Model(MasterModel):
         # Add the Interfaces to a set
         for interface_line in interface_lines:
             # Read interface characteristics
-            if len(interface_line.split()) == 5:
-                node_name, remote_node_name, name, cost, capacity = interface_line.split()
+            if len(interface_line.split()) == 6:
+                [node_name, remote_node_name, name, cost, capacity, circuit_id] = interface_line.split()
                 rsvp_enabled_bool = True
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) == 6:
-                node_name, remote_node_name, name, cost, capacity, rsvp_enabled = interface_line.split()
+            elif len(interface_line.split()) == 7:
+                [node_name, remote_node_name, name, cost, capacity, circuit_id, rsvp_enabled] = interface_line.split()
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:
                     rsvp_enabled_bool = False
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) >= 7:
-                node_name, remote_node_name, name, cost, capacity, \
-                    rsvp_enabled, percent_reservable_bandwidth = interface_line.split()
+            elif len(interface_line.split()) >= 8:
+                [node_name, remote_node_name, name, cost, capacity, circuit_id, rsvp_enabled,
+                 percent_reservable_bandwidth] = interface_line.split()
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:
                     rsvp_enabled_bool = False
             else:
-                msg = ("node_name, remote_node_name, name, cost, and capacity "
+                msg = ("node_name, remote_node_name, name, cost, capacity, circuit_id "
                        "must be defined for line {}, line index {}".format(interface_line,
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
-            new_interface = Interface(name, int(cost), float(capacity), Node(node_name), Node(remote_node_name),
-                                      None, rsvp_enabled_bool, float(percent_reservable_bandwidth))
+            new_interface = Interface(name, int(cost), int(capacity), Node(node_name),
+                                      Node(remote_node_name), circuit_id, rsvp_enabled_bool,
+                                      float(percent_reservable_bandwidth))
 
             if new_interface._key not in set([interface._key for interface in interface_set]):
                 interface_set.add(new_interface)
@@ -1282,29 +1509,3 @@ class Model(MasterModel):
         else:
             srlg = SRLG(srlg_name, self)
             self.srlg_objects.add(srlg)
-
-    def multiple_links_between_nodes(self):
-        """
-        Ensures there is no more than a single interface facing a
-        given remote node (that there are no parallel interfaces
-        between nodes)
-        :return: a list of parallel interfaces; if
-        there are no parallel interfaces, the list is empty
-        """
-
-        connected_nodes_list = [(interface.node_object.name + '-' + interface.remote_node_object.name) for interface
-                                in self.interface_objects]
-
-        connected_nodes_set = set(connected_nodes_list)
-
-        # If there are parallel links between nodes, create a list of the
-        # parallel links, sort it, and return the list
-        if len(connected_nodes_list) != len(connected_nodes_set):
-            parallel_links = [connection for connection in connected_nodes_list if
-                              connected_nodes_list.count(connection) > 1]
-            parallel_links.sort()
-
-            return parallel_links
-
-        else:
-            return []

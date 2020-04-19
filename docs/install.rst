@@ -20,7 +20,7 @@ Virtualenv
 Create your virtualenv
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create an isolated virtual environment under the directory "venv" with python3::
+Create an isolated virtual environment under the directory "network_traffic_modeler_py3" with python3::
 
    $ virtualenv -p python3 venv
 
@@ -42,3 +42,4 @@ Deactivate "venv" that unsets the virtual env variables::
 Remove directory "venv"::
 
    $ rm -rf venv
+

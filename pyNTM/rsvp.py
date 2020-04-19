@@ -74,7 +74,7 @@ class RSVP_LSP(object):
 
             # Find the path cost and reservable bandwidth on each path.
             # If the path you are examining has an interface that is on
-            # the LSP's current path, don't count (or add back in) the
+            # the LSP's current path, add back in the
             # reserved bandwidth for the LSP to that interface
             proto_reservable_bw = {}
             for interface in path:
@@ -83,8 +83,9 @@ class RSVP_LSP(object):
                 else:
                     proto_reservable_bw[interface] = interface.reservable_bandwidth
 
-            # baseline_path_reservable_bw is the max amount of traffic that the path
-            # can handle without saturating a component interface
+            # baseline_path_reservable_bw is the max amount of traffic
+            # that the path can handle without using more than a component
+            # interface's reservable_bandwidth
             baseline_path_reservable_bw = min(proto_reservable_bw.values())
 
             path_info = {'interfaces': path, 'path_cost': path_cost,
@@ -129,7 +130,8 @@ class RSVP_LSP(object):
         is looking at paths that have interfaces already in its
         path['interfaces'] list.
 
-        :param model: Model object to search
+        :param model: Model object to search; this will typically be a Model
+        object consisting of only non-failed interfaces
         :param requested_bandwidth: number of units set for reserved_bandwidth
         :return: self with the current or updated path info
         """
@@ -264,11 +266,11 @@ class RSVP_LSP(object):
         """
 
         # Find all LSPs with same source and dest as self
-        parallel_routed_lsp_groups = model.parallel_lsp_groups()
+        parallel_lsp_groups = model.parallel_lsp_groups()
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
-        parallel_routed_lsps = parallel_routed_lsp_groups[key]
+        parallel_routed_lsps = [lsp for lsp in parallel_lsp_groups[key] if 'Unrouted' not in lsp.path]
 
         traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
 

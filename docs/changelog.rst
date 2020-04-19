@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.6
+---
+* Added support for multiple links between nodes (Parallel_Link_Model)
+* Cached parallel_lsp_groups in Model and Parallel_Link_Model objects (performance optimization)
+* Added check for multiple links between nodes in Model object (not allowed)
+* Added Parent Class MasterModel to hold common defs for Model and Parallel_Link_Model subclasses
+* Added simulation_diagnostics def in MasterModel that gives potentially useful diagnostic info about the simulation results
+* Simple user interface (beta feature) supports RSVP LSPs
+
 1.5
 ---
 * Updated code to account for networkx

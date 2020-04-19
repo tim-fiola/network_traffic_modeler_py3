@@ -4,7 +4,7 @@ Examples
 Demo scripts
 ----------------
 
-The UI (simple_user_interface.py) is specifically designed to address common modeling use cases
+The UI (simple_user_interface.py) is specifically designed to circuit_id common modeling use cases
 
 * explore the network topology and mine data
 * provide quick linkage between related objects: Nodes, interfaces, and demands (traffic)

@@ -6,9 +6,11 @@ demands, interfaces, and nodes."""
 import sys  # noqa
 sys.path.append('../')  # noqa
 
-
 from pyNTM import Model
+from pyNTM import Parallel_Link_Model
 from pyNTM import ModelException
+from pyNTM import RSVP_LSP
+
 from graph_network import graph_network
 from graph_network import graph_network_interactive
 
@@ -39,8 +41,7 @@ def open_file():
                                     text="Network Model file is:")
     selected_file_label.grid(row=1, column=0, sticky='W')
     selected_file_display = ttk.Label(label_frame, text=' ' * 30)
-    selected_file_display = ttk.Label(label_frame,
-                                      text=selected_model_file.get())
+    selected_file_display = ttk.Label(label_frame, text=selected_model_file.get())
     selected_file_display.grid(row=6, column=0)
 
     if selected_model_file.get() != '':
@@ -64,6 +65,9 @@ def open_file():
         # Update the Path Explorer tab
         examine_paths()
 
+        # Update the LSP Explorer tab
+        examine_selected_lsp()
+
     # Create a button to produce a network graph
     graph_network_button = Button(label_frame)
     graph_network_button.grid(row=12, column=0, padx=5, pady=5, sticky='W')
@@ -76,6 +80,48 @@ def open_file():
         graph_label_text = "Graph file saved at: " + network_graph_file.get()
         graph_file_label = Label(label_frame, text=graph_label_text)
         graph_file_label.grid(row=13, column=0, sticky='W')
+
+
+def open_parallel_link_model_file():
+    """Opens the file that describes the Parallel_Link_Model"""
+    if selected_model_file.get() == '':
+        selected_model_file.set(filedialog.askopenfilename(initialdir="/",
+                                                           title="Select file",
+                                                           filetypes=(("csv files", "*.csv"),
+                                                                      ("all files", "*.*"))))
+
+    global model
+
+    selected_file_label = ttk.Label(label_frame,
+                                    text="Network Parallel Link Model file is:")
+    selected_file_label.grid(row=1, column=0, sticky='W')
+    selected_file_display = ttk.Label(label_frame, text=' ' * 30)
+    selected_file_display = ttk.Label(label_frame, text=selected_model_file.get())
+    selected_file_display.grid(row=6, column=0)
+
+    if selected_model_file.get() != '':
+        model = Parallel_Link_Model.load_model_file(selected_model_file.get())
+        model.update_simulation()
+
+        model_status_label = ttk.Label(label_frame, text="Parallel Link Model is:")
+        model_status_label.grid(row=8, column=0, sticky='W')
+        model_file_display = ttk.Label(label_frame, text=model)
+        model_file_display.grid(row=9, column=0, sticky='W')
+
+        # Update the Node Explorer tab
+        examine_selected_node()
+
+        # Update the Demand Explorer tab
+        examine_selected_demand()
+
+        # Update the Interface Explorer tab
+        examine_selected_interface()
+
+        # Update the Path Explorer tab
+        examine_paths()
+
+        # Update the LSP Explorer tab
+        examine_selected_lsp()
 
 
 def create_network_graph():
@@ -124,7 +170,30 @@ def set_active_interface_from_listbox(event):
     examine_selected_node()
     examine_selected_demand()
     examine_selected_interface()
+    examine_selected_lsp()
 
+
+def set_active_lsp_from_listbox(event):
+    """Sets the selected LSP value from a listbox to the active_lsp"""
+    w = event.widget
+    value = (w.curselection())  # get the current selection
+    value_position = (w.curselection())  # get the position of the current selection
+    selected_lsp.set(w.get(value_position))  # set selected_lsp to the current selection
+
+    for thing in demand_tab.grid_slaves():
+        thing.destroy()
+    for thing in node_tab.grid_slaves():
+        thing.destroy()
+    for thing in interface_tab.grid_slaves():
+        thing.destroy()
+    for thing in lsp_tab.grid_slaves():
+        thing.destroy()
+
+    # Refresh the Node Info and Demand Info tabs
+    examine_selected_node()
+    examine_selected_demand()
+    examine_selected_interface()
+    examine_selected_lsp()
 
 def set_active_demand_from_listbox(event):
     """Sets the selected demand value from a listbox to the active_demand"""
@@ -140,11 +209,14 @@ def set_active_demand_from_listbox(event):
         thing.destroy()
     for thing in interface_tab.grid_slaves():
         thing.destroy()
+    for thing in lsp_tab.grid_slaves():
+        thing.destroy()
 
     # Refresh the Node Info and Demand Info tabs
     examine_selected_node()
     examine_selected_demand()
     examine_selected_interface()
+    examine_selected_lsp()
 
 
 def set_active_object_from_option_menu(event):
@@ -158,6 +230,8 @@ def set_active_object_from_option_menu(event):
         thing.destroy()
     for thing in interface_tab.grid_slaves():
         thing.destroy()
+    for thing in lsp_tab.grid_slaves():
+        thing.destroy()
     # for thing in path_tab.grid_slaves():
         # thing.destroy()
 
@@ -165,6 +239,7 @@ def set_active_object_from_option_menu(event):
     examine_selected_node()
     examine_selected_demand()
     examine_selected_interface()
+    examine_selected_lsp()
     examine_paths()
 
 
@@ -182,6 +257,34 @@ def get_demand_object_from_repr(demand_repr):
     except IndexError:
         pass
 
+
+def get_lsp_object_from_repr(lsp_repr):
+
+    try:
+        lsp_info = re.split(', | |\)', lsp_repr)
+        lsp_source = lsp_info[2]
+        lsp_dest = lsp_info[5]
+        lsp_name = lsp_info[8][1:-1]
+
+        lsp_object = model.get_rsvp_lsp(lsp_source, lsp_dest, lsp_name)
+
+        return lsp_object
+    except IndexError:
+        pass
+
+
+def get_demands_on_lsp(lsp):
+    """Returns list of demands on specified LSP"""
+
+    # Display demands on LSP
+    try:
+        lsp_object = get_lsp_object_from_repr(lsp)
+        demands_on_lsp = lsp_object.demands_on_lsp(model)
+    except (ModelException, IndexError):
+        lsp_object = None
+        demands_on_lsp = []
+
+    return demands_on_lsp
 
 def get_demands_on_interface(interface):
     """Returns a list of demands on the specified interface"""
@@ -202,6 +305,25 @@ def get_demands_on_interface(interface):
     return demands_on_interface
 
 
+def get_lsps_on_interface(interface):
+    """Returns list of RSVP LSPs on specified interface"""
+
+    try:
+        interface_data = interface.split("'")
+        interface_name = interface_data[1]
+        node_name = interface_data[3]
+
+        interface_object = model.get_interface_object(interface_name,
+                                                      node_name)
+
+        lsps_on_interface = interface_object.lsps(model)
+    except (ModelException, IndexError):
+        interface_object = None
+        lsps_on_interface = []
+
+    return lsps_on_interface
+
+
 def display_selected_objects(canvas_object, row_, column_):
     """Displays the selected objects"""
 
@@ -209,6 +331,7 @@ def display_selected_objects(canvas_object, row_, column_):
     interface_status = 'Unknown'
     demand_status = 'Unknown'
     interface_info = 'Unknown'
+    lsp_status = 'Unknown'
 
     try:
         node_failed = model.get_node_object(selected_node.get()).failed
@@ -251,6 +374,17 @@ def display_selected_objects(canvas_object, row_, column_):
     except (ModelException, AttributeError):
         pass
 
+    try:
+        lsp_object = get_lsp_object_from_repr(selected_lsp.get())
+        lsp_routed = lsp_object.path
+
+        if 'Unrouted' in lsp_routed:
+            lsp_status = lsp_routed
+        else:
+            lsp_status = 'Routed'
+    except (ModelException, AttributeError):
+        pass
+
     selected_object_frame = LabelFrame(canvas_object, background=background_color,
                                        text="Selected Interface, Demand, and Node")
     selected_object_frame.grid(column=column_, row=row_, columnspan=3, pady=10)
@@ -286,9 +420,15 @@ def display_selected_objects(canvas_object, row_, column_):
     Label(selected_object_frame, text=demand_status,
           background=background_color).grid(row=row_ + 4, column=2, sticky='E')
 
+    Label(selected_object_frame, text="Selected LSP:",
+          background=background_color).grid(row=row_ + 5, column=0, sticky='W')
+    Label(selected_object_frame, text=selected_lsp.get(), width=52,
+          borderwidth=1, wraplength=450, relief="solid").grid(row=row_ + 5, column=1)
+    Label(selected_object_frame, text=lsp_status,
+          background=background_color).grid(row=row_ + 5, column=2, sticky='E')
 
-def display_demands(label_info, canvas_object, list_of_demands, row_,
-                    column_,):
+
+def display_demands(label_info, canvas_object, list_of_demands, row_, column_,):
     """Displays a label for demands and a single-select listbox of the
     demands below the label_info on a given canvas_object.  A horizontal
     scrollbar is included """
@@ -296,8 +436,7 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     demands_frame = LabelFrame(canvas_object)
     demands_frame.grid(row=row_, column=column_, pady=10)
 
-    Label(demands_frame, text=label_info).grid(row=0,
-                                               column=0, sticky='W', padx=10)
+    Label(demands_frame, text=label_info).grid(row=0, column=0, sticky='W', padx=10)
 
     # Horizontal scrollbar
     horizontal_scrollbar = Scrollbar(demands_frame, orient=HORIZONTAL)
@@ -325,8 +464,7 @@ def display_demands(label_info, canvas_object, list_of_demands, row_,
     demand_listbox.bind("<Double-Button-1>", set_active_demand_from_listbox)
 
 
-def display_interfaces(label_info, canvas_object, list_of_interfaces,
-                       row_, column_):
+def display_interfaces(label_info, canvas_object, list_of_interfaces, row_, column_):
     """Displays interfaces from list of interfaces in single selectable listbox.
     A label with label_info will appear above the listbox."""
     # Display Node's Interfaces Label
@@ -346,8 +484,7 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     interfaces_listbox = Listbox(canvas_object, selectmode='single',
                                  height=8, width=40, xscrollcommand=horizontal_scrollbar.set,
                                  yscrollcommand=vertical_scrollbar.set)
-    interfaces_listbox.grid(row=row_ + 1, column=column_, columnspan=2,
-                            sticky='W', padx=5)
+    interfaces_listbox.grid(row=row_ + 1, column=column_, columnspan=2, sticky='W', padx=5)
 
     horizontal_scrollbar.config(command=interfaces_listbox.xview)
     vertical_scrollbar.config(command=interfaces_listbox.yview)
@@ -362,6 +499,47 @@ def display_interfaces(label_info, canvas_object, list_of_interfaces,
     interfaces_listbox.bind("<Double-Button-1>", set_active_interface_from_listbox)
 
     return interfaces_listbox
+
+
+def display_lsps(label_info, canvas_object, lsp_list, row_, column_):
+    """Displays lsps in single selectable listbox.
+    A label with label_info will appear above the listbox."""
+    # Display Node's Interfaces Label
+
+
+    lsp_frame = LabelFrame(canvas_object)
+    lsp_frame.grid(row=row_, column=column_, pady=10)
+
+    Label(lsp_frame, text=label_info).grid(row=0, column=0, sticky='W', padx=10)
+
+    # Vertical scrollbar
+    vertical_scrollbar = Scrollbar(lsp_frame, orient=VERTICAL)
+    vertical_scrollbar.grid(row=row_ + 1, column=column_ + 2, sticky=N + S)
+
+    # Horizontal scrollbar
+    horizontal_scrollbar = Scrollbar(lsp_frame, orient=HORIZONTAL)
+    horizontal_scrollbar.grid(row=(row_ + 2), column=column_, sticky=E + W,
+                              columnspan=2)
+
+    # Create a listbox with the available interfaces for the Node
+    lsps_listbox = Listbox(lsp_frame, selectmode='single', height=8, width=40,
+                           xscrollcommand=horizontal_scrollbar.set, yscrollcommand=vertical_scrollbar.set)
+
+    lsps_listbox.grid(row=row_ + 1, column=column_, columnspan=2, sticky='W', padx=5)
+
+    horizontal_scrollbar.config(command=lsps_listbox.xview)
+    vertical_scrollbar.config(command=lsps_listbox.yview)
+
+    lsp_counter = 1
+
+    for lsp_name in lsp_list:
+        lsps_listbox.insert(lsp_counter, lsp_name)
+        lsp_counter += 1
+
+    lsps_listbox.bind("<<ListBoxSelect>>", set_active_lsp_from_listbox)
+    lsps_listbox.bind("<Double-Button-1>", set_active_lsp_from_listbox)
+
+    return lsps_listbox
 
 
 def examine_selected_node(*args):
@@ -389,8 +567,7 @@ def examine_selected_node(*args):
     Label(choose_node_frame, text="Selected node is:").grid(row=1, column=0, sticky='W')
 
     # Display the selected Node
-    Label(choose_node_frame, text='-----------------------------------').\
-        grid(row=1, column=1, sticky='E')
+    Label(choose_node_frame, text='-----------------------------------').grid(row=1, column=1, sticky='E')
     Label(choose_node_frame, text=selected_node.get()).grid(row=1, column=1, sticky='E')
 
     # Get selected_nodes Interfaces and display them in a listbox
@@ -416,14 +593,12 @@ def examine_selected_node(*args):
     demands_frame.grid(column=0, row=4, columnspan=4, sticky='W', pady=15)
 
     # Display Demands Sourced From Node
-    source_demand_choices = \
-        model.get_demand_objects_source_node(selected_node.get())
+    source_demand_choices = model.get_demand_objects_source_node(selected_node.get())
 
     display_demands("Demands sourced from node", demands_frame,
                     source_demand_choices, 0, 0)
 
     # Display Demands Destined To Node
-
     dest_demand_choices = model.get_demand_objects_dest_node(selected_node.get())
 
     display_demands("Demands destined to node", demands_frame,
@@ -431,8 +606,7 @@ def examine_selected_node(*args):
 
     #### Create a frame to show interface demand info ####
     intf_demands_frame = LabelFrame(node_tab, text="Interface Demand Info")
-    intf_demands_frame.grid(column=5, row=4, columnspan=2, sticky='W',
-                            padx=15, pady=15)
+    intf_demands_frame.grid(column=4, row=4, columnspan=2, sticky='W', padx=15, pady=15)
 
     # Display demands on interface
     try:
@@ -444,18 +618,105 @@ def examine_selected_node(*args):
     display_demands("Demands Egressing Selected Interface", intf_demands_frame,
                     demands_on_interface, 0, 1)
 
+    # ### Create a frame to node show LSP info ### #
+    lsp_frame = LabelFrame(node_tab, text="Node LSP Info")
+    lsp_frame.grid(column=0, row=5, columnspan=4, sticky='W', pady=15)
+
+    # Display LSPs Sourced From Node
+    source_lsp_choices = [lsp for lsp in model.rsvp_lsp_objects if lsp.source_node_object.name == selected_node.get()]
+
+    display_lsps("LSPs sourced from node", lsp_frame, source_lsp_choices, 0, 0)
+
+    # Display Demands Destined To Node
+
+    dest_lsp_choices = [lsp for lsp in model.rsvp_lsp_objects if lsp.dest_node_object.name == selected_node.get()]
+
+    display_lsps("LSPs destined to node", lsp_frame, dest_lsp_choices, 0, 1)
+
     #### Create a frame to show selected object info ####
     display_selected_objects(node_tab, 0, 4)
 
     # TODO - fail selected interface or node
 
+def examine_selected_lsp(*args):   # TODO - add reserved bandwidth, setup bandwidth, and traffic
+    """Examine selected_lsp object"""
+
+    # Label for choosing lsp
+    choose_lsp_label = Label(lsp_tab, text="Choose an LSP:").grid(row=0, column=0, sticky='W', pady=10)
+
+    # Dropdown menu to choose an LSP
+    lsp_choices_list = [lsp for lsp in model.rsvp_lsp_objects]
+
+    lsp_choices_list_sorted = sorted(lsp_choices_list,
+                                        key=lambda lsp: lsp.source_node_object.name)
+
+    lsp_dropdown_select = OptionMenu(lsp_tab, selected_lsp,
+                                        *lsp_choices_list_sorted,
+                                        command=set_active_object_from_option_menu)
+    lsp_dropdown_select.grid(row=0, column=1, sticky='EW')
+
+    # Display the selected objects
+    display_selected_objects(lsp_tab, 0, 3)
+
+    # ### Display the selected LSP's path ### #
+    lsp_path_frame = LabelFrame(lsp_tab, text="RSVP LSP Path Info (Ordered hops from source to destination)")
+    lsp_path_frame.grid(row=3, column=0, columnspan=10, sticky='W', padx=10, pady=10)
+
+    try:
+
+        lsp_object = get_lsp_object_from_repr(selected_lsp.get())
+
+        try:
+            lsp_path = lsp_object.path['interfaces']
+        except (AttributeError, TypeError):
+            lsp_path = 'Unrouted'
+
+        column_num = 0
+
+        if lsp_path != 'Unrouted':
+            label_info = "LSP hops ordered from source to dest"
+
+            interface_info = ["{}% {}".format(str(round((interface.utilization), 1)),
+                                              interface.__repr__()) for interface in lsp_path]
+
+            display_interfaces(label_info, lsp_path_frame, interface_info, 0, column_num)
+            column_num += 3
+        else:
+            label_info = "LSP is Unrouted"
+            interface_info = "LSP is Unrouted"
+            display_interfaces(label_info, lsp_path_frame, [interface_info], 0, column_num)
+
+    except (IndexError, UnboundLocalError):
+        pass
+
+    # Display reserved bandwidth, setup bandwidth, and traffic for selected LSP
+    lsp_info_frame = LabelFrame(lsp_tab, text="RSVP LSP Info")
+    lsp_info_frame.grid(row=3, column=2, columnspan=10, sticky='W', padx=10, pady=10)
+    reserved_bandwidth = lsp_object.reserved_bandwidth
+    setup_bandwidth = lsp_object.setup_bandwidth
+    traffic = lsp_object.traffic_on_lsp(model)
+
+    Label(lsp_info_frame, text='Selected LSP reserved bandwidth').grid(column=0, row=0)
+    Label(lsp_info_frame, text=reserved_bandwidth).grid(column=1, row=0)
+
+    Label(lsp_info_frame, text='Selected LSP setup bandwidth').grid(column=0, row=1)
+    Label(lsp_info_frame, text=setup_bandwidth).grid(column=1, row=1)
+
+    Label(lsp_info_frame, text='Selected LSP traffic bandwidth').grid(column=0, row=2)
+    Label(lsp_info_frame, text=traffic).grid(column=1, row=2)
+
+
+    # Display demands on LSP
+    demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
+
+    display_demands("Demands on selected LSP", lsp_tab, demands_on_lsp, 4, 3)
+
 
 def examine_selected_demand(*args):
-    """Examine selected_interface object"""
+    """Examine selected_demand object"""
 
-    # Label for choosing interface
-    choose_demand_label = Label(demand_tab,
-                                text="Choose a demand:").grid(row=0, column=0, sticky='W', pady=10)
+    # Label for choosing demand
+    choose_demand_label = Label(demand_tab, text="Choose a demand:").grid(row=0, column=0, sticky='W', pady=10)
 
     # Dropdown menu to choose a demand
     demand_choices_list = [demand for demand in model.demand_objects]
@@ -492,13 +753,17 @@ def examine_selected_demand(*args):
 
         if dmd_paths != 'Unrouted':
             for path in dmd_paths:
+
                 label_info = "Demand hops ordered from source to dest"
 
-                interface_info = ["{}% {}".format(str(round((interface.utilization), 1)),
-                                                  interface.__repr__()) for interface in path]
+                if isinstance(path, RSVP_LSP):
+                    display_lsps(label_info, demand_path_frame, [path], 0, column_num)
+                else:
+                    interface_info = ["{}% {}".format(str(round((interface.utilization), 1)),
+                                                      interface.__repr__()) for interface in path]
 
-                display_interfaces(label_info, demand_path_frame, interface_info, 0, column_num)
-                column_num += 3
+                    display_interfaces(label_info, demand_path_frame, interface_info, 0, column_num)
+                    column_num += 3
         else:
             label_info = "Demand is Unrouted"
             interface_info = "Demand is Unrouted"
@@ -509,9 +774,7 @@ def examine_selected_demand(*args):
 
     demands_on_interface = get_demands_on_interface(selected_interface.get())
 
-    demands_on_int = display_demands("Demands Egressing Selected Interface", demand_tab,
-                                     demands_on_interface, 4, 3)
-
+    demands_on_int = display_demands("Demands Egressing Selected Interface", demand_tab, demands_on_interface, 4, 3)
 
 def examine_selected_interface(*args):
     """Allows user to explore interfaces with different characteristics"""
@@ -755,10 +1018,11 @@ ui_window.resizable(1, 1)
 # Create a tabbed notebook in the canvas ui_window
 nb = ttk.Notebook(ui_window)  # Creates ttk notebook in ui window
 
-# Establish names for selected demand, node, and interface in the notebook
+# Establish names for selected demand, node, lsp, and interface in the notebook
 selected_demand = StringVar(nb)
 selected_node = StringVar(nb)
 selected_interface = StringVar(nb)
+selected_lsp = StringVar(nb)
 selected_model_file = StringVar(nb)
 source_node = StringVar(nb)
 dest_node = StringVar(nb)
@@ -791,9 +1055,15 @@ label_frame.grid(column=0, row=0, padx=8, pady=8, sticky='W')
 
 # Make a button to load a file
 load_file_button = ttk.Button(open_file_tab)
-load_file_button["text"] = "Push button to load network model file"
+load_file_button["text"] = "Push button to load network model file (only single links allowed between nodes)"
 load_file_button.grid(row=11, column=0, sticky='W')
 load_file_button["command"] = open_file
+
+load_file_button = ttk.Button(open_file_tab)
+load_file_button["text"] = "Push button to load network parallel model file (multiple links allowed between nodes)"
+load_file_button.grid(row=13, column=0, sticky='W')
+load_file_button["command"] = open_parallel_link_model_file
+
 
 # ### Node Tab ### #
 # Create a new tab and add it to the notebook
@@ -812,6 +1082,10 @@ nb.add(interface_tab, text="Interface Explorer")
 # ### Create Paths Tab ### #
 path_tab = ttk.Frame(nb)
 nb.add(path_tab, text="Path Explorer")
+
+# ### Create RSVP_LSP Tab ### #
+lsp_tab = ttk.Frame(nb)
+nb.add(lsp_tab, text="RSVP LSP Explorer")
 
 
 ui_window.mainloop()

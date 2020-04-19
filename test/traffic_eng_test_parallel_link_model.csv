@@ -1,0 +1,29 @@
+INTERFACES_TABLE
+node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth
+A	B	A-to-B_1    20	120 1   True  50
+B	A	B-to-A_1    20	120 1   True  50
+A   B   A-to-B_2    20  150 2
+B   A   B-to-A_2    20  150 2
+A   B   A-to-B_3    10  200 3   False
+B   A   B-to-A_3    10  200 3   False
+B   E   B-to-E  20  500 4
+E   B   E-to-B  20  500 4
+
+NODES_TABLE
+name	lon	lat
+A	50	0
+B	0 50
+C	0	50
+D 50	0
+E	75	0
+
+DEMANDS_TABLE
+source	dest	traffic	name
+A	E	80	dmd_a_e_1
+A	E	70	dmd_a_e_2
+
+RSVP_LSP_TABLE
+source	dest	name
+A	E	lsp_a_e_1
+A	E	lsp_a_e_2
+A   E   lsp_a_e_3
