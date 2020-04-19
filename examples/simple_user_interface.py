@@ -707,14 +707,9 @@ def examine_selected_lsp(*args):   # TODO - add reserved bandwidth, setup bandwi
 
 
     # Display demands on LSP
-    import pdb
-    pdb.set_trace()
     demands_on_lsp = get_demands_on_lsp(selected_lsp.get())
 
     display_demands("Demands on selected LSP", lsp_tab, demands_on_lsp, 4, 3)
-
-
-
 
 
 def examine_selected_demand(*args):
