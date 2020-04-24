@@ -18,3 +18,4 @@ D	62	37
 
 DEMANDS_TABLE
 source	dest	traffic	name
+A   D   100 dmd_a_d_1
