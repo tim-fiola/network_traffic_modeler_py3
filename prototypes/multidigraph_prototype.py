@@ -1,6 +1,9 @@
 import sys
-import networkx as nx
 sys.path.append('../')
+
+import itertools
+import networkx as nx
+
 
 from pprint import pprint
 
@@ -51,36 +54,50 @@ demand = 100
 num_paths = len(sp_a_b)
 demand_load_per_path = demand / num_paths
 
+# for path in sp_a_b:
+#     current_hop = path[0]
+#     for next_hop in path[1:]:
+#         values_source_hop = G[current_hop][next_hop].values()
+#         min_weight = min(d['cost'] for d in values_source_hop)
+#         print('min_weight = {}'.format(min_weight))
+#         ecmp_links = [k for k, d in G[current_hop][next_hop].items() if d['cost'] == min_weight]
+#         num_ecmp_links = len(ecmp_links)
+#         for link_index in ecmp_links:
+#             G[current_hop][next_hop][link_index]['interface'].traffic += int(demand_load_per_path) / int(num_ecmp_links)
+#         current_hop = next_hop
+
+# Find the demand's path(s)
+all_paths = []
 for path in sp_a_b:
     current_hop = path[0]
+    this_path = []
     for next_hop in path[1:]:
+        this_hop = []
         values_source_hop = G[current_hop][next_hop].values()
         min_weight = min(d['cost'] for d in values_source_hop)
         print('min_weight = {}'.format(min_weight))
         ecmp_links = [k for k, d in G[current_hop][next_hop].items() if d['cost'] == min_weight]
         num_ecmp_links = len(ecmp_links)
+        # Add Interface(s) to this_hop list and add traffic to Interfaces
         for link_index in ecmp_links:
             G[current_hop][next_hop][link_index]['interface'].traffic += int(demand_load_per_path) / int(num_ecmp_links)
+            this_hop.append(G[current_hop][next_hop][link_index]['interface'])
+        this_path.append(this_hop)
         current_hop = next_hop
+    all_paths.append(this_path)
 
+print("all_paths = ")
+pprint(all_paths)
+print()
+print()
+
+print("Interface traffic:")
 for i in model.interface_objects:
     print([i, i.traffic])
 print()
 print()
 
-# Find the demand's path(s)
-dmd_path = []
-for path in sp_a_b:
-    current_hop = path[0]
-    for next_hop in path[1:]:
-        values_source_hop = G[current_hop][next_hop].values()
-        min_weight = min(d['cost'] for d in values_source_hop)
-        print('min_weight = {}'.format(min_weight))
-        ecmp_links = [k for k, d in G[current_hop][next_hop].items() if d['cost'] == min_weight]
-        num_ecmp_links = len(ecmp_links)
-        pprint(ecmp_links)
-        for link_index in ecmp_links:
-            # import pdb
-            # pdb.set_trace()
-            dmd_path.append(G[current_hop][next_hop][link_index]['interface'])
-        current_hop = next_hop
+path_list = Parallel_Link_Model._normalize_multidigraph_paths(model, all_paths)
+print()
+print("path_list:")
+pprint(path_list)
