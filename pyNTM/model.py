@@ -240,8 +240,7 @@ class Model(MasterModel):
         self = self._route_lsps(non_failed_interfaces_model)
         print("LSPs routed (if present); routing demands now . . .")
         # Route the demands
-        self = self._route_demands(self.demand_objects,
-                                   non_failed_interfaces_model)
+        self = self._route_demands(non_failed_interfaces_model)
         print("Demands routed; validating model . . . ")
 
         self.validate_model()

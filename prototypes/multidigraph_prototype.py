@@ -9,7 +9,17 @@ from pprint import pprint
 from pyNTM import Parallel_Link_Model
 
 
-def route_demands(model, G):
+def route_demands(model):
+
+    edge_names = ((interface.node_object.name,
+                   interface.remote_node_object.name,
+                   {'cost': interface.cost, 'interface': interface})
+                  for interface in model.interface_objects)
+
+    G = nx.MultiDiGraph()
+
+    G.add_edges_from(edge_names)
+
     for demand in model.demand_objects:
         src = demand.source_node_object.name
         dest = demand.dest_node_object.name
@@ -37,8 +47,8 @@ def route_demands(model, G):
                               interface_item['cost'] == min_weight]
                 num_ecmp_links = len(ecmp_links)
                 # Add Interface(s) to this_hop list and add traffic to Interfaces
-                import pdb
-                pdb.set_trace()
+                # import pdb
+                # pdb.set_trace()
                 for link_index in ecmp_links:
                     G[current_hop][next_hop][link_index]['interface'].traffic += int(demand_load_per_path) / int(
                         num_ecmp_links)
@@ -72,16 +82,22 @@ def route_demands(model, G):
 model = Parallel_Link_Model.load_model_file('multidigraph_topology.csv')
 model.update_simulation()
 
-G = nx.MultiDiGraph()
+# for interface in model.interface_objects:
+#     interface.traffic = 0
+#
+# for demand in model.demand_objects:
+#     demand.path = []
 
-edge_names = ((interface.node_object.name,
-                           interface.remote_node_object.name,
-                           {'cost': interface.cost, 'interface': interface})
-                           for interface in model.interface_objects)
-G.add_edges_from(edge_names)
+# G = nx.MultiDiGraph()
+
+# edge_names = ((interface.node_object.name,
+#                            interface.remote_node_object.name,
+#                            {'cost': interface.cost, 'interface': interface})
+#                            for interface in model.interface_objects)
+# G.add_edges_from(edge_names)
 
 
-nx_sp = list(nx.all_shortest_paths(G, 'A', 'D', weight='cost'))
+# nx_sp = list(nx.all_shortest_paths(G, 'A', 'D', weight='cost'))
 
 # demand = 100
 #
@@ -126,6 +142,6 @@ nx_sp = list(nx.all_shortest_paths(G, 'A', 'D', weight='cost'))
 # print("path_list:")
 # pprint(path_list)
 
-model = route_demands(model, G)
+# model = route_demands(model)
 
 model.display_interfaces_traffic()
