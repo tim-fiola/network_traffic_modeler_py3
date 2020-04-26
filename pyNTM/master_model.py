@@ -11,7 +11,6 @@ from .exceptions import ModelException
 from .node import Node
 from .rsvp import RSVP_LSP
 
-import itertools
 import networkx as nx
 
 

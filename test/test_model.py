@@ -348,7 +348,7 @@ class TestModel(unittest.TestCase):
         new_int = Interface('F-to-B', 100, 100, node_f, node_b, 80)
         model.interface_objects.add(new_int)
 
-        err_msg = "WARNING: These interfaces were not matched into a circuit [('F', 'B', {'cost': 100})]"
+        err_msg = "WARNING: These interfaces were not matched into a circuit [('F', 'B', {"
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()

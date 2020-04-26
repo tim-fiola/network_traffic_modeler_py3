@@ -872,7 +872,7 @@ class Parallel_Link_Model(MasterModel):
         path_info = self._normalize_multidigraph_paths(converted_path['path'])
         return {'path': path_info}
 
-    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
+    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):  # TODO - does this work?
         """
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
@@ -893,14 +893,12 @@ class Parallel_Link_Model(MasterModel):
         converted_path['cost'] = None
 
         # Find the shortest paths in G between source and dest
-        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                                       dest_node_name,
-                                                       weight='cost')
 
+        multidigraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
         # Get shortest path(s) from source to destination; this may include paths
         # that have multiple links between nodes
         try:
-            for path in digraph_shortest_paths:
+            for path in multidigraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path, needed_bw)
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
