@@ -385,8 +385,66 @@ class MasterModel(object):
     #
     #     return self._update_interface_utilization()
 
+    def _route_demands(self, model):
+        """
+        Routes demands in input 'model'
 
+        :param model: input 'model' parameter object (may be different from self)
+        :return: model with routed demands
+        """
 
+        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
+
+        for demand in model.demand_objects:
+            demand.path = []
+
+            # Find all LSPs that can carry the demand:
+            for lsp in (lsp for lsp in model.rsvp_lsp_objects):
+                if (lsp.source_node_object == demand.source_node_object and
+                        lsp.dest_node_object == demand.dest_node_object and
+                        'Unrouted' not in lsp.path):
+                    demand.path.append(lsp)
+
+            if demand.path == []:
+                src = demand.source_node_object.name
+                dest = demand.dest_node_object.name
+
+                # Shortest path in networkx multidigraph
+                try:
+                    nx_sp = list(nx.all_shortest_paths(G, src, dest, weight='cost'))
+                except nx.exception.NetworkXNoPath:
+                    # There is no path, demand.path = 'Unrouted'
+                    demand.path = 'Unrouted'
+                    continue
+
+                # all_paths is list of paths from source to destination; these paths
+                # may include paths that have multiple links between nodes
+                all_paths = []
+
+                for path in nx_sp:
+                    current_hop = path[0]
+                    this_path = []
+                    for next_hop in path[1:]:
+                        this_hop = []
+                        values_source_hop = G[current_hop][next_hop].values()
+                        min_weight = min(d['cost'] for d in values_source_hop)
+                        ecmp_links = [interface_index for interface_index, interface_item in
+                                      G[current_hop][next_hop].items() if
+                                      interface_item['cost'] == min_weight]
+
+                        # Add Interface(s) to this_hop list and add traffic to Interfaces
+                        for link_index in ecmp_links:
+                            this_hop.append(G[current_hop][next_hop][link_index]['interface'])
+                        this_path.append(this_hop)
+                        current_hop = next_hop
+                    all_paths.append(this_path)
+
+                path_list = self._normalize_multidigraph_paths(all_paths)
+                demand.path = path_list
+
+        self._update_interface_utilization()
+
+        return self
 
     def _route_lsps(self, input_model):
         """Route the LSPs in the model

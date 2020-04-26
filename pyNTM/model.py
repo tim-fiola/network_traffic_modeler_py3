@@ -246,61 +246,61 @@ class Model(MasterModel):
 
         self.validate_model()
 
-    def _route_demands(self, model):
-        """
-        Routes demands in input 'model'
-
-        :param model: input 'model' parameter object (may be different from self)
-        :return: model with routed demands
-        """
-
-        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
-
-        for demand in model.demand_objects:
-            src = demand.source_node_object.name
-            dest = demand.dest_node_object.name
-
-            # Shortest path in networkx multidigraph
-            try:
-                nx_sp = list(nx.all_shortest_paths(G, src, dest, weight='cost'))
-            except nx.exception.NetworkXNoPath:
-                # There is no path, demand.path = 'Unrouted'
-                demand.path = 'Unrouted'
-                continue
-
-            # Find demand's load to interfaces it touches
-            num_paths = len(nx_sp)
-            demand_load_per_path = demand.traffic / num_paths
-
-            # all_paths is list of paths from source to destination; these paths
-            # may include paths that have multiple links between nodes
-            all_paths = []
-
-            for path in nx_sp:
-                current_hop = path[0]
-                this_path = []
-                for next_hop in path[1:]:
-                    this_hop = []
-                    values_source_hop = G[current_hop][next_hop].values()
-                    min_weight = min(d['cost'] for d in values_source_hop)
-                    ecmp_links = [interface_index for interface_index, interface_item in
-                                  G[current_hop][next_hop].items() if
-                                  interface_item['cost'] == min_weight]
-                    num_ecmp_links = len(ecmp_links)
-
-                    # Add Interface(s) to this_hop list and add traffic to Interfaces
-                    for link_index in ecmp_links:
-                        this_hop.append(G[current_hop][next_hop][link_index]['interface'])
-                    this_path.append(this_hop)
-                    current_hop = next_hop
-                all_paths.append(this_path)
-
-            path_list = self._normalize_multidigraph_paths(all_paths)
-            demand.path = path_list
-
-        self._update_interface_utilization()
-
-        return self
+    # def _route_demands(self, model):
+    #     """
+    #     Routes demands in input 'model'
+    #
+    #     :param model: input 'model' parameter object (may be different from self)
+    #     :return: model with routed demands
+    #     """
+    #
+    #     G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
+    #
+    #     for demand in model.demand_objects:
+    #         src = demand.source_node_object.name
+    #         dest = demand.dest_node_object.name
+    #
+    #         # Shortest path in networkx multidigraph
+    #         try:
+    #             nx_sp = list(nx.all_shortest_paths(G, src, dest, weight='cost'))
+    #         except nx.exception.NetworkXNoPath:
+    #             # There is no path, demand.path = 'Unrouted'
+    #             demand.path = 'Unrouted'
+    #             continue
+    #
+    #         # Find demand's load to interfaces it touches
+    #         num_paths = len(nx_sp)
+    #         demand_load_per_path = demand.traffic / num_paths
+    #
+    #         # all_paths is list of paths from source to destination; these paths
+    #         # may include paths that have multiple links between nodes
+    #         all_paths = []
+    #
+    #         for path in nx_sp:
+    #             current_hop = path[0]
+    #             this_path = []
+    #             for next_hop in path[1:]:
+    #                 this_hop = []
+    #                 values_source_hop = G[current_hop][next_hop].values()
+    #                 min_weight = min(d['cost'] for d in values_source_hop)
+    #                 ecmp_links = [interface_index for interface_index, interface_item in
+    #                               G[current_hop][next_hop].items() if
+    #                               interface_item['cost'] == min_weight]
+    #                 num_ecmp_links = len(ecmp_links)
+    #
+    #                 # Add Interface(s) to this_hop list and add traffic to Interfaces
+    #                 for link_index in ecmp_links:
+    #                     this_hop.append(G[current_hop][next_hop][link_index]['interface'])
+    #                 this_path.append(this_hop)
+    #                 current_hop = next_hop
+    #             all_paths.append(this_path)
+    #
+    #         path_list = self._normalize_multidigraph_paths(all_paths)
+    #         demand.path = path_list
+    #
+    #     self._update_interface_utilization()
+    #
+    #     return self
 
     def _make_weighted_network_graph_mdg(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
         """
@@ -1040,51 +1040,51 @@ class Model(MasterModel):
             pprint(interface)
             print()
 
-    def _make_weighted_network_graph_mdg(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
-        """
-        Returns a networkx weighted networkx multidigraph object from
-        the input Model object
-
-        :param include_failed_circuits: include interfaces from currently failed
-        circuits in the graph?
-        :param needed_bw: how much reservable_bandwidth is required?
-        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
-
-        :return: networkx multidigraph with edges that conform to the needed_bw and
-        rsvp_required parameters
-        """
-
-        G = nx.MultiDiGraph()
-
-        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
-        if include_failed_circuits is False:
-            considered_interfaces = (interface for interface in self.interface_objects
-                                     if (interface.failed is False and
-                                         interface.reservable_bandwidth >= needed_bw))
-        elif include_failed_circuits is True:
-            considered_interfaces = (interface for interface in self.interface_objects
-                                     if interface.reservable_bandwidth >= needed_bw)
-
-        if rsvp_required is True:
-            edge_names = ((interface.node_object.name,
-                           interface.remote_node_object.name,
-                           {'cost': interface.cost, 'interface': interface, 'circuit_id': interface.circuit_id})
-                          for interface in considered_interfaces
-                          if interface.rsvp_enabled is True)
-        else:
-            edge_names = ((interface.node_object.name,
-                           interface.remote_node_object.name,
-                           {'cost': interface.cost, 'interface': interface, 'circuit_id': interface.circuit_id})
-                          for interface in considered_interfaces)
-
-        # Add edges to networkx DiGraph
-        G.add_edges_from(edge_names)
-
-        # Add all the nodes
-        node_name_iterator = (node.name for node in self.node_objects)
-        G.add_nodes_from(node_name_iterator)
-
-        return G
+    # def _make_weighted_network_graph_mdg(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
+    #     """
+    #     Returns a networkx weighted networkx multidigraph object from
+    #     the input Model object
+    #
+    #     :param include_failed_circuits: include interfaces from currently failed
+    #     circuits in the graph?
+    #     :param needed_bw: how much reservable_bandwidth is required?
+    #     :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+    #
+    #     :return: networkx multidigraph with edges that conform to the needed_bw and
+    #     rsvp_required parameters
+    #     """
+    #
+    #     G = nx.MultiDiGraph()
+    #
+    #     # Get all the edges that meet 'failed' and 'reservable_bw' criteria
+    #     if include_failed_circuits is False:
+    #         considered_interfaces = (interface for interface in self.interface_objects
+    #                                  if (interface.failed is False and
+    #                                      interface.reservable_bandwidth >= needed_bw))
+    #     elif include_failed_circuits is True:
+    #         considered_interfaces = (interface for interface in self.interface_objects
+    #                                  if interface.reservable_bandwidth >= needed_bw)
+    #
+    #     if rsvp_required is True:
+    #         edge_names = ((interface.node_object.name,
+    #                        interface.remote_node_object.name,
+    #                        {'cost': interface.cost, 'interface': interface, 'circuit_id': interface.circuit_id})
+    #                       for interface in considered_interfaces
+    #                       if interface.rsvp_enabled is True)
+    #     else:
+    #         edge_names = ((interface.node_object.name,
+    #                        interface.remote_node_object.name,
+    #                        {'cost': interface.cost, 'interface': interface, 'circuit_id': interface.circuit_id})
+    #                       for interface in considered_interfaces)
+    #
+    #     # Add edges to networkx DiGraph
+    #     G.add_edges_from(edge_names)
+    #
+    #     # Add all the nodes
+    #     node_name_iterator = (node.name for node in self.node_objects)
+    #     G.add_nodes_from(node_name_iterator)
+    #
+    #     return G
 
     def _make_weighted_network_graph_routed_lsp(self, lsp, needed_bw=0):
         """
