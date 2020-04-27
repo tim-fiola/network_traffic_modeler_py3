@@ -20,6 +20,10 @@ def _route_lsps(model, input_model):
     :return: self, with updated LSP paths
     """
 
+    for interface in input_model.interface_objects:
+        interface.reserved_bandwidth = 0
+
+
     # Find parallel LSP groups
     parallel_lsp_groups = model.parallel_lsp_groups()  # TODO - can this be optimized?
 
@@ -28,6 +32,9 @@ def _route_lsps(model, input_model):
 
     # Find the amount of bandwidth each LSP in each parallel group will carry
     counter = 1
+
+    G = input_model._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True)
+
     for group, lsps in parallel_lsp_groups.items():
 
         num_lsps_in_group = len(lsps)
@@ -49,8 +56,6 @@ def _route_lsps(model, input_model):
             # since parallel_demand_group will have no entry for 'group'
             pass
 
-        res_bw_per_lsp = traff_on_each_group_lsp / num_lsps_in_group
-
         # # Now route each LSP in the group (first routing iteration)
         # for lsp in lsps:  # TODO - can this be optimized?
         #     # Route each LSP one at a time
@@ -63,9 +68,7 @@ def _route_lsps(model, input_model):
 
         for lsp in lsps:
             lsp.path = {}
-
-            G = model._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
-                                                       needed_bw=res_bw_per_lsp)
+            lsp.reserved_bandwidth = traff_on_each_group_lsp
 
             # Shortest path in networkx multidigraph
             try:
@@ -100,9 +103,6 @@ def _route_lsps(model, input_model):
 
             candidate_path_info = model._normalize_multidigraph_paths(all_paths)
 
-            import pdb
-            pdb.set_trace()
-
             # If multiple lowest_metric_paths, find those with fewest hops
             if len(candidate_path_info) > 1:
                 fewest_hops = min([len(path['interfaces']) for path in candidate_path_info])
@@ -116,7 +116,13 @@ def _route_lsps(model, input_model):
 
             lsp.path = new_path
 
+            for interface in [interface for interface in lsp.path if lsp.path != 'Unrouted']:
+                interface.reserved_bandwidth += lsp.reserved_bandwidth
 
+            # TODO - get lsp.path in normal format?
+            #  {'interfaces': [Interface(name = 'interfaceA-to-B', cost = 4, capacity = 100,
+            #  node_object = Node('nodeA'), remote_node_object = Node('nodeB'), circuit_id = 1)],
+            #  'path_cost': 4, 'baseline_path_reservable_bw': 100.0}
 
     ########################
         routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted']
@@ -179,7 +185,9 @@ model = Parallel_Link_Model(interface_objects=set([interface_a, interface_b]),
               node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
               rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
 
-model.update_simulation()
+# model.update_simulation()
+
+model = _route_lsps(model, model)
 
 
 
