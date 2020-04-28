@@ -10,6 +10,7 @@ from pyNTM import Parallel_Link_Model
 from pyNTM import Interface
 from pyNTM import RSVP_LSP
 
+from pprint import pprint
 
 def _route_lsps(model, input_model):
     """Route the LSPs in the model
@@ -103,20 +104,37 @@ def _route_lsps(model, input_model):
 
             candidate_path_info = model._normalize_multidigraph_paths(all_paths)
 
+            # Candidate paths with enough reservable bandwidth
+            candidate_path_info_w_reservable_bw = []
+
+            for path in candidate_path_info:
+                if min([interface.reservable_bandwidth for interface in path]) >= traff_on_each_group_lsp:
+                    candidate_path_info_w_reservable_bw.append(path)
+
             # If multiple lowest_metric_paths, find those with fewest hops
-            if len(candidate_path_info) > 1:
-                fewest_hops = min([len(path['interfaces']) for path in candidate_path_info])
-                lowest_hop_count_paths = [path for path in candidate_path_info if len(path['interfaces']) == fewest_hops]
+            if len(candidate_path_info_w_reservable_bw) == 0:
+                lsp.path = 'Unrouted'
+                continue
+
+            elif len(candidate_path_info_w_reservable_bw) > 1:
+                fewest_hops = min([len(path) for path in candidate_path_info_w_reservable_bw])
+                lowest_hop_count_paths = [path for path in candidate_path_info_w_reservable_bw
+                                          if len(path) == fewest_hops]
                 if len(lowest_hop_count_paths) > 1:
                     new_path = random.choice(lowest_hop_count_paths)
                 else:
                     new_path = lowest_hop_count_paths[0]
             else:
-                new_path = candidate_path_info[0]
+                new_path = candidate_path_info_w_reservable_bw[0]
 
-            lsp.path = new_path
+            # Change LSP path into more verbose form
+            path_cost = sum([interface.cost for interface in new_path])
+            baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in new_path])
+            lsp.path = {'interfaces': new_path,
+                        'path_cost': path_cost,
+                        'baseline_path_reservable_bw': baseline_path_reservable_bw}
 
-            for interface in [interface for interface in lsp.path if lsp.path != 'Unrouted']:
+            for interface in [interface for interface in lsp.path['interfaces'] if lsp.path != 'Unrouted']:
                 interface.reserved_bandwidth += lsp.reserved_bandwidth
 
             # TODO - get lsp.path in normal format?
@@ -137,59 +155,30 @@ def _route_lsps(model, input_model):
 
     return model
 
+# node_a = Node(name='nodeA', lat=0, lon=0)
+# node_b = Node(name='nodeB', lat=0, lon=0)
+# node_d = Node(name='nodeD')
+# interface_a = Interface(name='interfaceA-to-B', cost=4, capacity=100,
+#                         node_object=node_a, remote_node_object=node_b, circuit_id=1)
+# interface_b = Interface(name='interfaceB-to-A', cost=4, capacity=100,
+#                         node_object=node_b, remote_node_object=node_a, circuit_id=1)
+# dmd_a_b = Demand(node_a, node_b, traffic=10)
+#
+# lsp_a_b_1 = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b_1')
+# lsp_a_b_2 = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b_2')
+#
+# model = Parallel_Link_Model(interface_objects=set([interface_a, interface_b]),
+#               node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
+#               rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
 
-def _find_path_cost_and_headroom(lsp, candidate_paths):
-    """
-    Returns a list of dictionaries containing the path interfaces as
-    well as the path cost and headroom available on the path.
-    :param candidate_paths: list of lists of Interface objects
-    :return: list of dictionaries of paths: {'interfaces': path,
-                                             'path_cost': path_cost,
-                                             'baseline_path_reservable_bw': baseline_path_reservable_bw}
-    """
-
-    # List to hold info on each candidate path
-    candidate_path_info = []
-
-    # Find the path cost and path headroom for each path candidate
-    for path in candidate_paths['path']:
-        path_cost = 0
-        for interface in path:
-            path_cost += interface.cost
-
-        # baseline_path_reservable_bw is the max amount of traffic that the path
-        # can handle without saturating a component interface
-        baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
-
-        path_info = {'interfaces': path, 'path_cost': path_cost,
-                     'baseline_path_reservable_bw': baseline_path_reservable_bw}
-
-        candidate_path_info.append(path_info)
-
-    return candidate_path_info
-
-
-node_a = Node(name='nodeA', lat=0, lon=0)
-node_b = Node(name='nodeB', lat=0, lon=0)
-node_d = Node(name='nodeD')
-interface_a = Interface(name='interfaceA-to-B', cost=4, capacity=100,
-                        node_object=node_a, remote_node_object=node_b, circuit_id=1)
-interface_b = Interface(name='interfaceB-to-A', cost=4, capacity=100,
-                        node_object=node_b, remote_node_object=node_a, circuit_id=1)
-dmd_a_b = Demand(node_a, node_b, traffic=10)
-
-lsp_a_b_1 = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b_1')
-lsp_a_b_2 = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b_2')
-
-model = Parallel_Link_Model(interface_objects=set([interface_a, interface_b]),
-              node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
-              rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
+model = Parallel_Link_Model.load_model_file('3lsps_2_paths_parallel_link_model.csv')
 
 # model.update_simulation()
 
 model = _route_lsps(model, model)
 
-
+for lsp in model.rsvp_lsp_objects:
+    pprint([lsp, lsp.reserved_bandwidth, lsp.path])
 
 
 # model.update_simulation()
