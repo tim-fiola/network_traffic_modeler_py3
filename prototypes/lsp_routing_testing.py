@@ -155,6 +155,8 @@ def _route_lsps(model, input_model):
 
     return model
 
+    # TODO - replace the above in model object
+
 # node_a = Node(name='nodeA', lat=0, lon=0)
 # node_b = Node(name='nodeB', lat=0, lon=0)
 # node_d = Node(name='nodeD')
