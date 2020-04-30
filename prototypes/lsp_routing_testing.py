@@ -10,6 +10,8 @@ from pyNTM import Parallel_Link_Model
 from pyNTM import Interface
 from pyNTM import RSVP_LSP
 
+from datetime import datetime
+
 from pprint import pprint
 
 def _route_lsps(model, input_model):
@@ -173,14 +175,23 @@ def _route_lsps(model, input_model):
 #               node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
 #               rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
 
-model = Parallel_Link_Model.load_model_file('3lsps_2_paths_parallel_link_model.csv')
+model = Parallel_Link_Model.load_model_file('big_model_multi_digraph_file.txt')
 
 # model.update_simulation()
-
+pre_lsp_route_time = datetime.now()
 model = _route_lsps(model, model)
+post_lsp_route_time = datetime.now()
 
-for lsp in model.rsvp_lsp_objects:
-    pprint([lsp, lsp.reserved_bandwidth, lsp.path])
+model = model._route_demands(model)
+post_demand_time = datetime.now()
+
+lsp_time = post_lsp_route_time - pre_lsp_route_time
+dmd_time = post_demand_time - post_lsp_route_time
+print("lsp_time = {}".format(lsp_time))
+print("dmd_time = {}".format(dmd_time))
+
+# for lsp in model.rsvp_lsp_objects:
+#     pprint([lsp, lsp.reserved_bandwidth, lsp.path])
 
 
 # model.update_simulation()
