@@ -6,6 +6,7 @@ import random
 
 from pyNTM import Node
 from pyNTM import Demand
+from pyNTM import Model
 from pyNTM import Parallel_Link_Model
 from pyNTM import Interface
 from pyNTM import RSVP_LSP
@@ -175,8 +176,8 @@ def _route_lsps(model, input_model):
 #               node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
 #               rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
 
-model = Parallel_Link_Model.load_model_file('big_model_multi_digraph_file.txt')
-
+# model = Parallel_Link_Model.load_model_file('big_model_multi_digraph_file.txt')
+model = Parallel_Link_Model.load_model_file('parallel_link_model_test_topology_2.csv')
 # model.update_simulation()
 pre_lsp_route_time = datetime.now()
 model = _route_lsps(model, model)
@@ -198,3 +199,13 @@ print("dmd_time = {}".format(dmd_time))
 #
 # for lsp in model.rsvp_lsp_objects:
 #     print(lsp.traffic_on_lsp(model))
+
+model2 = Model.load_model_file('../test/model_test_topology_2.csv')
+model2.update_simulation()
+
+model3 = Model.load_model_file('../test/model_test_topology.csv')
+model3.update_simulation()
+
+# TODO - find why both these LSPs are not routing . . .
+lsp_a_d_1 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+lsp_a_d_2 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
