@@ -11,8 +11,6 @@ from .exceptions import ModelException
 from .node import Node
 from .rsvp import RSVP_LSP
 
-from pprint import pprint
-
 import networkx as nx
 import random
 
@@ -553,11 +551,6 @@ class MasterModel(object):
 
             for lsp in lsps:
 
-                G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
-                                                          needed_bw=traff_on_each_group_lsp)
-
-                lsp.path = {}
-
                 # Check to see if configured_setup_bandwidth is set; if so,
                 # set reserved_bandwidth and setup_bandwidth equal to
                 # configured_setup_bandwidth value
@@ -567,6 +560,11 @@ class MasterModel(object):
                 else:
                     lsp.reserved_bandwidth = lsp.configured_setup_bandwidth
                     lsp.setup_bandwidth = lsp.configured_setup_bandwidth
+
+                G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
+                                                          needed_bw=lsp.setup_bandwidth)
+
+                lsp.path = {}
 
                 # Shortest path in networkx multidigraph
                 try:
@@ -606,7 +604,7 @@ class MasterModel(object):
                 candidate_path_info_w_reservable_bw = []
 
                 for path in candidate_path_info:
-                    if min([interface.reservable_bandwidth for interface in path]) >= traff_on_each_group_lsp:
+                    if min([interface.reservable_bandwidth for interface in path]) >= lsp.setup_bandwidth:
                         candidate_path_info_w_reservable_bw.append(path)
 
                 # If multiple lowest_metric_paths, find those with fewest hops
