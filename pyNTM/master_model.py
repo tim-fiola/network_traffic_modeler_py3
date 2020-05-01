@@ -406,25 +406,7 @@ class MasterModel(object):
 
                 # all_paths is list of paths from source to destination; these paths
                 # may include paths that have multiple links between nodes
-                all_paths = []
-
-                for path in nx_sp:
-                    current_hop = path[0]
-                    this_path = []
-                    for next_hop in path[1:]:
-                        this_hop = []
-                        values_source_hop = G[current_hop][next_hop].values()
-                        min_weight = min(d['cost'] for d in values_source_hop)
-                        ecmp_links = [interface_index for interface_index, interface_item in
-                                      G[current_hop][next_hop].items() if
-                                      interface_item['cost'] == min_weight]
-
-                        # Add Interface(s) to this_hop list and add traffic to Interfaces
-                        for link_index in ecmp_links:
-                            this_hop.append(G[current_hop][next_hop][link_index]['interface'])
-                        this_path.append(this_hop)
-                        current_hop = next_hop
-                    all_paths.append(this_path)
+                all_paths = self._get_all_paths(G, nx_sp)
 
                 path_list = self._normalize_multidigraph_paths(all_paths)
                 demand.path = path_list
@@ -454,6 +436,7 @@ class MasterModel(object):
         # Find the amount of bandwidth each LSP in each parallel group will carry
         counter = 1
 
+        # Route LSPs by source, dest (parallel) groups
         for group, lsps in parallel_lsp_groups.items():
 
             num_lsps_in_group = len(lsps)
@@ -492,7 +475,7 @@ class MasterModel(object):
 
                 lsp.path = {}
 
-                # Shortest path in networkx multidigraph
+                # Get shortest paths in networkx multidigraph
                 try:
                     nx_sp = list(nx.all_shortest_paths(G, lsp.source_node_object.name, lsp.dest_node_object.name,
                                                        weight='cost'))
@@ -502,27 +485,8 @@ class MasterModel(object):
                     lsp.reserved_bandwidth = 'Unrouted'
                     continue
 
-                # all_paths is list of paths from source to destination; these paths
-                # may include paths that have multiple links between nodes
-                all_paths = []
-
-                for path in nx_sp:
-                    current_hop = path[0]
-                    this_path = []
-                    for next_hop in path[1:]:
-                        this_hop = []
-                        values_source_hop = G[current_hop][next_hop].values()
-                        min_weight = min(d['cost'] for d in values_source_hop)
-                        ecmp_links = [interface_index for interface_index, interface_item in
-                                      G[current_hop][next_hop].items() if
-                                      interface_item['cost'] == min_weight]
-
-                        # Add Interface(s) to this_hop list and add traffic to Interfaces
-                        for link_index in ecmp_links:
-                            this_hop.append(G[current_hop][next_hop][link_index]['interface'])
-                        this_path.append(this_hop)
-                        current_hop = next_hop
-                    all_paths.append(this_path)
+                # Convert node hop by hop paths from G into Interface-based paths
+                all_paths = self._get_all_paths(G, nx_sp)
 
                 candidate_path_info = self._normalize_multidigraph_paths(all_paths)
 
@@ -567,6 +531,55 @@ class MasterModel(object):
             counter += 1
 
         return self
+
+    def _get_all_paths(self, G, nx_sp):
+        """
+        Examines hop-by-hop paths in G and determines specific
+        edges transited from one hop to the next
+
+        :param G:  networkx multidigraph object containing nx_sp, contains
+        Interface objects in edge data
+        :param nx_sp:  List of node paths in G
+        Example: nx_sp from A to D in graph G:
+         [['A', 'D'], ['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
+
+        :return:  Specific model Interface objects transited from node to node for nx_sp
+        Example:
+        [[[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+            remote_node_object = Node('D'), circuit_id = None)]],
+        [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = None)],
+        [Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
+            remote_node_object = Node('D'), circuit_id = None)]],
+        [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = None)],
+        [Interface(name = 'B-to-G', cost = 10, capacity = 100.0, node_object = Node('B'),
+            remote_node_object = Node('G'), circuit_id = None)],
+        [Interface(name = 'G-to-D', cost = 10, capacity = 100.0, node_object = Node('G'),
+            remote_node_object = Node('D'), circuit_id = None)]]]
+
+        """
+
+        all_paths = []
+        for path in nx_sp:
+            current_hop = path[0]
+            this_path = []
+            for next_hop in path[1:]:
+                this_hop = []
+                values_source_hop = G[current_hop][next_hop].values()
+                min_weight = min(d['cost'] for d in values_source_hop)
+                ecmp_links = [interface_index for interface_index, interface_item in
+                              G[current_hop][next_hop].items() if
+                              interface_item['cost'] == min_weight]
+
+                # Add Interface(s) to this_hop list and add traffic to Interfaces
+                for link_index in ecmp_links:
+                    this_hop.append(G[current_hop][next_hop][link_index]['interface'])
+                this_path.append(this_hop)
+                current_hop = next_hop
+            all_paths.append(this_path)
+
+        return all_paths
 
     def _add_lsp_path_data(self, lsp, path):
         """
