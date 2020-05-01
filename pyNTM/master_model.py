@@ -11,6 +11,8 @@ from .exceptions import ModelException
 from .node import Node
 from .rsvp import RSVP_LSP
 
+from pprint import pprint
+
 import networkx as nx
 import random
 
@@ -502,7 +504,7 @@ class MasterModel(object):
         1.  Get LSPs into groups with matching source/dest
         2.  Find all the demands that take the LSP group
         3.  Route the LSP group, one at a time
-        :param input_model: Model object; this may have different parameters than 'self'
+
         :return: self, with updated LSP paths
         """
 
@@ -518,8 +520,6 @@ class MasterModel(object):
         # Find the amount of bandwidth each LSP in each parallel group will carry
         counter = 1
 
-        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True)
-
         for group, lsps in parallel_lsp_groups.items():
 
             num_lsps_in_group = len(lsps)
@@ -527,6 +527,7 @@ class MasterModel(object):
             print("Routing {} LSPs in parallel LSP group {}; {}/{}".format(num_lsps_in_group, group, counter,
                                                                            len(parallel_lsp_groups)))
             # Traffic each LSP in a parallel LSP group will carry; initialize
+            traffic_in_demand_group = 0
             traff_on_each_group_lsp = 0
 
             try:
@@ -551,6 +552,10 @@ class MasterModel(object):
             # G = model._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True)
 
             for lsp in lsps:
+
+                G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
+                                                          needed_bw=traff_on_each_group_lsp)
+
                 lsp.path = {}
                 lsp.reserved_bandwidth = traff_on_each_group_lsp
 
@@ -561,6 +566,7 @@ class MasterModel(object):
                 except nx.exception.NetworkXNoPath:
                     # There is no path, demand.path = 'Unrouted'
                     lsp.path = 'Unrouted'
+                    lsp.reserved_bandwidth = 'Unrouted'
                     continue
 
                 # all_paths is list of paths from source to destination; these paths
@@ -597,6 +603,7 @@ class MasterModel(object):
                 # If multiple lowest_metric_paths, find those with fewest hops
                 if len(candidate_path_info_w_reservable_bw) == 0:
                     lsp.path = 'Unrouted'
+                    lsp.reserved_bandwidth = 'Unrouted'
                     continue
 
                 elif len(candidate_path_info_w_reservable_bw) > 1:

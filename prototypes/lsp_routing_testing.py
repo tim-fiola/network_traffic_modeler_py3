@@ -15,7 +15,7 @@ from datetime import datetime
 
 from pprint import pprint
 
-def _route_lsps(model, input_model):
+def _route_lsps(model):
     """Route the LSPs in the model
     1.  Get LSPs into groups with matching source/dest
     2.  Find all the demands that take the LSP group
@@ -24,7 +24,7 @@ def _route_lsps(model, input_model):
     :return: self, with updated LSP paths
     """
 
-    for interface in input_model.interface_objects:
+    for interface in model.interface_objects:
         interface.reserved_bandwidth = 0
 
 
@@ -37,8 +37,6 @@ def _route_lsps(model, input_model):
     # Find the amount of bandwidth each LSP in each parallel group will carry
     counter = 1
 
-    G = input_model._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True)
-
     for group, lsps in parallel_lsp_groups.items():
 
         num_lsps_in_group = len(lsps)
@@ -46,6 +44,7 @@ def _route_lsps(model, input_model):
         print("Routing {} LSPs in parallel LSP group {}; {}/{}".format(num_lsps_in_group, group, counter,
                                                                        len(parallel_lsp_groups)))
         # Traffic each LSP in a parallel LSP group will carry; initialize
+        traffic_in_demand_group = 0
         traff_on_each_group_lsp = 0
 
         try:
@@ -71,6 +70,10 @@ def _route_lsps(model, input_model):
         # G = model._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True)
 
         for lsp in lsps:
+
+            G = model._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
+                                                       needed_bw=traffic_in_demand_group)
+
             lsp.path = {}
             lsp.reserved_bandwidth = traff_on_each_group_lsp
 
@@ -176,20 +179,24 @@ def _route_lsps(model, input_model):
 #               node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
 #               rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
 
+
+# ## BIG MODEL LOAD ## #
 # model = Parallel_Link_Model.load_model_file('big_model_multi_digraph_file.txt')
-model = Parallel_Link_Model.load_model_file('parallel_link_model_test_topology_2.csv')
+# model = Parallel_Link_Model.load_model_file('parallel_link_model_test_topology_2.csv')
 # model.update_simulation()
-pre_lsp_route_time = datetime.now()
-model = _route_lsps(model, model)
-post_lsp_route_time = datetime.now()
+# pre_lsp_route_time = datetime.now()
+# model = _route_lsps(model)
+# post_lsp_route_time = datetime.now()
+#
+# model = model._route_demands(model)
+# post_demand_time = datetime.now()
+#
+# lsp_time = post_lsp_route_time - pre_lsp_route_time
+# dmd_time = post_demand_time - post_lsp_route_time
+# print("lsp_time = {}".format(lsp_time))
+# print("dmd_time = {}".format(dmd_time))
 
-model = model._route_demands(model)
-post_demand_time = datetime.now()
-
-lsp_time = post_lsp_route_time - pre_lsp_route_time
-dmd_time = post_demand_time - post_lsp_route_time
-print("lsp_time = {}".format(lsp_time))
-print("dmd_time = {}".format(dmd_time))
+# ## END BIG MODEL LOAD ## #
 
 # for lsp in model.rsvp_lsp_objects:
 #     pprint([lsp, lsp.reserved_bandwidth, lsp.path])
@@ -200,12 +207,13 @@ print("dmd_time = {}".format(dmd_time))
 # for lsp in model.rsvp_lsp_objects:
 #     print(lsp.traffic_on_lsp(model))
 
-model2 = Model.load_model_file('../test/model_test_topology_2.csv')
-model2.update_simulation()
+# model2 = Model.load_model_file('../test/model_test_topology_2.csv')
+# model2.update_simulation()
 
 model3 = Model.load_model_file('../test/model_test_topology.csv')
 model3.update_simulation()
+sim_diag = model3.simulation_diagnostics()
+pprint(sim_diag)
 
-# TODO - find why both these LSPs are not routing . . .
 lsp_a_d_1 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
 lsp_a_d_2 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')

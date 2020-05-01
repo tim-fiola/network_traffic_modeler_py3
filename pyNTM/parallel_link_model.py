@@ -1292,7 +1292,7 @@ class Parallel_Link_Model(MasterModel):
         lsp_path_interfaces = lsp.path['interfaces']
 
         eligible_interface_generator = (interface for interface in self.interface_objects if
-                                        interface.failed is False)
+                                        (interface.failed is False and interface.rsvp_enabled == True))
 
         eligible_interfaces = set()
 
