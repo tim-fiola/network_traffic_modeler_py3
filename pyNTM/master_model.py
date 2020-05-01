@@ -433,7 +433,23 @@ class MasterModel(object):
         # Find all the parallel demand groups
         parallel_demand_groups = self.parallel_demand_groups()  # TODO - can this be optimized?
 
-        # Find the amount of bandwidth each LSP in each parallel group will carry
+        # Route the LSPs by parallel group
+        self._route_parallel_lsp_groups(parallel_demand_groups, parallel_lsp_groups)
+
+        return self
+
+    def _route_parallel_lsp_groups(self, parallel_demand_groups, parallel_lsp_groups):
+        """
+        Routes LSPs with same source, dest (parallel LSPs) based on the demands that would
+        take those LSPs.  For each LSP, determine a 'path' attribute.
+
+        :param parallel_demand_groups: dict with keys = source_node-dest_node and values being a
+        list of all demands with the common corresponding source and dest nodes
+        :param parallel_lsp_groups: dict with keys = source_node-dest_node and values being a
+        list of all LSPs with the common corresponding source and dest nodes
+        :return: None; assigns path to each LSP
+        """
+        # Counter for LSP groups
         counter = 1
 
         # Route LSPs by source, dest (parallel) groups
@@ -459,66 +475,9 @@ class MasterModel(object):
                 # since parallel_demand_group will have no entry for 'group'
                 pass
 
-            for lsp in lsps:
-                # Check to see if configured_setup_bandwidth is set; if so,
-                # set reserved_bandwidth and setup_bandwidth equal to
-                # configured_setup_bandwidth value
-                if lsp.configured_setup_bandwidth is None:
-                    lsp.reserved_bandwidth = traff_on_each_group_lsp
-                    lsp.setup_bandwidth = traff_on_each_group_lsp
-                else:
-                    lsp.reserved_bandwidth = lsp.configured_setup_bandwidth
-                    lsp.setup_bandwidth = lsp.configured_setup_bandwidth
-
-                G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
-                                                          needed_bw=lsp.setup_bandwidth)
-
-                lsp.path = {}
-
-                # Get shortest paths in networkx multidigraph
-                try:
-                    nx_sp = list(nx.all_shortest_paths(G, lsp.source_node_object.name, lsp.dest_node_object.name,
-                                                       weight='cost'))
-                except nx.exception.NetworkXNoPath:
-                    # There is no path, demand.path = 'Unrouted'
-                    lsp.path = 'Unrouted'
-                    lsp.reserved_bandwidth = 'Unrouted'
-                    continue
-
-                # Convert node hop by hop paths from G into Interface-based paths
-                all_paths = self._get_all_paths(G, nx_sp)
-
-                candidate_path_info = self._normalize_multidigraph_paths(all_paths)
-
-                # Candidate paths with enough reservable bandwidth
-                candidate_path_info_w_reservable_bw = []
-
-                for path in candidate_path_info:
-                    if min([interface.reservable_bandwidth for interface in path]) >= lsp.setup_bandwidth:
-                        candidate_path_info_w_reservable_bw.append(path)
-
-                # If multiple lowest_metric_paths, find those with fewest hops
-                if len(candidate_path_info_w_reservable_bw) == 0:
-                    lsp.path = 'Unrouted'
-                    lsp.reserved_bandwidth = 'Unrouted'
-                    continue
-
-                elif len(candidate_path_info_w_reservable_bw) > 1:
-                    fewest_hops = min([len(path) for path in candidate_path_info_w_reservable_bw])
-                    lowest_hop_count_paths = [path for path in candidate_path_info_w_reservable_bw
-                                              if len(path) == fewest_hops]
-                    if len(lowest_hop_count_paths) > 1:
-                        new_path = random.choice(lowest_hop_count_paths)
-                    else:
-                        new_path = lowest_hop_count_paths[0]
-                else:
-                    new_path = candidate_path_info_w_reservable_bw[0]
-
-                # Change LSP path into more verbose form and set LSP's path
-                self._add_lsp_path_data(lsp, new_path)
-
-                for interface in [interface for interface in lsp.path['interfaces'] if lsp.path != 'Unrouted']:
-                    interface.reserved_bandwidth += lsp.reserved_bandwidth
+            # Determine LSP's specific path and reserved bandwidth; also consume
+            # reserved bandwidth on transited Interfaces
+            self._determine_lsp_state_info(lsps, traff_on_each_group_lsp)
 
             routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted']
 
@@ -530,7 +489,81 @@ class MasterModel(object):
 
             counter += 1
 
-        return self
+    def _determine_lsp_state_info(self, lsps, traff_on_each_group_lsp):
+        """
+        Determine LSP's specific path and reserved bandwidth; also consume
+        reserved bandwidth on transited Interfaces
+
+        :param lsps: List of parallel LSPs (LSPs with common source/dest nodes)
+        :param traff_on_each_group_lsp: How much traffic each LSP should attempt
+        to carry
+        :return: None; determines path and reserved bandwidth for each LSP in lsps
+        and also consumes reservable bandwidth on each Interface each LSP transits
+        """
+        for lsp in lsps:
+            # Check to see if configured_setup_bandwidth is set; if so,
+            # set reserved_bandwidth and setup_bandwidth equal to
+            # configured_setup_bandwidth value
+            if lsp.configured_setup_bandwidth is None:
+                lsp.reserved_bandwidth = traff_on_each_group_lsp
+                lsp.setup_bandwidth = traff_on_each_group_lsp
+            else:
+                lsp.reserved_bandwidth = lsp.configured_setup_bandwidth
+                lsp.setup_bandwidth = lsp.configured_setup_bandwidth
+
+            G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
+                                                      needed_bw=lsp.setup_bandwidth)
+
+            lsp.path = {}
+
+            # Get shortest paths in networkx multidigraph
+            try:
+                nx_sp = list(nx.all_shortest_paths(G, lsp.source_node_object.name, lsp.dest_node_object.name,
+                                                   weight='cost'))
+            except nx.exception.NetworkXNoPath:
+                # There is no path, demand.path = 'Unrouted'
+                lsp.path = 'Unrouted'
+                lsp.reserved_bandwidth = 'Unrouted'
+                continue
+
+            # Convert node hop by hop paths from G into Interface-based paths
+            all_paths = self._get_all_paths(G, nx_sp)
+
+            # all_paths may have hops between nodes that can take different Interfaces;
+            # normalize those hops that could transit any of multiple Interfaces into
+            # distinct, unique possible paths
+            candidate_path_info = self._normalize_multidigraph_paths(all_paths)
+
+            # Candidate paths with enough reservable bandwidth
+            candidate_path_info_w_reservable_bw = []
+
+            # Determine which candidate paths have enough reservable bandwidth
+            for path in candidate_path_info:
+                if min([interface.reservable_bandwidth for interface in path]) >= lsp.setup_bandwidth:
+                    candidate_path_info_w_reservable_bw.append(path)
+
+            # If multiple lowest_metric_paths, find those with fewest hops
+            if len(candidate_path_info_w_reservable_bw) == 0:
+                lsp.path = 'Unrouted'
+                lsp.reserved_bandwidth = 'Unrouted'
+                continue
+
+            elif len(candidate_path_info_w_reservable_bw) > 1:
+                fewest_hops = min([len(path) for path in candidate_path_info_w_reservable_bw])
+                lowest_hop_count_paths = [path for path in candidate_path_info_w_reservable_bw
+                                          if len(path) == fewest_hops]
+                if len(lowest_hop_count_paths) > 1:
+                    new_path = random.choice(lowest_hop_count_paths)
+                else:
+                    new_path = lowest_hop_count_paths[0]
+            else:
+                new_path = candidate_path_info_w_reservable_bw[0]
+
+            # Change LSP path into more verbose form and set LSP's path
+            self._add_lsp_path_data(lsp, new_path)
+
+            for interface in [interface for interface in lsp.path['interfaces'] if lsp.path != 'Unrouted']:
+                interface.reserved_bandwidth += lsp.reserved_bandwidth
 
     def _get_all_paths(self, G, nx_sp):
         """
@@ -543,20 +576,26 @@ class MasterModel(object):
         Example: nx_sp from A to D in graph G:
          [['A', 'D'], ['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
 
-        :return:  Specific model Interface objects transited from node to node for nx_sp
-        Example:
+        :return:  List of lists of possible specific model paths from source to
+        destination nodes.  Each 'hop' in a given path may include multiple possible
+        Interfaces that could be transited from one node to the next adjacent node.
+
+        Example:  all_paths from 'A' to 'D' is a list of lists; notice that there are
+        two Interfacs that could be transited from Node 'B' to Node 'G'
         [[[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
-            remote_node_object = Node('D'), circuit_id = None)]],
+            remote_node_object = Node('D'), circuit_id = 1)]],
         [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
-            remote_node_object = Node('B'), circuit_id = None)],
-        [Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
-            remote_node_object = Node('D'), circuit_id = None)]],
+            remote_node_object = Node('B'), circuit_id = 2)],
+         [Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
+            remote_node_object = Node('D'), circuit_id = 3)]],
         [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
-            remote_node_object = Node('B'), circuit_id = None)],
-        [Interface(name = 'B-to-G', cost = 10, capacity = 100.0, node_object = Node('B'),
-            remote_node_object = Node('G'), circuit_id = None)],
+            remote_node_object = Node('B'), circuit_id = 4)],
+         [Interface(name = 'B-to-G', cost = 10, capacity = 100.0, node_object = Node('B'),
+            remote_node_object = Node('G'), circuit_id = 5),
+          Interface(name = 'B-to-G_2', cost = 10, capacity = 50.0, node_object = Node('B'),
+            remote_node_object = Node('G'), circuit_id = 6)],
         [Interface(name = 'G-to-D', cost = 10, capacity = 100.0, node_object = Node('G'),
-            remote_node_object = Node('D'), circuit_id = None)]]]
+            remote_node_object = Node('D'), circuit_id = 7)]]]
 
         """
 
