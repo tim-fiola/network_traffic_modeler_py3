@@ -500,6 +500,7 @@ class MasterModel(object):
         :return: None; determines path and reserved bandwidth for each LSP in lsps
         and also consumes reservable bandwidth on each Interface each LSP transits
         """
+
         for lsp in lsps:
             # Check to see if configured_setup_bandwidth is set; if so,
             # set reserved_bandwidth and setup_bandwidth equal to
