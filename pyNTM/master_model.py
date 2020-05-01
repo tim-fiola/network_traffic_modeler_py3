@@ -558,6 +558,7 @@ class MasterModel(object):
 
                 lsp.path = {}
                 lsp.reserved_bandwidth = traff_on_each_group_lsp
+                lsp.setup_bandwidth = traff_on_each_group_lsp
 
                 # Shortest path in networkx multidigraph
                 try:

@@ -109,7 +109,7 @@ class RSVP_LSP(object):
         """
         Puts guardrails on the setup bandwidth for the RSVP LSP
         :param proposed_setup_bw: setup bandwidth value to be evaluated
-        :return:
+        :return: None
         """
 
         # Check for configured_setup_bandwidth
