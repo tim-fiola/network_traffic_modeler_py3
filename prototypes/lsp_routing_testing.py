@@ -209,11 +209,19 @@ def _route_lsps(model):
 
 # model2 = Model.load_model_file('../test/model_test_topology_2.csv')
 # model2.update_simulation()
+#
+# model3 = Model.load_model_file('../test/model_test_topology.csv')
+# model3.update_simulation()
+# sim_diag = model3.simulation_diagnostics()
+# pprint(sim_diag)
+#
+# lsp_a_d_1 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+# lsp_a_d_2 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
 
-model3 = Model.load_model_file('../test/model_test_topology.csv')
-model3.update_simulation()
-sim_diag = model3.simulation_diagnostics()
-pprint(sim_diag)
+model = Model.load_model_file('../test/lsp_configured_setup_bw_model.csv')
+lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
+lsp_a_d_2 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
+lsp_a_d_3 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
 
-lsp_a_d_1 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
-lsp_a_d_2 = model3.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
+model.update_simulation()
+

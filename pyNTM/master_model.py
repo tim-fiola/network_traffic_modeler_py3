@@ -557,8 +557,16 @@ class MasterModel(object):
                                                           needed_bw=traff_on_each_group_lsp)
 
                 lsp.path = {}
-                lsp.reserved_bandwidth = traff_on_each_group_lsp
-                lsp.setup_bandwidth = traff_on_each_group_lsp
+
+                # Check to see if configured_setup_bandwidth is set; if so,
+                # set reserved_bandwidth and setup_bandwidth equal to
+                # configured_setup_bandwidth value
+                if lsp.configured_setup_bandwidth is None:
+                    lsp.reserved_bandwidth = traff_on_each_group_lsp
+                    lsp.setup_bandwidth = traff_on_each_group_lsp
+                else:
+                    lsp.reserved_bandwidth = lsp.configured_setup_bandwidth
+                    lsp.setup_bandwidth = lsp.configured_setup_bandwidth
 
                 # Shortest path in networkx multidigraph
                 try:
@@ -821,7 +829,7 @@ class MasterModel(object):
                 raise ModelException(err_msg)
             name = lsp_info[2]
             try:
-                configured_setup_bw = lsp_info[3]
+                configured_setup_bw = float(lsp_info[3])
             except IndexError:
                 configured_setup_bw = None
             new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
