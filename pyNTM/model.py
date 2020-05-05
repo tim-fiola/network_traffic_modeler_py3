@@ -28,12 +28,11 @@ from .srlg import SRLG
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
 #  routed lsp/demands in dict form
-# TODO - look at removing the requirement that Interface circuit_id be specified since the remote side
-#  can be determined because only one circuit can exist between any pair of Nodes
 # TODO - add support for SRLGs in load_model_file
 # TODO - add attribute for Node/Interface whereby an object can be failed by itself
 #  and not unfail when a parent SRLG unfails
 
+# TODO 1.7 - test
 
 class Model(MasterModel):
     """A network model object consisting of the following base components:
