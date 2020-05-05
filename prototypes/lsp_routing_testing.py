@@ -71,8 +71,8 @@ def _route_lsps(model):
 
         for lsp in lsps:
 
-            G = model._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
-                                                       needed_bw=traffic_in_demand_group)
+            G = model._make_weighted_network_graph(include_failed_circuits=False, rsvp_required=True,
+                                                   needed_bw=traffic_in_demand_group)
 
             lsp.path = {}
             lsp.reserved_bandwidth = traff_on_each_group_lsp
@@ -108,7 +108,7 @@ def _route_lsps(model):
                     current_hop = next_hop
                 all_paths.append(this_path)
 
-            candidate_path_info = model._normalize_multidigraph_paths(all_paths)
+            candidate_path_info = model._normalize_multigraph_paths(all_paths)
 
             # Candidate paths with enough reservable bandwidth
             candidate_path_info_w_reservable_bw = []

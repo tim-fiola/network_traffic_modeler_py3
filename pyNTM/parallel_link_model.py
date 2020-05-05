@@ -12,6 +12,7 @@ from pprint import pprint
 
 import itertools
 import networkx as nx
+import random
 
 from .circuit import Circuit
 from .interface import Interface
@@ -234,66 +235,103 @@ class Parallel_Link_Model(MasterModel):
 
         self.validate_model()
 
-    # def _route_demands(self, model):
-    #     """
-    #     Routes demands in input 'model'
-    #
-    #     :param model: input 'model' parameter object (may be different from self)
-    #     :return: model with routed demands
-    #     """
-    #
-    #     G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
-    #
-    #     for demand in model.demand_objects:
-    #         demand.path = []
-    #
-    #         # Find all LSPs that can carry the demand:
-    #         for lsp in (lsp for lsp in model.rsvp_lsp_objects):
-    #             if (lsp.source_node_object == demand.source_node_object and
-    #                     lsp.dest_node_object == demand.dest_node_object and
-    #                     'Unrouted' not in lsp.path):
-    #                 demand.path.append(lsp)
-    #
-    #         if demand.path == []:
-    #             src = demand.source_node_object.name
-    #             dest = demand.dest_node_object.name
-    #
-    #             # Shortest path in networkx multidigraph
-    #             try:
-    #                 nx_sp = list(nx.all_shortest_paths(G, src, dest, weight='cost'))
-    #             except nx.exception.NetworkXNoPath:
-    #                 # There is no path, demand.path = 'Unrouted'
-    #                 demand.path = 'Unrouted'
-    #                 continue
-    #
-    #             # all_paths is list of paths from source to destination; these paths
-    #             # may include paths that have multiple links between nodes
-    #             all_paths = []
-    #
-    #             for path in nx_sp:
-    #                 current_hop = path[0]
-    #                 this_path = []
-    #                 for next_hop in path[1:]:
-    #                     this_hop = []
-    #                     values_source_hop = G[current_hop][next_hop].values()
-    #                     min_weight = min(d['cost'] for d in values_source_hop)
-    #                     ecmp_links = [interface_index for interface_index, interface_item in
-    #                                   G[current_hop][next_hop].items() if
-    #                                   interface_item['cost'] == min_weight]
-    #
-    #                     # Add Interface(s) to this_hop list and add traffic to Interfaces
-    #                     for link_index in ecmp_links:
-    #                         this_hop.append(G[current_hop][next_hop][link_index]['interface'])
-    #                     this_path.append(this_hop)
-    #                     current_hop = next_hop
-    #                 all_paths.append(this_path)
-    #
-    #             path_list = self._normalize_multidigraph_paths(all_paths)
-    #             demand.path = path_list
-    #
-    #     self._update_interface_utilization()
-    #
-    #     return self
+    def _route_demands(self, model):
+        """
+        Routes demands in input 'model'
+
+        :param model: input 'model' parameter object (may be different from self)
+        :return: model with routed demands
+        """
+
+        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
+
+        for demand in model.demand_objects:
+            demand.path = []
+
+            # Find all LSPs that can carry the demand:
+            for lsp in (lsp for lsp in model.rsvp_lsp_objects):
+                if (lsp.source_node_object == demand.source_node_object and
+                        lsp.dest_node_object == demand.dest_node_object and
+                        'Unrouted' not in lsp.path):
+                    demand.path.append(lsp)
+
+            if demand.path == []:
+                src = demand.source_node_object.name
+                dest = demand.dest_node_object.name
+
+                # Shortest path in networkx multidigraph
+                try:
+                    nx_sp = list(nx.all_shortest_paths(G, src, dest, weight='cost'))
+                except nx.exception.NetworkXNoPath:
+                    # There is no path, demand.path = 'Unrouted'
+                    demand.path = 'Unrouted'
+                    continue
+
+                # all_paths is list of paths from source to destination; these paths
+                # may include paths that have multiple links between nodes
+                all_paths = self._get_all_paths_mdg(G, nx_sp)
+
+                path_list = self._normalize_multidigraph_paths(all_paths)
+                demand.path = path_list
+
+        self._update_interface_utilization()
+
+        return self
+
+    def _get_all_paths_mdg(self, G, nx_sp):
+        """
+        Examines hop-by-hop paths in G and determines specific
+        edges transited from one hop to the next
+
+        :param G:  networkx multidigraph object containing nx_sp, contains
+        Interface objects in edge data
+        :param nx_sp:  List of node paths in G
+        Example: nx_sp from A to D in graph G:
+         [['A', 'D'], ['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
+
+        :return:  List of lists of possible specific model paths from source to
+        destination nodes.  Each 'hop' in a given path may include multiple possible
+        Interfaces that could be transited from one node to the next adjacent node.
+
+        Example:  all_paths from 'A' to 'D' is a list of lists; notice that there are
+        two Interfacs that could be transited from Node 'B' to Node 'G'
+        [[[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+            remote_node_object = Node('D'), circuit_id = 1)]],
+        [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = 2)],
+         [Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
+            remote_node_object = Node('D'), circuit_id = 3)]],
+        [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = 4)],
+         [Interface(name = 'B-to-G', cost = 10, capacity = 100.0, node_object = Node('B'),
+            remote_node_object = Node('G'), circuit_id = 5),
+          Interface(name = 'B-to-G_2', cost = 10, capacity = 50.0, node_object = Node('B'),
+            remote_node_object = Node('G'), circuit_id = 6)],
+        [Interface(name = 'G-to-D', cost = 10, capacity = 100.0, node_object = Node('G'),
+            remote_node_object = Node('D'), circuit_id = 7)]]]
+
+        """
+
+        all_paths = []
+        for path in nx_sp:
+            current_hop = path[0]
+            this_path = []
+            for next_hop in path[1:]:
+                this_hop = []
+                values_source_hop = G[current_hop][next_hop].values()
+                min_weight = min(d['cost'] for d in values_source_hop)
+                ecmp_links = [interface_index for interface_index, interface_item in
+                              G[current_hop][next_hop].items() if
+                              interface_item['cost'] == min_weight]
+
+                # Add Interface(s) to this_hop list and add traffic to Interfaces
+                for link_index in ecmp_links:
+                    this_hop.append(G[current_hop][next_hop][link_index]['interface'])
+                this_path.append(this_hop)
+                current_hop = next_hop
+            all_paths.append(this_path)
+
+        return all_paths
 
     def _make_weighted_network_graph_mdg(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
         """
@@ -950,64 +988,6 @@ class Parallel_Link_Model(MasterModel):
 
         return {'cost': converted_path['cost'], 'path': path_info}
 
-    # def _normalize_multidigraph_paths(self, path_info):
-    #     """
-    #     Takes the multidigraph_path_info and normalizes it to create all the
-    #     path combos that only have one link between each node.
-    #
-    #     :param path_info: List of of interface hops from a source
-    #     node to a destination node.  Each hop in the path
-    #     is a list of all the interfaces from the current node
-    #     to the next node.
-    #
-    #     path_info example from source node 'B' to destination node 'D':
-    #     [
-    #         [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-    #                 remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
-    #                 complete path
-    #         [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-    #                 remote_node_object = Node('G'), circuit_id = '28'),
-    #           Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-    #                 remote_node_object = Node('G'), circuit_id = '8'),
-    #           Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-    #                 remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
-    #         [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-    #                 remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of 2nd path
-    #     ]
-    #
-    #
-    #
-    #     :return: List of lists.  Each component list is a list with a unique
-    #     Interface combination for the egress Interfaces from source to destination
-    #     example:
-    #
-    #         [
-    #             [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-    #                 remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
-    #             [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-    #                 remote_node_object = Node('G'), circuit_id = '28'),
-    #              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-    #                 remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-    #             [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-    #                 remote_node_object = Node('G'), circuit_id = '18'),
-    #              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-    #                 remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-    #             [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-    #                 remote_node_object = Node('G'), circuit_id = '8'),
-    #              Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-    #                 remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
-    #         ]
-    #     """
-    #     # List to hold unique path(s)
-    #     path_list = []
-    #
-    #     for path in path_info:
-    #         path = list(itertools.product(*path))
-    #         for path_option in path:
-    #             path_list.append(list(path_option))
-    #
-    #     return path_list
-
     def _convert_nx_path_to_model_path(self, nx_graph_path, needed_bw):
         """
         Given a path from an networkx DiGraph, converts that
@@ -1228,51 +1208,82 @@ class Parallel_Link_Model(MasterModel):
             pprint(interface)
             print()
 
-    # def _make_weighted_network_graph_mdg(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
-    #     """
-    #     Returns a networkx weighted networkx multidigraph object from
-    #     the input Model object
-    #
-    #     :param include_failed_circuits: include interfaces from currently failed
-    #     circuits in the graph?
-    #     :param needed_bw: how much reservable_bandwidth is required?
-    #     :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
-    #
-    #     :return: networkx multidigraph with edges that conform to the needed_bw and
-    #     rsvp_required parameters
-    #     """
-    #
-    #     G = nx.MultiDiGraph()
-    #
-    #     # Get all the edges that meet 'failed' and 'reservable_bw' criteria
-    #     if include_failed_circuits is False:
-    #         considered_interfaces = (interface for interface in self.interface_objects
-    #                                  if (interface.failed is False and
-    #                                      interface.reservable_bandwidth >= needed_bw))
-    #     elif include_failed_circuits is True:
-    #         considered_interfaces = (interface for interface in self.interface_objects
-    #                                  if interface.reservable_bandwidth >= needed_bw)
-    #
-    #     if rsvp_required is True:
-    #         edge_names = ((interface.node_object.name,
-    #                        interface.remote_node_object.name,
-    #                        {'cost': interface.cost, 'circuit_id': interface.circuit_id})
-    #                       for interface in considered_interfaces
-    #                       if interface.rsvp_enabled is True)
-    #     else:
-    #         edge_names = ((interface.node_object.name,
-    #                        interface.remote_node_object.name,
-    #                        {'cost': interface.cost, 'circuit_id': interface.circuit_id})
-    #                       for interface in considered_interfaces)
-    #
-    #     # Add edges to networkx DiGraph
-    #     G.add_edges_from(edge_names)
-    #
-    #     # Add all the nodes
-    #     node_name_iterator = (node.name for node in self.node_objects)
-    #     G.add_nodes_from(node_name_iterator)
-    #
-    #     return G
+    def _determine_lsp_state_info(self, lsps, traff_on_each_group_lsp):
+        """
+        Determine LSP's specific path and reserved bandwidth; also consume
+        reserved bandwidth on transited Interfaces
+
+        :param lsps: List of parallel LSPs (LSPs with common source/dest nodes)
+        :param traff_on_each_group_lsp: How much traffic each LSP should attempt
+        to carry
+        :return: None; determines path and reserved bandwidth for each LSP in lsps
+        and also consumes reservable bandwidth on each Interface each LSP transits
+        """
+
+        for lsp in lsps:
+            # Check to see if configured_setup_bandwidth is set; if so,
+            # set reserved_bandwidth and setup_bandwidth equal to
+            # configured_setup_bandwidth value
+            if lsp.configured_setup_bandwidth is None:
+                lsp.reserved_bandwidth = traff_on_each_group_lsp
+                lsp.setup_bandwidth = traff_on_each_group_lsp
+            else:
+                lsp.reserved_bandwidth = lsp.configured_setup_bandwidth
+                lsp.setup_bandwidth = lsp.configured_setup_bandwidth
+
+            G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
+                                                      needed_bw=lsp.setup_bandwidth)
+
+            lsp.path = {}
+
+            # Get shortest paths in networkx multidigraph
+            try:
+                nx_sp = list(nx.all_shortest_paths(G, lsp.source_node_object.name, lsp.dest_node_object.name,
+                                                   weight='cost'))
+            except nx.exception.NetworkXNoPath:
+                # There is no path; path = 'Unrouted'
+                lsp.path = 'Unrouted'
+                lsp.reserved_bandwidth = 'Unrouted'
+                continue
+
+            # Convert node hop by hop paths from G into Interface-based paths
+            all_paths = self._get_all_paths_mdg(G, nx_sp)
+
+            # all_paths may have hops between nodes that can take different Interfaces;
+            # normalize those hops that could transit any of multiple Interfaces into
+            # distinct, unique possible paths
+            candidate_path_info = self._normalize_multidigraph_paths(all_paths)
+
+            # Candidate paths with enough reservable bandwidth
+            candidate_path_info_w_reservable_bw = []
+
+            # Determine which candidate paths have enough reservable bandwidth
+            for path in candidate_path_info:
+                if min([interface.reservable_bandwidth for interface in path]) >= lsp.setup_bandwidth:
+                    candidate_path_info_w_reservable_bw.append(path)
+
+            # If multiple lowest_metric_paths, find those with fewest hops
+            if len(candidate_path_info_w_reservable_bw) == 0:
+                lsp.path = 'Unrouted'
+                lsp.reserved_bandwidth = 'Unrouted'
+                continue
+
+            elif len(candidate_path_info_w_reservable_bw) > 1:
+                fewest_hops = min([len(path) for path in candidate_path_info_w_reservable_bw])
+                lowest_hop_count_paths = [path for path in candidate_path_info_w_reservable_bw
+                                          if len(path) == fewest_hops]
+                if len(lowest_hop_count_paths) > 1:
+                    new_path = random.choice(lowest_hop_count_paths)
+                else:
+                    new_path = lowest_hop_count_paths[0]
+            else:
+                new_path = candidate_path_info_w_reservable_bw[0]
+
+            # Change LSP path into more verbose form and set LSP's path
+            self._add_lsp_path_data(lsp, new_path)
+
+            for interface in [interface for interface in lsp.path['interfaces'] if lsp.path != 'Unrouted']:
+                interface.reserved_bandwidth += lsp.reserved_bandwidth
 
     def _make_weighted_network_graph_routed_lsp(self, lsp, needed_bw=0):
         """
