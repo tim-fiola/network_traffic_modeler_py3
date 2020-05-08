@@ -1,13 +1,13 @@
 import unittest
 
-from pyNTM import Parallel_Link_Model
+from pyNTM import FlexModel
 
 
 class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.model = Parallel_Link_Model.load_model_file('test/test_rsvp_3rd_lsp_2_paths_parallel_links.csv')
+        self.model = FlexModel.load_model_file('test/test_rsvp_3rd_lsp_2_paths_parallel_links.csv')
         self.lsp_a_e_1 = self.model.get_rsvp_lsp('A', 'E', 'lsp_a_e_1')
         self.lsp_a_e_2 = self.model.get_rsvp_lsp('A', 'E', 'lsp_a_e_2')
         self.lsp_a_e_3 = self.model.get_rsvp_lsp('A', 'E', 'lsp_a_e_3')
@@ -64,7 +64,7 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
 
     def test_add_more_traffic(self):
         # Add 4th LSP from A to E (use an isolated model for this)
-        model = Parallel_Link_Model.load_model_file('test/test_rsvp_3rd_lsp_2_paths_parallel_links.csv')
+        model = FlexModel.load_model_file('test/test_rsvp_3rd_lsp_2_paths_parallel_links.csv')
         model.add_rsvp_lsp('A', 'E', 'lsp_a_e_4')
         model.update_simulation()
 

@@ -6,7 +6,7 @@ import networkx as nx
 
 from pprint import pprint
 
-from pyNTM import Parallel_Link_Model
+from pyNTM import FlexModel
 
 
 def route_demands(model):
@@ -62,7 +62,7 @@ def route_demands(model):
         print()
         print()
 
-        path_list = Parallel_Link_Model._normalize_multidigraph_paths(model, all_paths)
+        path_list = FlexModel._normalize_multidigraph_paths(model, all_paths)
         demand.path = path_list
 
         print("Interface traffic:")
@@ -79,7 +79,7 @@ def route_demands(model):
 
 
 # Make the Parallel_Link_Model
-model = Parallel_Link_Model.load_model_file('multidigraph_topology.csv')
+model = FlexModel.load_model_file('multidigraph_topology.csv')
 model.update_simulation()
 
 # for interface in model.interface_objects:

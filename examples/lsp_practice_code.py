@@ -2,10 +2,9 @@
 import sys  # noqa
 sys.path.append('../')  # noqa
 
-from pyNTM import Model
+from pyNTM import PerformanceModel
 from pprint import pprint
 
-import pdb
 
 # Test cases:
 # 1. LSP routes on path with available bandwidth
@@ -15,7 +14,7 @@ import pdb
 #       their reserved bandwidth accordingly
 # 5.  A non lsp demand will properly route
 
-model = Model.load_model_file('lsp_model_test_file.csv')
+model = PerformanceModel.load_model_file('lsp_model_test_file.csv')
 
 # Test 1
 print("model is", model)
@@ -55,7 +54,6 @@ for lsp in model.rsvp_lsp_objects:
     print()
 if 'Unrouted - initial' in [lsp.path for lsp in model.rsvp_lsp_objects]:
     print("Unexpected LSP path; breaking for debug")
-    pdb.set_trace()
 print()
 print("Here are the LSP reserved_bandwidth values:")
 for lsp in model.rsvp_lsp_objects:

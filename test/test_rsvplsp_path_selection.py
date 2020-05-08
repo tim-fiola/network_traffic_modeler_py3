@@ -1,13 +1,13 @@
 import unittest
 
-from pyNTM import Model
+from pyNTM import PerformanceModel
 
 
 class TestRSVPLSPPathSelection(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.model = Model.load_model_file('test/model_test_topology_2.csv')
+        self.model = PerformanceModel.load_model_file('test/model_test_topology_2.csv')
 
         self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
         self.lsp_e_a_1 = self.model.get_rsvp_lsp('E', 'A', 'lsp_e_a_1')
@@ -26,7 +26,7 @@ class TestRSVPLSPPathSelection(unittest.TestCase):
         self.assertEqual(self.lsp_a_d_1.traffic_on_lsp(self.model), 40)
 
     def test_random_path_selection(self):
-        model = Model.load_model_file('test/multiple_rsvp_paths.csv')
+        model = PerformanceModel.load_model_file('test/multiple_rsvp_paths.csv')
         model.update_simulation()
 
         lsp_a_d_1_path_info = [(interface.name, interface.node_object.name)

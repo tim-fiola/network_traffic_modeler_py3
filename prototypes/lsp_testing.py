@@ -3,8 +3,8 @@ sys.path.append('../')
 
 from pyNTM import Node
 from pyNTM import Demand
-from pyNTM import Model
-from pyNTM import Parallel_Link_Model
+from pyNTM import PerformanceModel
+from pyNTM import FlexModel
 from pyNTM import Interface
 from pyNTM import RSVP_LSP
 
@@ -20,9 +20,9 @@ dmd_a_b = Demand(node_a, node_b, traffic=10)
 lsp_a_b_1 = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b_1')
 lsp_a_b_2 = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b_2')
 
-model = Parallel_Link_Model(interface_objects=set([interface_a, interface_b]),
-              node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
-              rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
+model = FlexModel(interface_objects=set([interface_a, interface_b]),
+                  node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
+                  rsvp_lsp_objects=set([lsp_a_b_1, lsp_a_b_2]))
 
 model.update_simulation()
 

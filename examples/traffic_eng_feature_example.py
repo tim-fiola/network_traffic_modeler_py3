@@ -13,9 +13,9 @@ sys.path.append('../')
 
 from pprint import pprint
 
-from pyNTM import Model
+from pyNTM import PerformanceModel
 
-model = Model.load_model_file('traffic_eng_example_model.csv')
+model = PerformanceModel.load_model_file('traffic_eng_example_model.csv')
 
 model.update_simulation()
 

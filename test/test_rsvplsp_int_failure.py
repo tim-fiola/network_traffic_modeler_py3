@@ -1,5 +1,5 @@
 import unittest
-from pyNTM import Model
+from pyNTM import PerformanceModel
 
 
 class TestRSVPLSPIntFailure(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestRSVPLSPIntFailure(unittest.TestCase):
     # Update the simulation and make sure both LSPs are on
     # interface int_a_c
     def test_lsp_failover(self):
-        model1 = Model()
+        model1 = PerformanceModel()
         model1.rsvp_lsp_objects = set()
         model1.demand_objects = set()
 

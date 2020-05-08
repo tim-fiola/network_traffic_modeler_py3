@@ -1,6 +1,6 @@
 import unittest
 
-from pyNTM import Model
+from pyNTM import PerformanceModel
 from pyNTM import ModelException
 from pyNTM import SRLG
 
@@ -8,13 +8,13 @@ from pyNTM import SRLG
 class TestSRLG(unittest.TestCase):
 
     def test_repr(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         new_srlg = SRLG('new_srlg', model)
 
         self.assertEqual(new_srlg.__repr__(), 'SRLG(Name: new_srlg)')
 
     def test_failed_boolean(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
         model.add_srlg('test_srlg')
@@ -28,7 +28,7 @@ class TestSRLG(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_duplicate_srlg(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         SRLG('new_srlg', model)
         err_msg = 'SRLG with name new_srlg already exists in Model'
         with self.assertRaises(ModelException) as context:
@@ -36,7 +36,7 @@ class TestSRLG(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_duplicate_srlg_2(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.add_srlg('new_srlg')
         err_msg = 'SRLG with name new_srlg already exists in Model'
         with self.assertRaises(ModelException) as context:
@@ -45,7 +45,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test adding interface to SRLG that exists
     def test_add_interface_to_srlg(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
+        model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = int_a_b.get_remote_interface(model)
@@ -65,7 +65,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test adding interface to SRLG that does not exist already
     def test_add_interface_to_srlg_2(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
+        model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = int_a_b.get_remote_interface(model)
@@ -82,7 +82,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test removing interface from SRLG
     def test_remove_interface_from_srlg(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
+        model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = int_a_b.get_remote_interface(model)
@@ -110,7 +110,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test removing interface from SRLG that does not exist throws error
     def test_remove_interface_from_bad_srlg(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
+        model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = int_a_b.get_remote_interface(model)
@@ -122,7 +122,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test interface in failed SRLG is failed
     def test_interface_in_failed_srlg(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
+        model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = int_a_b.get_remote_interface(model)
@@ -149,7 +149,7 @@ class TestSRLG(unittest.TestCase):
         self.assertTrue(int_b_a.failed)
 
     def test_interface_in_failed_srlg_stays_failed(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         int_a_b = model.get_interface_object('A-to-B', 'A')
         model.update_simulation()
 
@@ -169,7 +169,7 @@ class TestSRLG(unittest.TestCase):
     # Test adding Interface to SRLG that does not exist in
     # model (create_if_not_present defaults to False)
     def test_add_interface_to_new_srlg_dont_create(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         int_a_b = model.get_interface_object('A-to-B', 'A')
 
         err_msg = "An SRLG with name new_srlg does not exist in the Model"
@@ -181,7 +181,7 @@ class TestSRLG(unittest.TestCase):
     # Test adding node to SRLG that does not exist in
     # model (create_if_not_present defaults to False)
     def test_add_node_to_new_srlg_dont_create(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
 
         err_msg = "An SRLG with name new_srlg does not exist in the Model"
@@ -193,7 +193,7 @@ class TestSRLG(unittest.TestCase):
     # Test adding node to SRLG that does not exist in
     # model (create_if_not_present = True)
     def test_add_node_to_new_srlg_create(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
 
         node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
@@ -204,7 +204,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a failed srlg brings a member node to failed = True
     def test_node_in_failed_srlg(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -222,7 +222,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a Node in a failed SRLG will stay failed
     def test_node_in_failed_srlg_stays_failed(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -241,7 +241,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a Node in a non-failed SRLG can be unfailed
     def test_node_in_unfailed_srlg(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -259,7 +259,7 @@ class TestSRLG(unittest.TestCase):
     # Test that a node added to an SRLG is unique within Model's SRLG
     # node_objects
     def test_node_uniqueness_in_model_srlg(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -270,7 +270,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a node added to an SRLG updates its srlgs' SRLG objects
     def test_srlg_uniqueness_in_node_srlgs(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -281,7 +281,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a node can be removed from an SRLG
     def test_remove_node_from_srlg(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
 
         node_a.add_to_srlg('new_srlg', model, create_if_not_present=True)
@@ -296,7 +296,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that removing a node from an srlg that does not exist throws error
     def test_remove_node_bad_srlg(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
 
         err_msg = 'An SRLG with name bad_srlg does not exist in the Model'
@@ -307,7 +307,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test getting an SRLG that does not exist in Model raises exception
     def test_get_bad_srlg(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
 
         err_msg = 'No SRLG with name bad_srlg exists in Model'
         with self.assertRaises(ModelException) as context:
@@ -316,7 +316,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test getting an SRLG that does not exist in Model does not raise exception
     def test_get_bad_srlg_no_exception(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
 
         bad_srlg = model.get_srlg_object('bad_srlg', raise_exception=False)
 
@@ -325,7 +325,7 @@ class TestSRLG(unittest.TestCase):
     # Test unfailing SRLG containing Interface in SRLG but
     # Interface's Node is still failed; Interface should stay failed
     def test_failed_int_node_srlg(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
+        model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = int_a_b.get_remote_interface(model)
@@ -357,7 +357,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a failed srlg unfails when removed from the SRLG
     def test_node_in_failed_srlg_unfails_when_removed(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -382,7 +382,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a node in a failed SRLG unfails when the SRLG unfails
     def test_node_unfails_when_srlg_unfails(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -402,7 +402,7 @@ class TestSRLG(unittest.TestCase):
 
     # Test that a node in 2 failed SRLGs stays failed when one SRLG unfails
     def test_node_in_two_srlgs(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         node_a = model.get_node_object('A')
         model.update_simulation()
 
@@ -429,7 +429,7 @@ class TestSRLG(unittest.TestCase):
     # Test that an interface in 2 failed SRLGs stays failed when
     # one SRLG unfails
     def test_int_in_two_SRLGs(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         int_a_b = model.get_interface_object('A-to-B', 'A')
         model.update_simulation()
 
@@ -456,7 +456,7 @@ class TestSRLG(unittest.TestCase):
     # Test that an interface in 1 failed SRLG stays failed when
     # SRLG unfails if its local node is also failed
     def test_int_in_SRLG_failed_node(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
         int_a_b = model.get_interface_object('A-to-B', 'A')

@@ -34,8 +34,23 @@ from .srlg import SRLG
 
 # TODO 1.7 - test
 
-class Model(MasterModel):
-    """A network model object consisting of the following base components:
+
+class PerformanceModel(MasterModel):
+    """  This is the high-performance model class: it will converge
+    about 20-30% faster than the FlexModel object.  However, the
+    PerformanceModel class has the following restriction:
+        - THIS CLASS DOES ONLY SUPPORTS A SINGLE CIRCUIT (EDGE) BETWEEN
+        LAYER 3 NODES
+
+    In general, this class will support less topology features than the
+    FlexModel object.
+
+    If you are not sure whether to use the PerformanceModel or FlexModel object,
+    it's best to use the FlexModel class.
+
+    This Class is the same as the legacy (version 1.6 and earlier) Model object.
+
+    A network model object consisting of the following base components:
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
           Note: Interfaces are matched into Circuit objects based on the
@@ -66,10 +81,9 @@ class Model(MasterModel):
         super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)
 
     def __repr__(self):
-        return 'Model(Interfaces: %s, Nodes: %s, Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
-                                                                                 len(self.node_objects),
-                                                                                 len(self.demand_objects),
-                                                                                 len(self.rsvp_lsp_objects))
+        return 'PerformanceModel(Interfaces: %s, Nodes: %s, Demands: %s, ' \
+               'RSVP_LSPs: %s)' % (len(self.interface_objects), len(self.node_objects),
+                                   len(self.demand_objects), len(self.rsvp_lsp_objects))
 
     def add_network_interfaces_from_list(self, network_interfaces):
         """
@@ -221,9 +235,9 @@ class Model(MasterModel):
 
         # Create a model consisting only of the non-failed interfaces and
         # corresponding non-failed (available) nodes
-        non_failed_interfaces_model = Model(non_failed_interfaces,
-                                            available_nodes, self.demand_objects,
-                                            self.rsvp_lsp_objects)
+        non_failed_interfaces_model = PerformanceModel(non_failed_interfaces,
+                                                       available_nodes, self.demand_objects,
+                                                       self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth, traffic on each interface
         for interface in (interface for interface in self.interface_objects):
@@ -1512,3 +1526,24 @@ class Model(MasterModel):
 
         else:
             return []
+
+
+class Model(PerformanceModel):
+    """
+    This is the legacy Model class, now a subclass of the more aptly named
+    PerformanceModel class.
+
+    This has been added to attempt to keep any legacy code, written in pyNTM 1.6
+    or earlier, from breaking.
+    """
+    def __init__(self, interface_objects=set(), node_objects=set(),
+                 demand_objects=set(), rsvp_lsp_objects=set()):
+        self.interface_objects = interface_objects
+        self.node_objects = node_objects
+        self.demand_objects = demand_objects
+        self.circuit_objects = set()
+        self.rsvp_lsp_objects = rsvp_lsp_objects
+        self.srlg_objects = set()
+        self._parallel_lsp_groups = {}
+
+        super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)

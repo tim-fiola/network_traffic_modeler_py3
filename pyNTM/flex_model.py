@@ -31,8 +31,20 @@ from .srlg import SRLG
 #  and not unfail when a parent SRLG unfails
 
 
-class Parallel_Link_Model(MasterModel):
-    """A network model object consisting of the following base components:
+class FlexModel(MasterModel):
+    """This is the flexible, more feature-rich model class.  It supports
+    more features than the PerformanceModel class.  For example, the
+    FlexModel class supports multiple Circuits (edges) between layer 3
+    Nodes.  This class will tend to support more topology features than
+    the PerformanceModel class.
+
+    If you are not sure whether to use the PerformanceModel or FlexModel object,
+    it's best to use the FlexModel object.
+
+    This Class is the same as the legacy (version 1.6 and earlier)
+    Parallel_Link_Model class.
+
+    A network model object consisting of the following base components:
 
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
@@ -69,7 +81,7 @@ class Parallel_Link_Model(MasterModel):
         super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)
 
     def __repr__(self):
-        return 'Parallel_Link_Model(Interfaces: %s, Nodes: %s, ' \
+        return 'FlexModel(Interfaces: %s, Nodes: %s, ' \
                'Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
                                                 len(self.node_objects),
                                                 len(self.demand_objects),
@@ -210,9 +222,9 @@ class Parallel_Link_Model(MasterModel):
 
         # Create a model consisting only of the non-failed interfaces and
         # corresponding non-failed (available) nodes
-        non_failed_interfaces_model = Parallel_Link_Model(non_failed_interfaces,
-                                                          available_nodes, self.demand_objects,
-                                                          self.rsvp_lsp_objects)
+        non_failed_interfaces_model = FlexModel(non_failed_interfaces,
+                                                available_nodes, self.demand_objects,
+                                                self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth, traffic on each interface
         for interface in (interface for interface in self.interface_objects):
@@ -1683,3 +1695,24 @@ class Parallel_Link_Model(MasterModel):
         else:
             srlg = SRLG(srlg_name, self)
             self.srlg_objects.add(srlg)
+
+
+class Parallel_Link_Model(FlexModel):
+    """
+    This is the legacy Parallel_Link_Model class, now a subclass of the more aptly named
+    FlexModel class.
+
+    This has been added to attempt to keep any legacy code, written in pyNTM 1.6
+    or earlier, from breaking.
+    """
+    def __init__(self, interface_objects=set(), node_objects=set(),
+                 demand_objects=set(), rsvp_lsp_objects=set()):
+        self.interface_objects = interface_objects
+        self.node_objects = node_objects
+        self.demand_objects = demand_objects
+        self.circuit_objects = set()
+        self.rsvp_lsp_objects = rsvp_lsp_objects
+        self.srlg_objects = set()
+        self._parallel_lsp_groups = {}
+
+        super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)

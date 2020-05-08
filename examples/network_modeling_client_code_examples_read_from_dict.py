@@ -10,7 +10,7 @@ Requirements:
 import sys  # noqa
 sys.path.append('../')  # noqa
 
-from pyNTM import Model
+from pyNTM import PerformanceModel
 from pyNTM import Node
 
 from graph_network import graph_network_interactive
@@ -117,7 +117,7 @@ source = 'A'
 dest = 'B'
 
 # Define a network model and load interfaces
-model1 = Model()
+model1 = PerformanceModel()
 model1.add_network_interfaces_from_list(network_interfaces)
 print('model1 is type', type(model1))
 print()

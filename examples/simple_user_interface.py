@@ -6,8 +6,8 @@ demands, interfaces, and nodes."""
 import sys  # noqa
 sys.path.append('../')  # noqa
 
-from pyNTM import Model
-from pyNTM import Parallel_Link_Model
+from pyNTM import PerformanceModel
+from pyNTM import FlexModel
 from pyNTM import ModelException
 from pyNTM import RSVP_LSP
 
@@ -45,7 +45,7 @@ def open_file():
     selected_file_display.grid(row=6, column=0)
 
     if selected_model_file.get() != '':
-        model = Model.load_model_file(selected_model_file.get())
+        model = PerformanceModel.load_model_file(selected_model_file.get())
         model.update_simulation()
 
         model_status_label = ttk.Label(label_frame, text="Model is:")
@@ -100,7 +100,7 @@ def open_parallel_link_model_file():
     selected_file_display.grid(row=6, column=0)
 
     if selected_model_file.get() != '':
-        model = Parallel_Link_Model.load_model_file(selected_model_file.get())
+        model = FlexModel.load_model_file(selected_model_file.get())
         model.update_simulation()
 
         model_status_label = ttk.Label(label_frame, text="Parallel Link Model is:")
