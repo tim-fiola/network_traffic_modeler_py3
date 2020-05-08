@@ -1360,6 +1360,11 @@ class FlexModel(MasterModel):
 
         The format for the file must be a tab separated value file.
 
+        CIRCUIT ID (circuit_id) MUST BE SPECIFIED AS THIS IS WHAT ALLOWS THE CLASS
+        TO DISCERN WHAT MULTIPLE, PARALLEL INTERFACES BETWEEN THE SAME NODES MATCH
+        UP INTO WHICH CIRCUIT.  THE circuit_id CAN BE ANY COMMON KEY, SUCH AS IP SUBNET ID
+        OR DESIGNATED CIRCUIT ID FROM PRODUCTION.
+
         This docstring you are reading may not display the table info
         explanations/examples below correctly on https://pyntm.readthedocs.io/en/latest/api.html.
         Recommend either using help(Model.load_model_file) at the python3 cli or
