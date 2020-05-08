@@ -1,9 +1,23 @@
 API
 =======
 
-Model
-----------
-.. autoclass:: pyNTM.model.Model
+MasterModel
+--------------
+.. autoclass:: pyNTM.master_model.MasterModel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PerformanceModel
+-----------------
+.. autoclass:: pyNTM.performance_model.PerformanceModel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+FlexModel
+------------
+.. autoclass:: pyNTM.flex_model.FlexModel
     :members:
     :undoc-members:
     :show-inheritance:

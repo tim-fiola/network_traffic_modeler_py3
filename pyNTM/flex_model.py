@@ -1,11 +1,19 @@
 """
+This is the flexible, more feature-rich model class.  It supports
+more features than the PerformanceModel class.  For example, the
+FlexModel class supports multiple Circuits (edges) between layer 3
+Nodes.  This class will tend to support more topology features than
+the PerformanceModel class.
+
+If you are not sure whether to use the PerformanceModel or FlexModel object,
+it's best to use the FlexModel object.
+
+This Class is the same as the legacy (version 1.6 and earlier)
+Parallel_Link_Model class.
+
 This model type allows multiple links/parallel links between 2 nodes.
 
 There will be a performance impact in this model variant.
-
-A class that defines the network being modeled and that contains all
-modeled objects in the network such as Nodes, Interfaces, Circuits,
-and Demands.
 """
 
 from pprint import pprint
@@ -32,18 +40,7 @@ from .srlg import SRLG
 
 
 class FlexModel(MasterModel):
-    """This is the flexible, more feature-rich model class.  It supports
-    more features than the PerformanceModel class.  For example, the
-    FlexModel class supports multiple Circuits (edges) between layer 3
-    Nodes.  This class will tend to support more topology features than
-    the PerformanceModel class.
-
-    If you are not sure whether to use the PerformanceModel or FlexModel object,
-    it's best to use the FlexModel object.
-
-    This Class is the same as the legacy (version 1.6 and earlier)
-    Parallel_Link_Model class.
-
+    """
     A network model object consisting of the following base components:
 
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a

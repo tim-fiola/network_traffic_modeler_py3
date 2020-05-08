@@ -161,7 +161,11 @@ class RSVP_LSP(object):
         return self
 
     def demands_on_lsp(self, model):
-        """Returns demands that LSP is transporting."""
+        """
+        Returns demands in model object that LSP is transporting.
+        :param model: model object containing LSP
+        :return: List of demands in model object that LSP carries
+        """
         demand_list = []
         for demand in (demand for demand in model.demand_objects):
             if self in demand.path:

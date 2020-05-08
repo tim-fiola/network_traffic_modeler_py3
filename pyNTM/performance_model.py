@@ -4,10 +4,26 @@ modeled objects in the network such as Nodes, Interfaces, Circuits,
 and Demands.
 
 Allows a single connection (Circuit) between layer3 Nodes.  If multiple
-Circuits between Nodes is needed, use Parallel_Link_Model object.
+Circuits between Nodes is needed, use FlexModel class.
 
-This Model object will generally perform better than Parallel_Model_Object due
-to the latter's requirement to check for multiple Circuits between Nodes.
+This PerformanceModel class will generally perform better than FlexModel due
+to the latter's requirement to check for multiple Circuits between Nodes and
+deal with more diverse possible topology features.
+
+This is the high-performance model class: it will converge
+about 20-30% faster than the FlexModel object.  However, the
+PerformanceModel class has the following restriction:
+    - THIS CLASS DOES ONLY SUPPORTS A SINGLE CIRCUIT (EDGE) BETWEEN LAYER 3 NODES
+
+In general, this class will support less topology features than the
+FlexModel class.  For simpler networks without complex topology features,
+this may be the class to use if fast model convergence is important.
+
+If you are not sure whether to use the PerformanceModel or FlexModel object,
+it's best to use the FlexModel class.
+
+This PerformanceModel class is the same as the legacy (version 1.6 and earlier) Model class.
+
 """
 
 from pprint import pprint
@@ -36,20 +52,7 @@ from .srlg import SRLG
 
 
 class PerformanceModel(MasterModel):
-    """  This is the high-performance model class: it will converge
-    about 20-30% faster than the FlexModel object.  However, the
-    PerformanceModel class has the following restriction:
-        - THIS CLASS DOES ONLY SUPPORTS A SINGLE CIRCUIT (EDGE) BETWEEN
-        LAYER 3 NODES
-
-    In general, this class will support less topology features than the
-    FlexModel object.
-
-    If you are not sure whether to use the PerformanceModel or FlexModel object,
-    it's best to use the FlexModel class.
-
-    This Class is the same as the legacy (version 1.6 and earlier) Model object.
-
+    """
     A network model object consisting of the following base components:
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
