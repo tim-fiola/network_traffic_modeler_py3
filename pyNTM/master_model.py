@@ -30,6 +30,7 @@ class MasterModel(object):
     def simulation_diagnostics(self):  # TODO - make unit test for this
         """
         Analyzes simulation results and looks for the following:
+
         - Number of routed LSPs carrying Demands
         - Number of routed LSPs with no Demands
         - Number of Demands riding LSPs
@@ -695,3 +696,158 @@ class MasterModel(object):
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
             existing_node.lat = node_lat
             existing_node.lon = node_lon
+
+    def _does_interface_exist(self, interface_name, node_object_name):
+        """
+        Does specified Interface exist in self?  Raises exception if it
+        does not.
+
+        :param interface_name: Interface name
+        :param node_object_name: Node name
+        """
+        int_key = (interface_name, node_object_name)
+        interface_key_iterator = (interface._key for interface in self.interface_objects)
+
+        if int_key not in (interface_key_iterator):
+            raise ModelException('specified interface does not exist')
+
+    def get_circuit_object_from_interface(self, interface_name, node_name):
+        """
+        Returns a Circuit object, given a Node name and Interface name
+
+        :param interface_name: Interface object on one side of Circuit
+        :param node_name: Node name where Interface resides
+        :return: Circuit object from self that contains Interface with interface_name and node_name
+        """
+
+        # Does interface exist?
+        self._does_interface_exist(interface_name, node_name)
+
+        interface = self.get_interface_object(interface_name, node_name)
+
+        ckts = [ckt for ckt in self.circuit_objects if interface in (ckt.interface_a, ckt.interface_b)]
+
+        return ckts[0]
+
+    def get_failed_interface_objects(self):
+        """
+        Returns a list of all failed interfaces in self
+        """
+        failed_interfaces = []
+
+        for interface in (interface for interface in self.interface_objects):
+            if interface.failed:
+                failed_interfaces.append(interface)
+
+        return failed_interfaces
+
+    def get_unfailed_interface_objects(self):
+        """
+        Returns a list of all non-failed interfaces in the Model
+        """
+
+        unfailed_interface_objects = set()
+
+        interface_iter = (interface for interface in self.interface_objects)
+
+        for interface in interface_iter:
+            if not interface.failed:
+                unfailed_interface_objects.add(interface)
+
+        return unfailed_interface_objects
+
+    def get_unrouted_demand_objects(self):
+        """
+        Returns list of demand objects that cannot be routed
+        """
+        unrouted_demands = []
+        for demand in (demand for demand in self.demand_objects):
+            if demand.path == "Unrouted":
+                unrouted_demands.append(demand)
+
+        return unrouted_demands
+
+    def change_interface_name(self, node_name,
+                              current_interface_name,
+                              new_interface_name):
+        """Changes interface name"""
+        interface_to_edit = self.get_interface_object(current_interface_name, node_name)
+        interface_to_edit.name = new_interface_name
+
+        return interface_to_edit
+
+    def fail_interface(self, interface_name, node_name):
+        """Fails the Interface object for the interface_name/node_name pair"""
+
+        # Get the interface object
+        interface_object = self.get_interface_object(interface_name, node_name)
+
+        # Does interface exist?
+        if interface_object not in self.interface_objects:
+            ModelException('specified interface does not exist')
+
+        # find the remote interface
+        remote_interface_object = interface_object.get_remote_interface(self)
+
+        remote_interface_object.failed = True
+        interface_object.failed = True
+
+    def unfail_interface(self, interface_name, node_name, raise_exception=False):
+        """
+        Unfails the Interface object for the interface_name, node_name pair.
+
+        :param interface_name: name of interface
+        :param node_name: node name
+        :param raise_exception: If raise_exception=True, an exception
+                                will be raised if the interface cannot be unfailed.
+                                An example of this would be if you tried to unfail
+                                the interface when the parent node or remote node
+                                was in a failed state
+        :return: Interface object from Model with 'failed' attribute set to False
+        """
+
+        if not (isinstance(raise_exception, bool)):
+            message = "raise_exception must be boolean value"
+            raise ModelException(message)
+
+        # Get the interface object
+        interface_object = self.get_interface_object(interface_name, node_name)
+
+        # Does interface exist?
+        if interface_object not in set(self.interface_objects):
+            ModelException('specified interface does not exist')
+
+        # Find the remote interface
+        remote_interface = interface_object.get_remote_interface(self)
+
+        # Ensure local and remote nodes are failed == False and set reservable
+        # bandwidth on each interface to interface.capacity
+        if self.get_node_object(interface_object.node_object.name).failed is False and \
+                self.get_node_object(remote_interface.node_object.name).failed is False:
+
+            remote_interface.failed = False
+            remote_interface.reserved_bandwidth = 0
+            interface_object.failed = False
+            interface_object.reserved_bandwidth = 0
+            self.validate_model()
+        else:
+            if raise_exception:
+                message = ("Local and/or remote node are failed; cannot have "
+                           "unfailed interface on failed node.")
+                raise ModelException(message)
+
+    def get_interface_object(self, interface_name, node_name):
+        """
+        Returns an interface object for specified node name and interface name
+
+        :param interface_name: name of Interface
+        :param node_name: name of Node
+        :return: Specified Interface object from self
+        """
+
+        self._does_interface_exist(interface_name, node_name)
+
+        node_object = self.get_node_object(node_name)
+
+        int_object = [interface for interface in node_object.interfaces(self) if interface.name == interface_name]
+        return int_object[0]

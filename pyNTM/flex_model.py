@@ -61,7 +61,7 @@ class FlexModel(MasterModel):
 
         - RSVP LSP objects (set): RSVP LSPs in the Model
 
-        - Circuit objects are created by matching Interface objects
+        - Circuit objects are created by matching Interface objects using common circuit_id
 
     """
 
@@ -88,8 +88,9 @@ class FlexModel(MasterModel):
         """
         A tool that reads network interface info and updates an *existing* model.
         Intended to be used from CLI/interactive environment
-        Interface info must be a list of dicts and in format like below example:
+        Interface info must be a list of dicts and in format like below example.
 
+        Example:
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
             'remote_node': 'B', 'circuit_id': 1, 'failed': False},
@@ -98,6 +99,8 @@ class FlexModel(MasterModel):
             {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
             'remote_node': 'C', 'circuit_id': 3, 'failed': False},]
 
+        :param network_interfaces: python list of attributes for Interface objects
+        :return: self with new Interface objects
         """
 
         new_interface_objects, new_node_objects = self._make_network_interfaces(network_interfaces)
@@ -295,7 +298,9 @@ class FlexModel(MasterModel):
         :param G:  networkx multidigraph object containing nx_sp, contains
         Interface objects in edge data
         :param nx_sp:  List of node paths in G
-        Example: nx_sp from A to D in graph G:
+
+        Example:
+        nx_sp from A to D in graph G::
          [['A', 'D'], ['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
 
         :return:  List of lists of possible specific model paths from source to
@@ -398,27 +403,26 @@ class FlexModel(MasterModel):
         is a list of all the interfaces from the current node
         to the next node.
 
-        path_info example from source node 'B' to destination node 'D':
-        [
-            [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
-                    complete path
-            [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28'),
-              Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '8'),
-              Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
-            [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of 2nd path
-        ]
-
-
+        path_info example from source node 'B' to destination node 'D'.
+        Example:
+            [
+                [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                        remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
+                        complete path
+                [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '28'),
+                  Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '8'),
+                  Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
+                [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                        remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of path 2
+            ]
 
         :return: List of lists.  Each component list is a list with a unique
         Interface combination for the egress Interfaces from source to destination
-        example:
 
+        Example:
             [
                 [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
                     remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
@@ -730,147 +734,6 @@ class FlexModel(MasterModel):
             for lsp in (lsp for lsp in self.rsvp_lsp_objects):
                 if lsp._key == needed_key:
                     return lsp
-
-    # Interface calls
-    def get_interface_object(self, interface_name, node_name):
-        """Returns an interface object for specified node name and interface name"""
-
-        self._does_interface_exist(interface_name, node_name)
-
-        node_object = self.get_node_object(node_name)
-
-        int_object = [interface for interface in node_object.interfaces(self) if interface.name == interface_name]
-        return int_object[0]
-
-    def _does_interface_exist(self, interface_name, node_object_name):
-        int_key = (interface_name, node_object_name)
-        interface_key_iterator = (interface._key for interface in
-                                  self.interface_objects)
-
-        if int_key not in (interface_key_iterator):
-            raise ModelException('specified interface does not exist')
-
-    def get_circuit_object_from_interface(self, interface_name, node_name):
-        """
-        Returns a Circuit object, given a Node name and Interface name
-        """
-
-        # Does interface exist?
-        self._does_interface_exist(interface_name, node_name)
-
-        interface = self.get_interface_object(interface_name, node_name)
-
-        ckts = [ckt for ckt in self.circuit_objects if interface in (ckt.interface_a, ckt.interface_b)]
-
-        return ckts[0]
-
-    # Convenience calls #####
-    def get_failed_interface_objects(self):
-        """
-        Returns a list of all failed interfaces in the Model
-        """
-        failed_interfaces = []
-
-        for interface in (interface for interface in self.interface_objects):
-            if interface.failed:
-                failed_interfaces.append(interface)
-
-        return failed_interfaces
-
-    def get_unfailed_interface_objects(self):
-        """
-        Returns a list of all non-failed interfaces in the Model
-        """
-
-        unfailed_interface_objects = set()
-
-        interface_iter = (interface for interface in self.interface_objects)
-
-        for interface in interface_iter:
-            if not interface.failed:
-                unfailed_interface_objects.add(interface)
-
-        return unfailed_interface_objects
-
-    def get_unrouted_demand_objects(self):
-        """
-        Returns list of demand objects that cannot be routed
-        """
-        unrouted_demands = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.path == "Unrouted":
-                unrouted_demands.append(demand)
-
-        return unrouted_demands
-
-    def change_interface_name(self, node_name,
-                              current_interface_name,
-                              new_interface_name):
-        """Changes interface name"""
-        interface_to_edit = self.get_interface_object(current_interface_name, node_name)
-        interface_to_edit.name = new_interface_name
-
-        return interface_to_edit
-
-    def fail_interface(self, interface_name, node_name):
-        """Fails the Interface object for the interface_name/node_name pair"""
-
-        # Get the interface object
-        interface_object = self.get_interface_object(interface_name, node_name)
-
-        # Does interface exist?
-        if interface_object not in self.interface_objects:
-            ModelException('specified interface does not exist')
-
-        # find the remote interface
-        remote_interface_object = interface_object.get_remote_interface(self)
-
-        remote_interface_object.failed = True
-        interface_object.failed = True
-
-    def unfail_interface(self, interface_name, node_name, raise_exception=False):
-        """
-        Unfails the Interface object for the interface_name, node_name pair.
-
-        :param interface_name:
-        :param node_name:
-        :param raise_exception: If raise_excecption=True, an exception
-                                will be raised if the interface cannot be unfailed.
-                                An example of this would be if you tried to unfail
-                                the interface when the parent node or remote node
-                                was in a failed state
-        :return: Interface object from Model that is not failed
-        """
-
-        if not (isinstance(raise_exception, bool)):
-            message = "raise_exception must be boolean value"
-            raise ModelException(message)
-
-        # Get the interface object
-        interface_object = self.get_interface_object(interface_name, node_name)
-
-        # Does interface exist?
-        if interface_object not in set(self.interface_objects):
-            ModelException('specified interface does not exist')
-
-        # Find the remote interface
-        remote_interface = interface_object.get_remote_interface(self)
-
-        # Ensure local and remote nodes are failed == False and set reservable
-        # bandwidth on each interface to interface.capacity
-        if self.get_node_object(interface_object.node_object.name).failed is False and \
-                self.get_node_object(remote_interface.node_object.name).failed is False:
-
-            remote_interface.failed = False
-            remote_interface.reserved_bandwidth = 0
-            interface_object.failed = False
-            interface_object.reserved_bandwidth = 0
-            self.validate_model()
-        else:
-            if raise_exception:
-                message = ("Local and/or remote node are failed; cannot have "
-                           "unfailed interface on failed node.")
-                raise ModelException(message)
 
     def get_all_paths_reservable_bw(self, source_node_name, dest_node_name, include_failed_circuits=True,
                                     cutoff=10, needed_bw=0):
@@ -1372,75 +1235,76 @@ class FlexModel(MasterModel):
         The following headers must exist, with the following tab-column
         names beneath:
 
-            INTERFACES_TABLE
-            - node_object_name - name of node	where interface resides
-            - remote_node_object_name	- name of remote node
-            - name - interface name
-            - cost - IGP cost/metric for interface
-            - capacity - capacity
-            - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
-                - each circuit_id can only appear twice in the model
-                - circuit_id can be string or integer
-            - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-            - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-            value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+        INTERFACES_TABLE
+        - node_object_name - name of node	where interface resides
+        - remote_node_object_name	- name of remote node
+        - name - interface name
+        - cost - IGP cost/metric for interface
+        - capacity - capacity
+        - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
+            - each circuit_id can only appear twice in the model
+            - circuit_id can be string or integer
+        - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+        - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+        value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
-            Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
-            So a Node created from an Interface does not have to appear in the
-            NODES_TABLE unless you want to add additional attributes for the Node
-            such as latitude/longitude
+        Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
+        So a Node created from an Interface does not have to appear in the
+        NODES_TABLE unless you want to add additional attributes for the Node
+        such as latitude/longitude
 
-            NODES_TABLE -
-            - name - name of node
-            - lon	- longitude (or y-coordinate)
-            - lat - latitude (or x-coordinate)
+        NODES_TABLE -
+        - name - name of node
+        - lon	- longitude (or y-coordinate)
+        - lat - latitude (or x-coordinate)
 
-            Note - The NODES_TABLE is present for 2 reasons:
-            - to add a Node that has no interfaces
-            - and/or to add additional attributes for a Node inferred from
-            the INTERFACES_TABLE
+        Note - The NODES_TABLE is present for 2 reasons:
+        - to add a Node that has no interfaces
+        - and/or to add additional attributes for a Node inferred from
+        the INTERFACES_TABLE
 
-            DEMANDS_TABLE
-            - source - source node name
-            - dest - destination node name
-            - traffic	- amount of traffic on demand
-            - name - name of demand
+        DEMANDS_TABLE
+        - source - source node name
+        - dest - destination node name
+        - traffic	- amount of traffic on demand
+        - name - name of demand
 
-            RSVP_LSP_TABLE (this table is optional)
-            - source - source node name
-            - dest - destination node name
-            - name - name of LSP
-            - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-            if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
+        RSVP_LSP_TABLE (this table is optional)
+        - source - source node name
+        - dest - destination node name
+        - name - name of LSP
+        - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+        if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
 
-        Here is an example of a data file:
+        Here is an example of a data file.
 
-        INTERFACES_TABLE
-        node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth   # noqa E501
-        A	B	A-to-B_1    20	120 1   True  50
-        B	A	B-to-A_1    20	120 1   True  50
-        A   B   A-to-B_2    20  150 2
-        B   A   B-to-A_2    20  150 2
-        A   B   A-to-B_3    10  200 3   False
-        B   A   B-to-A_3    10  200 3   False
+        Example::
 
-        NODES_TABLE
-        name	lon	lat
-        A	50	0
-        B	0	-50
+            INTERFACES_TABLE
+            node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth   # noqa E501
+            A	B	A-to-B_1    20	120 1   True  50
+            B	A	B-to-A_1    20	120 1   True  50
+            A   B   A-to-B_2    20  150 2
+            B   A   B-to-A_2    20  150 2
+            A   B   A-to-B_3    10  200 3   False
+            B   A   B-to-A_3    10  200 3   False
 
-        DEMANDS_TABLE
-        source	dest	traffic	name
-        A	B	80	dmd_a_b_1
+            NODES_TABLE
+            name	lon	lat
+            A	50	0
+            B	0	-50
 
-        RSVP_LSP_TABLE
-        source	dest	name    configured_setup_bw
-        A	B	lsp_a_b_1   10
-        A	B	lsp_a_b_2
+            DEMANDS_TABLE
+            source	dest	traffic	name
+            A	B	80	dmd_a_b_1
 
+            RSVP_LSP_TABLE
+            source	dest	name    configured_setup_bw
+            A	B	lsp_a_b_1   10
+            A	B	lsp_a_b_2
 
         :param data_file: file with model info
         :return: Model object

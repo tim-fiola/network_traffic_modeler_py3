@@ -92,7 +92,9 @@ class PerformanceModel(MasterModel):
         """
         A tool that reads network interface info and updates an *existing* model.
         Intended to be used from CLI/interactive environment
-        Interface info must be a list of dicts and in format like below example:
+        Interface info must be a list of dicts and in format like below example.
+
+        Example:
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
             'remote_node': 'B', 'circuit_id': 1, 'failed': False},
@@ -100,6 +102,9 @@ class PerformanceModel(MasterModel):
             'remote_node': 'B', 'circuit_id': 2, 'failed': False},
             {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
             'remote_node': 'C', 'circuit_id': 3, 'failed': False},]
+
+        :param network_interfaces: python list of attributes for Interface objects
+        :return: self with new Interface objects
         """
 
         new_interface_objects, new_node_objects = \
@@ -389,13 +394,18 @@ class PerformanceModel(MasterModel):
         (Circuit) between Node objects.
 
         :param nx_sp: List of Node name hops on path
-        Example: [['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
+        Example:
+            [['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
+
         :return: List of Interface objects on path
-        Example: for the ['A', 'B', 'D'] path above, the converted path would be
-        [Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
-            remote_node_object = Node('B'), circuit_id = None),
-         Interface(name = 'B-to-D', cost = 20,
-            capacity = 125.0, node_object = Node('B'), remote_node_object = Node('D'), circuit_id = None)]
+
+        Example:
+            For the ['A', 'B', 'D'] path above, the converted path would be
+
+                [Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = None),
+                Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
+                remote_node_object = Node('D'), circuit_id = None)]
 
         """
         all_paths = []
@@ -574,8 +584,14 @@ class PerformanceModel(MasterModel):
         self.circuit_objects = circuits
 
     def get_interface_object_from_nodes(self, local_node_name, remote_node_name):
-        """Returns an Interface object with the specified local and
-        remote node names """
+        """
+        Returns a list of Interface objects with the specified
+        local and remote node names.
+
+        :param local_node_name:
+        :param remote_node_name:
+        :return: Interface object with specified local node and remote node names
+        """
         for interface in (interface for interface in self.interface_objects):
             if interface.node_object.name == local_node_name and \
                     interface.remote_node_object.name == remote_node_name:
@@ -587,6 +603,7 @@ class PerformanceModel(MasterModel):
         """
         Creates component Interface objects for a new Circuit in the Model.
         The Circuit object will then be created during the validate_model() call.
+
         :param node_a_object: Node object
         :param node_b_object: Node object
         :param node_a_interface_name: name of component Interface on node_a
@@ -624,7 +641,13 @@ class PerformanceModel(MasterModel):
         self.validate_model()
 
     def is_node_an_orphan(self, node_object):
-        """Determines if a node is in orphan_nodes"""
+        """
+        Determines if a node is in orphan_nodes.  A node in
+        orphan_nodes is a Node with no Interface objects
+
+        :param node_object: Node object
+        :return: Boolean indicating if Node is orphan (True) or not (False)
+        """
         if node_object in self.get_orphan_node_objects():
             return True
         else:
@@ -640,7 +663,9 @@ class PerformanceModel(MasterModel):
 
     def add_node(self, node_object):
         """
-        Adds a node object to the model object
+        Adds a node object to the model object and validates self
+
+        :param node_object: Node object to add to self
         """
 
         if node_object.name in (node.name for node in self.node_objects):
@@ -653,8 +678,12 @@ class PerformanceModel(MasterModel):
 
     def get_node_object(self, node_name):
         """
-        Returns a Node object, given a node's name
+        Returns a Node object from self, given a Node's name
+
+        :param node_name: name of Node object in self
+        :return: Node object with node_name
         """
+
         matching_node = [node for node in self.node_objects if node.name == node_name]
 
         if len(matching_node) > 0:
@@ -667,9 +696,10 @@ class PerformanceModel(MasterModel):
         """
         Returns set of Interface objects and a set of Node objects for Nodes
         that are not already in the Model.
+
         :param interface_info_list: list of dicts with interface specs;
         :return: Set of Interface objects and set of Node objects for the
-                 new Interfaces for Nodes that are not already in the model
+        new Interfaces for Nodes that are not already in the model
         """
         network_interface_objects = set([])
         network_node_objects = set([])
@@ -695,11 +725,13 @@ class PerformanceModel(MasterModel):
         """
         Adds an RSVP LSP with name from the source node to the
         dest node and validates model.
+
         :param source_node_name: LSP source Node name
         :param dest_node_name: LSP destination Node name
         :param name: name of LSP
         :return: A validated Model with the new RSVP_LSP object
         """
+
         source_node_object = self.get_node_object(source_node_name)
         dest_node_object = self.get_node_object(dest_node_name)
         added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
@@ -715,7 +747,13 @@ class PerformanceModel(MasterModel):
         """
         Returns demand specified by the source_node_name, dest_node_name, name;
         throws exception if demand not found
+
+        :param source_node_name: name of source Node for Demand
+        :param dest_node_name: name of destination Node for Demand
+        :param demand_name: name of Demand
+        :return: Specified Demand object
         """
+
         model_demand_iterator = (demand for demand in self.demand_objects)
 
         demand_to_return = None
@@ -734,6 +772,7 @@ class PerformanceModel(MasterModel):
         """
         Returns the RSVP LSP from the model with the specified source node
         name, dest node name, and LSP name.
+
         :param source_node_name: name of source node for LSP
         :param dest_node_name: name of destination node for LSP
         :param lsp_name: name of LSP
@@ -751,146 +790,6 @@ class PerformanceModel(MasterModel):
                 if lsp._key == needed_key:
                     return lsp
 
-    # Interface calls
-    def get_interface_object(self, interface_name, node_name):
-        """Returns an interface object for specified node name and interface name"""
-
-        self._does_interface_exist(interface_name, node_name)
-
-        node_object = self.get_node_object(node_name)
-
-        int_object = [interface for interface in node_object.interfaces(self) if interface.name == interface_name]
-        return int_object[0]
-
-    def _does_interface_exist(self, interface_name, node_object_name):
-        int_key = (interface_name, node_object_name)
-        interface_key_iterator = (interface._key for interface in
-                                  self.interface_objects)
-
-        if int_key not in (interface_key_iterator):
-            raise ModelException('specified interface does not exist')
-
-    def get_circuit_object_from_interface(self, interface_name, node_name):
-        """
-        Returns a Circuit object, given a Node name and Interface name
-        """
-
-        # Does interface exist?
-        self._does_interface_exist(interface_name, node_name)
-
-        interface = self.get_interface_object(interface_name, node_name)
-
-        ckts = [ckt for ckt in self.circuit_objects if interface in (ckt.interface_a, ckt.interface_b)]
-
-        return ckts[0]
-
-    # Convenience calls #####
-    def get_failed_interface_objects(self):
-        """
-        Returns a list of all failed interfaces in the Model
-        """
-        failed_interfaces = []
-
-        for interface in (interface for interface in self.interface_objects):
-            if interface.failed:
-                failed_interfaces.append(interface)
-
-        return failed_interfaces
-
-    def get_unfailed_interface_objects(self):
-        """
-        Returns a list of all non-failed interfaces in the Model
-        """
-
-        unfailed_interface_objects = set()
-
-        interface_iter = (interface for interface in self.interface_objects)
-
-        for interface in interface_iter:
-            if not interface.failed:
-                unfailed_interface_objects.add(interface)
-
-        return unfailed_interface_objects
-
-    def get_unrouted_demand_objects(self):
-        """
-        Returns list of demand objects that cannot be routed
-        """
-        unrouted_demands = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.path == "Unrouted":
-                unrouted_demands.append(demand)
-
-        return unrouted_demands
-
-    def change_interface_name(self, node_name,
-                              current_interface_name,
-                              new_interface_name):
-        """Changes interface name"""
-        interface_to_edit = self.get_interface_object(current_interface_name, node_name)
-        interface_to_edit.name = new_interface_name
-
-        return interface_to_edit
-
-    def fail_interface(self, interface_name, node_name):
-        """Fails the Interface object for the interface_name/node_name pair"""
-
-        # Get the interface object
-        interface_object = self.get_interface_object(interface_name, node_name)
-
-        # Does interface exist?
-        if interface_object not in self.interface_objects:
-            ModelException('specified interface does not exist')
-
-        # find the remote interface
-        remote_interface_object = interface_object.get_remote_interface(self)
-
-        remote_interface_object.failed = True
-        interface_object.failed = True
-
-    def unfail_interface(self, interface_name, node_name, raise_exception=False):
-        """
-        Unfails the Interface object for the interface_name, node_name pair.
-        :param interface_name:
-        :param node_name:
-        :param raise_exception: If raise_excecption=True, an exception
-                                will be raised if the interface cannot be unfailed.
-                                An example of this would be if you tried to unfail
-                                the interface when the parent node or remote node
-                                was in a failed state
-        :return: Interface object from Model that is not failed
-        """
-
-        if not (isinstance(raise_exception, bool)):
-            message = "raise_exception must be boolean value"
-            raise ModelException(message)
-
-        # Get the interface object
-        interface_object = self.get_interface_object(interface_name, node_name)
-
-        # Does interface exist?
-        if interface_object not in set(self.interface_objects):
-            ModelException('specified interface does not exist')
-
-        # Find the remote interface
-        remote_interface = interface_object.get_remote_interface(self)
-
-        # Ensure local and remote nodes are failed == False and set reservable
-        # bandwidth on each interface to interface.capacity
-        if self.get_node_object(interface_object.node_object.name).failed is False and \
-                self.get_node_object(remote_interface.node_object.name).failed is False:
-
-            remote_interface.failed = False
-            remote_interface.reserved_bandwidth = 0
-            interface_object.failed = False
-            interface_object.reserved_bandwidth = 0
-            self.validate_model()
-        else:
-            if raise_exception:
-                message = ("Local and/or remote node are failed; cannot have "
-                           "unfailed interface on failed node.")
-                raise ModelException(message)
-
     def get_all_paths_reservable_bw(self, source_node_name, dest_node_name, include_failed_circuits=True,
                                     cutoff=10, needed_bw=0):
         """
@@ -901,12 +800,14 @@ class PerformanceModel(MasterModel):
         be very large for larger topologies and so this call can be very expensive.
         Use the cutoff argument to limit the path length to consider to cut down on
         the time it takes to run this call.
+
         :param source_node_name: name of source node in path
         :param dest_node_name: name of destination node in path
         :param include_failed_circuits: include failed circuits in the topology
         :param needed_bw: the amount of reservable bandwidth required on the path
         :param cutoff: max amount of path hops
         :return: Return the path(s) in dictionary form:
+            Example:
                  path = {'path': [list of all path routes]}
         """
 
@@ -932,10 +833,13 @@ class PerformanceModel(MasterModel):
         """
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
+
         :param source_node_name: name of source node in path
         :param dest_node_name: name of destination node in path
         :param needed_bw: the amount of reservable bandwidth required on the path
-        :return: Return the shortest path in dictionary form:
+        :return: Return the shortest path in dictionary form
+
+            Example:
                  shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
@@ -997,15 +901,19 @@ class PerformanceModel(MasterModel):
         path to a Model style path and returns that Model style path
         A networkx path is a list of nodes in order of transit.
         ex: ['A', 'B', 'G', 'D', 'F']
-        The corresponding model style path would be:
-        [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-            remote_node_object = Node('B'), circuit_id = 9),
-        Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-            remote_node_object = Node('G'), circuit_id = 6),
-        Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-            remote_node_object = Node('D'), circuit_id = 2),
-        Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
-            remote_node_object = Node('F'), circuit_id = 1)]
+        The corresponding model style path would be
+
+        Example::
+
+            [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = 9),
+            Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                remote_node_object = Node('G'), circuit_id = 6),
+            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
+                remote_node_object = Node('F'), circuit_id = 1)]
+
         """
 
         # Define a model-style path to build
@@ -1021,7 +929,7 @@ class PerformanceModel(MasterModel):
 
         return model_path
 
-    # NODE CALLS ######
+    # NODE CALLS ######  # TODO - continue here
     def get_node_interfaces(self, node_name):
         """Returns list of interfaces on specified node name"""
         return Node(node_name).interfaces(self)
@@ -1253,21 +1161,26 @@ class PerformanceModel(MasterModel):
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
         Here is an example of a data file:
 
-        INTERFACES_TABLE
-        node_object_name	remote_node_object_name	name	cost	capacity    rsvp_enabled    percent_reservable_bandwidth  # noqa E501
-        A	B	A-to-B	4	100
-        B	A	B-to-A	4	100
-        NODES_TABLE
-        name	lon	lat
-        A	50	0
-        B	0	-50
-        DEMANDS_TABLE
-        source	dest	traffic	name
-        A	B	80	dmd_a_b_1
-        RSVP_LSP_TABLE
-        source	dest	name    configured_setup_bw
-        A	B	lsp_a_b_1   10
-        A	B	lsp_a_b_2
+        Example::
+
+            INTERFACES_TABLE
+            node_object_name	remote_node_object_name	name	cost	capacity    rsvp_enabled    percent_reservable_bandwidth  # noqa E501
+            A	B	A-to-B	4	100
+            B	A	B-to-A	4	100
+
+            NODES_TABLE
+            name	lon	lat
+            A	50	0
+            B	0	-50
+
+            DEMANDS_TABLE
+            source	dest	traffic	name
+            A	B	80	dmd_a_b_1
+
+            RSVP_LSP_TABLE
+            source	dest	name    configured_setup_bw
+            A	B	lsp_a_b_1   10
+            A	B	lsp_a_b_2
 
         :param data_file: file with model info
         :return: Model object
