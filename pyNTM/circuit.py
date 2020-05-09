@@ -18,13 +18,17 @@ class Circuit(object):
 
     def get_circuit_interfaces(self, model):
         """
-        Return the circuit's interface objects
+        Return the Circuit's component Interface objects in model object
+
+        :param model: model object containing Circuit
+        :return: Component Interfaces in Circuit
         """
         return (self.interface_a, self.interface_b)
 
     def failed(self, model):
         """
         Is Circuit failed?
+
         :param model: Model containing circuit
         :return: Boolean
         """

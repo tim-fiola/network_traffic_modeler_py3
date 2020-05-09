@@ -13,7 +13,9 @@ class RSVP_LSP(object):
 
     lsp_name: name of LSP
 
-    path: will either be 'Unrouted' or be a dict containing the following -
+    path::
+
+        will either be 'Unrouted' or be a dict containing the following -
         - interfaces: list of interfaces that LSP egresses in the order it
             egresses them
         - path_cost: sum of costs of the interfaces
@@ -57,6 +59,7 @@ class RSVP_LSP(object):
         signal for additional bandwidth.  As such, this def adds back its
         existing reserved_bandwidth to any Interface in a path in
         candidate_paths that it is already signaled on.
+
         :param candidate_paths: list of lists of Interface objects
         :return: list of dictionaries of paths: {'interfaces': path,
                                                  'path_cost': path_cost,
@@ -99,6 +102,7 @@ class RSVP_LSP(object):
     def setup_bandwidth(self):
         """
         The bandwidth the LSP attempts to signal for.
+
         :return: the bandwidth the LSP attempts to signal for
         """
 
@@ -108,6 +112,7 @@ class RSVP_LSP(object):
     def setup_bandwidth(self, proposed_setup_bw):
         """
         Puts guardrails on the setup bandwidth for the RSVP LSP
+
         :param proposed_setup_bw: setup bandwidth value to be evaluated
         :return: None
         """
@@ -163,6 +168,7 @@ class RSVP_LSP(object):
     def demands_on_lsp(self, model):
         """
         Returns demands in model object that LSP is transporting.
+
         :param model: model object containing LSP
         :return: List of demands in model object that LSP carries
         """
@@ -176,6 +182,7 @@ class RSVP_LSP(object):
     def traffic_on_lsp(self, model):
         """
         Returns the amount of traffic on the LSP
+
         :param model: Model object for LSP
         :return: Units of traffic on the LSP
         """
@@ -192,16 +199,26 @@ class RSVP_LSP(object):
         return traffic_on_lsp
 
     def effective_metric(self, model):
-        """Returns the metric for the best path. This value will be the
-        shortest possible path from LSP's source to dest, regardless of
-        whether the LSP takes that shortest path or not."""
+        """
+        Returns the metric for the best path. This value will be the
+        metric for the shortest possible path from LSP's source to dest,
+        regardless of whether the LSP takes that shortest path or not.
+
+        :param model: model object containing self
+        :return: metric for the LSP's shortest possible path
+        """
 
         return model.get_shortest_path(self.source_node_object.name,
                                        self.dest_node_object.name, needed_bw=0)['cost']
 
     def actual_metric(self, model):
-        """Returns the metric sum of the interfaces that the LSP actually
-        transits."""
+        """
+        Returns the metric sum of the interfaces that the LSP actually
+        transits.
+
+        :param model: model object containing self
+        :return: sum of the metrics of the Interfaces that the LSP transits
+        """
         if 'Unrouted' in self.path:
             metric = 'Unrouted'
 
