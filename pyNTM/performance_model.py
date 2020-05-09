@@ -39,7 +39,6 @@ from .master_model import MasterModel
 from .utilities import find_end_index
 from .node import Node
 from .rsvp import RSVP_LSP
-from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
@@ -929,130 +928,6 @@ class PerformanceModel(MasterModel):
 
         return model_path
 
-    # NODE CALLS ######  # TODO - continue here
-    def get_node_interfaces(self, node_name):
-        """Returns list of interfaces on specified node name"""
-        return Node(node_name).interfaces(self)
-
-    def fail_node(self, node_name):
-        """Fails specified node"""
-
-        # Find node's interfaces and fail them
-        ints_to_fail_iterator = (interface for interface in
-                                 self.get_node_interfaces(node_name))
-
-        for interface in ints_to_fail_iterator:
-            self.fail_interface(interface.name, node_name)
-
-        # Change the failed property on the specified node
-        self.get_node_object(node_name).failed = True
-
-    def unfail_node(self, node_name):
-        """Unfails the Node with name=node_name"""
-
-        # Change the failed property on the specified node;
-        self.get_node_object(node_name).failed = False
-
-        # Find node's interfaces and unfail them
-        ints_to_unfail_iterator = (interface for interface in self.get_node_interfaces(node_name))
-
-        for interface in ints_to_unfail_iterator:
-
-            # Unfail the interfaces if the remote node is not failed
-            if not interface.remote_node_object.failed:
-                # Unfail the specific interface
-                self.unfail_interface(interface.name, node_name, False)
-
-                # Unfail the remote interface
-                remote_int = interface.get_remote_interface(self)
-                self.unfail_interface(remote_int.name,
-                                      remote_int.node_object.name, False)
-
-    def get_failed_node_objects(self):
-        """
-        Returns a list of all failed nodes
-        """
-        failed_nodes = []
-
-        for node in (node for node in self.node_objects):
-            if node.failed:
-                node_object = self.get_node_object(node.name)
-                failed_nodes.append(node_object)
-
-        return failed_nodes
-
-    def get_non_failed_node_objects(self):
-        """Returns a list of all failed nodes"""
-        non_failed_nodes = []
-
-        for node in (node for node in self.node_objects):
-            if not node.failed:
-                node_object = self.get_node_object(node.name)
-                non_failed_nodes.append(node_object)
-
-        return non_failed_nodes
-
-    # Display calls #########
-    def display_interface_status(self):  # pragma: no cover
-        """Returns failed = True/False for each interface"""
-
-        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), end=' ')
-        print('Failed'.ljust(12))
-
-        interface_iterator = (interface for interface in self.interface_objects)
-
-        for interface in interface_iterator:
-            print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
-            print(interface.remote_node_object.name.ljust(12), end=' ')
-            print(str(interface.failed).ljust(12))
-
-    def display_node_status(self):  # pragma: no cover
-        """Returns failed = True/False for each node"""
-
-        print('Node'.ljust(12), 'Failed'.ljust(12))
-
-        node_iterator = (node for node in self.node_objects)
-
-        for node in node_iterator:
-            print(node.name.ljust(12), str(node.failed).ljust(12))
-
-    def display_interfaces_traffic(self):  # pragma: no cover
-        """
-        A human-readable(-ish) display of interfaces and traffic on each
-        """
-
-        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), 'Traffic'.ljust(12))
-
-        interface_iterator = (interface for interface in self.interface_objects)
-
-        for interface in interface_iterator:
-            print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
-            print(interface.remote_node_object.name.ljust(12), end=' ')
-            print(repr(interface.traffic).ljust(12))
-
-    def display_demand_paths(self):  # pragma: no cover
-        """
-        Displays each demand and its path(s) across the network
-        """
-
-        demand_iter = (demand for demand in self.demand_objects)
-
-        for demand in demand_iter:
-            print('demand._key is', demand._key)
-            print('Demand has %s paths:' % (len(demand.path)))
-            for path in demand.path:
-                pprint(path)
-                print()
-            print()
-            print()
-
-    def display_interface_objects(self):  # pragma: no cover
-        """Displays interface objects in a more human readable manner"""
-
-        for interface in self.interface_objects:
-            pprint(interface)
-            print()
-
     def _make_weighted_network_graph_routed_lsp(self, lsp, needed_bw=0):
         """
         Looks for a new path with needed_bw reservable bandwidth for an RSVP LSP
@@ -1060,6 +935,7 @@ class PerformanceModel(MasterModel):
         Returns a networkx weighted network directional graph from the input Model object.
         Considers edges with needed_bw of reservable_bandwidth and also takes into account
         reserved_bandwidth by the lsp on Interfaces in the existing LSP path
+
         :param lsp: RSVP LSP that is currently routed
         :param needed_bw: how much bandwidth is needed for the RSVP LSP's new path
         :return: networkx DiGraph with eligible edges
@@ -1247,6 +1123,7 @@ class PerformanceModel(MasterModel):
         """
         Extracts interface data from lines and adds Interface objects to a set.
         Also extracts the implied Nodes from the Interfaces and adds those Nodes to a set.
+
         :param int_info_begin_index: Index position in lines where interface info begins
         :param int_info_end_index:  Index position in lines where interface info ends
         :param lines: lines of data describing a Model objects
@@ -1299,123 +1176,6 @@ class PerformanceModel(MasterModel):
                 node_set.add(new_interface.remote_node_object)
 
         return interface_set, node_set
-
-    def get_demand_objects_source_node(self, source_node_name):
-        """
-        Returns list of demand objects originating at the source node
-        """
-
-        demand_list = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.source_node_object.name == source_node_name:
-                demand_list.append(demand)
-
-        return demand_list
-
-    def get_demand_objects_dest_node(self, dest_node_name):
-        """Returns list of demands objects originating at the
-        destination node """
-        demand_list = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.dest_node_object.name == dest_node_name:
-                demand_list.append(demand)
-
-        return demand_list
-
-    # ### SRLG Calls ### #
-    def get_srlg_object(self, srlg_name, raise_exception=True):
-        """
-        Returns SRLG in self with srlg_name
-        :param srlg_name: name of SRLG
-        :param raise_exception: raise an exception if SRLG with name=srlg_name does not
-        exist in self
-        :return: None
-        """
-
-        srlg_already_in_model = [srlg for srlg in self.srlg_objects if srlg.name == srlg_name]
-
-        if len(srlg_already_in_model) == 1:
-            return srlg_already_in_model[0]  # There will only be one SRLG with srlg_name
-        else:
-            if raise_exception:
-                msg = "No SRLG with name {} exists in Model".format(srlg_name)
-                raise ModelException(msg)
-            else:
-                return None
-
-    def fail_srlg(self, srlg_name):
-        """
-        Sets SRLG with name srlg_name to failed = True
-        :param srlg_name: name of SRLG to fail
-        :return: none
-        """
-
-        srlg_to_fail = self.get_srlg_object(srlg_name)
-
-        # Find SRLG's Nodes to fail
-        nodes_to_fail_iterator = (node for node in self.node_objects if node in srlg_to_fail.node_objects)
-
-        for node in nodes_to_fail_iterator:
-            self.fail_node(node.name)
-
-        # Find SRLG's Interfaces to fail
-        interfaces_to_fail_iterator = (interface for interface in self.interface_objects if
-                                       interface in srlg_to_fail.interface_objects)
-
-        for interface in interfaces_to_fail_iterator:
-            self.fail_interface(interface.name, interface.node_object.name)
-
-        # Change the failed property on the specified srlg
-        srlg_to_fail.failed = True
-
-    def unfail_srlg(self, srlg_name):
-        """
-        Sets SRLG with srlg_name to failed = False
-        :param srlg_name: name of SRLG to unfail
-        :return: none
-        """
-
-        srlg_to_unfail = self.get_srlg_object(srlg_name)
-
-        # Change the failed property on the specified srlg
-        srlg_to_unfail.failed = False
-
-        # Find SRLG's Nodes to unfail
-        nodes_to_unfail_iterator = (node for node in self.node_objects if node in srlg_to_unfail.node_objects)
-
-        # Node will stay failed if it's part of another SRLG that is still failed;
-        # in that case, the unfail_node will create an exception; ignore that exception
-        for node in nodes_to_unfail_iterator:
-            try:
-                self.unfail_node(node.name)
-            except ModelException:
-                pass
-
-        # Find SRLG's Interfaces to unfail
-        interfaces_to_unfail_iterator = (interface for interface in self.interface_objects if
-                                         interface in srlg_to_unfail.interface_objects)
-
-        # Interface will stay failed if it's part of another SRLG that is still failed or
-        # if the local/remote Node is failed;  in that case, the unfail_interface
-        # will create an exception; ignore that exception
-        for interface in interfaces_to_unfail_iterator:
-            try:
-                self.unfail_interface(interface.name, interface.node_object.name)
-            except ModelException:
-                pass
-
-    def add_srlg(self, srlg_name):
-        """
-        Adds SRLG object to Model
-        :param srlg_name: name of SRLG
-        :return:
-        """
-
-        if srlg_name in set([srlg.name for srlg in self.srlg_objects]):
-            raise ModelException("SRLG with name {} already exists in Model".format(srlg_name))
-        else:
-            srlg = SRLG(srlg_name, self)
-            self.srlg_objects.add(srlg)
 
     def multiple_links_between_nodes(self):
         """
