@@ -30,5 +30,3 @@
 
 # TODO - test model with demands over LSPs and routed demands in same Model
 
-# TODO - Rename Model to PerformanceModel and Parallel_Link_Model to FlexModel
-
