@@ -393,12 +393,14 @@ class PerformanceModel(MasterModel):
         (Circuit) between Node objects.
 
         :param nx_sp: List of Node name hops on path
-        Example:
+        Example::
+
             [['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
 
         :return: List of Interface objects on path
 
-        Example:
+        Example::
+
             For the ['A', 'B', 'D'] path above, the converted path would be
 
                 [Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
@@ -685,8 +687,22 @@ class PerformanceModel(MasterModel):
         :param needed_bw: the amount of reservable bandwidth required on the path
         :param cutoff: max amount of path hops
         :return: Return the path(s) in dictionary form:
-            Example:
-                 path = {'path': [list of all path routes]}
+        Example::
+
+            >>> model.get_all_paths_reservable_bw('A', 'B', False, 5, 10)
+            {'path': [
+            [Interface(name = 'A-to-D', cost = 40, capacity = 20.0,
+            node_object = Node('A'), remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-B', cost = 20, capacity = 125.0, node_object = Node('D'),
+            remote_node_object = Node('B'), circuit_id = 7)],
+            [Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+            remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-G', cost = 10, capacity = 100.0, node_object = Node('D'),
+            remote_node_object = Node('G'), circuit_id = 8),
+            Interface(name = 'G-to-B', cost = 10, capacity = 100.0, node_object = Node('G'),
+            remote_node_object = Node('B'), circuit_id = 9)]
+            ]}
+
         """
 
         # Define a networkx DiGraph to find the path
@@ -747,7 +763,9 @@ class PerformanceModel(MasterModel):
     def get_shortest_path_for_routed_lsp(self, source_node_name, dest_node_name, lsp, needed_bw):
         """
         For a source and dest node name pair, find the shortest path(s) with at
-        least needed_bw available for an LSP that is already routed.
+        least needed_bw available for an LSP that is already routed.  This takes into account
+        reserved bandwidth on the Interfaces the LSP already transits, allowing the bandwidth
+        reserved by the LSP to be considered for reservation on any new path for the input LSP
         Return the shortest path in dictionary form:
         shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
 
@@ -756,6 +774,15 @@ class PerformanceModel(MasterModel):
         :param lsp: LSP object
         :param needed_bw: reserved bandwidth for LSPs
         :return: dict {'path': [list of lists, each list a shortest path route], 'cost': path_cost}
+
+        Example::
+            >>> lsp
+            RSVP_LSP(source = B, dest = C, lsp_name = 'lsp_b_c_1')
+            >>> path = model.get_shortest_path_for_routed_lsp('A', 'D', lsp, 10)
+            >>> path
+            {'path': [[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+            remote_node_object = Node('D'), circuit_id = 3)]], 'cost': 40}
+
 
         """
 
@@ -768,9 +795,7 @@ class PerformanceModel(MasterModel):
         converted_path['cost'] = None
 
         # Find the shortest paths in G between source and dest
-        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                                       dest_node_name,
-                                                       weight='cost')
+        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
         try:
             for path in digraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path)

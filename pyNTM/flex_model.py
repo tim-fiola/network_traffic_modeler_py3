@@ -658,6 +658,22 @@ class FlexModel(MasterModel):
         :param cutoff: max amount of path hops
         :return: Return the path(s) in dictionary form:
                  path = {'path': [list of shortest path routes]}
+
+        Example::
+
+            >>> model.get_all_paths_reservable_bw('A', 'B', False, 5, 10)
+            {'path': [
+            [Interface(name = 'A-to-D', cost = 40, capacity = 20.0,
+            node_object = Node('A'), remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-B', cost = 20, capacity = 125.0, node_object = Node('D'),
+            remote_node_object = Node('B'), circuit_id = 7)],
+            [Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+            remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-G', cost = 10, capacity = 100.0, node_object = Node('D'),
+            remote_node_object = Node('G'), circuit_id = 8),
+            Interface(name = 'G-to-B', cost = 10, capacity = 100.0, node_object = Node('G'),
+            remote_node_object = Node('B'), circuit_id = 9)]
+            ]}
         """
 
         # Define a networkx DiGraph to find the path

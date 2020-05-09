@@ -522,6 +522,17 @@ class MasterModel(object):
 
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
         with matching source/dest nodes
+
+        Example::
+
+            {'A-F': [RSVP_LSP(source = A, dest = F, lsp_name = 'lsp_a_f')],
+            'A-D': [RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_1'),
+            RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_2'),
+            RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_4'),
+            RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_3')],
+            'B-C': [RSVP_LSP(source = B, dest = C, lsp_name = 'lsp_b_c_1')],
+            'F-E': [RSVP_LSP(source = F, dest = E, lsp_name = 'lsp_f_e_1')]}
+
         """
 
         if self._parallel_lsp_groups == {}:
@@ -552,8 +563,16 @@ class MasterModel(object):
         """
         Determine demands with same source and dest nodes
 
-        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands
-        with matching source/dest nodes
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of
+        demands with matching source/dest nodes
+
+        Example::
+
+            {'A-F': [Demand(source = A, dest = F, traffic = 40, name = 'dmd_a_f_1')],
+            'A-D': [Demand(source = A, dest = D, traffic = 80, name = 'dmd_a_d_1'),
+            Demand(source = A, dest = D, traffic = 70, name = 'dmd_a_d_2'),
+            Demand(source = A, dest = D, traffic = 100, name = 'dmd_a_to_d_3')],
+            'F-E': [Demand(source = F, dest = E, traffic = 400, name = 'dmd_f_e_1')]}
         """
 
         src_node_names = set([dmd.source_node_object.name for dmd in self.demand_objects])
@@ -1225,6 +1244,11 @@ class MasterModel(object):
         """
         Returns demand specified by the source_node_name, dest_node_name, name;
         throws exception if demand not found
+
+        :param source_node_name: name of Node where desired Demand originates (source)
+        :param dest_node_name: name of Node where desired Demand terminates (destination)
+        :param demand_name: name of Demand object
+        :return: desired Demand object that matches parameters above
         """
         model_demand_iterator = (demand for demand in self.demand_objects)
 
