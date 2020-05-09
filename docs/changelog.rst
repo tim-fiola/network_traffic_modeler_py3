@@ -1,6 +1,10 @@
 Changelog
 =========
 
+2.0
+--
+*  Made version 1.7 into major version 2.0 to account for possible backwards compatibilty
+
 1.7
 --
 * Renamed Model class to PerformanceModel
