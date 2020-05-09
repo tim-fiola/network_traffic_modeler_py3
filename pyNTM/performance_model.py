@@ -38,7 +38,6 @@ from .exceptions import ModelException
 from .master_model import MasterModel
 from .utilities import find_end_index
 from .node import Node
-from .rsvp import RSVP_LSP
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
@@ -93,7 +92,8 @@ class PerformanceModel(MasterModel):
         Intended to be used from CLI/interactive environment
         Interface info must be a list of dicts and in format like below example.
 
-        Example:
+        Example::
+
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
             'remote_node': 'B', 'circuit_id': 1, 'failed': False},
@@ -639,58 +639,6 @@ class PerformanceModel(MasterModel):
 
         self.validate_model()
 
-    def is_node_an_orphan(self, node_object):
-        """
-        Determines if a node is in orphan_nodes.  A node in
-        orphan_nodes is a Node with no Interface objects
-
-        :param node_object: Node object
-        :return: Boolean indicating if Node is orphan (True) or not (False)
-        """
-        if node_object in self.get_orphan_node_objects():
-            return True
-        else:
-            return False
-
-    def get_orphan_node_objects(self):
-        """
-        Returns list of Nodes that have no interfaces
-        """
-        orphan_nodes = [node for node in self.node_objects if len(node.interfaces(self)) == 0]
-
-        return orphan_nodes
-
-    def add_node(self, node_object):
-        """
-        Adds a node object to the model object and validates self
-
-        :param node_object: Node object to add to self
-        """
-
-        if node_object.name in (node.name for node in self.node_objects):
-            message = "A node with name {} already exists in the model".format(node_object.name)
-            raise ModelException(message)
-        else:
-            self.node_objects.add(node_object)
-
-        self.validate_model()
-
-    def get_node_object(self, node_name):
-        """
-        Returns a Node object from self, given a Node's name
-
-        :param node_name: name of Node object in self
-        :return: Node object with node_name
-        """
-
-        matching_node = [node for node in self.node_objects if node.name == node_name]
-
-        if len(matching_node) > 0:
-            return matching_node[0]
-        else:
-            message = "No node with name %s exists in the model" % node_name
-            raise ModelException(message)
-
     def _make_network_interfaces(self, interface_info_list):
         """
         Returns set of Interface objects and a set of Node objects for Nodes
@@ -719,75 +667,6 @@ class PerformanceModel(MasterModel):
                 network_node_objects.add(Node(interface['remote_node']))
 
         return (network_interface_objects, network_node_objects)
-
-    def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
-        """
-        Adds an RSVP LSP with name from the source node to the
-        dest node and validates model.
-
-        :param source_node_name: LSP source Node name
-        :param dest_node_name: LSP destination Node name
-        :param name: name of LSP
-        :return: A validated Model with the new RSVP_LSP object
-        """
-
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
-        added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
-
-        if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
-            message = '{} already exists in rsvp_lsp_objects'.format(added_lsp)
-            raise ModelException(message)
-        self.rsvp_lsp_objects.add(added_lsp)
-
-        self.validate_model()
-
-    def get_demand_object(self, source_node_name, dest_node_name, demand_name='none'):
-        """
-        Returns demand specified by the source_node_name, dest_node_name, name;
-        throws exception if demand not found
-
-        :param source_node_name: name of source Node for Demand
-        :param dest_node_name: name of destination Node for Demand
-        :param demand_name: name of Demand
-        :return: Specified Demand object
-        """
-
-        model_demand_iterator = (demand for demand in self.demand_objects)
-
-        demand_to_return = None
-
-        for demand in model_demand_iterator:
-            if demand.source_node_object.name == source_node_name and \
-                    demand.dest_node_object.name == dest_node_name and \
-                    demand.name == demand_name:
-                demand_to_return = demand
-                return demand_to_return
-
-        if demand_to_return is None:
-            raise ModelException('no matching demand')
-
-    def get_rsvp_lsp(self, source_node_name, dest_node_name, lsp_name='none'):
-        """
-        Returns the RSVP LSP from the model with the specified source node
-        name, dest node name, and LSP name.
-
-        :param source_node_name: name of source node for LSP
-        :param dest_node_name: name of destination node for LSP
-        :param lsp_name: name of LSP
-        :return: RSVP_LSP object
-        """
-
-        needed_key = (source_node_name, dest_node_name, lsp_name)
-
-        if needed_key not in (lsp._key for lsp in self.rsvp_lsp_objects):
-            msg = ("LSP with source node %s, dest node %s, and name %s "
-                   "does not exist in model" % (source_node_name, dest_node_name, lsp_name))
-            raise ModelException(msg)
-        else:
-            for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-                if lsp._key == needed_key:
-                    return lsp
 
     def get_all_paths_reservable_bw(self, source_node_name, dest_node_name, include_failed_circuits=True,
                                     cutoff=10, needed_bw=0):
@@ -871,6 +750,13 @@ class PerformanceModel(MasterModel):
         least needed_bw available for an LSP that is already routed.
         Return the shortest path in dictionary form:
         shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
+
+        :param source_node_name: name of source node
+        :param dest_node_name: name of destination node
+        :param lsp: LSP object
+        :param needed_bw: reserved bandwidth for LSPs
+        :return: dict {'path': [list of lists, each list a shortest path route], 'cost': path_cost}
+
         """
 
         # Define a networkx DiGraph to find the path
@@ -1182,6 +1068,7 @@ class PerformanceModel(MasterModel):
         Ensures there is no more than a single interface facing a
         given remote node (that there are no parallel interfaces
         between nodes)
+
         :return: a list of parallel interfaces; if
         there are no parallel interfaces, the list is empty
         """

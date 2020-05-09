@@ -50,6 +50,7 @@ class Node(object):
         """
         Is node failed?  Boolean.  It is NOT recommended to directly
         modify this property.  Rather, use Node.fail or Node.unfail.
+
         :return: Boolean - is node failed?
         """
         return self._failed
@@ -116,6 +117,9 @@ class Node(object):
     def adjacent_nodes(self, model):
         """
         Returns a list of adjacent nodes
+
+        :param model: model Object
+        :return: List of adjacent Nodes in model
         """
 
         adjacencies = self.interfaces(model)
@@ -130,6 +134,7 @@ class Node(object):
     def add_to_srlg(self, srlg_name, model, create_if_not_present=False):
         """
         Adds self to an SRLG with name=srlg_name in model.
+
         :param srlg_name: name of srlg
         :param model: Model object
         :param create_if_not_present: Boolean.  Create the SRLG if it
@@ -164,6 +169,7 @@ class Node(object):
     def remove_from_srlg(self, srlg_name, model):
         """
         Removes self from SRLG with srlg_name in model
+
         :param srlg_name: name of SRLG
         :param model: Model object
         :return: none
