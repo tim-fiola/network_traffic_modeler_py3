@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.7
+--
+* Renamed Model class to PerformanceModel
+* Renamed Parallel_Link_Model class to FlexModel
+* Optimization: general 18-25% performance improvement when measured by time to converge
+* Moved common code from PerformanceModel and FlexModel to _MasterModel parent class
+* Maintained unit testing coverage at 95%
+* Cleaned up documentation/docstrings
+
 1.6
 ---
 * Added support for multiple links between nodes (Parallel_Link_Model)
