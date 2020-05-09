@@ -20,7 +20,7 @@ import json
 import pdb
 
 from matplotlib.patches import FancyArrowPatch, Circle
-from pyNTM import Model
+from pyNTM import PerformanceModel
 
 # Util ranges mapped to colors
 util_ranges_2 = [('darkviolet', 100),

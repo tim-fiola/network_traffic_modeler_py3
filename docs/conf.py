@@ -22,7 +22,7 @@ copyright = '2019, Tim Fiola'
 author = 'Tim Fiola'
 
 # The full version, including alpha/beta/rc tags
-release = '1.6'
+release = '1.7'
 
 # index file
 master_doc = 'index'
@@ -32,7 +32,7 @@ master_doc = 'index'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc']
+extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

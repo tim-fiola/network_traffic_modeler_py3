@@ -1,26 +1,33 @@
 """
+This is the flexible, more feature-rich model class.  It supports
+more features than the PerformanceModel class.  For example, the
+FlexModel class supports multiple Circuits (edges) between layer 3
+Nodes.  This class will tend to support more topology features than
+the PerformanceModel class.
+
+If you are not sure whether to use the PerformanceModel or FlexModel object,
+it's best to use the FlexModel object.
+
+This Class is the same as the legacy (version 1.6 and earlier)
+Parallel_Link_Model class.
+
 This model type allows multiple links/parallel links between 2 nodes.
 
 There will be a performance impact in this model variant.
-
-A class that defines the network being modeled and that contains all
-modeled objects in the network such as Nodes, Interfaces, Circuits,
-and Demands.
 """
 
 from pprint import pprint
 
 import itertools
 import networkx as nx
+import random
 
 from .circuit import Circuit
 from .interface import Interface
 from .exceptions import ModelException
-from .master_model import MasterModel
+from .master_model import _MasterModel
 from .utilities import find_end_index
 from .node import Node
-from .rsvp import RSVP_LSP
-from .srlg import SRLG
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
@@ -30,8 +37,9 @@ from .srlg import SRLG
 #  and not unfail when a parent SRLG unfails
 
 
-class Parallel_Link_Model(MasterModel):
-    """A network model object consisting of the following base components:
+class FlexModel(_MasterModel):
+    """
+    A network model object consisting of the following base components:
 
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a
           'capacity' attribute that determines how much traffic it can carry.
@@ -51,7 +59,7 @@ class Parallel_Link_Model(MasterModel):
 
         - RSVP LSP objects (set): RSVP LSPs in the Model
 
-        - Circuit objects are created by matching Interface objects
+        - Circuit objects are created by matching Interface objects using common circuit_id
 
     """
 
@@ -68,7 +76,7 @@ class Parallel_Link_Model(MasterModel):
         super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)
 
     def __repr__(self):
-        return 'Parallel_Link_Model(Interfaces: %s, Nodes: %s, ' \
+        return 'FlexModel(Interfaces: %s, Nodes: %s, ' \
                'Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
                                                 len(self.node_objects),
                                                 len(self.demand_objects),
@@ -78,7 +86,9 @@ class Parallel_Link_Model(MasterModel):
         """
         A tool that reads network interface info and updates an *existing* model.
         Intended to be used from CLI/interactive environment
-        Interface info must be a list of dicts and in format like below example:
+        Interface info must be a list of dicts and in format like below example.
+
+        Example::
 
             network_interfaces = [
             {'name':'A-to-B', 'cost':4,'capacity':100, 'node':'A',
@@ -88,6 +98,8 @@ class Parallel_Link_Model(MasterModel):
             {'name':'A-to-C', 'cost':1,'capacity':200, 'node':'A',
             'remote_node': 'C', 'circuit_id': 3, 'failed': False},]
 
+        :param network_interfaces: python list of attributes for Interface objects
+        :return: self with new Interface objects
         """
 
         new_interface_objects, new_node_objects = self._make_network_interfaces(network_interfaces)
@@ -209,9 +221,9 @@ class Parallel_Link_Model(MasterModel):
 
         # Create a model consisting only of the non-failed interfaces and
         # corresponding non-failed (available) nodes
-        non_failed_interfaces_model = Parallel_Link_Model(non_failed_interfaces,
-                                                          available_nodes, self.demand_objects,
-                                                          self.rsvp_lsp_objects)
+        non_failed_interfaces_model = FlexModel(non_failed_interfaces,
+                                                available_nodes, self.demand_objects,
+                                                self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth, traffic on each interface
         for interface in (interface for interface in self.interface_objects):
@@ -226,17 +238,227 @@ class Parallel_Link_Model(MasterModel):
 
         print("Routing the LSPs . . . ")
         # Route the RSVP LSPs
-        self = self._route_lsps(non_failed_interfaces_model)
+        self = self._route_lsps()
         print("LSPs routed (if present); routing demands now . . .")
         # Route the demands
-        self = self._route_demands(self.demand_objects, non_failed_interfaces_model)
+        self = self._route_demands(non_failed_interfaces_model)
         print("Demands routed; validating model . . . ")
 
         self.validate_model()
 
+    def _route_demands(self, model):
+        """
+        Routes demands in input 'model'
+
+        :param model: input 'model' parameter object (may be different from self)
+        :return: model with routed demands
+        """
+
+        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
+
+        for demand in model.demand_objects:
+            demand.path = []
+
+            # Find all LSPs that can carry the demand:
+            for lsp in (lsp for lsp in model.rsvp_lsp_objects):
+                if (lsp.source_node_object == demand.source_node_object and
+                        lsp.dest_node_object == demand.dest_node_object and
+                        'Unrouted' not in lsp.path):
+                    demand.path.append(lsp)
+
+            if demand.path == []:
+                src = demand.source_node_object.name
+                dest = demand.dest_node_object.name
+
+                # Shortest path in networkx multidigraph
+                try:
+                    nx_sp = list(nx.all_shortest_paths(G, src, dest, weight='cost'))
+                except nx.exception.NetworkXNoPath:
+                    # There is no path, demand.path = 'Unrouted'
+                    demand.path = 'Unrouted'
+                    continue
+
+                # all_paths is list of paths from source to destination; these paths
+                # may include paths that have multiple links between nodes
+                all_paths = self._get_all_paths_mdg(G, nx_sp)
+
+                path_list = self._normalize_multidigraph_paths(all_paths)
+                demand.path = path_list
+
+        self._update_interface_utilization()
+
+        return self
+
+    def _get_all_paths_mdg(self, G, nx_sp):
+        """
+        Examines hop-by-hop paths in G and determines specific
+        edges transited from one hop to the next
+
+        :param G:  networkx multidigraph object containing nx_sp, contains
+        Interface objects in edge data
+        :param nx_sp:  List of node paths in G
+
+        Example::
+
+            nx_sp from A to D in graph G::
+             [['A', 'D'], ['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
+
+        :return:  List of lists of possible specific model paths from source to
+        destination nodes.  Each 'hop' in a given path may include multiple possible
+        Interfaces that could be transited from one node to the next adjacent node.
+
+        Example::
+
+            all_paths from 'A' to 'D' is a list of lists; notice that there are
+            two Interfacs that could be transited from Node 'B' to Node 'G'
+            [[[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+                remote_node_object = Node('D'), circuit_id = 1)]],
+            [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = 2)],
+             [Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
+                remote_node_object = Node('D'), circuit_id = 3)]],
+            [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = 4)],
+             [Interface(name = 'B-to-G', cost = 10, capacity = 100.0, node_object = Node('B'),
+                remote_node_object = Node('G'), circuit_id = 5),
+              Interface(name = 'B-to-G_2', cost = 10, capacity = 50.0, node_object = Node('B'),
+                remote_node_object = Node('G'), circuit_id = 6)],
+            [Interface(name = 'G-to-D', cost = 10, capacity = 100.0, node_object = Node('G'),
+                remote_node_object = Node('D'), circuit_id = 7)]]]
+
+        """
+
+        all_paths = []
+        for path in nx_sp:
+            current_hop = path[0]
+            this_path = []
+            for next_hop in path[1:]:
+                this_hop = []
+                values_source_hop = G[current_hop][next_hop].values()
+                min_weight = min(d['cost'] for d in values_source_hop)
+                ecmp_links = [interface_index for interface_index, interface_item in
+                              G[current_hop][next_hop].items() if
+                              interface_item['cost'] == min_weight]
+
+                # Add Interface(s) to this_hop list and add traffic to Interfaces
+                for link_index in ecmp_links:
+                    this_hop.append(G[current_hop][next_hop][link_index]['interface'])
+                this_path.append(this_hop)
+                current_hop = next_hop
+            all_paths.append(this_path)
+
+        return all_paths
+
+    def _make_weighted_network_graph_mdg(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
+        """
+        Returns a networkx weighted networkx multidigraph object from
+        the input Model object
+
+        :param include_failed_circuits: include interfaces from currently failed
+        circuits in the graph?
+        :param needed_bw: how much reservable_bandwidth is required?
+        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+
+        :return: networkx multidigraph with edges that conform to the needed_bw and
+        rsvp_required parameters
+        """
+
+        G = nx.MultiDiGraph()
+
+        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
+        if include_failed_circuits is False:
+            considered_interfaces = (interface for interface in self.interface_objects
+                                     if (interface.failed is False and
+                                         interface.reservable_bandwidth >= needed_bw))
+        elif include_failed_circuits is True:
+            considered_interfaces = (interface for interface in self.interface_objects
+                                     if interface.reservable_bandwidth >= needed_bw)
+
+        if rsvp_required is True:
+            edge_names = ((interface.node_object.name,
+                           interface.remote_node_object.name,
+                           {'cost': interface.cost, 'interface': interface, 'circuit_id': interface.circuit_id})
+                          for interface in considered_interfaces
+                          if interface.rsvp_enabled is True)
+        else:
+            edge_names = ((interface.node_object.name,
+                           interface.remote_node_object.name,
+                           {'cost': interface.cost, 'interface': interface, 'circuit_id': interface.circuit_id})
+                          for interface in considered_interfaces)
+
+        # Add edges to networkx DiGraph
+        G.add_edges_from(edge_names)
+
+        # Add all the nodes
+        node_name_iterator = (node.name for node in self.node_objects)
+        G.add_nodes_from(node_name_iterator)
+
+        return G
+
+    def _normalize_multidigraph_paths(self, path_info):  # TODO - static?
+        """
+        Takes the multidigraph_path_info and normalizes it to create all the
+        path combos that only have one link between each node.
+
+        :param path_info: List of of interface hops from a source
+        node to a destination node.  Each hop in the path
+        is a list of all the interfaces from the current node
+        to the next node.
+
+        path_info example from source node 'B' to destination node 'D'.
+        Example::
+
+            [
+                [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                        remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
+                        complete path
+                [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '28'),
+                  Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '8'),
+                  Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
+                [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                        remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of path 2
+            ]
+
+        :return: List of lists.  Each component list is a list with a unique
+        Interface combination for the egress Interfaces from source to destination
+
+        Example::
+
+            [
+                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
+                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '28'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
+                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '18'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
+                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '8'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
+            ]
+
+        """
+        # List to hold unique path(s)
+        path_list = []
+
+        for path in path_info:
+            path = list(itertools.product(*path))
+            for path_option in path:
+                path_list.append(list(path_option))
+
+        return path_list
+
     def _make_circuits_multidigraph(self, return_exception=True, include_failed_circuits=True):
         """
         Matches interface objects into circuits and returns the circuits list
+
         :param return_exception: Should an exception be returned if not all the
                                  interfaces can be matched into a circuit?
         :param include_failed_circuits:  Should circuits that will be in a
@@ -246,7 +468,7 @@ class Parallel_Link_Model(MasterModel):
                  comprised of two Interface objects
         """
 
-        G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits)
+        G = self._make_weighted_network_graph_mdg(include_failed_circuits=include_failed_circuits)
 
         # Determine which interfaces pair up into good circuits in G
         graph_interfaces = ((local_node_name, remote_node_name, data) for
@@ -388,46 +610,6 @@ class Parallel_Link_Model(MasterModel):
 
         self.validate_model()
 
-    def is_node_an_orphan(self, node_object):
-        """Determines if a node is in orphan_nodes"""
-        if node_object in self.get_orphan_node_objects():
-            return True
-        else:
-            return False
-
-    def get_orphan_node_objects(self):
-        """
-        Returns list of Nodes that have no interfaces
-        """
-        orphan_nodes = [node for node in self.node_objects if len(node.interfaces(self)) == 0]
-
-        return orphan_nodes
-
-    def add_node(self, node_object):
-        """
-        Adds a node object to the model object
-        """
-
-        if node_object.name in (node.name for node in self.node_objects):
-            message = "A node with name {} already exists in the model".format(node_object.name)
-            raise ModelException(message)
-        else:
-            self.node_objects.add(node_object)
-
-        self.validate_model()
-
-    def get_node_object(self, node_name):
-        """
-        Returns a Node object, given a node's name
-        """
-        matching_node = [node for node in self.node_objects if node.name == node_name]
-
-        if len(matching_node) > 0:
-            return matching_node[0]
-        else:
-            message = "No node with name %s exists in the model" % node_name
-            raise ModelException(message)
-
     def _make_network_interfaces(self, interface_info_list):
         """
         Returns set of Interface objects and a set of Node objects for Nodes
@@ -457,209 +639,6 @@ class Parallel_Link_Model(MasterModel):
 
         return (network_interface_objects, network_node_objects)
 
-    def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
-        """
-        Adds an RSVP LSP with name from the source node to the
-        dest node and validates model.
-
-        :param source_node_name: LSP source Node name
-        :param dest_node_name: LSP destination Node name
-        :param name: name of LSP
-        :return: A validated Model with the new RSVP_LSP object
-        """
-        source_node_object = self.get_node_object(source_node_name)
-        dest_node_object = self.get_node_object(dest_node_name)
-        added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
-
-        if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
-            message = '{} already exists in rsvp_lsp_objects'.format(added_lsp)
-            raise ModelException(message)
-        self.rsvp_lsp_objects.add(added_lsp)
-
-        self.validate_model()
-
-    def get_demand_object(self, source_node_name, dest_node_name, demand_name='none'):
-        """
-        Returns demand specified by the source_node_name, dest_node_name, name;
-        throws exception if demand not found
-        """
-        model_demand_iterator = (demand for demand in self.demand_objects)
-
-        demand_to_return = None
-
-        for demand in model_demand_iterator:
-            if demand.source_node_object.name == source_node_name and \
-                    demand.dest_node_object.name == dest_node_name and \
-                    demand.name == demand_name:
-                demand_to_return = demand
-                return demand_to_return
-
-        if demand_to_return is None:
-            raise ModelException('no matching demand')
-
-    def get_rsvp_lsp(self, source_node_name, dest_node_name, lsp_name='none'):
-        """
-        Returns the RSVP LSP from the model with the specified source node
-        name, dest node name, and LSP name.
-
-        :param source_node_name: name of source node for LSP
-        :param dest_node_name: name of destination node for LSP
-        :param lsp_name: name of LSP
-        :return: RSVP_LSP object
-        """
-
-        needed_key = (source_node_name, dest_node_name, lsp_name)
-
-        if needed_key not in (lsp._key for lsp in self.rsvp_lsp_objects):
-            msg = ("LSP with source node %s, dest node %s, and name %s "
-                   "does not exist in model" % (source_node_name, dest_node_name, lsp_name))
-            raise ModelException(msg)
-        else:
-            for lsp in (lsp for lsp in self.rsvp_lsp_objects):
-                if lsp._key == needed_key:
-                    return lsp
-
-    # Interface calls
-    def get_interface_object(self, interface_name, node_name):
-        """Returns an interface object for specified node name and interface name"""
-
-        self._does_interface_exist(interface_name, node_name)
-
-        node_object = self.get_node_object(node_name)
-
-        int_object = [interface for interface in node_object.interfaces(self) if interface.name == interface_name]
-        return int_object[0]
-
-    def _does_interface_exist(self, interface_name, node_object_name):
-        int_key = (interface_name, node_object_name)
-        interface_key_iterator = (interface._key for interface in
-                                  self.interface_objects)
-
-        if int_key not in (interface_key_iterator):
-            raise ModelException('specified interface does not exist')
-
-    def get_circuit_object_from_interface(self, interface_name, node_name):
-        """
-        Returns a Circuit object, given a Node name and Interface name
-        """
-
-        # Does interface exist?
-        self._does_interface_exist(interface_name, node_name)
-
-        interface = self.get_interface_object(interface_name, node_name)
-
-        ckts = [ckt for ckt in self.circuit_objects if interface in (ckt.interface_a, ckt.interface_b)]
-
-        return ckts[0]
-
-    # Convenience calls #####
-    def get_failed_interface_objects(self):
-        """
-        Returns a list of all failed interfaces in the Model
-        """
-        failed_interfaces = []
-
-        for interface in (interface for interface in self.interface_objects):
-            if interface.failed:
-                failed_interfaces.append(interface)
-
-        return failed_interfaces
-
-    def get_unfailed_interface_objects(self):
-        """
-        Returns a list of all non-failed interfaces in the Model
-        """
-
-        unfailed_interface_objects = set()
-
-        interface_iter = (interface for interface in self.interface_objects)
-
-        for interface in interface_iter:
-            if not interface.failed:
-                unfailed_interface_objects.add(interface)
-
-        return unfailed_interface_objects
-
-    def get_unrouted_demand_objects(self):
-        """
-        Returns list of demand objects that cannot be routed
-        """
-        unrouted_demands = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.path == "Unrouted":
-                unrouted_demands.append(demand)
-
-        return unrouted_demands
-
-    def change_interface_name(self, node_name,
-                              current_interface_name,
-                              new_interface_name):
-        """Changes interface name"""
-        interface_to_edit = self.get_interface_object(current_interface_name, node_name)
-        interface_to_edit.name = new_interface_name
-
-        return interface_to_edit
-
-    def fail_interface(self, interface_name, node_name):
-        """Fails the Interface object for the interface_name/node_name pair"""
-
-        # Get the interface object
-        interface_object = self.get_interface_object(interface_name, node_name)
-
-        # Does interface exist?
-        if interface_object not in self.interface_objects:
-            ModelException('specified interface does not exist')
-
-        # find the remote interface
-        remote_interface_object = interface_object.get_remote_interface(self)
-
-        remote_interface_object.failed = True
-        interface_object.failed = True
-
-    def unfail_interface(self, interface_name, node_name, raise_exception=False):
-        """
-        Unfails the Interface object for the interface_name, node_name pair.
-
-        :param interface_name:
-        :param node_name:
-        :param raise_exception: If raise_excecption=True, an exception
-                                will be raised if the interface cannot be unfailed.
-                                An example of this would be if you tried to unfail
-                                the interface when the parent node or remote node
-                                was in a failed state
-        :return: Interface object from Model that is not failed
-        """
-
-        if not (isinstance(raise_exception, bool)):
-            message = "raise_exception must be boolean value"
-            raise ModelException(message)
-
-        # Get the interface object
-        interface_object = self.get_interface_object(interface_name, node_name)
-
-        # Does interface exist?
-        if interface_object not in set(self.interface_objects):
-            ModelException('specified interface does not exist')
-
-        # Find the remote interface
-        remote_interface = interface_object.get_remote_interface(self)
-
-        # Ensure local and remote nodes are failed == False and set reservable
-        # bandwidth on each interface to interface.capacity
-        if self.get_node_object(interface_object.node_object.name).failed is False and \
-                self.get_node_object(remote_interface.node_object.name).failed is False:
-
-            remote_interface.failed = False
-            remote_interface.reserved_bandwidth = 0
-            interface_object.failed = False
-            interface_object.reserved_bandwidth = 0
-            self.validate_model()
-        else:
-            if raise_exception:
-                message = ("Local and/or remote node are failed; cannot have "
-                           "unfailed interface on failed node.")
-                raise ModelException(message)
-
     def get_all_paths_reservable_bw(self, source_node_name, dest_node_name, include_failed_circuits=True,
                                     cutoff=10, needed_bw=0):
         """
@@ -679,10 +658,26 @@ class Parallel_Link_Model(MasterModel):
         :param cutoff: max amount of path hops
         :return: Return the path(s) in dictionary form:
                  path = {'path': [list of shortest path routes]}
+
+        Example::
+
+            >>> model.get_all_paths_reservable_bw('A', 'B', False, 5, 10)
+            {'path': [
+            [Interface(name = 'A-to-D', cost = 40, capacity = 20.0,
+            node_object = Node('A'), remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-B', cost = 20, capacity = 125.0, node_object = Node('D'),
+            remote_node_object = Node('B'), circuit_id = 7)],
+            [Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+            remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-G', cost = 10, capacity = 100.0, node_object = Node('D'),
+            remote_node_object = Node('G'), circuit_id = 8),
+            Interface(name = 'G-to-B', cost = 10, capacity = 100.0, node_object = Node('G'),
+            remote_node_object = Node('B'), circuit_id = 9)]
+            ]}
         """
 
         # Define a networkx DiGraph to find the path
-        G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits, needed_bw=needed_bw)
+        G = self._make_weighted_network_graph_mdg(include_failed_circuits=include_failed_circuits, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
         converted_path = dict()
@@ -707,7 +702,7 @@ class Parallel_Link_Model(MasterModel):
         path_info = self._normalize_multidigraph_paths(converted_path['path'])
         return {'path': path_info}
 
-    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
+    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):  # TODO - does this work?
         """
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.
@@ -720,7 +715,7 @@ class Parallel_Link_Model(MasterModel):
         """
 
         # Define a networkx DiGraph to find the path
-        G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)
+        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
         converted_path = dict()
@@ -728,14 +723,12 @@ class Parallel_Link_Model(MasterModel):
         converted_path['cost'] = None
 
         # Find the shortest paths in G between source and dest
-        digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
-                                                       dest_node_name,
-                                                       weight='cost')
 
+        multidigraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
         # Get shortest path(s) from source to destination; this may include paths
         # that have multiple links between nodes
         try:
-            for path in digraph_shortest_paths:
+            for path in multidigraph_shortest_paths:
                 model_path = self._convert_nx_path_to_model_path(path, needed_bw)
                 converted_path['path'].append(model_path)
                 converted_path['cost'] = nx.shortest_path_length(G, source_node_name, dest_node_name, weight='cost')
@@ -787,64 +780,6 @@ class Parallel_Link_Model(MasterModel):
 
         return {'cost': converted_path['cost'], 'path': path_info}
 
-    def _normalize_multidigraph_paths(self, path_info):
-        """
-        Takes the multidigraph_path_info and normalizes it to create all the
-        path combos that only have one link between each node.
-
-        :param path_info: List of of interface hops from a source
-        node to a destination node.  Each hop in the path
-        is a list of all the interfaces from the current node
-        to the next node.
-
-        path_info example from source node 'B' to destination node 'D':
-        [
-            [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
-                    complete path
-            [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28'),
-              Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '8'),
-              Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
-            [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of 2nd path
-        ]
-
-
-
-        :return: List of lists.  Each component list is a list with a unique
-        Interface combination for the egress Interfaces from source to destination
-        example:
-
-            [
-                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
-                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '18'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '8'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
-            ]
-        """
-        # List to hold unique path(s)
-        path_list = []
-
-        for path in path_info:
-            path = list(itertools.product(*path))
-            for path_option in path:
-                path_list.append(list(path_option))
-
-        return path_list
-
     def _convert_nx_path_to_model_path(self, nx_graph_path, needed_bw):
         """
         Given a path from an networkx DiGraph, converts that
@@ -853,15 +788,16 @@ class Parallel_Link_Model(MasterModel):
         A networkx path is a list of nodes in order of transit.
         ex: ['A', 'B', 'G', 'D', 'F']
 
-        The corresponding model style path would be:
-        [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-            remote_node_object = Node('B'), circuit_id = 9),
-        Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-            remote_node_object = Node('G'), circuit_id = 6),
-        Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-            remote_node_object = Node('D'), circuit_id = 2),
-        Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
-            remote_node_object = Node('F'), circuit_id = 1)]
+        The corresponding model style path would be::
+
+            [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = 9),
+            Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                remote_node_object = Node('G'), circuit_id = 6),
+            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
+                remote_node_object = Node('F'), circuit_id = 1)]
 
         :param nx_graph_path: list of node names
         :param needed_bw: needed reservable bandwidth on the requested path
@@ -897,15 +833,15 @@ class Parallel_Link_Model(MasterModel):
         examines the interface(s) from each hop to the next hop and adds them
         to a hop_interface_list
 
-        The corresponding model style path could be:
-        [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
-            remote_node_object = Node('B'), circuit_id = 9),
-        Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-            remote_node_object = Node('G'), circuit_id = 6),
-        Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-            remote_node_object = Node('D'), circuit_id = 2),
-        Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
-            remote_node_object = Node('F'), circuit_id = 1)]
+        The corresponding model style path could be::
+            [Interface(name = 'A-to-B', cost = 20, capacity = 125, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = 9),
+            Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                remote_node_object = Node('G'), circuit_id = 6),
+            Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                remote_node_object = Node('D'), circuit_id = 2),
+            Interface(name = 'D-to-F', cost = 10, capacity = 300, node_object = Node('D'),
+                remote_node_object = Node('F'), circuit_id = 1)]
 
         :param nx_graph_path: list of node names
         :param needed_bw: needed reservable bandwidth on the requested path
@@ -941,175 +877,82 @@ class Parallel_Link_Model(MasterModel):
                         model_path.append(hop_interface_list)
         return model_path
 
-    # NODE CALLS ######
-    def get_node_interfaces(self, node_name):
-        """Returns list of interfaces on specified node name"""
-        return Node(node_name).interfaces(self)
-
-    def fail_node(self, node_name):
-        """Fails specified node"""
-
-        # Find node's interfaces and fail them
-        ints_to_fail_iterator = (interface for interface in
-                                 self.get_node_interfaces(node_name))
-
-        for interface in ints_to_fail_iterator:
-            self.fail_interface(interface.name, node_name)
-
-        # Change the failed property on the specified node
-        self.get_node_object(node_name).failed = True
-
-    def unfail_node(self, node_name):
-        """Unfails the Node with name=node_name"""
-
-        # Change the failed property on the specified node;
-        self.get_node_object(node_name).failed = False
-
-        # Find node's interfaces and unfail them
-        ints_to_unfail_iterator = (interface for interface in self.get_node_interfaces(node_name))
-
-        for interface in ints_to_unfail_iterator:
-
-            # Unfail the interfaces if the remote node is not failed
-            if not interface.remote_node_object.failed:
-                # Unfail the specific interface
-                self.unfail_interface(interface.name, node_name, False)
-
-                # Unfail the remote interface
-                remote_int = interface.get_remote_interface(self)
-                self.unfail_interface(remote_int.name,
-                                      remote_int.node_object.name, False)
-
-    def get_failed_node_objects(self):
+    def _determine_lsp_state_info(self, lsps, traff_on_each_group_lsp):
         """
-        Returns a list of all failed nodes
-        """
-        failed_nodes = []
+        Determine LSP's specific path and reserved bandwidth; also consume
+        reserved bandwidth on transited Interfaces
 
-        for node in (node for node in self.node_objects):
-            if node.failed:
-                node_object = self.get_node_object(node.name)
-                failed_nodes.append(node_object)
-
-        return failed_nodes
-
-    def get_non_failed_node_objects(self):
-        """Returns a list of all failed nodes"""
-        non_failed_nodes = []
-
-        for node in (node for node in self.node_objects):
-            if not node.failed:
-                node_object = self.get_node_object(node.name)
-                non_failed_nodes.append(node_object)
-
-        return non_failed_nodes
-
-    # Display calls #########
-    def display_interface_status(self):  # pragma: no cover
-        """Returns failed = True/False for each interface"""
-
-        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), end=' ')
-        print('Failed'.ljust(12))
-
-        interface_iterator = (interface for interface in self.interface_objects)
-
-        for interface in interface_iterator:
-            print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
-            print(interface.remote_node_object.name.ljust(12), end=' ')
-            print(str(interface.failed).ljust(12))
-
-    def display_node_status(self):  # pragma: no cover
-        """Returns failed = True/False for each node"""
-
-        print('Node'.ljust(12), 'Failed'.ljust(12))
-
-        node_iterator = (node for node in self.node_objects)
-
-        for node in node_iterator:
-            print(node.name.ljust(12), str(node.failed).ljust(12))
-
-    def display_interfaces_traffic(self):  # pragma: no cover
-        """
-        A human-readable(-ish) display of interfaces and traffic on each
+        :param lsps: List of parallel LSPs (LSPs with common source/dest nodes)
+        :param traff_on_each_group_lsp: How much traffic each LSP should attempt
+        to carry
+        :return: None; determines path and reserved bandwidth for each LSP in lsps
+        and also consumes reservable bandwidth on each Interface each LSP transits
         """
 
-        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), 'Traffic'.ljust(12))
+        for lsp in lsps:
+            # Check to see if configured_setup_bandwidth is set; if so,
+            # set reserved_bandwidth and setup_bandwidth equal to
+            # configured_setup_bandwidth value
+            if lsp.configured_setup_bandwidth is None:
+                lsp.reserved_bandwidth = traff_on_each_group_lsp
+                lsp.setup_bandwidth = traff_on_each_group_lsp
+            else:
+                lsp.reserved_bandwidth = lsp.configured_setup_bandwidth
+                lsp.setup_bandwidth = lsp.configured_setup_bandwidth
 
-        interface_iterator = (interface for interface in self.interface_objects)
+            G = self._make_weighted_network_graph_mdg(include_failed_circuits=False, rsvp_required=True,
+                                                      needed_bw=lsp.setup_bandwidth)
 
-        for interface in interface_iterator:
-            print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
-            print(interface.remote_node_object.name.ljust(12), end=' ')
-            print(repr(interface.traffic).ljust(12))
+            lsp.path = {}
 
-    def display_demand_paths(self):  # pragma: no cover
-        """
-        Displays each demand and its path(s) across the network
-        """
+            # Get shortest paths in networkx multidigraph
+            try:
+                nx_sp = list(nx.all_shortest_paths(G, lsp.source_node_object.name, lsp.dest_node_object.name,
+                                                   weight='cost'))
+            except nx.exception.NetworkXNoPath:
+                # There is no path; path = 'Unrouted'
+                lsp.path = 'Unrouted'
+                lsp.reserved_bandwidth = 'Unrouted'
+                continue
 
-        demand_iter = (demand for demand in self.demand_objects)
+            # Convert node hop by hop paths from G into Interface-based paths
+            all_paths = self._get_all_paths_mdg(G, nx_sp)
 
-        for demand in demand_iter:
-            print('demand._key is', demand._key)
-            print('Demand has %s paths:' % (len(demand.path)))
-            for path in demand.path:
-                pprint(path)
-                print()
-            print()
-            print()
+            # all_paths may have hops between nodes that can take different Interfaces;
+            # normalize those hops that could transit any of multiple Interfaces into
+            # distinct, unique possible paths
+            candidate_path_info = self._normalize_multidigraph_paths(all_paths)
 
-    def display_interface_objects(self):  # pragma: no cover
-        """Displays interface objects in a more human readable manner"""
+            # Candidate paths with enough reservable bandwidth
+            candidate_path_info_w_reservable_bw = []
 
-        for interface in self.interface_objects:
-            pprint(interface)
-            print()
+            # Determine which candidate paths have enough reservable bandwidth
+            for path in candidate_path_info:
+                if min([interface.reservable_bandwidth for interface in path]) >= lsp.setup_bandwidth:
+                    candidate_path_info_w_reservable_bw.append(path)
 
-    def _make_weighted_network_graph(self, include_failed_circuits=True, needed_bw=0, rsvp_required=False):
-        """
-        Returns a networkx weighted networkx multidigraph object from
-        the input Model object
+            # If multiple lowest_metric_paths, find those with fewest hops
+            if len(candidate_path_info_w_reservable_bw) == 0:
+                lsp.path = 'Unrouted'
+                lsp.reserved_bandwidth = 'Unrouted'
+                continue
 
-        :param include_failed_circuits: include interfaces from currently failed
-        circuits in the graph?
-        :param needed_bw: how much reservable_bandwidth is required?
-        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+            elif len(candidate_path_info_w_reservable_bw) > 1:
+                fewest_hops = min([len(path) for path in candidate_path_info_w_reservable_bw])
+                lowest_hop_count_paths = [path for path in candidate_path_info_w_reservable_bw
+                                          if len(path) == fewest_hops]
+                if len(lowest_hop_count_paths) > 1:
+                    new_path = random.choice(lowest_hop_count_paths)
+                else:
+                    new_path = lowest_hop_count_paths[0]
+            else:
+                new_path = candidate_path_info_w_reservable_bw[0]
 
-        :return: networkx multidigraph with edges that conform to the needed_bw and
-        rsvp_required parameters
-        """
+            # Change LSP path into more verbose form and set LSP's path
+            self._add_lsp_path_data(lsp, new_path)
 
-        G = nx.MultiDiGraph()
-
-        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
-        if include_failed_circuits is False:
-            considered_interfaces = (interface for interface in self.interface_objects
-                                     if (interface.failed is False and
-                                         interface.reservable_bandwidth >= needed_bw))
-        elif include_failed_circuits is True:
-            considered_interfaces = (interface for interface in self.interface_objects
-                                     if interface.reservable_bandwidth >= needed_bw)
-
-        if rsvp_required is True:
-            edge_names = ((interface.node_object.name,
-                           interface.remote_node_object.name,
-                           {'cost': interface.cost, 'circuit_id': interface.circuit_id})
-                          for interface in considered_interfaces
-                          if interface.rsvp_enabled is True)
-        else:
-            edge_names = ((interface.node_object.name,
-                           interface.remote_node_object.name,
-                           {'cost': interface.cost, 'circuit_id': interface.circuit_id})
-                          for interface in considered_interfaces)
-
-        # Add edges to networkx DiGraph
-        G.add_edges_from(edge_names)
-
-        # Add all the nodes
-        node_name_iterator = (node.name for node in self.node_objects)
-        G.add_nodes_from(node_name_iterator)
-
-        return G
+            for interface in [interface for interface in lsp.path['interfaces'] if lsp.path != 'Unrouted']:
+                interface.reserved_bandwidth += lsp.reserved_bandwidth
 
     def _make_weighted_network_graph_routed_lsp(self, lsp, needed_bw=0):
         """
@@ -1129,7 +972,7 @@ class Parallel_Link_Model(MasterModel):
         lsp_path_interfaces = lsp.path['interfaces']
 
         eligible_interface_generator = (interface for interface in self.interface_objects if
-                                        interface.failed is False)
+                                        (interface.failed is False and interface.rsvp_enabled is True))
 
         eligible_interfaces = set()
 
@@ -1174,6 +1017,11 @@ class Parallel_Link_Model(MasterModel):
 
         The format for the file must be a tab separated value file.
 
+        CIRCUIT ID (circuit_id) MUST BE SPECIFIED AS THIS IS WHAT ALLOWS THE CLASS
+        TO DISCERN WHAT MULTIPLE, PARALLEL INTERFACES BETWEEN THE SAME NODES MATCH
+        UP INTO WHICH CIRCUIT.  THE circuit_id CAN BE ANY COMMON KEY, SUCH AS IP SUBNET ID
+        OR DESIGNATED CIRCUIT ID FROM PRODUCTION.
+
         This docstring you are reading may not display the table info
         explanations/examples below correctly on https://pyntm.readthedocs.io/en/latest/api.html.
         Recommend either using help(Model.load_model_file) at the python3 cli or
@@ -1184,75 +1032,76 @@ class Parallel_Link_Model(MasterModel):
         The following headers must exist, with the following tab-column
         names beneath:
 
-            INTERFACES_TABLE
-            - node_object_name - name of node	where interface resides
-            - remote_node_object_name	- name of remote node
-            - name - interface name
-            - cost - IGP cost/metric for interface
-            - capacity - capacity
-            - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
-                - each circuit_id can only appear twice in the model
-                - circuit_id can be string or integer
-            - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-            - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-            value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+        INTERFACES_TABLE
+        - node_object_name - name of node	where interface resides
+        - remote_node_object_name	- name of remote node
+        - name - interface name
+        - cost - IGP cost/metric for interface
+        - capacity - capacity
+        - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
+            - each circuit_id can only appear twice in the model
+            - circuit_id can be string or integer
+        - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+        - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+        value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
-            Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
-            So a Node created from an Interface does not have to appear in the
-            NODES_TABLE unless you want to add additional attributes for the Node
-            such as latitude/longitude
+        Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
+        So a Node created from an Interface does not have to appear in the
+        NODES_TABLE unless you want to add additional attributes for the Node
+        such as latitude/longitude
 
-            NODES_TABLE -
-            - name - name of node
-            - lon	- longitude (or y-coordinate)
-            - lat - latitude (or x-coordinate)
+        NODES_TABLE -
+        - name - name of node
+        - lon	- longitude (or y-coordinate)
+        - lat - latitude (or x-coordinate)
 
-            Note - The NODES_TABLE is present for 2 reasons:
-            - to add a Node that has no interfaces
-            - and/or to add additional attributes for a Node inferred from
-            the INTERFACES_TABLE
+        Note - The NODES_TABLE is present for 2 reasons:
+        - to add a Node that has no interfaces
+        - and/or to add additional attributes for a Node inferred from
+        the INTERFACES_TABLE
 
-            DEMANDS_TABLE
-            - source - source node name
-            - dest - destination node name
-            - traffic	- amount of traffic on demand
-            - name - name of demand
+        DEMANDS_TABLE
+        - source - source node name
+        - dest - destination node name
+        - traffic	- amount of traffic on demand
+        - name - name of demand
 
-            RSVP_LSP_TABLE (this table is optional)
-            - source - source node name
-            - dest - destination node name
-            - name - name of LSP
-            - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-            if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
+        RSVP_LSP_TABLE (this table is optional)
+        - source - source node name
+        - dest - destination node name
+        - name - name of LSP
+        - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+        if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
 
-        Here is an example of a data file:
+        Here is an example of a data file.
 
-        INTERFACES_TABLE
-        node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth   # noqa E501
-        A	B	A-to-B_1    20	120 1   True  50
-        B	A	B-to-A_1    20	120 1   True  50
-        A   B   A-to-B_2    20  150 2
-        B   A   B-to-A_2    20  150 2
-        A   B   A-to-B_3    10  200 3   False
-        B   A   B-to-A_3    10  200 3   False
+        Example::
 
-        NODES_TABLE
-        name	lon	lat
-        A	50	0
-        B	0	-50
+            INTERFACES_TABLE
+            node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth   # noqa E501
+            A	B	A-to-B_1    20	120 1   True  50
+            B	A	B-to-A_1    20	120 1   True  50
+            A   B   A-to-B_2    20  150 2
+            B   A   B-to-A_2    20  150 2
+            A   B   A-to-B_3    10  200 3   False
+            B   A   B-to-A_3    10  200 3   False
 
-        DEMANDS_TABLE
-        source	dest	traffic	name
-        A	B	80	dmd_a_b_1
+            NODES_TABLE
+            name	lon	lat
+            A	50	0
+            B	0	-50
 
-        RSVP_LSP_TABLE
-        source	dest	name    configured_setup_bw
-        A	B	lsp_a_b_1   10
-        A	B	lsp_a_b_2
+            DEMANDS_TABLE
+            source	dest	traffic	name
+            A	B	80	dmd_a_b_1
 
+            RSVP_LSP_TABLE
+            source	dest	name    configured_setup_bw
+            A	B	lsp_a_b_1   10
+            A	B	lsp_a_b_2
 
         :param data_file: file with model info
         :return: Model object
@@ -1393,119 +1242,23 @@ class Parallel_Link_Model(MasterModel):
 
         return interface_set, node_set
 
-    def get_demand_objects_source_node(self, source_node_name):
-        """
-        Returns list of demand objects originating at the source node
-        """
 
-        demand_list = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.source_node_object.name == source_node_name:
-                demand_list.append(demand)
+class Parallel_Link_Model(FlexModel):
+    """
+    This is the legacy Parallel_Link_Model class, now a subclass of the more aptly named
+    FlexModel class.
 
-        return demand_list
+    This has been added to attempt to keep any legacy code, written in pyNTM 1.6
+    or earlier, from breaking.
+    """
+    def __init__(self, interface_objects=set(), node_objects=set(),
+                 demand_objects=set(), rsvp_lsp_objects=set()):
+        self.interface_objects = interface_objects
+        self.node_objects = node_objects
+        self.demand_objects = demand_objects
+        self.circuit_objects = set()
+        self.rsvp_lsp_objects = rsvp_lsp_objects
+        self.srlg_objects = set()
+        self._parallel_lsp_groups = {}
 
-    def get_demand_objects_dest_node(self, dest_node_name):
-        """Returns list of demands objects originating at the
-        destination node """
-        demand_list = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.dest_node_object.name == dest_node_name:
-                demand_list.append(demand)
-
-        return demand_list
-
-    # ### SRLG Calls ### #
-    def get_srlg_object(self, srlg_name, raise_exception=True):
-        """
-        Returns SRLG in self with srlg_name
-        :param srlg_name: name of SRLG
-        :param raise_exception: raise an exception if SRLG with name=srlg_name does not
-        exist in self
-        :return: None
-        """
-
-        srlg_already_in_model = [srlg for srlg in self.srlg_objects if srlg.name == srlg_name]
-
-        if len(srlg_already_in_model) == 1:
-            return srlg_already_in_model[0]  # There will only be one SRLG with srlg_name
-        else:
-            if raise_exception:
-                msg = "No SRLG with name {} exists in Model".format(srlg_name)
-                raise ModelException(msg)
-            else:
-                return None
-
-    def fail_srlg(self, srlg_name):
-        """
-        Sets SRLG with name srlg_name to failed = True
-        :param srlg_name: name of SRLG to fail
-        :return: none
-        """
-
-        srlg_to_fail = self.get_srlg_object(srlg_name)
-
-        # Find SRLG's Nodes to fail
-        nodes_to_fail_iterator = (node for node in self.node_objects if node in srlg_to_fail.node_objects)
-
-        for node in nodes_to_fail_iterator:
-            self.fail_node(node.name)
-
-        # Find SRLG's Interfaces to fail
-        interfaces_to_fail_iterator = (interface for interface in self.interface_objects if
-                                       interface in srlg_to_fail.interface_objects)
-
-        for interface in interfaces_to_fail_iterator:
-            self.fail_interface(interface.name, interface.node_object.name)
-
-        # Change the failed property on the specified srlg
-        srlg_to_fail.failed = True
-
-    def unfail_srlg(self, srlg_name):
-        """
-        Sets SRLG with srlg_name to failed = False
-        :param srlg_name: name of SRLG to unfail
-        :return: none
-        """
-
-        srlg_to_unfail = self.get_srlg_object(srlg_name)
-
-        # Change the failed property on the specified srlg
-        srlg_to_unfail.failed = False
-
-        # Find SRLG's Nodes to unfail
-        nodes_to_unfail_iterator = (node for node in self.node_objects if node in srlg_to_unfail.node_objects)
-
-        # Node will stay failed if it's part of another SRLG that is still failed;
-        # in that case, the unfail_node will create an exception; ignore that exception
-        for node in nodes_to_unfail_iterator:
-            try:
-                self.unfail_node(node.name)
-            except ModelException:
-                pass
-
-        # Find SRLG's Interfaces to unfail
-        interfaces_to_unfail_iterator = (interface for interface in self.interface_objects if
-                                         interface in srlg_to_unfail.interface_objects)
-
-        # Interface will stay failed if it's part of another SRLG that is still failed or
-        # if the local/remote Node is failed;  in that case, the unfail_interface
-        # will create an exception; ignore that exception
-        for interface in interfaces_to_unfail_iterator:
-            try:
-                self.unfail_interface(interface.name, interface.node_object.name)
-            except ModelException:
-                pass
-
-    def add_srlg(self, srlg_name):
-        """
-        Adds SRLG object to Model
-        :param srlg_name: name of SRLG
-        :return:
-        """
-
-        if srlg_name in set([srlg.name for srlg in self.srlg_objects]):
-            raise ModelException("SRLG with name {} already exists in Model".format(srlg_name))
-        else:
-            srlg = SRLG(srlg_name, self)
-            self.srlg_objects.add(srlg)
+        super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)

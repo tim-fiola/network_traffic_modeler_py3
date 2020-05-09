@@ -6,7 +6,7 @@ from .srlg import SRLG
 
 
 class Interface(object):
-    """An object representing a Node interface"""
+    """An object representing a Node's Interface"""
 
     def __init__(self, name, cost, capacity, node_object, remote_node_object,
                  circuit_id=None, rsvp_enabled=True, percent_reservable_bandwidth=100):
@@ -82,6 +82,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
     def reserved_bandwidth(self, value):
         """
         Puts logical guardrails on what reserved_bandwidth value can be
+
         :param value: value of reserved_bandwidth
         :return: None
         """
@@ -95,6 +96,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         """
         Is interface failed?  Boolean.  It is NOT recommended to directly
         modify this property.  Rather, use Interface.fail or Interface.unfail.
+
         :return: Boolean - is Interface failed?
         """
         return self._failed
@@ -103,6 +105,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
     def failed(self, status):
         """
         Puts logical guardrails on conditions of interface failure status
+
         :param status: boolean; input by user
         :return: self._failed; boolean
         """
@@ -155,8 +158,11 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         self._capacity = capacity
 
     def fail_interface(self, model):
-        """Returns an updated model with the specified
-        interface and the remote interface with failed==True
+        """
+        Updates the specified interface and the remote interface
+        with failed==True
+
+        :param model: model object containing self
         """
 
         # find the remote interface
@@ -167,8 +173,11 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         remote_interface.failed = True
 
     def unfail_interface(self, model):
-        """Returns an updated network_interfaces table with the specified
-        interface and the remote interface in the 'failed': False state
+        """
+        Updates the specified interface and the remote interface
+        with failed==False
+
+        :param model: model object containing self
         """
 
         # find the remote interface
@@ -184,7 +193,12 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
             raise ModelException(message)
 
     def get_remote_interface(self, model):
-        """Searches the model and returns the remote interface"""
+        """
+        Returns Interface on other side of the Circuit containing self
+
+        :param model: model object holding self
+        :return: Interface object on remote side of Circuit containing self
+        """
 
         for interface in (interface for interface in model.interface_objects):
             if interface.node_object.name == self.remote_node_object.name and interface.circuit_id == self.circuit_id:
@@ -204,14 +218,24 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
             raise ModelException(message)
 
     def get_circuit_object(self, model):
-        """Returns the circuit object from the model that an
-        interface is associated with."""
+        """
+        Returns the circuit object from the model that an
+        interface is associated with.
+
+        :param model: model object containing self
+        :return: Circuit object containing self
+        """
         ckt = model.get_circuit_object_from_interface(self.name,
                                                       self.node_object.name)
         return ckt
 
     def demands(self, model):
-        """Returns list of demands that egress the interface"""
+        """
+        Returns list of demands that egress the interface
+
+        :param model: model object containing self
+        :return: list of Demand objects egressing self
+        """
         dmd_set = set()
         routed_demands = (demand for demand in model.demand_objects if demand.path != 'Unrouted')
         for demand in routed_demands:
@@ -238,6 +262,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
     def lsps(self, model):
         """
         Returns a list of RSVP LSPs that egress the interface
+
         :param model: Model object
         :return: list of RSVP LSPs that egress the interface
         """
@@ -268,6 +293,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         """
         Adds self to an SRLG with name=srlg_name in model.  Also finds the
         remote Interface object and adds that to the SRLG.
+
         :param srlg_name: name of srlg
         :param model: Model object
         :param create_if_not_present: Boolean.  Create the SRLG if it
@@ -311,6 +337,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
     def remove_from_srlg(self, srlg_name, model):
         """
         Removes self and remote interface object from SRLG with srlg_name in model.
+
         :param srlg_name: name of SRLG
         :param model: Model object
         :return: none

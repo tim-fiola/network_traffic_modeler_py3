@@ -1,7 +1,7 @@
 import unittest
 
 from pyNTM import Node
-from pyNTM import Model
+from pyNTM import PerformanceModel
 from pyNTM import Circuit
 from pyNTM import Interface
 
@@ -17,9 +17,9 @@ class TestCircuit(unittest.TestCase):
                                      node_object=self.node_a, remote_node_object=self.node_b, circuit_id=1)
         self.interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
                                      node_object=self.node_b, remote_node_object=self.node_a, circuit_id=1)
-        self.model = Model(interface_objects=set([self.interface_a, self.interface_b]),
-                           node_objects=set([self.node_a, self.node_b]), demand_objects=set([]),
-                           rsvp_lsp_objects=set([]))
+        self.model = PerformanceModel(interface_objects=set([self.interface_a, self.interface_b]),
+                                      node_objects=set([self.node_a, self.node_b]), demand_objects=set([]),
+                                      rsvp_lsp_objects=set([]))
         self.circuit = Circuit(self.interface_a, self.interface_b)
 
     def test_repr(self):

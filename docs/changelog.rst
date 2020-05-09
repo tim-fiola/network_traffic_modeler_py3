@@ -1,13 +1,22 @@
 Changelog
 =========
 
+1.7
+--
+* Renamed Model class to PerformanceModel
+* Renamed Parallel_Link_Model class to FlexModel
+* Optimization: general 18-25% performance improvement when measured by time to converge
+* Moved common code from PerformanceModel and FlexModel to _MasterModel parent class
+* Maintained unit testing coverage at 95%
+* Cleaned up documentation/docstrings
+
 1.6
 ---
 * Added support for multiple links between nodes (Parallel_Link_Model)
 * Cached parallel_lsp_groups in Model and Parallel_Link_Model objects (performance optimization)
 * Added check for multiple links between nodes in Model object (not allowed)
-* Added Parent Class MasterModel to hold common defs for Model and Parallel_Link_Model subclasses
-* Added simulation_diagnostics def in MasterModel that gives potentially useful diagnostic info about the simulation results
+* Added Parent Class _MasterModel to hold common defs for Model and Parallel_Link_Model subclasses
+* Added simulation_diagnostics def in _MasterModel that gives potentially useful diagnostic info about the simulation results
 * Simple user interface (beta feature) supports RSVP LSPs
 
 1.5

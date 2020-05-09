@@ -6,11 +6,11 @@ sys.path.append('../pyNTM')
 from pprint import pprint
 
 # from pyNTM import Parallel_Link_Model
-from pyNTM.parallel_link_model import Parallel_Link_Model
+from pyNTM.flex_model import FlexModel
 
 time_before_load = datetime.now()
 
-model = Parallel_Link_Model.load_model_file('big_model_multi_digraph_file.txt')
+model = FlexModel.load_model_file('big_model_multi_digraph_file.txt')
 
 time_after_load = datetime.now()
 

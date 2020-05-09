@@ -3,10 +3,10 @@ sys.path.append('../')
 
 from pprint import pprint
 
-from pyNTM import Parallel_Link_Model
+from pyNTM import FlexModel
 
 # Make the Parallel_Link_Model
-model = Parallel_Link_Model.load_model_file('model_test_topology_multidigraph.csv')
+model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
 model.update_simulation()
 print()
 # Get shorteset path from Node A to Node D

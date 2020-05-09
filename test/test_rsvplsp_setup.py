@@ -1,7 +1,7 @@
 import unittest
 
 from pyNTM import RSVP_LSP
-from pyNTM import Model
+from pyNTM import PerformanceModel
 from pyNTM import ModelException
 
 
@@ -9,7 +9,7 @@ class TestRSVPLSPInitial(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.model = Model.load_model_file('test/model_test_topology.csv')
+        self.model = PerformanceModel.load_model_file('test/model_test_topology.csv')
 
         self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
         self.lsp_a_d_2 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_2')
@@ -76,7 +76,7 @@ class TestRSVPLSPInitial(unittest.TestCase):
 
     # Test for setup bandwidth must be >= 0
     def test_bad_setup_bw(self):
-        model = Model.load_model_file('test/model_test_topology.csv')
+        model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
 
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')

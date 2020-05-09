@@ -1,6 +1,6 @@
 import unittest
 
-from pyNTM import Model
+from pyNTM import PerformanceModel
 
 
 class TestRSVPLSPTraffAdd(unittest.TestCase):
@@ -10,7 +10,7 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
     # with int_a_b failed; the one that does signal will reserved will
     # attempt to reserve 250/2 = 125 units of bandwidth
     def test_reserved_bandwidth(self):
-        model = Model()
+        model = PerformanceModel()
         model.rsvp_lsp_objects = set([])
         model.demand_objects = set([])
 
@@ -81,7 +81,7 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
 
     # lsp_a_d_1/2 will each try to set up at 125.0 traffic units
     def test_setup_bandwidth(self):
-        model = Model()
+        model = PerformanceModel()
         model.rsvp_lsp_objects = set([])
         model.demand_objects = set([])
 
@@ -150,7 +150,7 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
     # that reserved_bandwidth; there will be a 25 unit remainder
     def test_int_bw(self):
 
-        model = Model()
+        model = PerformanceModel()
         model.rsvp_lsp_objects = set([])
         model.demand_objects = set([])
 

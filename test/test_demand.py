@@ -2,7 +2,7 @@ import unittest
 
 from pyNTM import Node
 from pyNTM import Demand
-from pyNTM import Model
+from pyNTM import PerformanceModel
 from pyNTM import Interface
 from pyNTM import RSVP_LSP
 
@@ -19,9 +19,9 @@ class TestDemand(unittest.TestCase):
         self.interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
                                      node_object=self.node_b, remote_node_object=self.node_a, circuit_id=1)
         self.rsvp_lsp_a = RSVP_LSP(source_node_object=self.node_a, dest_node_object=self.node_b, lsp_name='A-to-B')
-        self.model = Model(interface_objects=set([self.interface_a, self.interface_b]),
-                           node_objects=set([self.node_a, self.node_b]), demand_objects=set([]),
-                           rsvp_lsp_objects=set([self.rsvp_lsp_a]))
+        self.model = PerformanceModel(interface_objects=set([self.interface_a, self.interface_b]),
+                                      node_objects=set([self.node_a, self.node_b]), demand_objects=set([]),
+                                      rsvp_lsp_objects=set([self.rsvp_lsp_a]))
         self.demand = Demand(source_node_object=self.node_a, dest_node_object=self.node_b, traffic=10, name='A-to-B')
 
     def test_init_fail_neg_traffic(self):
@@ -38,7 +38,7 @@ class TestDemand(unittest.TestCase):
         self.demand._add_demand_path(self.model)
 
     def test_demand_behavior(self):
-        model = Model.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
 
         model.update_simulation()
 
@@ -84,9 +84,9 @@ class TestDemand(unittest.TestCase):
         interface_b = Interface(name='inerfaceB-to-A', cost=4, capacity=100,
                                      node_object=node_b, remote_node_object=node_a, circuit_id=1)
         dmd_a_d = Demand(node_a, node_d, traffic=10)
-        model = Model(interface_objects=set([interface_a, interface_b]),
-                      node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_d]),
-                      rsvp_lsp_objects=set([]))
+        model = PerformanceModel(interface_objects=set([interface_a, interface_b]),
+                                 node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_d]),
+                                 rsvp_lsp_objects=set([]))
         model.update_simulation()
 
         self.assertEqual(dmd_a_d.path, 'Unrouted')
@@ -107,9 +107,9 @@ class TestDemand(unittest.TestCase):
 
         lsp_a_b = RSVP_LSP(source_node_object=node_a, dest_node_object=node_b, lsp_name='lsp_a_b')
 
-        model = Model(interface_objects=set([interface_a, interface_b]),
-                      node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
-                      rsvp_lsp_objects=set([lsp_a_b]))
+        model = PerformanceModel(interface_objects=set([interface_a, interface_b]),
+                                 node_objects=set([node_a, node_b, node_d]), demand_objects=set([dmd_a_b]),
+                                 rsvp_lsp_objects=set([lsp_a_b]))
 
         model.update_simulation()
 

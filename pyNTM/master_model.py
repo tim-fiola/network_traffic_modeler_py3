@@ -1,20 +1,28 @@
 """
-Parent Class for Model and Parallel_Link_Model objects.
+Parent Class for FlexModel and PerformanceModel objects.
 
 A class that defines the network being modeled and that contains all
 modeled objects in the network such as Nodes, Interfaces, Circuits,
 and Demands.
+
+This cannot be used to instantiate a functioning model directly.  Use a subclass
+FlexModel or PerformanceModel
 """
 
 from .demand import Demand
 from .exceptions import ModelException
 from .node import Node
 from .rsvp import RSVP_LSP
+from .srlg import SRLG
+
+from pprint import pprint
 
 
-class MasterModel(object):
+class _MasterModel(object):
     """
-    Parent class for Model and Parallel_Link_Model subclasses; holds common defs
+    Parent class for Model and Parallel_Link_Model subclasses; holds common defs.
+    This cannot be used to instantiate a functioning model directly.  Use a subclass
+    FlexModel or PerformanceModel
     """
 
     def __init__(self, interface_objects=set(), node_objects=set(),
@@ -27,9 +35,10 @@ class MasterModel(object):
         self.srlg_objects = set()
         self._parallel_lsp_groups = {}
 
-    def simulation_diagnostics(self):  # TODO - make unit test for this
+    def simulation_diagnostics(self):
         """
         Analyzes simulation results and looks for the following:
+
         - Number of routed LSPs carrying Demands
         - Number of routed LSPs with no Demands
         - Number of Demands riding LSPs
@@ -43,7 +52,9 @@ class MasterModel(object):
         This is not cached currently and my be expensive to (re)run on a very large model.  Current best
         practice is to assign the output of this to a variable:
 
-        ex: sim_diag1 = model1.simulation_diagnostics()
+        Example::
+
+            sim_diag1 = model1.simulation_diagnostics()
 
         """
 
@@ -100,6 +111,7 @@ class MasterModel(object):
         is derived from the simulation.
         Returns dict object.  Keys are the _key for each Interface; values are
         dicts for each interface_ key that hold information about the Interface.
+
         :return: int_info
         """
         keys = (interface._key for interface in self.interface_objects)
@@ -113,6 +125,7 @@ class MasterModel(object):
     def _validate_circuit_interface_capacity(self, circuits_with_mismatched_interface_capacity, ckt):
         """
         Checks ckt's component Interfaces for matching capacity
+
         :param circuits_with_mismatched_interface_capacity: list that will store
         Circuits that have mismatched Interface capacity
         :param ckt: Circuit object to check
@@ -134,6 +147,7 @@ class MasterModel(object):
         - Is reserved_bandwidth > capacity?
         - Does reserved_bandwidth for interface match the sum of the
         reserved_bandwidth for the LSPs egressing interface?
+
         :param int_info: dict that holds int_res_bw_sum_error and
         int_res_bw_too_high sets.  Has the following format for a given
         entry:
@@ -164,18 +178,21 @@ class MasterModel(object):
         : demand: Demand object
         : return: dict of (Interface: <traffic from demand> ) k, v pairs
 
-        Example: The interface from node G to node D below has 2.5 units of traffic from 'demand';
-                 the interface from A to B has 10.0, etc.
-        {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
-        remote_node_object = Node('B'), circuit_id = '1'): 12.0,
-         Interface(name = 'A-to-B_2', cost = 4, capacity = 50, node_object = Node('A'),
-         remote_node_object = Node('B'), circuit_id = '2'): 12.0,
-         Interface(name = 'B-to-E', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), circuit_id = '7'): 8.0,
-         Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), circuit_id = '27'): 8.0,
-         Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
-         remote_node_object = Node('E'), circuit_id = '17'): 8.0}
+        Example::
+
+            The interface from node G to node D below has 2.5 units of traffic from 'demand';
+            the interface from A to B has 10.0, etc.
+
+            {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = '1'): 12.0,
+             Interface(name = 'A-to-B_2', cost = 4, capacity = 50, node_object = Node('A'),
+             remote_node_object = Node('B'), circuit_id = '2'): 12.0,
+             Interface(name = 'B-to-E', cost = 3, capacity = 200, node_object = Node('B'),
+             remote_node_object = Node('E'), circuit_id = '7'): 8.0,
+             Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
+             remote_node_object = Node('E'), circuit_id = '27'): 8.0,
+             Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
+             remote_node_object = Node('E'), circuit_id = '17'): 8.0}
 
         """
 
@@ -370,26 +387,17 @@ class MasterModel(object):
 
         return self
 
-    def _route_demands(self, demands, input_model):  # common between model and parallel_link_model
-        """
-        Routes demands through input_model Model object
-        :param demands: iterable of Demand objects to be routed
-        :param input_model:  Model object in which to route the demands
-        :return:
-        """
-        for demand_object in demands:
-            demand_object = demand_object._add_demand_path(input_model)
-
-        return self._update_interface_utilization()
-
-    def _route_lsps(self, input_model):
+    def _route_lsps(self):
         """Route the LSPs in the model
         1.  Get LSPs into groups with matching source/dest
         2.  Find all the demands that take the LSP group
         3.  Route the LSP group, one at a time
-        :param input_model: Model object; this may have different parameters than 'self'
+
         :return: self, with updated LSP paths
         """
+
+        for interface in self.interface_objects:
+            interface.reserved_bandwidth = 0
 
         # Find parallel LSP groups
         parallel_lsp_groups = self.parallel_lsp_groups()  # TODO - can this be optimized?
@@ -397,12 +405,34 @@ class MasterModel(object):
         # Find all the parallel demand groups
         parallel_demand_groups = self.parallel_demand_groups()  # TODO - can this be optimized?
 
-        # Find the amount of bandwidth each LSP in each parallel group will carry
+        # Route the LSPs by parallel group
+        self._route_parallel_lsp_groups(parallel_demand_groups, parallel_lsp_groups)
+
+        return self
+
+    def _route_parallel_lsp_groups(self, parallel_demand_groups, parallel_lsp_groups):
+        """
+        Routes LSPs with same source, dest (parallel LSPs) based on the demands that would
+        take those LSPs.  For each LSP, determine a 'path' attribute.
+
+        :param parallel_demand_groups: dict with keys = source_node-dest_node and values being a
+        list of all demands with the common corresponding source and dest nodes
+        :param parallel_lsp_groups: dict with keys = source_node-dest_node and values being a
+        list of all LSPs with the common corresponding source and dest nodes
+        :return: None; assigns path to each LSP
+        """
+        # Counter for LSP groups
         counter = 1
+
+        # Route LSPs by source, dest (parallel) groups
         for group, lsps in parallel_lsp_groups.items():
-            print("Routing {} LSPs in parallel LSP group {}; {}/{}".format(len(lsps), group, counter,
+
+            num_lsps_in_group = len(lsps)
+
+            print("Routing {} LSPs in parallel LSP group {}; {}/{}".format(num_lsps_in_group, group, counter,
                                                                            len(parallel_lsp_groups)))
             # Traffic each LSP in a parallel LSP group will carry; initialize
+            traffic_in_demand_group = 0
             traff_on_each_group_lsp = 0
 
             try:
@@ -417,10 +447,9 @@ class MasterModel(object):
                 # since parallel_demand_group will have no entry for 'group'
                 pass
 
-            # Now route each LSP in the group (first routing iteration)
-            for lsp in lsps:  # TODO - can this be optimized?
-                # Route each LSP one at a time
-                lsp.route_lsp(input_model, traff_on_each_group_lsp)
+            # Determine LSP's specific path and reserved bandwidth; also consume
+            # reserved bandwidth on transited Interfaces
+            self._determine_lsp_state_info(lsps, traff_on_each_group_lsp)
 
             routed_lsps_in_group = [lsp for lsp in lsps if lsp.path != 'Unrouted']
 
@@ -428,11 +457,25 @@ class MasterModel(object):
             # If not all the LSPs in the group can route at the lowest (initial)
             # setup bandwidth, determine which LSPs can signal and for how much traffic
             if len(routed_lsps_in_group) != len(lsps) and len(routed_lsps_in_group) > 0:
-                self._optimize_parallel_lsp_group_res_bw(input_model, routed_lsps_in_group, traffic_in_demand_group)
+                self._optimize_parallel_lsp_group_res_bw(self, routed_lsps_in_group, traffic_in_demand_group)
 
             counter += 1
 
-        return self
+    def _add_lsp_path_data(self, lsp, path):
+        """
+        Adds data about an LSP's path: cost of path and reservable bandwidth
+        on the path at the time the LSP was signaled.  Sets the lsp.path
+        attribute to the path data
+
+        :param lsp: RSVP LSP object
+        :param path: List of Interface objects along the path
+        :return: None
+        """
+        path_cost = sum([interface.cost for interface in path])
+        baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
+        lsp.path = {'interfaces': path,
+                    'path_cost': path_cost,
+                    'baseline_path_reservable_bw': baseline_path_reservable_bw}
 
     def _optimize_parallel_lsp_group_res_bw(self, input_model, routed_lsps_in_group, traffic_in_demand_group):
         """
@@ -481,8 +524,20 @@ class MasterModel(object):
     def parallel_lsp_groups(self):
         """
         Determine LSPs with same source and dest nodes
+
         :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
         with matching source/dest nodes
+
+        Example::
+
+            {'A-F': [RSVP_LSP(source = A, dest = F, lsp_name = 'lsp_a_f')],
+            'A-D': [RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_1'),
+            RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_2'),
+            RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_4'),
+            RSVP_LSP(source = A, dest = D, lsp_name = 'lsp_a_d_3')],
+            'B-C': [RSVP_LSP(source = B, dest = C, lsp_name = 'lsp_b_c_1')],
+            'F-E': [RSVP_LSP(source = F, dest = E, lsp_name = 'lsp_f_e_1')]}
+
         """
 
         if self._parallel_lsp_groups == {}:
@@ -512,8 +567,17 @@ class MasterModel(object):
     def parallel_demand_groups(self):
         """
         Determine demands with same source and dest nodes
-        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands
-        with matching source/dest nodes
+
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of
+        demands with matching source/dest nodes
+
+        Example::
+
+            {'A-F': [Demand(source = A, dest = F, traffic = 40, name = 'dmd_a_f_1')],
+            'A-D': [Demand(source = A, dest = D, traffic = 80, name = 'dmd_a_d_1'),
+            Demand(source = A, dest = D, traffic = 70, name = 'dmd_a_d_2'),
+            Demand(source = A, dest = D, traffic = 100, name = 'dmd_a_to_d_3')],
+            'F-E': [Demand(source = F, dest = E, traffic = 400, name = 'dmd_f_e_1')]}
         """
 
         src_node_names = set([dmd.source_node_object.name for dmd in self.demand_objects])
@@ -573,6 +637,7 @@ class MasterModel(object):
         """
         Adds a traffic load (Demand) from point A to point B in the
         model and validates model.
+
         :param source_node_name: name of Demand's source Node
         :param dest_node_name: name of Demand's destination Node
         :param traffic: amount of traffic (magnitude) of the Demand
@@ -590,7 +655,16 @@ class MasterModel(object):
         self.validate_model()
 
     @classmethod
-    def _add_lsp_from_data(cls, demands_info_end_index, lines, lsp_set, node_set):  # TODO - same as model
+    def _add_lsp_from_data(cls, demands_info_end_index, lines, lsp_set, node_set):
+        """
+        Adds LSP data from info in a data file to Class
+
+        :param demands_info_end_index: line index where demand info ends
+        :param lines: input lines from data file
+        :param lsp_set: set of RSVP_LSP objects
+        :param node_set: set of Node objects
+
+        """
         lsp_info_begin_index = demands_info_end_index + 3
         lsp_lines = lines[lsp_info_begin_index:]
         for lsp_line in lsp_lines:
@@ -609,7 +683,7 @@ class MasterModel(object):
                 raise ModelException(err_msg)
             name = lsp_info[2]
             try:
-                configured_setup_bw = lsp_info[3]
+                configured_setup_bw = float(lsp_info[3])
             except IndexError:
                 configured_setup_bw = None
             new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
@@ -620,7 +694,16 @@ class MasterModel(object):
                 print("{} already exists in model; disregarding line {}".format(new_lsp, lines.index(lsp_line)))
 
     @classmethod
-    def _add_demand_from_data(cls, demand_line, demand_set, lines, node_set):  # same as Model call
+    def _add_demand_from_data(cls, demand_line, demand_set, lines, node_set):
+        """
+        Adds Demand from line of data
+
+        :param demand_line: line of data for demand
+        :param demand_set: set of Demands in model
+        :param lines: lines of data from input file
+        :param node_set: set of Nodes from model
+
+        """
         demand_info = demand_line.split()
         source = demand_info[0]
         try:
@@ -669,3 +752,541 @@ class MasterModel(object):
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
             existing_node.lat = node_lat
             existing_node.lon = node_lon
+
+    def _does_interface_exist(self, interface_name, node_object_name):
+        """
+        Does specified Interface exist in self?  Raises exception if it
+        does not.
+
+        :param interface_name: Interface name
+        :param node_object_name: Node name
+        """
+        int_key = (interface_name, node_object_name)
+        interface_key_iterator = (interface._key for interface in self.interface_objects)
+
+        if int_key not in (interface_key_iterator):
+            raise ModelException('specified interface does not exist')
+
+    def get_circuit_object_from_interface(self, interface_name, node_name):
+        """
+        Returns a Circuit object, given a Node name and Interface name
+
+        :param interface_name: Interface object on one side of Circuit
+        :param node_name: Node name where Interface resides
+        :return: Circuit object from self that contains Interface with interface_name and node_name
+        """
+
+        # Does interface exist?
+        self._does_interface_exist(interface_name, node_name)
+
+        interface = self.get_interface_object(interface_name, node_name)
+
+        ckts = [ckt for ckt in self.circuit_objects if interface in (ckt.interface_a, ckt.interface_b)]
+
+        return ckts[0]
+
+    def get_failed_interface_objects(self):
+        """
+        Returns a list of all failed interfaces in self
+        """
+        failed_interfaces = []
+
+        for interface in (interface for interface in self.interface_objects):
+            if interface.failed:
+                failed_interfaces.append(interface)
+
+        return failed_interfaces
+
+    def get_unfailed_interface_objects(self):
+        """
+        Returns a list of all non-failed interfaces in the self
+        """
+
+        unfailed_interface_objects = set()
+
+        interface_iter = (interface for interface in self.interface_objects)
+
+        for interface in interface_iter:
+            if not interface.failed:
+                unfailed_interface_objects.add(interface)
+
+        return unfailed_interface_objects
+
+    def get_unrouted_demand_objects(self):
+        """
+        Returns list of demand objects that cannot be routed in self
+        """
+        unrouted_demands = []
+        for demand in (demand for demand in self.demand_objects):
+            if demand.path == "Unrouted":
+                unrouted_demands.append(demand)
+
+        return unrouted_demands
+
+    def change_interface_name(self, node_name, current_interface_name, new_interface_name):
+        """
+        Changes interface name
+
+        :param node_name: name of Node holding Interface
+        :param current_interface_name: current Interface name
+        :param new_interface_name: new Interface name
+        :return: Interface with new name
+        """
+        interface_to_edit = self.get_interface_object(current_interface_name, node_name)
+        interface_to_edit.name = new_interface_name
+
+        return interface_to_edit
+
+    def fail_interface(self, interface_name, node_name):
+        """
+        Fails the Interface in self object for the interface_name/node_name pair
+
+        :param interface_name: name of Interface object
+        :param node_name: Name of Node holding Interface
+
+        """
+
+        # Get the interface object
+        interface_object = self.get_interface_object(interface_name, node_name)
+
+        # Does interface exist?
+        if interface_object not in self.interface_objects:
+            ModelException('specified interface does not exist')
+
+        # find the remote interface
+        remote_interface_object = interface_object.get_remote_interface(self)
+
+        remote_interface_object.failed = True
+        interface_object.failed = True
+
+    def unfail_interface(self, interface_name, node_name, raise_exception=False):
+        """
+        Unfails the Interface object for the interface_name, node_name pair.
+
+        :param interface_name: name of interface
+        :param node_name: node name
+        :param raise_exception: If raise_exception=True, an exception
+                                will be raised if the interface cannot be unfailed.
+                                An example of this would be if you tried to unfail
+                                the interface when the parent node or remote node
+                                was in a failed state
+        :return: Interface object from Model with 'failed' attribute set to False
+        """
+
+        if not (isinstance(raise_exception, bool)):
+            message = "raise_exception must be boolean value"
+            raise ModelException(message)
+
+        # Get the interface object
+        interface_object = self.get_interface_object(interface_name, node_name)
+
+        # Does interface exist?
+        if interface_object not in set(self.interface_objects):
+            ModelException('specified interface does not exist')
+
+        # Find the remote interface
+        remote_interface = interface_object.get_remote_interface(self)
+
+        # Ensure local and remote nodes are failed == False and set reservable
+        # bandwidth on each interface to interface.capacity
+        if self.get_node_object(interface_object.node_object.name).failed is False and \
+                self.get_node_object(remote_interface.node_object.name).failed is False:
+
+            remote_interface.failed = False
+            remote_interface.reserved_bandwidth = 0
+            interface_object.failed = False
+            interface_object.reserved_bandwidth = 0
+            self.validate_model()
+        else:
+            if raise_exception:
+                message = ("Local and/or remote node are failed; cannot have "
+                           "unfailed interface on failed node.")
+                raise ModelException(message)
+
+    def get_interface_object(self, interface_name, node_name):
+        """
+        Returns an interface object for specified node name and interface name
+
+        :param interface_name: name of Interface
+        :param node_name: name of Node
+        :return: Specified Interface object from self
+        """
+
+        self._does_interface_exist(interface_name, node_name)
+
+        node_object = self.get_node_object(node_name)
+
+        int_object = [interface for interface in node_object.interfaces(self) if interface.name == interface_name]
+        return int_object[0]
+
+    # NODE CALLS ######
+    def get_node_interfaces(self, node_name):
+        """Returns list of interfaces on specified node name"""
+        return Node(node_name).interfaces(self)
+
+    def fail_node(self, node_name):
+        """Fails specified Node with name node_name"""
+
+        # Find node's interfaces and fail them
+        ints_to_fail_iterator = (interface for interface in
+                                 self.get_node_interfaces(node_name))
+
+        for interface in ints_to_fail_iterator:
+            self.fail_interface(interface.name, node_name)
+
+        # Change the failed property on the specified node
+        self.get_node_object(node_name).failed = True
+
+    def unfail_node(self, node_name):
+        """Unfails the Node with name=node_name"""
+
+        # Change the failed property on the specified node;
+        self.get_node_object(node_name).failed = False
+
+        # Find node's interfaces and unfail them
+        ints_to_unfail_iterator = (interface for interface in self.get_node_interfaces(node_name))
+
+        for interface in ints_to_unfail_iterator:
+
+            # Unfail the interfaces if the remote node is not failed
+            if not interface.remote_node_object.failed:
+                # Unfail the specific interface
+                self.unfail_interface(interface.name, node_name, False)
+
+                # Unfail the remote interface
+                remote_int = interface.get_remote_interface(self)
+                self.unfail_interface(remote_int.name,
+                                      remote_int.node_object.name, False)
+
+    def get_failed_node_objects(self):
+        """
+        Returns a list of all failed Nodes in self
+        """
+        failed_nodes = []
+
+        for node in (node for node in self.node_objects):
+            if node.failed:
+                node_object = self.get_node_object(node.name)
+                failed_nodes.append(node_object)
+
+        return failed_nodes
+
+    def get_non_failed_node_objects(self):
+        """Returns a list of all failed nodes"""
+        non_failed_nodes = []
+
+        for node in (node for node in self.node_objects):
+            if not node.failed:
+                node_object = self.get_node_object(node.name)
+                non_failed_nodes.append(node_object)
+
+        return non_failed_nodes
+
+    # Display calls #########
+    def display_interface_status(self):  # pragma: no cover
+        """Returns failed = True/False for each interface"""
+
+        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), end=' ')
+        print('Failed'.ljust(12))
+
+        interface_iterator = (interface for interface in self.interface_objects)
+
+        for interface in interface_iterator:
+            print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
+            print(interface.remote_node_object.name.ljust(12), end=' ')
+            print(str(interface.failed).ljust(12))
+
+    def display_node_status(self):  # pragma: no cover
+        """Returns failed = True/False for each node"""
+
+        print('Node'.ljust(12), 'Failed'.ljust(12))
+
+        node_iterator = (node for node in self.node_objects)
+
+        for node in node_iterator:
+            print(node.name.ljust(12), str(node.failed).ljust(12))
+
+    def display_interfaces_traffic(self):  # pragma: no cover
+        """
+        A human-readable(-ish) display of interfaces and traffic on each
+        """
+
+        print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), 'Traffic'.ljust(12))
+
+        interface_iterator = (interface for interface in self.interface_objects)
+
+        for interface in interface_iterator:
+            print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
+            print(interface.remote_node_object.name.ljust(12), end=' ')
+            print(repr(interface.traffic).ljust(12))
+
+    def display_demand_paths(self):  # pragma: no cover
+        """
+        Displays each demand and its path(s) across the network
+        """
+
+        demand_iter = (demand for demand in self.demand_objects)
+
+        for demand in demand_iter:
+            print('demand._key is', demand._key)
+            print('Demand has %s paths:' % (len(demand.path)))
+            for path in demand.path:
+                pprint(path)
+                print()
+            print()
+            print()
+
+    def display_interface_objects(self):  # pragma: no cover
+        """Displays interface objects in a more human readable manner"""
+
+        for interface in self.interface_objects:
+            pprint(interface)
+            print()
+
+    def get_demand_objects_source_node(self, source_node_name):
+        """
+        Returns list of demand objects originating at the node with name
+        source_node_name
+
+        :param source_node_name: name of source node for Demands
+        :return: list of Demands originating at node
+        """
+
+        demand_list = []
+        for demand in (demand for demand in self.demand_objects):
+            if demand.source_node_object.name == source_node_name:
+                demand_list.append(demand)
+
+        return demand_list
+
+    def get_demand_objects_dest_node(self, dest_node_name):
+        """
+        Returns list of demands objects originating at the
+        destination node
+
+        :param dest_node_name: name of destination node for Demands
+        :return: list of Demands terminating on destination node
+        """
+        demand_list = []
+        for demand in (demand for demand in self.demand_objects):
+            if demand.dest_node_object.name == dest_node_name:
+                demand_list.append(demand)
+
+        return demand_list
+
+    # ### SRLG Calls ### #
+    def get_srlg_object(self, srlg_name, raise_exception=True):
+        """
+        Returns SRLG in self with srlg_name
+
+        :param srlg_name: name of SRLG
+        :param raise_exception: raise an exception if SRLG with name=srlg_name does not
+        exist in self
+        :return: None
+        """
+
+        srlg_already_in_model = [srlg for srlg in self.srlg_objects if srlg.name == srlg_name]
+
+        if len(srlg_already_in_model) == 1:
+            return srlg_already_in_model[0]  # There will only be one SRLG with srlg_name
+        else:
+            if raise_exception:
+                msg = "No SRLG with name {} exists in Model".format(srlg_name)
+                raise ModelException(msg)
+            else:
+                return None
+
+    def fail_srlg(self, srlg_name):
+        """
+        Sets SRLG with name srlg_name to failed = True
+
+        :param srlg_name: name of SRLG to fail
+        :return: none
+        """
+
+        srlg_to_fail = self.get_srlg_object(srlg_name)
+
+        # Find SRLG's Nodes to fail
+        nodes_to_fail_iterator = (node for node in self.node_objects if node in srlg_to_fail.node_objects)
+
+        for node in nodes_to_fail_iterator:
+            self.fail_node(node.name)
+
+        # Find SRLG's Interfaces to fail
+        interfaces_to_fail_iterator = (interface for interface in self.interface_objects if
+                                       interface in srlg_to_fail.interface_objects)
+
+        for interface in interfaces_to_fail_iterator:
+            self.fail_interface(interface.name, interface.node_object.name)
+
+        # Change the failed property on the specified srlg
+        srlg_to_fail.failed = True
+
+    def unfail_srlg(self, srlg_name):
+        """
+        Sets SRLG with srlg_name to failed = False
+        :param srlg_name: name of SRLG to unfail
+        :return: none
+        """
+
+        srlg_to_unfail = self.get_srlg_object(srlg_name)
+
+        # Change the failed property on the specified srlg
+        srlg_to_unfail.failed = False
+
+        # Find SRLG's Nodes to unfail
+        nodes_to_unfail_iterator = (node for node in self.node_objects if node in srlg_to_unfail.node_objects)
+
+        # Node will stay failed if it's part of another SRLG that is still failed;
+        # in that case, the unfail_node will create an exception; ignore that exception
+        for node in nodes_to_unfail_iterator:
+            try:
+                self.unfail_node(node.name)
+            except ModelException:
+                pass
+
+        # Find SRLG's Interfaces to unfail
+        interfaces_to_unfail_iterator = (interface for interface in self.interface_objects if
+                                         interface in srlg_to_unfail.interface_objects)
+
+        # Interface will stay failed if it's part of another SRLG that is still failed or
+        # if the local/remote Node is failed;  in that case, the unfail_interface
+        # will create an exception; ignore that exception
+        for interface in interfaces_to_unfail_iterator:
+            try:
+                self.unfail_interface(interface.name, interface.node_object.name)
+            except ModelException:
+                pass
+
+    def add_srlg(self, srlg_name):
+        """
+        Adds SRLG object to Model
+
+        :param srlg_name: name of SRLG to add to self
+
+        """
+
+        if srlg_name in set([srlg.name for srlg in self.srlg_objects]):
+            raise ModelException("SRLG with name {} already exists in Model".format(srlg_name))
+        else:
+            srlg = SRLG(srlg_name, self)
+            self.srlg_objects.add(srlg)
+
+    def is_node_an_orphan(self, node_object):
+        """
+        Determines if a node is in orphan_nodes.  A node in
+        orphan_nodes is a Node with no Interface objects
+
+        :param node_object: Node object
+        :return: Boolean indicating if Node is orphan (True) or not (False)
+        """
+        if node_object in self.get_orphan_node_objects():
+            return True
+        else:
+            return False
+
+    def get_orphan_node_objects(self):
+        """
+        Returns list of Nodes that have no interfaces
+        """
+        orphan_nodes = [node for node in self.node_objects if len(node.interfaces(self)) == 0]
+
+        return orphan_nodes
+
+    def add_node(self, node_object):
+        """
+        Adds a node object to the model object and validates self
+
+        :param node_object: Node object to add to self
+        """
+
+        if node_object.name in (node.name for node in self.node_objects):
+            message = "A node with name {} already exists in the model".format(node_object.name)
+            raise ModelException(message)
+        else:
+            self.node_objects.add(node_object)
+
+        self.validate_model()
+
+    def get_node_object(self, node_name):
+        """
+        Returns a Node object from self, given a Node's name
+
+        :param node_name: name of Node object in self
+        :return: Node object with node_name
+        """
+
+        matching_node = [node for node in self.node_objects if node.name == node_name]
+
+        if len(matching_node) > 0:
+            return matching_node[0]
+        else:
+            message = "No node with name %s exists in the model" % node_name
+            raise ModelException(message)
+
+    def add_rsvp_lsp(self, source_node_name, dest_node_name, name):
+        """
+        Adds an RSVP LSP with name from the source node to the
+        dest node and validates model.
+
+        :param source_node_name: LSP source Node name
+        :param dest_node_name: LSP destination Node name
+        :param name: name of LSP
+        :return: A validated Model with the new RSVP_LSP object
+        """
+        source_node_object = self.get_node_object(source_node_name)
+        dest_node_object = self.get_node_object(dest_node_name)
+        added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
+
+        if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
+            message = '{} already exists in rsvp_lsp_objects'.format(added_lsp)
+            raise ModelException(message)
+        self.rsvp_lsp_objects.add(added_lsp)
+
+        self.validate_model()
+
+    def get_demand_object(self, source_node_name, dest_node_name, demand_name='none'):
+        """
+        Returns demand specified by the source_node_name, dest_node_name, name;
+        throws exception if demand not found
+
+        :param source_node_name: name of Node where desired Demand originates (source)
+        :param dest_node_name: name of Node where desired Demand terminates (destination)
+        :param demand_name: name of Demand object
+        :return: desired Demand object that matches parameters above
+        """
+        model_demand_iterator = (demand for demand in self.demand_objects)
+
+        demand_to_return = None
+
+        for demand in model_demand_iterator:
+            if demand.source_node_object.name == source_node_name and \
+                    demand.dest_node_object.name == dest_node_name and \
+                    demand.name == demand_name:
+                demand_to_return = demand
+                return demand_to_return
+
+        if demand_to_return is None:
+            raise ModelException('no matching demand')
+
+    def get_rsvp_lsp(self, source_node_name, dest_node_name, lsp_name='none'):
+        """
+        Returns the RSVP LSP from the model with the specified source node
+        name, dest node name, and LSP name.
+
+        :param source_node_name: name of source node for LSP
+        :param dest_node_name: name of destination node for LSP
+        :param lsp_name: name of LSP
+        :return: RSVP_LSP object
+        """
+
+        needed_key = (source_node_name, dest_node_name, lsp_name)
+
+        if needed_key not in (lsp._key for lsp in self.rsvp_lsp_objects):
+            msg = ("LSP with source node %s, dest node %s, and name %s "
+                   "does not exist in model" % (source_node_name, dest_node_name, lsp_name))
+            raise ModelException(msg)
+        else:
+            for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+                if lsp._key == needed_key:
+                    return lsp
