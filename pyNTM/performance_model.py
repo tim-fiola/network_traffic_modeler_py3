@@ -35,7 +35,7 @@ import random
 from .circuit import Circuit
 from .interface import Interface
 from .exceptions import ModelException
-from .master_model import MasterModel
+from .master_model import _MasterModel
 from .utilities import find_end_index
 from .node import Node
 
@@ -49,7 +49,7 @@ from .node import Node
 # TODO 1.7 - test
 
 
-class PerformanceModel(MasterModel):
+class PerformanceModel(_MasterModel):
     """
     A network model object consisting of the following base components:
         - Interface objects (set): layer 3 Node interfaces.  Interfaces have a

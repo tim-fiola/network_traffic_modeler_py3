@@ -25,7 +25,7 @@ import random
 from .circuit import Circuit
 from .interface import Interface
 from .exceptions import ModelException
-from .master_model import MasterModel
+from .master_model import _MasterModel
 from .utilities import find_end_index
 from .node import Node
 
@@ -37,7 +37,7 @@ from .node import Node
 #  and not unfail when a parent SRLG unfails
 
 
-class FlexModel(MasterModel):
+class FlexModel(_MasterModel):
     """
     A network model object consisting of the following base components:
 

@@ -13,4 +13,4 @@ from .srlg import SRLG  # noqa: F401
 from .utilities import *  # noqa: F401,F403
 from .flex_model import FlexModel  # noqa: F401
 from .flex_model import Parallel_Link_Model  # noqa: F401
-from .master_model import MasterModel  # noqa: F401
+from .master_model import _MasterModel  # noqa: F401

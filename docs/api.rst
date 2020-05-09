@@ -1,9 +1,9 @@
 API
 =======
 
-MasterModel
+_MasterModel
 --------------
-.. autoclass:: pyNTM.master_model.MasterModel
+.. autoclass:: pyNTM.master_model._MasterModel
     :members:
     :undoc-members:
     :show-inheritance:

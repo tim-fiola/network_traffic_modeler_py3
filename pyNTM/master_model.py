@@ -1,9 +1,12 @@
 """
-Parent Class for Model and Parallel_Link_Model objects.
+Parent Class for FlexModel and PerformanceModel objects.
 
 A class that defines the network being modeled and that contains all
 modeled objects in the network such as Nodes, Interfaces, Circuits,
 and Demands.
+
+This cannot be used to instantiate a functioning model directly.  Use a subclass
+FlexModel or PerformanceModel
 """
 
 from .demand import Demand
@@ -15,9 +18,11 @@ from .srlg import SRLG
 from pprint import pprint
 
 
-class MasterModel(object):
+class _MasterModel(object):
     """
-    Parent class for Model and Parallel_Link_Model subclasses; holds common defs
+    Parent class for Model and Parallel_Link_Model subclasses; holds common defs.
+    This cannot be used to instantiate a functioning model directly.  Use a subclass
+    FlexModel or PerformanceModel
     """
 
     def __init__(self, interface_objects=set(), node_objects=set(),
