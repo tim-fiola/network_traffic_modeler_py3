@@ -1,0 +1,144 @@
+getting pytest to work in pypy3 -
+
+sphinx
+sphinx_rtd_theme
+pytest>=4.5.0
+pytest-cov
+pytest-flake8
+pytest-mccabe
+coveralls
+
+- for every requirement above, pypy3 -m pip install <module>
+
+(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$ pypy3 -m pip install coveralls
+
+
+Now when I run it, all the tests pass minus the flake8 tests - I get this for each flake8 test on each file
+FAILED pyNTM/rsvp.py::FLAKE8 - AttributeError: 'Application' object has no attribute 'parse_preliminary_options_and_args'
+FAILED pyNTM/srlg.py::FLAKE8 - AttributeError: 'Application' object has no attribute 'parse_preliminary_options_and_args'
+FAILED pyNTM/utilities.py::FLAKE8 - AttributeError: 'Application' object has no attribute 'parse_preliminary_options_and_args'
+========================================================================== 34 failed, 254 passed in 51.52s ===========================================================================
+(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$
+
+
+
+(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$ pypy3 -m pytest --version
+This is pytest version 5.4.1, imported from /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest/__init__.py
+setuptools registered plugins:
+  pytest-mccabe-1.0 at /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest_mccabe.py
+  pytest-flake8-1.0.5 at /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest_flake8.py
+  pytest-cov-2.8.1 at /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest_cov/plugin.py
+
+(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$ pytest --version
+This is pytest version 5.3.5, imported from /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest/__init__.py
+setuptools registered plugins:
+  pytest-mccabe-1.0 at /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest_mccabe.py
+  pytest-cov-2.7.1 at /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest_cov/plugin.py
+  pytest-flake8-1.0.4 at /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest_flake8.py
+(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$
+
+
+
+
+Next step - the pytest versions are different in python3 and pypy3 - check flake8/main/application.py in python3; in the pypy  /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/flake8/main/application.py, application has def parse_preliminary_options, but no parse_preliminary_options_and_args
+	- check the python3 application.py file for parse_preliminary_options_and_args def
+
+	/usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest_flake8.py:191: in check_file
+		app.parse_preliminary_options_and_args(args)
+	E   AttributeError: 'Application' object has no attribute 'parse_preliminary_options_and_args'
+
+
+
+	This is pytest version 5.3.5, imported from /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest/__init__.py
+	setuptools registered plugins:
+	  pytest-mccabe-1.0 at /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest_mccabe.py
+	  pytest-cov-2.7.1 at /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest_cov/plugin.py
+	  pytest-flake8-1.0.4 at /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3/venv/lib/python3.7/site-packages/pytest_flake8.py
+	(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$
+	(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$ pypy3 -m pytest --version
+	This is pytest version 5.4.1, imported from /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest/__init__.py
+	setuptools registered plugins:
+	  pytest-mccabe-1.0 at /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest_mccabe.py
+	  pytest-flake8-1.0.5 at /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest_flake8.py
+	  pytest-cov-2.8.1 at /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages/pytest_cov/plugin.py
+	(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$
+
+5-13-20 - it LOOKS like (https://flake8.pycqa.org/en/latest/_modules/flake8/main/application.html) parse_preliminary_options is the most recent implementation in flake8; in flake8 3.7.9 https://flake8.pycqa.org/en/3.7.9/_modules/flake8/main/application.html it has parse_preliminary_options_and_args - it changed in 3.8.0 to parse_preliminary_options
+
+Installed flake8 3.7.9 - ALL TESTS PASSED!!!
+
+(venv) Timothys-MacBook-Air:venv timothyfiola$ pypy3 -m pip install flake8==3.7.9
+Collecting flake8==3.7.9
+  Using cached flake8-3.7.9-py2.py3-none-any.whl (69 kB)
+Collecting entrypoints<0.4.0,>=0.3.0
+  Using cached entrypoints-0.3-py2.py3-none-any.whl (11 kB)
+Collecting pyflakes<2.2.0,>=2.1.0
+  Using cached pyflakes-2.1.1-py2.py3-none-any.whl (59 kB)
+Collecting pycodestyle<2.6.0,>=2.5.0
+  Using cached pycodestyle-2.5.0-py2.py3-none-any.whl (51 kB)
+Requirement already satisfied: mccabe<0.7.0,>=0.6.0 in /usr/local/Cellar/pypy3/7.3.1_1/libexec/site-packages (from flake8==3.7.9) (0.6.1)
+Installing collected packages: entrypoints, pyflakes, pycodestyle, flake8
+  Attempting uninstall: pyflakes
+    Found existing installation: pyflakes 2.2.0
+    Uninstalling pyflakes-2.2.0:
+      Successfully uninstalled pyflakes-2.2.0
+  WARNING: The script pyflakes is installed in '/usr/local/share/pypy3' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+  Attempting uninstall: pycodestyle
+    Found existing installation: pycodestyle 2.6.0
+    Uninstalling pycodestyle-2.6.0:
+      Successfully uninstalled pycodestyle-2.6.0
+  WARNING: The script pycodestyle is installed in '/usr/local/share/pypy3' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+  Attempting uninstall: flake8
+    Found existing installation: flake8 3.8.0
+    Uninstalling flake8-3.8.0:
+      Successfully uninstalled flake8-3.8.0
+  WARNING: The script flake8 is installed in '/usr/local/share/pypy3' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+Successfully installed entrypoints-0.3 flake8-3.7.9 pycodestyle-2.5.0 pyflakes-2.1.1
+
+
+
+(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$ pypy3 -m pytest
+================================================================================ test session starts =================================================================================
+platform darwin -- Python 3.6.9[pypy-7.3.1-final], pytest-5.4.1, py-1.8.1, pluggy-0.13.1 -- /usr/local/bin/pypy3
+cachedir: .pytest_cache
+rootdir: /Users/timothyfiola/PycharmProjects/network_traffic_modeler_py3, inifile: setup.cfg
+plugins: mccabe-1.0, flake8-1.0.5, cov-2.8.1
+collected 288 items
+
+test/__init__.py::FLAKE8 PASSED
+-------<snip>-----------
+pyNTM/master_model.py::FLAKE8 PASSED                                                                                                                                           [ 98%]
+pyNTM/node.py::FLAKE8 PASSED                                                                                                                                                   [ 98%]
+pyNTM/performance_model.py::FLAKE8 PASSED                                                                                                                                      [ 98%]
+pyNTM/rsvp.py::FLAKE8 PASSED                                                                                                                                                   [ 99%]
+pyNTM/srlg.py::FLAKE8 PASSED                                                                                                                                                   [ 99%]
+pyNTM/utilities.py::FLAKE8 PASSED                                                                                                                                              [100%]
+
+---------- coverage: platform darwin, python 3.6.9-final-0 -----------
+Name                         Stmts   Miss  Cover   Missing
+----------------------------------------------------------
+pyNTM/__init__.py               13      0   100%
+pyNTM/circuit.py                15      0   100%
+pyNTM/demand.py                 24      2    92%   50, 58
+pyNTM/exceptions.py              2      0   100%
+pyNTM/flex_model.py            402     37    91%   105-108, 177, 492-495, 523, 560-563, 586, 605, 622-640, 697-698, 735-736, 874, 900-901, 936-938, 1210, 1220, 1234
+pyNTM/interface.py             149      1    99%   92
+pyNTM/master_model.py          458     18    96%   168, 651-652, 681-683, 694, 717-719, 724, 731, 854, 877-878, 885, 902-904
+pyNTM/node.py                   85      0   100%
+pyNTM/performance_model.py     371     26    93%   171-174, 179, 368-370, 515-522, 583, 623, 637, 723-724, 760-761, 1057, 1067, 1080, 1109-1113
+pyNTM/rsvp.py                   72      3    96%   87, 161-162
+pyNTM/srlg.py                   23      0   100%
+pyNTM/utilities.py               7      0   100%
+----------------------------------------------------------
+TOTAL                         1621     87    95%
+Coverage XML written to file coverage.xml
+
+
+=========================================================================== 288 passed in 78.56s (0:01:18) ===========================================================================
+(venv) Timothys-MacBook-Air:network_traffic_modeler_py3 timothyfiola$
+
+
+

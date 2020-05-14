@@ -2,6 +2,6 @@ sphinx
 sphinx_rtd_theme
 pytest>=4.5.0
 pytest-cov
-pytest-flake8
+pytest-flake8==3.7.9
 pytest-mccabe
 coveralls
