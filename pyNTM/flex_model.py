@@ -288,6 +288,10 @@ class FlexModel(_MasterModel):
                 # Check for LSPs along the shortest path; find the first
                 # LSP the demand can take with a source and destination that
                 # is on the LSP's IGP path
+                import pdb
+                pdb.set_trace()
+
+                for path in path_list:
 
 
 
