@@ -283,6 +283,16 @@ class FlexModel(_MasterModel):
                 all_paths = self._get_all_paths_mdg(G, nx_sp)
 
                 path_list = self._normalize_multidigraph_paths(all_paths)
+
+                # TODO - insert check for IGP shortcuts here -->>
+                # Check for LSPs along the shortest path; find the first
+                # LSP the demand can take with a source and destination that
+                # is on the LSP's IGP path
+
+
+
+
+
                 demand.path = path_list
 
         self._update_interface_utilization()

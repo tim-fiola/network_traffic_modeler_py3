@@ -1,0 +1,37 @@
+INTERFACES_TABLE
+node_object_name	remote_node_object_name	name	cost	capacity    circuit_id
+A   B   10  100 1
+B   A   10  100 1
+B   C   10  100 2
+C   B   10  100 2
+C   D   10  100 3
+D   C   10  100 3
+D   E   10  100 4
+E   D   10  100 4
+A   F   10  100 5
+F   A   10  100 5
+F   G   10  100 6
+G   F   10  100 6
+G   H   10  100 7
+H   G   10  100 7
+H   E   10  100 8
+E   H   10  100 8
+C   I   10  100 9
+I   C   10  100 9
+I   E   10  100 10
+E   I   10  100 10
+E   J   10  100 11
+J   E   10  100 11
+
+NODES_TABLE
+name	lon	lat
+
+
+DEMANDS_TABLE
+source	dest	traffic	name
+A   E   100 dmd_a_e_1
+
+RSVP_LSP_TABLE
+source	dest	name
+B   E   lsp_b_e_1
+F   H   lsp_f_h_1
