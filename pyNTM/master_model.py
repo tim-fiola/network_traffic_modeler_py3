@@ -732,18 +732,25 @@ class _MasterModel(object):
                                                                             lines.index(demand_line)))
 
     @classmethod
-    def _add_node_from_data(cls, demand_set, interface_set, lines, lsp_set, node_line, node_set):
+    def _add_node_from_data(cls, demand_set, interface_set, lsp_set, node_line, node_set):
         node_info = node_line.split()
         node_name = node_info[0]
+        # Set latitude
         try:
             node_lat = int(node_info[2])
         except (ValueError, IndexError):
             node_lat = 0
+        # Set longitude
         try:
             node_lon = int(node_info[1])
         except (ValueError, IndexError):
             node_lon = 0
         new_node = Node(node_name)
+        # Set igp_shortcuts_enabled; only used in FlexModel, ignored in PerformanceModel
+        try:
+            new_node.igp_shortcuts_enabled = node_info[3]
+        except IndexError:
+            new_node.igp_shortcuts_enabled = False
         if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
             node_set.add(new_node)
             new_node.lat = node_lat

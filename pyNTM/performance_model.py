@@ -998,7 +998,7 @@ class PerformanceModel(_MasterModel):
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
         for node_line in node_lines:
-            cls._add_node_from_data(demand_set, interface_set, lines, lsp_set, node_line, node_set)
+            cls._add_node_from_data(demand_set, interface_set, lsp_set, node_line, node_set)
 
         # Define the demands info
         demands_info_begin_index = nodes_info_end_index + 3

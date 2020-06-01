@@ -284,24 +284,42 @@ class FlexModel(_MasterModel):
 
                 path_list = self._normalize_multidigraph_paths(all_paths)
 
-                # TODO - insert check for IGP shortcuts here -->>
-                # Check for LSPs along the shortest path; find the first
-                # LSP the demand can take with a source and destination that
-                # is on the LSP's IGP path
-                import pdb
-                pdb.set_trace()
-
-                for path in path_list:
-
-
-
-
+                # Check for IGP shortcuts
+                path_list = self.find_igp_shortcuts(path_list, nx_sp)
 
                 demand.path = path_list
 
         self._update_interface_utilization()
 
         return self
+
+    def find_igp_shortcuts(self, paths, node_paths):
+        """
+        Check for LSPs along the shortest path; find the first
+        LSP the demand can take with a source and destination that
+        is on the LSP's IGP path
+
+        1.  examine each IGP path
+        2.  If none of the nodes on the path have IGP shortcuts, continue to next path
+        3.  If some nodes have IGP shortcuts enabled, note the hop number (1, 2, 3, etc)
+        4.  For nodes that have IGP shortcuts, is there an LSP from that node to a downstream node on the path?
+          - if yes, compare the IGP metric of the path to the LSP remote node to that of the LSP metric to that node
+          - if no, look at next node downstream with IGP shortcuts
+
+        :param paths: List of lists; each list contains egress Interfaces along the path from
+        source to destination
+
+        :return: List of lists; each list contains Interfaces and/or RSVP LSPs along the path
+        from source to destination
+        """
+
+        # Check node_paths for igp_shortcuts_enabled nodes
+
+        for path in paths:
+            # Find Nodes along
+            continue
+
+        return paths
 
     def _get_all_paths_mdg(self, G, nx_sp):
         """
@@ -1095,7 +1113,7 @@ class FlexModel(_MasterModel):
         Example::
 
             INTERFACES_TABLE
-            node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth   # noqa E501
+            node_object_name	remote_node_object_name	name	cost	capacity    circuit_id  rsvp_enabled    percent_reservable_bandwidth # noqa E501
             A	B	A-to-B_1    20	120 1   True  50
             B	A	B-to-A_1    20	120 1   True  50
             A   B   A-to-B_2    20  150 2
@@ -1104,9 +1122,9 @@ class FlexModel(_MasterModel):
             B   A   B-to-A_3    10  200 3   False
 
             NODES_TABLE
-            name	lon	lat
-            A	50	0
-            B	0	-50
+            name	lon	lat igp_shortcuts_enabled(default=False)
+            A	50	0   True
+            B	0	-50 False
 
             DEMANDS_TABLE
             source	dest	traffic	name
@@ -1165,7 +1183,7 @@ class FlexModel(_MasterModel):
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
         for node_line in node_lines:
-            cls._add_node_from_data(demand_set, interface_set, lines, lsp_set, node_line, node_set)
+            cls._add_node_from_data(demand_set, interface_set, lsp_set, node_line, node_set)
 
         # Define the demands info
         demands_info_begin_index = nodes_info_end_index + 3
