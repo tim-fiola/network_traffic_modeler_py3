@@ -314,7 +314,23 @@ class FlexModel(_MasterModel):
         """
 
         # Check node_paths for igp_shortcuts_enabled nodes
+        # TODO - this can likely be optimized
+        all_nodes_in_paths = []
+        for node_path in node_paths:
+            all_nodes_in_paths = all_nodes_in_paths + node_path
 
+        all_nodes_in_paths = set(all_nodes_in_paths)
+
+        shortcut_enabled_nodes = [node for node in all_nodes_in_paths if
+                                  self.get_node_object(node).igp_shortcuts_enabled is True]
+
+        if len(shortcut_enabled_nodes) == 0:
+            return paths
+
+        # Find LSPs on shortcut_enabled_nodes that connect to downstream nodes in paths
+        # TODO - start here!!
+
+        # Substitute IGP enabled LSPs for Interfaces in paths
         for path in paths:
             # Find Nodes along
             continue
