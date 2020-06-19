@@ -748,17 +748,19 @@ class _MasterModel(object):
         new_node = Node(node_name)
         # Set igp_shortcuts_enabled; only used in FlexModel, ignored in PerformanceModel
         try:
-            new_node.igp_shortcuts_enabled = node_info[3]
+            igp_shortcuts_enabled_value = new_node.igp_shortcuts_enabled = node_info[3]
         except IndexError:
             new_node.igp_shortcuts_enabled = False
         if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
             node_set.add(new_node)
             new_node.lat = node_lat
             new_node.lon = node_lon
+            new_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
         else:
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
             existing_node.lat = node_lat
             existing_node.lon = node_lon
+            existing_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
 
     def _does_interface_exist(self, interface_name, node_object_name):
         """

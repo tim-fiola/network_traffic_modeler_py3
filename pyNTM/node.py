@@ -1,5 +1,6 @@
 """A class to represent a layer 3 device in the Model"""
 
+from distutils import util
 from .exceptions import ModelException
 from .srlg import SRLG
 
@@ -110,6 +111,10 @@ class Node(object):
     def igp_shortcuts_enabled(self, status):
         if isinstance(status, bool):
             self._igp_shortcuts_enabled = status
+        elif status == 'True':
+            self.igp_shortcuts_enabled = True
+        elif status == 'False':
+            self.igp_shortcuts_enabled = False
         else:
             raise ValueError("igp_shortcuts must be boolean")
 

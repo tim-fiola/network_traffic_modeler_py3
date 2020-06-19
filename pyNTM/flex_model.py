@@ -307,7 +307,9 @@ class FlexModel(_MasterModel):
           - if no, look at next node downstream with IGP shortcuts
 
         :param paths: List of lists; each list contains egress Interfaces along the path from
-        source to destination
+        source to destination (ordered from source to destination)
+        :param node_paths: List of lists; each list contains node names along the path from
+        source to destination (ordered from source to destination)
 
         :return: List of lists; each list contains Interfaces and/or RSVP LSPs along the path
         from source to destination
@@ -327,13 +329,41 @@ class FlexModel(_MasterModel):
         if len(shortcut_enabled_nodes) == 0:
             return paths
 
-        # Find LSPs on shortcut_enabled_nodes that connect to downstream nodes in paths
-        # TODO - start here!!
+        # ## Find LSPs on shortcut_enabled_nodes that connect to downstream nodes in paths ## #
 
         # Substitute IGP enabled LSPs for Interfaces in paths
-        for path in paths:
-            # Find Nodes along
-            continue
+        for node_path in node_paths:
+            # Find Nodes along the path that have igp_shortcuts_enabled and have
+            # LSPs to downstream Nodes in the path
+            path_lsps = []  # List of LSPs to substitute into path
+            next_node_to_check = []  # Next node name in path to check for LSPs
+            for node_name in node_path:
+                # Make sure the next node checked is downstream from the end of any LSPs
+                # the traffic has taken thusfar
+                if len(next_node_to_check) > 0:
+                    if node_path.index(node_name) < node_path.index(next_node_to_check[-1]):
+                        print("proceeding: {}".format(node_name))
+                        continue
+                if self.get_node_object(node_name).igp_shortcuts_enabled is True:
+                    # Get the source node object
+                    source_node = self.get_node_object(node_name)
+                    # Get the source node object index in node_path
+                    source_node_index = node_path.index(node_name)
+                    # Check for LSPs from present node in path to downstream nodes in path;
+                    # look for the LSPs that go furthest downstream first
+                    destinations = node_path[source_node_index + 1:]
+                    destinations.reverse()
+                    for destination in destinations:
+                        lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.source_node_object == source_node and
+                                lsp.dest_node_object == self.get_node_object(destination)]
+                        if len(lsps) > 0:
+                            # Break out of the destinations iteration as traffic will want to take
+                            # the first LSP(s) available the traffic farthest along the path
+                            path_lsps.append(lsps)
+                            next_node_to_check.append(node_name)
+                            break
+            import pdb
+            pdb.set_trace()
 
         return paths
 
