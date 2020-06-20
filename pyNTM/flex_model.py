@@ -331,12 +331,16 @@ class FlexModel(_MasterModel):
 
         # ## Find LSPs on shortcut_enabled_nodes that connect to downstream nodes in paths ## #
 
+        # List that will hold the paths that contain LSPs
+        paths_with_lsps = []
+
         # Substitute IGP enabled LSPs for Interfaces in paths
-        for node_path in node_paths:
+        for node_path, interface_path in zip(node_paths, paths):
             # Find Nodes along the path that have igp_shortcuts_enabled and have
             # LSPs to downstream Nodes in the path
             path_lsps = []  # List of LSPs to substitute into path
             next_node_to_check = []  # Next node name in path to check for LSPs
+
             for node_name in node_path:
                 # Make sure the next node checked is downstream from the end of any LSPs
                 # the traffic has taken thusfar
@@ -349,23 +353,57 @@ class FlexModel(_MasterModel):
                     source_node = self.get_node_object(node_name)
                     # Get the source node object index in node_path
                     source_node_index = node_path.index(node_name)
-                    # Check for LSPs from present node in path to downstream nodes in path;
+
+                    # Check for LSPs from present node in path (source_node) to downstream nodes in path;
                     # look for the LSPs that go furthest downstream first
                     destinations = node_path[source_node_index + 1:]
                     destinations.reverse()
                     for destination in destinations:
+                        # Take the LSPs whose source node matches source_node and whose dest node matches
+                        # the destination we are iterating through and whose effective metric matches the
+                        # shortest path from source_node to destination
                         lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.source_node_object == source_node and
-                                lsp.dest_node_object == self.get_node_object(destination)]
+                                lsp.dest_node_object == self.get_node_object(destination) if
+                                lsp.effective_metric(self) ==
+                                self.get_shortest_path(lsp.source_node_object.name, lsp.dest_node_object.name)['cost']]
+
+                        # lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.source_node_object == source_node and
+                        #         lsp.dest_node_object == self.get_node_object(destination)]
+
                         if len(lsps) > 0:
                             # Break out of the destinations iteration as traffic will want to take
                             # the first LSP(s) available the traffic farthest along the path
                             path_lsps.append(lsps)
-                            next_node_to_check.append(node_name)
+                            lsp_end_node = lsps[0].dest_node_object.name
+                            next_node_to_check.append(lsp_end_node)
                             break
-            import pdb
-            pdb.set_trace()
 
-        return paths
+            # Now that path_lsps is known, substitute those into path
+            if len(path_lsps) > 0:
+                path = interface_path
+                path_with_lsps = self._insert_lsps_into_path(path_lsps, path)
+            else:
+                path_with_lsps.append(path)
+
+            paths_with_lsps.append(path_with_lsps)
+
+        return paths_with_lsps
+
+
+    def _insert_lsps_into_path(self, path_lsps, path):
+        """
+
+
+        :param path_lsps: LSPs that can be substituted into path
+        :param path: List of Interfaces in path
+
+        :return:
+        """
+
+        path_with_lsps = []
+        import pdb
+        pdb.set_trace()
+
 
     def _get_all_paths_mdg(self, G, nx_sp):
         """
@@ -780,7 +818,7 @@ class FlexModel(_MasterModel):
         path_info = self._normalize_multidigraph_paths(converted_path['path'])
         return {'path': path_info}
 
-    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):  # TODO - does this work?
+    def get_shortest_path(self, source_node_name, dest_node_name, needed_bw=0):
         """
         For a source and dest node name pair, find the shortest path(s) with at
         least needed_bw available.

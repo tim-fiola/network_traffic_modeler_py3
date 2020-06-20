@@ -27,5 +27,6 @@ A   F   10  dmd_a_f_1
 RSVP_LSP_TABLE
 source	dest	name
 B   D   lsp_b_d_1
+B   D   lsp_b_d_2
 C   E   lsp_c_e_1
 D   F   lsp_d_f_1
