@@ -346,7 +346,6 @@ class FlexModel(_MasterModel):
                 # the traffic has taken thusfar
                 if len(next_node_to_check) > 0:
                     if node_path.index(node_name) < node_path.index(next_node_to_check[-1]):
-                        print("proceeding: {}".format(node_name))
                         continue
                 if self.get_node_object(node_name).igp_shortcuts_enabled is True:
                     # Get the source node object
@@ -401,6 +400,12 @@ class FlexModel(_MasterModel):
         """
 
         path_with_lsps = []
+        for lsp_group in path_lsps:
+            # Find start Interface
+            # TODO - pick up here
+            start_interface = [interface for interface in path if interface.node_object == lsp_group[0].source_node_object]
+
+
         import pdb
         pdb.set_trace()
 
@@ -1224,7 +1229,6 @@ class FlexModel(_MasterModel):
 
         """
         # TODO - allow user to add user-defined columns in NODES_TABLE and add that as an attribute to the Node
-        # TODO - add support for SRLGs
 
         interface_set = set()
         node_set = set()
@@ -1261,13 +1265,12 @@ class FlexModel(_MasterModel):
 
         interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
                                                                                 int_info_end_index, lines)
-
         # Define the explicit nodes info from the file
         nodes_info_begin_index = int_info_end_index + 3
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
         for node_line in node_lines:
-            cls._add_node_from_data(demand_set, interface_set, lsp_set, node_line, node_set)
+            node_set = cls._add_node_from_data(demand_set, interface_set, lsp_set, node_line, node_set)
 
         # Define the demands info
         demands_info_begin_index = nodes_info_end_index + 3
@@ -1340,8 +1343,21 @@ class FlexModel(_MasterModel):
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
-            new_interface = Interface(name, int(cost), int(capacity), Node(node_name),
-                                      Node(remote_node_name), circuit_id, rsvp_enabled_bool,
+            # TODO - fix this; check for existence of remote node before adding new_interface; get
+            #  the remote node and use that as the new interface remote node
+            node_names = [node.name for node in node_set]
+            if node_name in node_names:
+                node_object = [node for node in node_set if node.name == node_name][0]
+            else:
+                node_object = Node(node_name)
+
+            if remote_node_name in node_names:
+                remote_node_object = [node for node in node_set if node.name == remote_node_name][0]
+            else:
+                remote_node_object = Node(remote_node_name)
+
+            new_interface = Interface(name, int(cost), int(capacity), node_object,
+                                      remote_node_object, circuit_id, rsvp_enabled_bool,
                                       float(percent_reservable_bandwidth))
 
             if new_interface._key not in set([interface._key for interface in interface_set]):

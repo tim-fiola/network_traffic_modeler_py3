@@ -745,6 +745,7 @@ class _MasterModel(object):
             node_lon = int(node_info[1])
         except (ValueError, IndexError):
             node_lon = 0
+
         new_node = Node(node_name)
         # Set igp_shortcuts_enabled; only used in FlexModel, ignored in PerformanceModel
         try:
@@ -756,11 +757,14 @@ class _MasterModel(object):
             new_node.lat = node_lat
             new_node.lon = node_lon
             new_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
+            return node_set
         else:
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
+            # existing_node = [node for node in node_set if node.name == node_name][0] # TODO - delete this
             existing_node.lat = node_lat
             existing_node.lon = node_lon
             existing_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
+            return node_set
 
     def _does_interface_exist(self, interface_name, node_object_name):
         """
@@ -1224,7 +1228,6 @@ class _MasterModel(object):
         :param node_name: name of Node object in self
         :return: Node object with node_name
         """
-
         matching_node = [node for node in self.node_objects if node.name == node_name]
 
         if len(matching_node) > 0:

@@ -14,7 +14,7 @@ F   E   F-E 10  100 5
 NODES_TABLE
 name	lon	lat igp_shortcuts_enabled
 A   10   0   True
-B   0   0   True
+B   0   5   True
 C   0   0   True
 D   0   0   True
 E   0   0   True
