@@ -366,9 +366,6 @@ class FlexModel(_MasterModel):
                                 lsp.effective_metric(self) ==
                                 self.get_shortest_path(lsp.source_node_object.name, lsp.dest_node_object.name)['cost']]
 
-                        # lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.source_node_object == source_node and
-                        #         lsp.dest_node_object == self.get_node_object(destination)]
-
                         if len(lsps) > 0:
                             # Break out of the destinations iteration as traffic will want to take
                             # the first LSP(s) available the traffic farthest along the path
@@ -388,24 +385,37 @@ class FlexModel(_MasterModel):
 
         return paths_with_lsps
 
-
     def _insert_lsps_into_path(self, path_lsps, path):
         """
+        Substitutes the path_lsps into the path.  Although the path
+        argument is a single path, multiple paths will be returned if there
+        are multiple parallel LSPs (in path_lsps component lists) between
+        any hops in the path.
 
+        :param path_lsps: List of lists.  Each component list holds
+        the parallel LSPs from a common source to a common destination
 
-        :param path_lsps: LSPs that can be substituted into path
-        :param path: List of Interfaces in path
+        Example::
+            [[RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_2'),
+            RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_1')],
+            [RSVP_LSP(source = D, dest = F, lsp_name = 'lsp_d_f_1')]]
 
-        :return:
+        :param path: List of Interfaces in path from source to destination
+
+        :return:  List of path permutations with the LSPs substituted in
         """
 
-        # List of lists; each component list is a tuple for an LSP substitution
-        # in the path:
+        # path_slices is a list of lists; each component list is a tuple
+        # for an LSP substitution in the path:
         # [(start_index, end_index, parallel_lsp_1), . .
         # . . ((start_index, end_index, parallel_lsp_x)]
+        # Example: 2 LSPs from B to D and 1 LSP from D to F
+        #  [[[1, 3, RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_2')],
+        #   [1, 3, RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_1')]],
+        #   [[3, 5, RSVP_LSP(source = D, dest = F, lsp_name = 'lsp_d_f_1')]]]
         path_slices = []
         for lsp_group in path_lsps:
-            # List of tuples for each parallel LSP in lsp_group:
+            # lsp_group_slices is a list of tuples for each parallel LSP in lsp_group:
             # [(start_index, end_index, parallel_lsp_1),. .
             # . . ((start_index, end_index, parallel_lsp_x)]
             lsp_group_slices = []
@@ -424,25 +434,21 @@ class FlexModel(_MasterModel):
         # Sub in the LSPs, starting from the end of the path (to preserve index values)
         path_slices.reverse()
 
-        # TODO - left off here; user itertools to get all combos in path_slices
-        # Example: path_combos = list(itertools.product(path_slices[0], path_slices[1]))
-        import pdb
-        pdb.set_trace()
-        paths_with_lsps = []
-        for path_slice_list in path_slices:
-            path_prime = path[:]
-            for path_slice in path_slice_list:
+        path_slice_combos = list(itertools.product(*path_slices))
 
+        # List to hold the path(s) with the LSP(s) substituted in
+        paths_with_substitutions = []
+        for path_slice_combo in path_slice_combos:
+            path_prime = path[:]
+            for path_slice in path_slice_combo:
                 start_index = path_slice[0]
                 end_index = path_slice[1]
                 lsp = path_slice[2]
                 path_prime[start_index:end_index] = [lsp]
-                paths_with_lsps.append(path_prime)
 
+            paths_with_substitutions.append(path_prime)
 
-
-
-
+        return paths_with_substitutions
 
     def _get_all_paths_mdg(self, G, nx_sp):
         """
