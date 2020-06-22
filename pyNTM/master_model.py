@@ -180,8 +180,8 @@ class _MasterModel(object):
 
         Example::
 
-            The interface from node G to node D below has 2.5 units of traffic from 'demand';
-            the interface from A to B has 10.0, etc.
+            The interface from node B to E (name='B-to-E') below has 8.0 units of
+            traffic from 'demand'; the interface from A to B has 12.0, etc.
 
             {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
             remote_node_object = Node('B'), circuit_id = '1'): 12.0,
@@ -200,8 +200,10 @@ class _MasterModel(object):
         for path in demand.path:
             shortest_path_int_list += path
 
+        import pdb
+        pdb.set_trace()
         # Unique interfaces across all shortest paths
-        shortest_path_int_set = set(shortest_path_int_list)
+        shortest_path_int_set = set(shortest_path_int_list)  # TODO - resume here for IGP shortcut fixes
 
         # Dict to store how many unique next hops each node has in the shortest paths
         unique_next_hops = {}

@@ -10,6 +10,10 @@ D   E   D-E 10  100 4
 E   D   E-D 10  100 4
 E   F   E-F 10  100 5
 F   E   F-E 10  100 5
+A   G   A-G 25  100 6
+G   A   G-A 25  100 6
+G   F   G-F 25  100 7
+F   G   F-G 25  100 7
 
 NODES_TABLE
 name	lon	lat igp_shortcuts_enabled

@@ -311,7 +311,7 @@ class FlexModel(_MasterModel):
         :param node_paths: List of lists; each list contains node names along the path from
         source to destination (ordered from source to destination)
 
-        :return: List of lists; each list contains Interfaces and/or RSVP LSPs along the path
+        :return: List of lists; each list contains Interfaces and/or RSVP LSPs along each path
         from source to destination
         """
 
@@ -378,10 +378,11 @@ class FlexModel(_MasterModel):
             if len(path_lsps) > 0:
                 path = interface_path
                 path_with_lsps = self._insert_lsps_into_path(path_lsps, path)
+                for component_path in path_with_lsps:
+                    paths_with_lsps.append(component_path)
             else:
-                path_with_lsps.append(path)
-
-            paths_with_lsps.append(path_with_lsps)
+                # No LSPs on path;
+                paths_with_lsps.append(interface_path)
 
         return paths_with_lsps
 
