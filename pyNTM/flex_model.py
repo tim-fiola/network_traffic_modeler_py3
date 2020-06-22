@@ -425,6 +425,7 @@ class FlexModel(_MasterModel):
         path_slices.reverse()
 
         # TODO - left off here; user itertools to get all combos in path_slices
+        # Example: path_combos = list(itertools.product(path_slices[0], path_slices[1]))
         import pdb
         pdb.set_trace()
         paths_with_lsps = []
