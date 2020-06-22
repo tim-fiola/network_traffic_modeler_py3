@@ -399,15 +399,48 @@ class FlexModel(_MasterModel):
         :return:
         """
 
-        path_with_lsps = []
+        # List of lists; each component list is a tuple for an LSP substitution
+        # in the path:
+        # [(start_index, end_index, parallel_lsp_1), . .
+        # . . ((start_index, end_index, parallel_lsp_x)]
+        path_slices = []
         for lsp_group in path_lsps:
-            # Find start Interface
-            # TODO - pick up here
-            start_interface = [interface for interface in path if interface.node_object == lsp_group[0].source_node_object]
+            # List of tuples for each parallel LSP in lsp_group:
+            # [(start_index, end_index, parallel_lsp_1),. .
+            # . . ((start_index, end_index, parallel_lsp_x)]
+            lsp_group_slices = []
+            start_interface = [interface for interface in path if isinstance(interface, Interface) and
+                               interface.node_object == lsp_group[0].source_node_object][0]
+            end_interface = [interface for interface in path if isinstance(interface, Interface) and
+                             interface.remote_node_object == lsp_group[0].dest_node_object][0]
 
+            slice_to_sub_start_index = path.index(start_interface)
+            slice_to_sub_end_index = path.index(end_interface) + 1
+            for lsp in lsp_group:
+                lsp_group_slices.append([slice_to_sub_start_index, slice_to_sub_end_index, lsp])
 
+            path_slices.append(lsp_group_slices)
+
+        # Sub in the LSPs, starting from the end of the path (to preserve index values)
+        path_slices.reverse()
+
+        # TODO - left off here; user itertools to get all combos in path_slices
         import pdb
         pdb.set_trace()
+        paths_with_lsps = []
+        for path_slice_list in path_slices:
+            path_prime = path[:]
+            for path_slice in path_slice_list:
+
+                start_index = path_slice[0]
+                end_index = path_slice[1]
+                lsp = path_slice[2]
+                path_prime[start_index:end_index] = [lsp]
+                paths_with_lsps.append(path_prime)
+
+
+
+
 
 
     def _get_all_paths_mdg(self, G, nx_sp):
