@@ -414,23 +414,23 @@ class FlexModel(_MasterModel):
 
         """
 
-        shortest_path_int_list = []
+        shortest_path_item_list = []
         for path in demand.path:
-            shortest_path_int_list += path
+            shortest_path_item_list += path
 
         # Check for RSVP LSPs and replace them with the component 'interfaces'
-        for x in range(len(shortest_path_int_list)):
-            if isinstance(shortest_path_int_list[x], RSVP_LSP):
-                shortest_path_int_list += shortest_path_int_list[x].path['interfaces']
-                import pdb
-                pdb.set_trace()
-                shortest_path_int_list.remove(shortest_path_int_list[x])
+        for item in shortest_path_item_list:
+            if isinstance(item, RSVP_LSP):
+                shortest_path_item_list += item.path['interfaces']
+
+        # Iterate again and remove RSVP_LSPs
+        shortest_path_int_list = []
+        for item in shortest_path_item_list:
+            if isinstance(item, Interface):
+                shortest_path_int_list.append(item)
 
         # Unique interfaces across all shortest paths
         shortest_path_int_set = set(shortest_path_int_list)
-
-        import pdb
-        pdb.set_trace()
 
         # Dict to store how many unique next hops each node has in the shortest paths
         unique_next_hops = {}
@@ -442,7 +442,6 @@ class FlexModel(_MasterModel):
             unique_next_hops[interface.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
                                                             if intf.node_object.name == interface.node_object.name]
 
-        # TODO - find shorter example here
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path
         # - a dict of cumulative splits for each interface at that point in the path
@@ -468,47 +467,8 @@ class FlexModel(_MasterModel):
         #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
         #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
-        #  'path_2': {'interfaces': [
-        #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
-        #                circuit_id='2'),
-        #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                circuit_id='27')],
-        #             'path_traffic': 4.0,
-        #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
-        #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}},
-        #  'path_3': {'interfaces': [
-        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                circuit_id='1'),
-        #      Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                circuit_id='17')],
-        #             'path_traffic': 4.0,
-        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
-        #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), circuit_id='17'): 6}},
-        #  'path_4': {'interfaces': [
-        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                circuit_id='1'),
-        #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                circuit_id='7')],
-        #             'path_traffic': 4.0,
-        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
-        #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
-        #  'path_5': {'interfaces': [
-        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
-        #                circuit_id='1'),
-        #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
-        #                circuit_id='27')],
-        #             'path_traffic': 4.0,
-        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
-        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
-        #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
-        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}}}
+        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}}}
+
         shortest_path_info = {}
         path_counter = 0
 
@@ -523,7 +483,16 @@ class FlexModel(_MasterModel):
 
             # Create cumulative path splits for each interface
             total_splits = 1
-            for interface in path:
+
+            # Normalize any paths with LSPs
+            path_prime = []
+            for hop in path:
+                if isinstance(hop, Interface):
+                    path_prime.append(hop)
+                elif isinstance(hop, RSVP_LSP):
+                    path_prime += hop.path['interfaces']
+
+            for interface in path_prime:
                 total_splits = total_splits * len(unique_next_hops[interface.node_object.name])
                 traffic_splits_per_interface[interface] = total_splits
 
@@ -531,7 +500,7 @@ class FlexModel(_MasterModel):
             max_split = max([split for split in traffic_splits_per_interface.values()])
             path_traffic = float(demand.traffic) / float(max_split)
 
-            shortest_path_info[path_key]['interfaces'] = path
+            shortest_path_info[path_key]['interfaces'] = path_prime
             shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
             shortest_path_info[path_key]['path_traffic'] = path_traffic
             path_counter += 1
@@ -542,6 +511,8 @@ class FlexModel(_MasterModel):
         # Create dict to hold cumulative traffic for each interface for demand
         traff_per_int = dict.fromkeys(shortest_path_int_set, 0)
         for path, info in shortest_path_info.items():
+            import pdb
+            pdb.set_trace()
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
 

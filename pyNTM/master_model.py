@@ -221,7 +221,7 @@ class _MasterModel(object):
                         # portion of the demand's traffic
                         interface.traffic += traffic_per_demand_path
 
-            # If demand_object is not taking LSPs, IGP route it, using hop by hop ECMP
+            # If demand_object is not taking LSPs end to end, IGP route it, using hop by hop ECMP
             else:
                 # demand_traffic_per_int will be dict of
                 # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
