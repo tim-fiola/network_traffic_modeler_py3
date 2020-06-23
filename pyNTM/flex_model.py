@@ -388,7 +388,7 @@ class FlexModel(_MasterModel):
         return paths_with_lsps
 
 
-    def _demand_traffic_per_int(self, demand):
+    def _demand_traffic_per_int(self, demand):  # TODO - this is broken, does not put traffic on LSPs
         """
         Given a Demand object, return the (key, value) pairs for how much traffic each
         Interface gets from the routing of the traffic load over Model Interfaces.
@@ -419,28 +419,33 @@ class FlexModel(_MasterModel):
             shortest_path_item_list += path
 
         # Check for RSVP LSPs and replace them with the component 'interfaces'
-        for item in shortest_path_item_list:
-            if isinstance(item, RSVP_LSP):
-                shortest_path_item_list += item.path['interfaces']
+        # for item in shortest_path_item_list:
+        #     if isinstance(item, RSVP_LSP):
+        #         shortest_path_item_list += item.path['interfaces']
 
         # Iterate again and remove RSVP_LSPs
-        shortest_path_int_list = []
-        for item in shortest_path_item_list:
-            if isinstance(item, Interface):
-                shortest_path_int_list.append(item)
+        # shortest_path_int_list = []
+        # for item in shortest_path_item_list:
+        #     if isinstance(item, Interface):
+        #         shortest_path_int_list.append(item)
 
         # Unique interfaces across all shortest paths
-        shortest_path_int_set = set(shortest_path_int_list)
+        # shortest_path_int_set = set(shortest_path_int_list)
+        shortest_path_item_set = set(shortest_path_item_list)
 
         # Dict to store how many unique next hops each node has in the shortest paths
         unique_next_hops = {}
 
-        # Iterate through all the interfaces
-        for interface in shortest_path_int_set:
-            # For a given Interface's node_object, determine how many
-            # Interfaces on that Node are facing next hops
-            unique_next_hops[interface.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
-                                                            if intf.node_object.name == interface.node_object.name]
+        # Iterate through all the items
+        for item in shortest_path_item_set:  # TODO - left off here
+            if isinstance(item, Interface):
+                # For a given Interface's node_object, determine how many
+                # Interfaces on that Node are facing next hops
+                unique_next_hops[item.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
+                                                           if intf.node_object.name == item.node_object.name]
+            elif isinstance(item, RSVP_LSP):
+                unique_next_hops[item.source_node_object.name] = [lsp.source_node_object.name for lsp in shortest_path_int_set
+                                                                  if lsp.source_node_object.name == item.source_node_object.name]
 
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path
@@ -484,23 +489,21 @@ class FlexModel(_MasterModel):
             # Create cumulative path splits for each interface
             total_splits = 1
 
-            # Normalize any paths with LSPs
-            path_prime = []
-            for hop in path:
-                if isinstance(hop, Interface):
-                    path_prime.append(hop)
-                elif isinstance(hop, RSVP_LSP):
-                    path_prime += hop.path['interfaces']
+            # Normalize any paths with LSPs  # TODO - don't normalize the path, rather, update the LSP traffic and LSP interface traffic
+            import pdb
+            pdb.set_trace()
+            for item in path:
+                if isinstance(item, Interface):
+                    total_splits = total_splits * len(unique_next_hops[item.node_object.name])
+                    traffic_splits_per_interface[item] = total_splits
+                elif isinstance(item, RSVP_LSP):
 
-            for interface in path_prime:
-                total_splits = total_splits * len(unique_next_hops[interface.node_object.name])
-                traffic_splits_per_interface[interface] = total_splits
 
             # Find path traffic
             max_split = max([split for split in traffic_splits_per_interface.values()])
             path_traffic = float(demand.traffic) / float(max_split)
 
-            shortest_path_info[path_key]['interfaces'] = path_prime
+            shortest_path_info[path_key]['interfaces'] = path
             shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
             shortest_path_info[path_key]['path_traffic'] = path_traffic
             path_counter += 1
@@ -511,8 +514,6 @@ class FlexModel(_MasterModel):
         # Create dict to hold cumulative traffic for each interface for demand
         traff_per_int = dict.fromkeys(shortest_path_int_set, 0)
         for path, info in shortest_path_info.items():
-            import pdb
-            pdb.set_trace()
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
 
