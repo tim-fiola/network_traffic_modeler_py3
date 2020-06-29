@@ -437,15 +437,33 @@ class FlexModel(_MasterModel):
         unique_next_hops = {}
 
         # Iterate through all the items
-        for item in shortest_path_item_set:  # TODO - left off here
+        for item in shortest_path_item_set:
             if isinstance(item, Interface):
+                unique_next_hops[item.node_object.name] = []
                 # For a given Interface's node_object, determine how many
                 # Interfaces on that Node are facing next hops
-                unique_next_hops[item.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
-                                                           if intf.node_object.name == item.node_object.name]
+                for hop in shortest_path_item_set:
+                    if isinstance(hop, Interface):
+                        if hop.node_object.name == item.node_object.name:
+                            unique_next_hops[item.node_object.name].append(hop.node_object.name)
+                    elif isinstance(hop, RSVP_LSP):
+                        if hop.source_node_object.name == item.node_object.name:
+                            unique_next_hops[item.node_object.name].append(hop.source_node_object.name)
             elif isinstance(item, RSVP_LSP):
-                unique_next_hops[item.source_node_object.name] = [lsp.source_node_object.name for lsp in shortest_path_int_set
-                                                                  if lsp.source_node_object.name == item.source_node_object.name]
+                unique_next_hops[item.source_node_object.name] = []
+                # For an LSP's source_node_object,
+                for hop in shortest_path_item_set:
+                    if isinstance(hop, Interface):
+                        if hop.node_object.name == item.source_node_object.name:
+                            unique_next_hops[item.source_node_object.name].append(hop.node_object.name)
+                    elif isinstance(hop, RSVP_LSP):
+                        if hop.source_node_object.name == item.source_node_object.name:
+                            unique_next_hops[item.source_node_object.name].append(hop.source_node_object.name)
+
+                # unique_next_hops[item.source_node_object.name] = [lsp.source_node_object.name for lsp
+                #                                                   in shortest_path_item_set
+                #                                                   if lsp.source_node_object.name ==
+                #                                                   item.source_node_object.name]
 
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path
@@ -486,18 +504,19 @@ class FlexModel(_MasterModel):
 
             shortest_path_info[path_key] = {}
 
-            # Create cumulative path splits for each interface
+            # Create cumulative path splits for each item in the path
             total_splits = 1
 
-            # Normalize any paths with LSPs  # TODO - don't normalize the path, rather, update the LSP traffic and LSP interface traffic
-            import pdb
-            pdb.set_trace()
+            # Normalize any paths with LSPs
             for item in path:
+                # Update the total cumulative splits in the path before
+                # traffic reaches the item in the path
                 if isinstance(item, Interface):
                     total_splits = total_splits * len(unique_next_hops[item.node_object.name])
-                    traffic_splits_per_interface[item] = total_splits
                 elif isinstance(item, RSVP_LSP):
+                    total_splits = total_splits * len(unique_next_hops[item.source_node_object.name])
 
+                traffic_splits_per_interface[item] = total_splits
 
             # Find path traffic
             max_split = max([split for split in traffic_splits_per_interface.values()])
@@ -512,7 +531,7 @@ class FlexModel(_MasterModel):
         # that path's traffic to the interface
 
         # Create dict to hold cumulative traffic for each interface for demand
-        traff_per_int = dict.fromkeys(shortest_path_int_set, 0)
+        traff_per_int = dict.fromkeys(shortest_path_item_set, 0)
         for path, info in shortest_path_info.items():
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
