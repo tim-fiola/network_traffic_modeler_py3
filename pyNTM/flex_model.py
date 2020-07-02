@@ -387,8 +387,80 @@ class FlexModel(_MasterModel):
 
         return paths_with_lsps
 
+    def _update_interface_utilization(self):
+        """Updates each interface's utilization; returns Model object with
+        updated interface utilization."""
 
-    def _demand_traffic_per_int(self, demand):  # TODO - this is broken, does not put traffic on LSPs
+        # In the model, in an interface is failed, set the traffic attribute
+        # to 'Down', otherwise, initialize the traffic to zero
+        for interface_object in self.interface_objects:
+            if interface_object.failed:
+                interface_object.traffic = 'Down'
+            else:
+                interface_object.traffic = 0.0
+
+        routed_demand_object_generator = (demand_object for demand_object in self.demand_objects if
+                                          'Unrouted' not in demand_object.path)
+
+        # For each demand that is not Unrouted, add its traffic value to each
+        # interface object in the path
+        for demand_object in routed_demand_object_generator:
+            # This model only allows demands to take RSVP LSPs if
+            # the demand's source/dest nodes match the LSP's source/dest nodes.
+
+            # Expand each LSP into its interfaces and add that the traffic per LSP
+            # to the LSP's path interfaces.
+
+            # Can demand take LSP?
+            routed_lsp_generator = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
+            lsps_for_demand = []
+            for lsp in routed_lsp_generator:
+                if (lsp.source_node_object == demand_object.source_node_object and
+                        lsp.dest_node_object == demand_object.dest_node_object):
+                    lsps_for_demand.append(lsp)
+
+            if lsps_for_demand != []:
+                # Find each demands path list, determine the ECMP split across the
+                # routed LSPs, and find the traffic per path (LSP)
+                num_routed_lsps_for_demand = len(lsps_for_demand)
+
+                traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
+
+                # Get the interfaces for each LSP in the demand's path
+                for lsp in lsps_for_demand:
+                    lsp_path_interfaces = lsp.path['interfaces']
+
+                    # Now that all interfaces are known,
+                    # update traffic on interfaces demand touches
+                    for interface in lsp_path_interfaces:
+                        # Get the interface's existing traffic and add the
+                        # portion of the demand's traffic
+                        interface.traffic += traffic_per_demand_path
+
+            # If demand_object is not taking LSPs end to end, IGP route it, using hop by hop ECMP
+            else:
+                # demand_traffic_per_int will be dict of
+                # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
+                #
+                # Example: The interface from node G to node D has 2.5 units of traffic from 'demand'
+                # {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
+                demand_traffic_per_item = self._demand_traffic_per_item(demand_object)
+
+                demand_traffic_per_int = {}
+                for item, traffic in demand_traffic_per_item.items():
+                    if isinstance(item, Interface):
+                        item.traffic += traffic
+                    elif isinstance(item, RSVP_LSP):
+                        # Add traffic to the LSP
+                        item.traffic_on_lsp(self) += traffic
+                        # Get LSP interfaces
+                        interfaces = item.path['interfaces']
+                        for interface in interfaces:
+                            interface.traffic += traffic
+
+        return self
+
+    def _demand_traffic_per_item(self, demand):
         """
         Given a Demand object, return the (key, value) pairs for how much traffic each
         Interface gets from the routing of the traffic load over Model Interfaces.
@@ -417,17 +489,6 @@ class FlexModel(_MasterModel):
         shortest_path_item_list = []
         for path in demand.path:
             shortest_path_item_list += path
-
-        # Check for RSVP LSPs and replace them with the component 'interfaces'
-        # for item in shortest_path_item_list:
-        #     if isinstance(item, RSVP_LSP):
-        #         shortest_path_item_list += item.path['interfaces']
-
-        # Iterate again and remove RSVP_LSPs
-        # shortest_path_int_list = []
-        # for item in shortest_path_item_list:
-        #     if isinstance(item, Interface):
-        #         shortest_path_int_list.append(item)
 
         # Unique interfaces across all shortest paths
         # shortest_path_int_set = set(shortest_path_int_list)
@@ -459,11 +520,6 @@ class FlexModel(_MasterModel):
                     elif isinstance(hop, RSVP_LSP):
                         if hop.source_node_object.name == item.source_node_object.name:
                             unique_next_hops[item.source_node_object.name].append(hop.source_node_object.name)
-
-                # unique_next_hops[item.source_node_object.name] = [lsp.source_node_object.name for lsp
-                #                                                   in shortest_path_item_set
-                #                                                   if lsp.source_node_object.name ==
-                #                                                   item.source_node_object.name]
 
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path

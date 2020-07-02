@@ -13,4 +13,12 @@ model.update_simulation()
 dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
 node_a = model.get_node_object('A')
 
+for interface in model.interface_objects:
+    if interface.traffic > 0:
+        print([interface, interface.traffic, interface.utilization])
+
+for lsp in model.rsvp_lsp_objects:
+    print([lsp.traffic_on_lsp(model)])
+
+
 
