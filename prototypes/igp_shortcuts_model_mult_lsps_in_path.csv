@@ -27,6 +27,7 @@ F   0   0   True
 DEMANDS_TABLE
 source	dest	traffic	name
 A   F   10  dmd_a_f_1
+D   F   5   dmd_d_f_1
 
 RSVP_LSP_TABLE
 source	dest	name

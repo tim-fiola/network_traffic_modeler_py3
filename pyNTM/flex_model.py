@@ -452,7 +452,7 @@ class FlexModel(_MasterModel):
                         item.traffic += traffic
                     elif isinstance(item, RSVP_LSP):
                         # Add traffic to the LSP
-                        item.traffic_on_lsp(self) += traffic
+                        item._traffic_from_shortcuts += traffic
                         # Get LSP interfaces
                         interfaces = item.path['interfaces']
                         for interface in interfaces:

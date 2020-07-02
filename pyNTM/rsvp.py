@@ -2,6 +2,7 @@
 
 import random
 from .exceptions import ModelException
+from .flex_model import FlexModel
 
 
 class RSVP_LSP(object):
@@ -39,6 +40,7 @@ class RSVP_LSP(object):
         self.reserved_bandwidth = 'Unrouted - initial'
         self._setup_bandwidth = 'Unrouted - initial'
         self.configured_setup_bandwidth = configured_setup_bandwidth
+        self._traffic_from_shortcuts = 0
 
     @property
     def _key(self):
@@ -165,7 +167,7 @@ class RSVP_LSP(object):
         self.setup_bandwidth = requested_bandwidth
         return self
 
-    def demands_on_lsp(self, model):
+    def demands_on_lsp(self, model):  # TODO - update this to account for igp shortcut LSPs
         """
         Returns demands in model object that LSP is transporting.
 
@@ -176,6 +178,13 @@ class RSVP_LSP(object):
         for demand in (demand for demand in model.demand_objects):
             if self in demand.path:
                 demand_list.append(demand)
+            # if isinstance(model, FlexModel):
+            #     # Look for the demands from IGP shortcuts
+            #     for dmd_path in demand.path:
+            #         import pdb
+            #         pdb.set_trace()
+            #         if self in dmd_path:
+            #             demand_list.append(demand)
 
         return demand_list
 
@@ -196,7 +205,7 @@ class RSVP_LSP(object):
 
         traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
 
-        return traffic_on_lsp
+        return traffic_on_lsp + self._traffic_from_shortcuts
 
     def effective_metric(self, model):
         """
