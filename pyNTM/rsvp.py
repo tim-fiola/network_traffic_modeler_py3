@@ -206,9 +206,6 @@ class RSVP_LSP(object):
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
         parallel_routed_lsps = [lsp for lsp in parallel_lsp_groups[key] if 'Unrouted' not in lsp.path]
 
-        import pdb
-        pdb.set_trace()
-
         traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
 
         return traffic_on_lsp + self._traffic_from_shortcuts
