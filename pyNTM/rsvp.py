@@ -174,19 +174,17 @@ class RSVP_LSP(object):
         :return: List of demands in model object that LSP carries
         """
         from .flex_model import FlexModel
-        demand_list = []
+        demand_set = set()
         for demand in (demand for demand in model.demand_objects):
             if self in demand.path:
-                demand_list.append(demand)
+                demand_set.add(demand)
             if isinstance(model, FlexModel):
                 # Look for the demands from IGP shortcuts
                 for dmd_path in demand.path:
-                    import pdb
-                    pdb.set_trace()
-                    if self in dmd_path:
-                        demand_list.append(demand)
+                    if isinstance(dmd_path, list) and self in dmd_path:
+                        demand_set.add(demand)
 
-        return demand_list
+        return list(demand_set)
 
     def traffic_on_lsp(self, model):
         """

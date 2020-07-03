@@ -30,8 +30,8 @@ class Interface(object):
 
     # Modify the __hash__ and __eq__ methods to make comparisons easier
     def __eq__(self, other_object):
-        # if not isinstance(other_object, Interface):
-        #     return NotImplemented
+        if not isinstance(other_object, Interface):
+            return NotImplemented
 
         return [self.node_object, self.remote_node_object, self.name,
                 self.capacity, self.circuit_id] == [other_object.node_object,
