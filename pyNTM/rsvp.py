@@ -196,10 +196,18 @@ class RSVP_LSP(object):
 
         # Find all LSPs with same source and dest as self
         parallel_lsp_groups = model.parallel_lsp_groups()
+
+        # TODO - this is coming up wrong; it is assuming that all demand traffic will
+        #  take the LSP, but in IGP shortcuts, not all demand traffic will take LSPs; some
+        #  demands may be routed via igp and split before it gets on an LSP
+        # TODO - need to come up with split factor for demand in its path (perhaps enhanced_path object?)
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
         parallel_routed_lsps = [lsp for lsp in parallel_lsp_groups[key] if 'Unrouted' not in lsp.path]
+
+        import pdb
+        pdb.set_trace()
 
         traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
 
