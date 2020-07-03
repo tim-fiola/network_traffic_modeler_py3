@@ -2,7 +2,6 @@
 
 import random
 from .exceptions import ModelException
-from .flex_model import FlexModel
 
 
 class RSVP_LSP(object):
@@ -174,17 +173,18 @@ class RSVP_LSP(object):
         :param model: model object containing LSP
         :return: List of demands in model object that LSP carries
         """
+        from .flex_model import FlexModel
         demand_list = []
         for demand in (demand for demand in model.demand_objects):
             if self in demand.path:
                 demand_list.append(demand)
-            # if isinstance(model, FlexModel):
-            #     # Look for the demands from IGP shortcuts
-            #     for dmd_path in demand.path:
-            #         import pdb
-            #         pdb.set_trace()
-            #         if self in dmd_path:
-            #             demand_list.append(demand)
+            if isinstance(model, FlexModel):
+                # Look for the demands from IGP shortcuts
+                for dmd_path in demand.path:
+                    import pdb
+                    pdb.set_trace()
+                    if self in dmd_path:
+                        demand_list.append(demand)
 
         return demand_list
 

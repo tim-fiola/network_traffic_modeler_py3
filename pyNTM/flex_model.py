@@ -31,8 +31,6 @@ from .utilities import find_end_index
 from .node import Node
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
-# TODO - add simulation summary output with # failed nodes, interfaces, srlgs, unrouted lsp/demands,
-#  routed lsp/demands in dict form
 # TODO - add support for SRLGs in load_model_file
 # TODO - add attribute for Node/Interface whereby an object can be failed by itself
 #  and not unfail when a parent SRLG unfails
