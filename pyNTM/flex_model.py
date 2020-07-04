@@ -461,7 +461,7 @@ class FlexModel(_MasterModel):
     def _demand_traffic_per_item(self, demand):
         """
         Given a Demand object, return the (key, value) pairs for how much traffic each
-        Interface gets from the routing of the traffic load over Model Interfaces.
+        Interface/LSP gets from the routing of the traffic load over Model Interfaces.
 
         : demand: Demand object
         : return: dict of (Interface: <traffic from demand> ) k, v pairs
@@ -592,6 +592,8 @@ class FlexModel(_MasterModel):
 
         # Round all traffic values to 1 decimal place
         traff_per_int = {interface: round(traffic, 1) for interface, traffic in traff_per_int.items()}
+
+        demand._path_detail = shortest_path_info
 
         return traff_per_int
 

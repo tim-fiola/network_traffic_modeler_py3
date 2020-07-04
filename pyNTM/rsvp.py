@@ -166,7 +166,7 @@ class RSVP_LSP(object):
         self.setup_bandwidth = requested_bandwidth
         return self
 
-    def demands_on_lsp(self, model):  # TODO - update this to account for igp shortcut LSPs
+    def demands_on_lsp(self, model):
         """
         Returns demands in model object that LSP is transporting.
 
@@ -195,7 +195,7 @@ class RSVP_LSP(object):
         """
 
         # Find all LSPs with same source and dest as self
-        parallel_lsp_groups = model.parallel_lsp_groups()
+        parallel_lsp_groups = model.parallel_lsp_groups()  # TODO - can this be optimized? cache it in model object
 
         # TODO - this is coming up wrong; it is assuming that all demand traffic will
         #  take the LSP, but in IGP shortcuts, not all demand traffic will take LSPs; some
@@ -206,9 +206,27 @@ class RSVP_LSP(object):
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
         parallel_routed_lsps = [lsp for lsp in parallel_lsp_groups[key] if 'Unrouted' not in lsp.path]
 
-        traffic_on_lsp = total_traffic / len(parallel_routed_lsps)
+        from .performance_model import PerformanceModel, Model
+        if isinstance(model, PerformanceModel) or isinstance(model, Model):
+            # If it's PerformanceModel, IGP shortcuts not supported, all traffic
+            # routes on the parallel LSPs
+            source_dest_match_traffic = total_traffic / len(parallel_routed_lsps)
+        else:
+            source_dest_match_traffic = 0
+            # Account for possible IGP shortcut splits
+            for demand_object in self.demands_on_lsp(model):
+                # from pprint import pprint  # TODO - debug
+                # print(demand_object)
+                # pprint(demand_object.path_detail)
+                # import pdb
+                # pdb.set_trace()
 
-        return traffic_on_lsp + self._traffic_from_shortcuts
+                for path, path_data in demand_object.path_detail.items():
+                    # Check if self is in path_data
+                    if self in path_data['interfaces']:
+                        source_dest_match_traffic += path_data['path_traffic']
+
+        return source_dest_match_traffic + self._traffic_from_shortcuts
 
     def effective_metric(self, model):
         """
