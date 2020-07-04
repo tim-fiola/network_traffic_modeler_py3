@@ -418,11 +418,22 @@ class FlexModel(_MasterModel):
                     lsps_for_demand.append(lsp)
 
             if lsps_for_demand != []:
-                # Find each demands path list, determine the ECMP split across the
+                # demand_object takes LSP end to end.
+                # Find each demand's path list, determine the ECMP split across the
                 # routed LSPs, and find the traffic per path (LSP)
                 num_routed_lsps_for_demand = len(lsps_for_demand)
 
                 traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
+
+                path_detail = {}
+                for lsp in lsps_for_demand:
+                    # Build the path detail: lsp and path traffic
+                    path_detail['path_{}'.format(lsps_for_demand.index(lsp))] = {}
+                    path_detail['path_{}'.format(lsps_for_demand.index(lsp))]['items'] = [lsp]
+                    path_detail['path_{}'.format(lsps_for_demand.index(lsp))]['path_traffic'] = traffic_per_demand_path
+
+                # Add detailed path info to demand
+                demand_object._path_detail = path_detail
 
                 # Get the interfaces for each LSP in the demand's path
                 for lsp in lsps_for_demand:
@@ -444,16 +455,16 @@ class FlexModel(_MasterModel):
                 # {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
                 demand_traffic_per_item = self._demand_traffic_per_item(demand_object)
 
-                demand_traffic_per_int = {}
                 for item, traffic in demand_traffic_per_item.items():
                     if isinstance(item, Interface):
-                        item.traffic += traffic
+                        for path, path_info in demand_object._path_detail.items():
+                            if item in path_info['items']:
+                                item.traffic += path_info['path_traffic']
                     elif isinstance(item, RSVP_LSP):
-                        # Add traffic to the LSP
-                        item._traffic_from_shortcuts += traffic
                         # Get LSP interfaces
                         interfaces = item.path['interfaces']
                         for interface in interfaces:
+                            # Add traffic to the Interface
                             interface.traffic += traffic
 
         return self
@@ -549,7 +560,8 @@ class FlexModel(_MasterModel):
         shortest_path_info = {}
         path_counter = 0
 
-        # Iterate thru each path for the demand
+        # Iterate thru each path for the demand to get traffic per interface
+        # and the splits for each demand
         for path in demand.path:
             # Dict of cumulative splits per interface
             traffic_splits_per_interface = {}
@@ -576,7 +588,7 @@ class FlexModel(_MasterModel):
             max_split = max([split for split in traffic_splits_per_interface.values()])
             path_traffic = float(demand.traffic) / float(max_split)
 
-            shortest_path_info[path_key]['interfaces'] = path
+            shortest_path_info[path_key]['items'] = path
             shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
             shortest_path_info[path_key]['path_traffic'] = path_traffic
             path_counter += 1
@@ -587,7 +599,7 @@ class FlexModel(_MasterModel):
         # Create dict to hold cumulative traffic for each interface for demand
         traff_per_int = dict.fromkeys(shortest_path_item_set, 0)
         for path, info in shortest_path_info.items():
-            for interface in info['interfaces']:
+            for interface in info['items']:
                 traff_per_int[interface] += info['path_traffic']
 
         # Round all traffic values to 1 decimal place

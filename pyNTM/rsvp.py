@@ -39,7 +39,6 @@ class RSVP_LSP(object):
         self.reserved_bandwidth = 'Unrouted - initial'
         self._setup_bandwidth = 'Unrouted - initial'
         self.configured_setup_bandwidth = configured_setup_bandwidth
-        self._traffic_from_shortcuts = 0
 
     @property
     def _key(self):
@@ -197,10 +196,6 @@ class RSVP_LSP(object):
         # Find all LSPs with same source and dest as self
         parallel_lsp_groups = model.parallel_lsp_groups()  # TODO - can this be optimized? cache it in model object
 
-        # TODO - this is coming up wrong; it is assuming that all demand traffic will
-        #  take the LSP, but in IGP shortcuts, not all demand traffic will take LSPs; some
-        #  demands may be routed via igp and split before it gets on an LSP
-        # TODO - need to come up with split factor for demand in its path (perhaps enhanced_path object?)
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
@@ -215,18 +210,12 @@ class RSVP_LSP(object):
             source_dest_match_traffic = 0
             # Account for possible IGP shortcut splits
             for demand_object in self.demands_on_lsp(model):
-                # from pprint import pprint  # TODO - debug
-                # print(demand_object)
-                # pprint(demand_object.path_detail)
-                # import pdb
-                # pdb.set_trace()
-
                 for path, path_data in demand_object.path_detail.items():
                     # Check if self is in path_data
-                    if self in path_data['interfaces']:
+                    if self in path_data['items']:
                         source_dest_match_traffic += path_data['path_traffic']
 
-        return source_dest_match_traffic + self._traffic_from_shortcuts
+        return source_dest_match_traffic
 
     def effective_metric(self, model):
         """
