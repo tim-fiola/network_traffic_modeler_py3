@@ -503,32 +503,7 @@ class FlexModel(_MasterModel):
         # shortest_path_int_set = set(shortest_path_int_list)
         shortest_path_item_set = set(shortest_path_item_list)
 
-        # Dict to store how many unique next hops each node has in the shortest paths
-        unique_next_hops = {}
-
-        # Iterate through all the items
-        for item in shortest_path_item_set:
-            if isinstance(item, Interface):
-                unique_next_hops[item.node_object.name] = []
-                # For a given Interface's node_object, determine how many
-                # Interfaces on that Node are facing next hops
-                for hop in shortest_path_item_set:
-                    if isinstance(hop, Interface):
-                        if hop.node_object.name == item.node_object.name:
-                            unique_next_hops[item.node_object.name].append(hop.node_object.name)
-                    elif isinstance(hop, RSVP_LSP):
-                        if hop.source_node_object.name == item.node_object.name:
-                            unique_next_hops[item.node_object.name].append(hop.source_node_object.name)
-            elif isinstance(item, RSVP_LSP):
-                unique_next_hops[item.source_node_object.name] = []
-                # For an LSP's source_node_object,
-                for hop in shortest_path_item_set:
-                    if isinstance(hop, Interface):
-                        if hop.node_object.name == item.source_node_object.name:
-                            unique_next_hops[item.source_node_object.name].append(hop.node_object.name)
-                    elif isinstance(hop, RSVP_LSP):
-                        if hop.source_node_object.name == item.source_node_object.name:
-                            unique_next_hops[item.source_node_object.name].append(hop.source_node_object.name)
+        unique_next_hops = self._find_unique_next_hops(shortest_path_item_set)
 
         # shortest_path_info will be a dict with the following info for each path:
         # - an ordered list of interfaces in the path
@@ -556,7 +531,6 @@ class FlexModel(_MasterModel):
         #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
         #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
         #                                  remote_node_object=Node('E'), circuit_id='7'): 6}}}
-
         shortest_path_info = {}
         path_counter = 0
 
@@ -608,6 +582,58 @@ class FlexModel(_MasterModel):
         demand._path_detail = shortest_path_info
 
         return traff_per_int
+
+    def _find_unique_next_hops(self, shortest_path_item_set):
+        """
+        From a set of items from all the shortest paths, determine how many unique
+        next hops there are from a given node.
+
+        :param shortest_path_item_set: a set of items (Interfaces, RSVP_LSPs) from all
+        the shortest paths
+
+        :return: a dict with keys for each Node name and values being a list of each unique
+        next hop from that Node
+
+        In the example output below, Node B has 2 unique next hops, buth of which are RSVP LSPs
+
+        Example output::
+
+            {'A': [Interface(name = 'A-G', cost = 25, capacity = 100, node_object = Node('A'),
+                   remote_node_object = Node('G'), circuit_id = '6'),
+                   Interface(name = 'A-B', cost = 10, capacity = 100, node_object = Node('A'),
+                   remote_node_object = Node('B'), circuit_id = '1')],
+             'B': [RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_1'),
+                   RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_2')],
+             'D': [RSVP_LSP(source = D, dest = F, lsp_name = 'lsp_d_f_1')],
+             'G': [Interface(name = 'G-F', cost = 25, capacity = 100, node_object = Node('G'),
+                   remote_node_object = Node('F'), circuit_id = '7')]}
+        """
+        # Dict to store how many unique next hops each node has in the shortest paths
+        unique_next_hops = {}
+        # Iterate through all the items
+        for item in shortest_path_item_set:
+            if isinstance(item, Interface):
+                unique_next_hops[item.node_object.name] = []
+                # For a given Interface's node_object, determine how many
+                # Interfaces on that Node are facing next hops
+                for hop in shortest_path_item_set:
+                    if isinstance(hop, Interface):
+                        if hop.node_object.name == item.node_object.name:
+                            unique_next_hops[item.node_object.name].append(hop)
+                    elif isinstance(hop, RSVP_LSP):
+                        if hop.source_node_object.name == item.node_object.name:
+                            unique_next_hops[item.node_object.name].append(hop)
+            elif isinstance(item, RSVP_LSP):
+                unique_next_hops[item.source_node_object.name] = []
+                # For an LSP's source_node_object,
+                for hop in shortest_path_item_set:
+                    if isinstance(hop, Interface):
+                        if hop.node_object.name == item.source_node_object.name:
+                            unique_next_hops[item.source_node_object.name].append(hop)
+                    elif isinstance(hop, RSVP_LSP):
+                        if hop.source_node_object.name == item.source_node_object.name:
+                            unique_next_hops[item.source_node_object.name].append(hop)
+        return unique_next_hops
 
     def _insert_lsps_into_path(self, path_lsps, path):
         """
