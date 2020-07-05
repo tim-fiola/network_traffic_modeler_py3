@@ -1,6 +1,5 @@
 """A class to represent a layer 3 device in the Model"""
 
-from distutils import util
 from .exceptions import ModelException
 from .srlg import SRLG
 

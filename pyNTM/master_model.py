@@ -534,7 +534,7 @@ class _MasterModel(object):
         try:
             igp_shortcuts_enabled_value = new_node.igp_shortcuts_enabled = node_info[3]
         except IndexError:
-            new_node.igp_shortcuts_enabled = False
+            igp_shortcuts_enabled_value = False
         if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
             node_set.add(new_node)
             new_node.lat = node_lat
