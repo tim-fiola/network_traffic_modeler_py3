@@ -418,33 +418,7 @@ class FlexModel(_MasterModel):
                     lsps_for_demand.append(lsp)
 
             if lsps_for_demand != []:
-                # demand_object takes LSP end to end.
-                # Find each demand's path list, determine the ECMP split across the
-                # routed LSPs, and find the traffic per path (LSP)
-                num_routed_lsps_for_demand = len(lsps_for_demand)
-
-                traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
-
-                path_detail = {}
-                for lsp in lsps_for_demand:
-                    # Build the path detail: lsp and path traffic
-                    path_detail['path_{}'.format(lsps_for_demand.index(lsp))] = {}
-                    path_detail['path_{}'.format(lsps_for_demand.index(lsp))]['items'] = [lsp]
-                    path_detail['path_{}'.format(lsps_for_demand.index(lsp))]['path_traffic'] = traffic_per_demand_path
-
-                # Add detailed path info to demand
-                demand_object._path_detail = path_detail
-
-                # Get the interfaces for each LSP in the demand's path
-                for lsp in lsps_for_demand:
-                    lsp_path_interfaces = lsp.path['interfaces']
-
-                    # Now that all interfaces are known,
-                    # update traffic on interfaces demand touches
-                    for interface in lsp_path_interfaces:
-                        # Get the interface's existing traffic and add the
-                        # portion of the demand's traffic
-                        interface.traffic += traffic_per_demand_path
+                self._update_int_traffic_for_end_to_end_lsps(demand_object, lsps_for_demand)
 
             # If demand_object is not taking LSPs end to end, IGP route it, using hop by hop ECMP
             else:
@@ -468,6 +442,41 @@ class FlexModel(_MasterModel):
                             interface.traffic += traffic
 
         return self
+
+    def _update_int_traffic_for_end_to_end_lsps(self, demand_object, lsps_for_demand):
+        """
+        For a given Demand that is taking a single RSVP LSP end to end, update the traffic
+        on the LSP's interfaces within self.
+
+        :param demand_object: Demand that is traveling end to end on a single LSP
+        :param lsps_for_demand: List of parallel LSPs that transport demand_object
+        end to end.  The demand_object splits its traffic evenly across the LSPs
+
+        :return: None; interface traffic updated within self
+        """
+        # demand_object takes LSP end to end.
+        # Find each demand's path list, determine the ECMP split across the
+        # routed LSPs, and find the traffic per path (LSP)
+        num_routed_lsps_for_demand = len(lsps_for_demand)
+        traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
+        path_detail = {}
+        for lsp in lsps_for_demand:
+            # Build the path detail: lsp and path traffic
+            path_detail['path_{}'.format(lsps_for_demand.index(lsp))] = {}
+            path_detail['path_{}'.format(lsps_for_demand.index(lsp))]['items'] = [lsp]
+            path_detail['path_{}'.format(lsps_for_demand.index(lsp))]['path_traffic'] = traffic_per_demand_path
+        # Add detailed path info to demand
+        demand_object._path_detail = path_detail
+        # Get the interfaces for each LSP in the demand's path
+        for lsp in lsps_for_demand:
+            lsp_path_interfaces = lsp.path['interfaces']
+
+            # Now that all interfaces are known,
+            # update traffic on interfaces demand touches
+            for interface in lsp_path_interfaces:
+                # Get the interface's existing traffic and add the
+                # portion of the demand's traffic
+                interface.traffic += traffic_per_demand_path
 
     def _demand_traffic_per_item(self, demand):
         """
