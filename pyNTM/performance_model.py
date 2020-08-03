@@ -153,6 +153,12 @@ class PerformanceModel(_MasterModel):
         if not unique_interfaces_per_node:  # pragma: no cover
             error_data.append(unique_interfaces_per_node)
 
+        # Log any Nodes with IGP shortcuts enabled
+        igp_shortcut_nodes = [node for node in self.node_objects if node.igp_shortcuts_enabled is True]
+        if len(igp_shortcut_nodes) > 0:
+            igp_shortcut_key = 'igp_shortcuts_enabled not allowed in PerformanceModel, but present on these Nodes'
+            error_data.append({igp_shortcut_key: igp_shortcut_nodes})
+
         # Make validate_model() check for matching failed statuses
         # on the interfaces and matching interface capacity
         circuits_with_mismatched_interface_capacity = []

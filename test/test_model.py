@@ -331,14 +331,14 @@ class TestModel(unittest.TestCase):
 
         node_a = model.get_node_object('A')
         node_b = model.get_node_object('B')
-        duplicate_int = Interface('A-to-B', 100, 100, node_a, node_b, 80)
+        duplicate_int = Interface('A-to-B', 100, 125, node_a, node_b, 80)
         model.interface_objects.add(duplicate_int)
 
-        err_msg = "Interface names must be unique per node."
+        err_msg = 'multiple links between nodes detected; not allowed in Model object(use Parallel_Link_Model)'
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
-        self.assertIn(err_msg, context.exception.args[0])
+        self.assertIn(err_msg, context.exception.args[0][1][0].keys())
 
     def test_int_not_in_ckt(self):
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')

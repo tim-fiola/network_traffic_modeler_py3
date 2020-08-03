@@ -405,7 +405,8 @@ class _MasterModel(object):
         if len(exception_interfaces) > 0:
             message = ("Interface names must be unique per node.  The following"
                        " nodes have duplicate interface names {}".format(exception_interfaces))
-            raise ModelException(message)
+            # raise ModelException(message)
+            return message
         else:
             return True
 
