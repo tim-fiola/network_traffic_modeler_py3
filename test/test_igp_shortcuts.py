@@ -7,13 +7,25 @@ from pyNTM import PerformanceModel
 class TestIGPShortcuts(unittest.TestCase):
 
     # def test_traffic_on_shortcut_lsps(self):
+    #     # The demands should take LSPs starting on the first
+    #     # node that has shortcuts and should take the LSP that
+    #     # leads it closest to the demand destination
     #     model = FlexModel.load_model_file('igp_shortcuts_model_mult_lsps_in_path.csv')
     #     model.update_simulation()
 
     # def test_igp_shortcut_node_attributes(self):
-    #
+    #     # The IGP shortcut attribute should be True
     #     #
     #     pass #
+
+    def test_demands_no_shortcuts(self):
+        """
+        The demand should take the LSP if the IGP shortcut attribute is True.
+        When the IGP shortcut attribute is turned to False, the demand should
+        only IGP route
+        """
+
+        pass
 
     def test_igp_shortcut_perf_model(self):
 
