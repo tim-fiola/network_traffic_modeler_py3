@@ -1030,7 +1030,7 @@ class FlexModel(_MasterModel):
 
         self.validate_model()
 
-    def _make_network_interfaces(self, interface_info_list):
+    def _make_network_interfaces(self, interface_info_list):  # TODO - move this to master_model.py
         """
         Returns set of Interface objects and a set of Node objects for Nodes
         that are not already in the Model.
