@@ -11,6 +11,7 @@ FlexModel or PerformanceModel
 
 from .demand import Demand
 from .exceptions import ModelException
+from .interface import Interface
 from .node import Node
 from .rsvp import RSVP_LSP
 from .srlg import SRLG
@@ -1070,3 +1071,32 @@ class _MasterModel(object):
             for lsp in iter(self.rsvp_lsp_objects):
                 if lsp._key == needed_key:
                     return lsp
+
+    def _make_network_interfaces(self, interface_info_list):  # TODO - move this to master_model.py
+        """
+        Returns set of Interface objects and a set of Node objects for Nodes
+        that are not already in the Model.
+
+        :param interface_info_list: list of dicts with interface specs;
+        :return: Set of Interface objects and set of Node objects for the
+                 new Interfaces for Nodes that are not already in the model
+        """
+        network_interface_objects = set([])
+        network_node_objects = set([])
+
+        # Create the Interface objects
+        for interface in interface_info_list:
+            intf = Interface(interface['name'], interface['cost'],
+                             interface['capacity'], Node(interface['node']),
+                             Node(interface['remote_node']),
+                             interface['circuit_id'])
+            network_interface_objects.add(intf)
+
+            # Check to see if the Interface's Node already exists, if not, add it
+            node_names = ([node.name for node in self.node_objects])
+            if interface['node'] not in node_names:
+                network_node_objects.add(Node(interface['node']))
+            if interface['remote_node'] not in node_names:
+                network_node_objects.add(Node(interface['remote_node']))
+
+        return (network_interface_objects, network_node_objects)
