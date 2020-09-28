@@ -125,7 +125,7 @@ class FlexModel(_MasterModel):
 
         error_data = []  # list of all errored checks
 
-        for interface in (interface for interface in self.interface_objects):  # pragma: no cover
+        for interface in iter(self.interface_objects):  # pragma: no cover
             self._reserved_bw_error_checks(int_info, int_res_bw_sum_error, int_res_bw_too_high, interface)
 
         # If creation of circuits returns a dict, there are problems
@@ -133,10 +133,10 @@ class FlexModel(_MasterModel):
             error_data.append({'ints_w_no_remote_int': circuits['data']})
 
         # Append any failed checks to error_data
-        if len(int_res_bw_too_high) > 0:  # pragma: no cover
+        if int_res_bw_too_high:  # pragma: no cover
             error_data.append({'int_res_bw_too_high': int_res_bw_too_high})
 
-        if len(int_res_bw_sum_error) > 0:  # pragma: no cover
+        if int_res_bw_sum_error:  # pragma: no cover
             error_data.append({'int_res_bw_sum_error': int_res_bw_sum_error})
 
         # Validate there are no duplicate interfaces
@@ -149,10 +149,10 @@ class FlexModel(_MasterModel):
         # Make validate_model() check for matching failed statuses
         # on the interfaces and matching interface capacity
         circuits_with_mismatched_interface_capacity = []
-        for ckt in (ckt for ckt in self.circuit_objects):
+        for ckt in iter(self.circuit_objects):
             self._validate_circuit_interface_capacity(circuits_with_mismatched_interface_capacity, ckt)
 
-        if len(circuits_with_mismatched_interface_capacity) > 0:
+        if circuits_with_mismatched_interface_capacity:
             int_status_error_dict = {
                 'circuits_with_mismatched_interface_capacity':
                 circuits_with_mismatched_interface_capacity
@@ -172,18 +172,18 @@ class FlexModel(_MasterModel):
                 except KeyError:
                     srlg_errors[node.name] = []
 
-        if len(srlg_errors) > 0:
+        if srlg_errors:
             error_data.append(srlg_errors)
 
         # Verify no duplicate nodes
-        node_names = set([node.name for node in self.node_objects])
+        node_names = {node.name for node in self.node_objects}
         if (len(self.node_objects)) != (len(node_names)):  # pragma: no cover
             node_dict = {'len_node_objects': len(self.node_objects),
                          'len_node_names': len(node_names)}
             error_data.append(node_dict)
 
         # Read error_data
-        if len(error_data) > 0:
+        if error_data:
             message = 'network interface validation failed, see returned data'
             pprint(message)
             pprint(error_data)
@@ -225,14 +225,14 @@ class FlexModel(_MasterModel):
                                                 self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth, traffic on each interface
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             interface.reserved_bandwidth = 0
             interface.traffic = 0
 
-        for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+        for lsp in iter(self.rsvp_lsp_objects):
             lsp.path = 'Unrouted'
 
-        for demand in (demand for demand in self.demand_objects):
+        for demand in iter(self.demand_objects):
             demand.path = 'Unrouted'
 
         print("Routing the LSPs . . . ")
@@ -259,7 +259,7 @@ class FlexModel(_MasterModel):
             demand.path = []
 
             # Find all LSPs that can carry the demand:
-            for lsp in (lsp for lsp in model.rsvp_lsp_objects):
+            for lsp in iter(model.rsvp_lsp_objects):
                 if (lsp.source_node_object == demand.source_node_object and
                         lsp.dest_node_object == demand.dest_node_object and
                         'Unrouted' not in lsp.path):
@@ -392,11 +392,7 @@ class FlexModel(_MasterModel):
         # In the model, in an interface is failed, set the traffic attribute
         # to 'Down', otherwise, initialize the traffic to zero
         for interface_object in self.interface_objects:
-            if interface_object.failed:
-                interface_object.traffic = 'Down'
-            else:
-                interface_object.traffic = 0.0
-
+            interface_object.traffic = 'Down' if interface_object.failed else 0.0
         routed_demand_object_generator = (demand_object for demand_object in self.demand_objects if
                                           'Unrouted' not in demand_object.path)
 
@@ -896,7 +892,7 @@ class FlexModel(_MasterModel):
                             G.edges(data=True) if G.has_edge(remote_node_name, local_node_name))
 
         # Set interface object in_ckt = False
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             interface.in_ckt = False
 
         circuits = set([])
@@ -934,7 +930,7 @@ class FlexModel(_MasterModel):
                                      for (local_node_name, remote_node_name, data) in
                                      G.edges(data=True) if not (G.has_edge(remote_node_name, local_node_name))]
 
-        if len(exception_ints_not_in_ckt) > 0:
+        if exception_ints_not_in_ckt:
             exception_msg = ('WARNING: These interfaces were not matched '
                              'into a circuit {}'.format(exception_ints_not_in_ckt))
             if return_exception:
@@ -964,7 +960,7 @@ class FlexModel(_MasterModel):
         :return: list of Interface objects with common local node and remote node
         """
 
-        interface_gen = (interface for interface in self.interface_objects)
+        interface_gen = iter(self.interface_objects)
 
         if circuit_id is None:
             interface_list = [interface for interface in interface_gen if
@@ -1016,7 +1012,7 @@ class FlexModel(_MasterModel):
         int_b = Interface(node_b_interface_name, cost_intf_b, capacity,
                           node_b_object, node_a_object, circuit_id)
 
-        existing_int_keys = set([interface._key for interface in self.interface_objects])
+        existing_int_keys = {interface._key for interface in self.interface_objects}
 
         if int_a._key in existing_int_keys:
             raise ModelException("interface {} on node {} - "
@@ -1100,15 +1096,15 @@ class FlexModel(_MasterModel):
         G = self._make_weighted_network_graph_mdg(include_failed_circuits=include_failed_circuits, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-
+        converted_path = {'path': []}
         # Find the simple paths in G between source and dest
         digraph_all_paths = nx.all_simple_paths(G, source_node_name, dest_node_name, cutoff=cutoff)
 
         # Remove duplicate paths from digraph_all_paths
         # (duplicates can be caused by multiple links between nodes)
-        digraph_unique_paths = [list(path) for path in set(tuple(path) for path in digraph_all_paths)]
+        digraph_unique_paths = [
+            list(path) for path in {tuple(path) for path in digraph_all_paths}
+        ]
 
         try:
             for path in digraph_unique_paths:
@@ -1179,10 +1175,7 @@ class FlexModel(_MasterModel):
         G = self._make_weighted_network_graph_routed_lsp(lsp, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-        converted_path['cost'] = None
-
+        converted_path = {'path': [], 'cost': None}
         # Find the shortest paths in G between source and dest
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
 
@@ -1293,7 +1286,7 @@ class FlexModel(_MasterModel):
                         # to model_path
                         hop_interface_list.append(interface)
 
-                    if len(hop_interface_list) > 0:
+                    if hop_interface_list:
                         model_path.append(hop_interface_list)
         return model_path
 
@@ -1348,17 +1341,19 @@ class FlexModel(_MasterModel):
 
             # Determine which candidate paths have enough reservable bandwidth
             for path in candidate_path_info:
-                if min([interface.reservable_bandwidth for interface in path]) >= lsp.setup_bandwidth:
+                if (
+                    min(interface.reservable_bandwidth for interface in path) >= lsp.setup_bandwidth
+                ):
                     candidate_path_info_w_reservable_bw.append(path)
 
             # If multiple lowest_metric_paths, find those with fewest hops
-            if len(candidate_path_info_w_reservable_bw) == 0:
+            if not candidate_path_info_w_reservable_bw:
                 lsp.path = 'Unrouted'
                 lsp.reserved_bandwidth = 'Unrouted'
                 continue
 
             elif len(candidate_path_info_w_reservable_bw) > 1:
-                fewest_hops = min([len(path) for path in candidate_path_info_w_reservable_bw])
+                fewest_hops = min(len(path) for path in candidate_path_info_w_reservable_bw)
                 lowest_hop_count_paths = [path for path in candidate_path_info_w_reservable_bw
                                           if len(path) == fewest_hops]
                 if len(lowest_hop_count_paths) > 1:
@@ -1659,16 +1654,18 @@ class FlexModel(_MasterModel):
                                       remote_node_object, circuit_id, rsvp_enabled_bool,
                                       float(percent_reservable_bandwidth))
 
-            if new_interface._key not in set([interface._key for interface in interface_set]):
+            if new_interface._key not in {
+                interface._key for interface in interface_set
+            }:
                 interface_set.add(new_interface)
             else:
                 print("{} already exists in model; disregarding line {}".format(new_interface,
                                                                                 lines.index(interface_line)))
 
             # Derive Nodes from the Interface data
-            if node_name not in set([node.name for node in node_set]):
+            if node_name not in {node.name for node in node_set}:
                 node_set.add(new_interface.node_object)
-            if remote_node_name not in set([node.name for node in node_set]):
+            if remote_node_name not in {node.name for node in node_set}:
                 node_set.add(new_interface.remote_node_object)
 
         return interface_set, node_set

@@ -132,7 +132,7 @@ class PerformanceModel(_MasterModel):
 
         error_data = []  # list of all errored checks
 
-        for interface in (interface for interface in self.interface_objects):  # pragma: no cover
+        for interface in iter(self.interface_objects):  # pragma: no cover
             self._reserved_bw_error_checks(int_info, int_res_bw_sum_error, int_res_bw_too_high, interface)
 
         # If creation of circuits returns a dict, there are problems
@@ -140,10 +140,10 @@ class PerformanceModel(_MasterModel):
             error_data.append({'ints_w_no_remote_int': circuits['data']})
 
         # Append any failed checks to error_data
-        if len(int_res_bw_too_high) > 0:  # pragma: no cover
+        if int_res_bw_too_high:  # pragma: no cover
             error_data.append({'int_res_bw_too_high': int_res_bw_too_high})
 
-        if len(int_res_bw_sum_error) > 0:  # pragma: no cover
+        if int_res_bw_sum_error:  # pragma: no cover
             error_data.append({'int_res_bw_sum_error': int_res_bw_sum_error})
 
         # Validate there are no duplicate interfaces
@@ -155,17 +155,17 @@ class PerformanceModel(_MasterModel):
 
         # Log any Nodes with IGP shortcuts enabled
         igp_shortcut_nodes = [node for node in self.node_objects if node.igp_shortcuts_enabled is True]
-        if len(igp_shortcut_nodes) > 0:
+        if igp_shortcut_nodes:
             igp_shortcut_key = 'igp_shortcuts_enabled not allowed in PerformanceModel, but present on these Nodes'
             error_data.append({igp_shortcut_key: igp_shortcut_nodes})
 
         # Make validate_model() check for matching failed statuses
         # on the interfaces and matching interface capacity
         circuits_with_mismatched_interface_capacity = []
-        for ckt in (ckt for ckt in self.circuit_objects):
+        for ckt in iter(self.circuit_objects):
             self._validate_circuit_interface_capacity(circuits_with_mismatched_interface_capacity, ckt)
 
-        if len(circuits_with_mismatched_interface_capacity) > 0:
+        if circuits_with_mismatched_interface_capacity:
             int_status_error_dict = {
                 'circuits_with_mismatched_interface_capacity':
                 circuits_with_mismatched_interface_capacity
@@ -174,9 +174,11 @@ class PerformanceModel(_MasterModel):
 
         # Look for multiple links between nodes (not allowed in Model)
         if len(self.multiple_links_between_nodes()) > 0:
-            multiple_links_between_nodes = {}
-            multiple_links_between_nodes['multiple links between nodes detected; not allowed in Model object'
-                                         '(use Parallel_Link_Model)'] = self.multiple_links_between_nodes()
+            multiple_links_between_nodes = {
+                'multiple links between nodes detected; not allowed in Model object'
+                '(use Parallel_Link_Model)': self.multiple_links_between_nodes()
+            }
+
             error_data.append(multiple_links_between_nodes)
 
         srlg_errors = self.validate_srlg_nodes()
@@ -185,14 +187,14 @@ class PerformanceModel(_MasterModel):
             error_data.append(srlg_errors)
 
         # Verify no duplicate nodes
-        node_names = set([node.name for node in self.node_objects])
+        node_names = {node.name for node in self.node_objects}
         if (len(self.node_objects)) != (len(node_names)):  # pragma: no cover
             node_dict = {'len_node_objects': len(self.node_objects),
                          'len_node_names': len(node_names)}
             error_data.append(node_dict)
 
         # Read error_data
-        if len(error_data) > 0:
+        if error_data:
             message = 'network interface validation failed, see returned data'
             pprint(message)
             pprint(error_data)
@@ -253,14 +255,14 @@ class PerformanceModel(_MasterModel):
                                                        self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth, traffic on each interface
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             interface.reserved_bandwidth = 0
             interface.traffic = 0
 
-        for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+        for lsp in iter(self.rsvp_lsp_objects):
             lsp.path = 'Unrouted'
 
-        for demand in (demand for demand in self.demand_objects):
+        for demand in iter(self.demand_objects):
             demand.path = 'Unrouted'
 
         print("Routing the LSPs . . . ")
@@ -287,7 +289,7 @@ class PerformanceModel(_MasterModel):
             demand.path = []
 
             # Find all LSPs that can carry the demand:
-            for lsp in (lsp for lsp in model.rsvp_lsp_objects):
+            for lsp in iter(model.rsvp_lsp_objects):
                 if (lsp.source_node_object == demand.source_node_object and
                         lsp.dest_node_object == demand.dest_node_object and
                         'Unrouted' not in lsp.path):
@@ -547,7 +549,7 @@ class PerformanceModel(_MasterModel):
                                                               local_node_name))
 
         # Set interface object in_ckt = False and baseline the circuit_id
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             interface.in_ckt = False
         circuit_id_number = 1
         circuits = set([])
@@ -555,7 +557,7 @@ class PerformanceModel(_MasterModel):
         # Using the paired interfaces (source_node, dest_node) pairs from G,
         # get the corresponding interface objects from the model to create
         # the circuit object
-        for interface in (interface for interface in paired_interfaces):
+        for interface in iter(paired_interfaces):
             # Get each interface from model for each
             int1 = self.get_interface_object_from_nodes(interface[0],
                                                         interface[1])
@@ -570,7 +572,7 @@ class PerformanceModel(_MasterModel):
                 # Add circuit_id to interface objects
                 int1.circuit_id = circuit_id_number
                 int2.circuit_id = circuit_id_number
-                circuit_id_number = circuit_id_number + 1
+                circuit_id_number += 1
 
                 ckt = Circuit(int1, int2)
                 circuits.add(ckt)
@@ -580,7 +582,7 @@ class PerformanceModel(_MasterModel):
                                      for (local_node_name, remote_node_name, data) in
                                      G.edges(data=True) if not (G.has_edge(remote_node_name, local_node_name))]
 
-        if len(exception_ints_not_in_ckt) > 0:
+        if exception_ints_not_in_ckt:
             exception_msg = ('WARNING: These interfaces were not matched '
                              'into a circuit {}'.format(exception_ints_not_in_ckt))
             if return_exception:
@@ -599,7 +601,7 @@ class PerformanceModel(_MasterModel):
         :param remote_node_name:
         :return: Interface object with specified local node and remote node names
         """
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             if interface.node_object.name == local_node_name and \
                     interface.remote_node_object.name == remote_node_name:
                 return interface
