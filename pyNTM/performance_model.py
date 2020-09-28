@@ -28,7 +28,6 @@ This PerformanceModel class is the same as the legacy (version 1.6 and earlier) 
 
 from pprint import pprint
 
-import itertools
 import networkx as nx
 import random
 
@@ -475,59 +474,6 @@ class PerformanceModel(_MasterModel):
         G.add_nodes_from(node_name_iterator)
 
         return G
-
-    def _normalize_multigraph_paths(self, path_info):  # TODO - static?
-        """
-        Takes the multigraph_path_info and normalizes it to create all the
-        path combos that only have one link between each node.
-
-        :param path_info: List of of interface hops from a source
-        node to a destination node.  Each hop in the path
-        is a list of all the interfaces from the current node
-        to the next node.
-
-        path_info example from source node 'B' to destination node 'D':
-        [
-            [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')]],
-            [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28')],
-            [[Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]]
-        ]
-
-
-
-        :return: List of lists.  Each component list is a list with a unique
-        Interface combination for the egress Interfaces from source to destination
-        example:
-
-            [
-                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
-                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '18'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '8'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
-            ]
-        """
-        # List to hold unique path(s)
-        path_list = []
-
-        for path in path_info:
-            path = list(itertools.product(*path))
-            for path_option in path:
-                path_list.append(list(path_option))
-
-        return path_list
 
     def _make_circuits(self, return_exception=True, include_failed_circuits=True):
         """
