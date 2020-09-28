@@ -79,7 +79,7 @@ class _MasterModel(object):
         dmds_riding_lsps = set()
 
         # Find unrouted LSPs
-        for dmd in (dmd for dmd in self.demand_objects):
+        for dmd in iter(self.demand_objects):
             for object in dmd.path:
                 if isinstance(object, RSVP_LSP):
                     dmds_riding_lsps.add(dmd)
@@ -94,9 +94,9 @@ class _MasterModel(object):
         simulation_data['Number of unrouted Demands'] = len(self.get_unrouted_demand_objects())
 
         # Create generators to be returned
-        dmds_riding_lsps_gen = (dmd for dmd in dmds_riding_lsps)
-        lsps_routed_no_demands_gen = (lsp for lsp in lsps_routed_no_demands)
-        lsps_routed_with_demands_gen = (lsp for lsp in lsps_routed_with_demands)
+        dmds_riding_lsps_gen = iter(dmds_riding_lsps)
+        lsps_routed_no_demands_gen = iter(lsps_routed_no_demands)
+        lsps_routed_with_demands_gen = iter(lsps_routed_with_demands)
 
         # Update generators in simulation_data
         simulation_data['routed LSPs with no demands generator'] = lsps_routed_no_demands_gen
@@ -254,8 +254,11 @@ class _MasterModel(object):
         :param path: List of Interface objects along the path
         :return: None
         """
-        path_cost = sum([interface.cost for interface in path])
-        baseline_path_reservable_bw = min([interface.reservable_bandwidth for interface in path])
+        path_cost = sum(interface.cost for interface in path)
+        baseline_path_reservable_bw = min(
+            interface.reservable_bandwidth for interface in path
+        )
+
         lsp.path = {'interfaces': path,
                     'path_cost': path_cost,
                     'baseline_path_reservable_bw': baseline_path_reservable_bw}
@@ -323,29 +326,27 @@ class _MasterModel(object):
 
         """
 
-        if self._parallel_lsp_groups == {}:
-            src_node_names = set([lsp.source_node_object.name for lsp in self.rsvp_lsp_objects])
-            dest_node_names = set([lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects])
-
-            parallel_lsp_groups = {}
-
-            for src_node_name in src_node_names:
-                for dest_node_name in dest_node_names:
-                    key = '{}-{}'.format(src_node_name, dest_node_name)
-                    parallel_lsp_groups[key] = []
-                    for lsp in self.rsvp_lsp_objects:
-                        if (lsp.source_node_object.name == src_node_name and
-                                lsp.dest_node_object.name == dest_node_name):
-                            parallel_lsp_groups[key].append(lsp)
-
-                    if parallel_lsp_groups[key] == []:
-                        del parallel_lsp_groups[key]
-
-            self._parallel_lsp_groups = parallel_lsp_groups
-            return parallel_lsp_groups
-
-        else:
+        if self._parallel_lsp_groups != {}:
             return self._parallel_lsp_groups
+        src_node_names = {lsp.source_node_object.name for lsp in self.rsvp_lsp_objects}
+        dest_node_names = {lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects}
+
+        parallel_lsp_groups = {}
+
+        for src_node_name in src_node_names:
+            for dest_node_name in dest_node_names:
+                key = '{}-{}'.format(src_node_name, dest_node_name)
+                parallel_lsp_groups[key] = []
+                for lsp in self.rsvp_lsp_objects:
+                    if (lsp.source_node_object.name == src_node_name and
+                            lsp.dest_node_object.name == dest_node_name):
+                        parallel_lsp_groups[key].append(lsp)
+
+                if parallel_lsp_groups[key] == []:
+                    del parallel_lsp_groups[key]
+
+        self._parallel_lsp_groups = parallel_lsp_groups
+        return parallel_lsp_groups
 
     def parallel_demand_groups(self):
         """
@@ -363,8 +364,8 @@ class _MasterModel(object):
             'F-E': [Demand(source = F, dest = E, traffic = 400, name = 'dmd_f_e_1')]}
         """
 
-        src_node_names = set([dmd.source_node_object.name for dmd in self.demand_objects])
-        dest_node_names = set([dmd.dest_node_object.name for dmd in self.demand_objects])
+        src_node_names = {dmd.source_node_object.name for dmd in self.demand_objects}
+        dest_node_names = {dmd.dest_node_object.name for dmd in self.demand_objects}
 
         parallel_demand_groups = {}
 
@@ -390,7 +391,7 @@ class _MasterModel(object):
 
         exception_interfaces = set()  # duplicate interfaces
 
-        for node in (node for node in self.node_objects):
+        for node in iter(self.node_objects):
             node_int_list = [interface.name for interface in node.interfaces(self)]
             node_int_set = set(node_int_list)
 
@@ -402,11 +403,15 @@ class _MasterModel(object):
                 for item in node_int_list:
                     exception_interfaces.add((node, item))
 
-        if len(exception_interfaces) > 0:
-            message = ("Interface names must be unique per node.  The following"
-                       " nodes have duplicate interface names {}".format(exception_interfaces))
+        if exception_interfaces:
             # raise ModelException(message)
-            return message
+            return (
+                "Interface names must be unique per node.  The following"
+                " nodes have duplicate interface names {}".format(
+                    exception_interfaces
+                )
+            )
+
         else:
             return True
 
@@ -415,7 +420,7 @@ class _MasterModel(object):
         """
         Returns all interface circuit_ids
         """
-        return set(interface.circuit_id for interface in self.interface_objects)
+        return {interface.circuit_id for interface in self.interface_objects}
 
     def add_demand(self, source_node_name, dest_node_name, traffic=0, name='none'):
         """
@@ -431,7 +436,7 @@ class _MasterModel(object):
         source_node_object = self.get_node_object(source_node_name)
         dest_node_object = self.get_node_object(dest_node_name)
         added_demand = Demand(source_node_object, dest_node_object, traffic, name)
-        if added_demand._key in set([demand._key for demand in self.demand_objects]):
+        if added_demand._key in {demand._key for demand in self.demand_objects}:
             message = '{} already exists in demand_objects'.format(added_demand)
             raise ModelException(message)
         self.demand_objects.add(added_demand)
@@ -472,7 +477,7 @@ class _MasterModel(object):
                 configured_setup_bw = None
             new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
 
-            if new_lsp._key not in set([lsp._key for lsp in lsp_set]):
+            if new_lsp._key not in {lsp._key for lsp in lsp_set}:
                 lsp_set.add(new_lsp)
             else:
                 print("{} already exists in model; disregarding line {}".format(new_lsp, lines.index(lsp_line)))
@@ -504,12 +509,9 @@ class _MasterModel(object):
 
         traffic = int(demand_info[2])
         name = demand_info[3]
-        if name == '':
-            demand_name = 'none'
-        else:
-            demand_name = name
+        demand_name = 'none' if name == '' else name
         new_demand = Demand(source_node, dest_node, traffic, demand_name)
-        if new_demand._key not in set([dmd._key for dmd in demand_set]):
+        if new_demand._key not in {dmd._key for dmd in demand_set}:
             demand_set.add(new_demand)
         else:
             print("{} already exists in model; disregarding line {}".format(new_demand,
@@ -536,19 +538,18 @@ class _MasterModel(object):
             igp_shortcuts_enabled_value = new_node.igp_shortcuts_enabled = node_info[3]
         except IndexError:
             igp_shortcuts_enabled_value = False
-        if new_node.name not in set([node.name for node in node_set]):  # Pick up orphan nodes
+        if new_node.name not in {node.name for node in node_set}:  # Pick up orphan nodes
             node_set.add(new_node)
             new_node.lat = node_lat
             new_node.lon = node_lon
             new_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
-            return node_set
         else:
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
             # existing_node = [node for node in node_set if node.name == node_name][0] # TODO - delete this
             existing_node.lat = node_lat
             existing_node.lon = node_lon
             existing_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
-            return node_set
+        return node_set
 
     def _does_interface_exist(self, interface_name, node_object_name):
         """
@@ -586,39 +587,30 @@ class _MasterModel(object):
         """
         Returns a list of all failed interfaces in self
         """
-        failed_interfaces = []
-
-        for interface in (interface for interface in self.interface_objects):
-            if interface.failed:
-                failed_interfaces.append(interface)
-
-        return failed_interfaces
+        return [
+            interface
+            for interface in iter(self.interface_objects)
+            if interface.failed
+        ]
 
     def get_unfailed_interface_objects(self):
         """
         Returns a list of all non-failed interfaces in the self
         """
 
-        unfailed_interface_objects = set()
+        interface_iter = iter(self.interface_objects)
 
-        interface_iter = (interface for interface in self.interface_objects)
-
-        for interface in interface_iter:
-            if not interface.failed:
-                unfailed_interface_objects.add(interface)
-
-        return unfailed_interface_objects
+        return {interface for interface in interface_iter if not interface.failed}
 
     def get_unrouted_demand_objects(self):
         """
         Returns list of demand objects that cannot be routed in self
         """
-        unrouted_demands = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.path == "Unrouted":
-                unrouted_demands.append(demand)
-
-        return unrouted_demands
+        return [
+            demand
+            for demand in iter(self.demand_objects)
+            if demand.path == "Unrouted"
+        ]
 
     def change_interface_name(self, node_name, current_interface_name, new_interface_name):
         """
@@ -725,8 +717,7 @@ class _MasterModel(object):
         """Fails specified Node with name node_name"""
 
         # Find node's interfaces and fail them
-        ints_to_fail_iterator = (interface for interface in
-                                 self.get_node_interfaces(node_name))
+        ints_to_fail_iterator = iter(self.get_node_interfaces(node_name))
 
         for interface in ints_to_fail_iterator:
             self.fail_interface(interface.name, node_name)
@@ -741,7 +732,7 @@ class _MasterModel(object):
         self.get_node_object(node_name).failed = False
 
         # Find node's interfaces and unfail them
-        ints_to_unfail_iterator = (interface for interface in self.get_node_interfaces(node_name))
+        ints_to_unfail_iterator = iter(self.get_node_interfaces(node_name))
 
         for interface in ints_to_unfail_iterator:
 
@@ -761,7 +752,7 @@ class _MasterModel(object):
         """
         failed_nodes = []
 
-        for node in (node for node in self.node_objects):
+        for node in iter(self.node_objects):
             if node.failed:
                 node_object = self.get_node_object(node.name)
                 failed_nodes.append(node_object)
@@ -772,7 +763,7 @@ class _MasterModel(object):
         """Returns a list of all failed nodes"""
         non_failed_nodes = []
 
-        for node in (node for node in self.node_objects):
+        for node in iter(self.node_objects):
             if not node.failed:
                 node_object = self.get_node_object(node.name)
                 non_failed_nodes.append(node_object)
@@ -780,49 +771,49 @@ class _MasterModel(object):
         return non_failed_nodes
 
     # Display calls #########
-    def display_interface_status(self):  # pragma: no cover
+    def display_interface_status(self):    # pragma: no cover
         """Returns failed = True/False for each interface"""
 
         print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), end=' ')
         print('Failed'.ljust(12))
 
-        interface_iterator = (interface for interface in self.interface_objects)
+        interface_iterator = iter(self.interface_objects)
 
         for interface in interface_iterator:
             print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
             print(interface.remote_node_object.name.ljust(12), end=' ')
             print(str(interface.failed).ljust(12))
 
-    def display_node_status(self):  # pragma: no cover
+    def display_node_status(self):    # pragma: no cover
         """Returns failed = True/False for each node"""
 
         print('Node'.ljust(12), 'Failed'.ljust(12))
 
-        node_iterator = (node for node in self.node_objects)
+        node_iterator = iter(self.node_objects)
 
         for node in node_iterator:
             print(node.name.ljust(12), str(node.failed).ljust(12))
 
-    def display_interfaces_traffic(self):  # pragma: no cover
+    def display_interfaces_traffic(self):    # pragma: no cover
         """
         A human-readable(-ish) display of interfaces and traffic on each
         """
 
         print('Node'.ljust(12), 'Interface'.ljust(12), 'Remote Node'.ljust(12), 'Traffic'.ljust(12))
 
-        interface_iterator = (interface for interface in self.interface_objects)
+        interface_iterator = iter(self.interface_objects)
 
         for interface in interface_iterator:
             print(interface.node_object.name.ljust(12), interface.name.ljust(12), end=' ')
             print(interface.remote_node_object.name.ljust(12), end=' ')
             print(repr(interface.traffic).ljust(12))
 
-    def display_demand_paths(self):  # pragma: no cover
+    def display_demand_paths(self):    # pragma: no cover
         """
         Displays each demand and its path(s) across the network
         """
 
-        demand_iter = (demand for demand in self.demand_objects)
+        demand_iter = iter(self.demand_objects)
 
         for demand in demand_iter:
             print('demand._key is', demand._key)
@@ -849,12 +840,11 @@ class _MasterModel(object):
         :return: list of Demands originating at node
         """
 
-        demand_list = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.source_node_object.name == source_node_name:
-                demand_list.append(demand)
-
-        return demand_list
+        return [
+            demand
+            for demand in iter(self.demand_objects)
+            if demand.source_node_object.name == source_node_name
+        ]
 
     def get_demand_objects_dest_node(self, dest_node_name):
         """
@@ -864,12 +854,11 @@ class _MasterModel(object):
         :param dest_node_name: name of destination node for Demands
         :return: list of Demands terminating on destination node
         """
-        demand_list = []
-        for demand in (demand for demand in self.demand_objects):
-            if demand.dest_node_object.name == dest_node_name:
-                demand_list.append(demand)
-
-        return demand_list
+        return [
+            demand
+            for demand in iter(self.demand_objects)
+            if demand.dest_node_object.name == dest_node_name
+        ]
 
     # ### SRLG Calls ### #
     def get_srlg_object(self, srlg_name, raise_exception=True):
@@ -963,7 +952,7 @@ class _MasterModel(object):
 
         """
 
-        if srlg_name in set([srlg.name for srlg in self.srlg_objects]):
+        if srlg_name in {srlg.name for srlg in self.srlg_objects}:
             raise ModelException("SRLG with name {} already exists in Model".format(srlg_name))
         else:
             srlg = SRLG(srlg_name, self)
@@ -977,18 +966,13 @@ class _MasterModel(object):
         :param node_object: Node object
         :return: Boolean indicating if Node is orphan (True) or not (False)
         """
-        if node_object in self.get_orphan_node_objects():
-            return True
-        else:
-            return False
+        return node_object in self.get_orphan_node_objects()
 
     def get_orphan_node_objects(self):
         """
         Returns list of Nodes that have no interfaces
         """
-        orphan_nodes = [node for node in self.node_objects if len(node.interfaces(self)) == 0]
-
-        return orphan_nodes
+        return [node for node in self.node_objects if len(node.interfaces(self)) == 0]
 
     def add_node(self, node_object):
         """
@@ -1014,7 +998,7 @@ class _MasterModel(object):
         """
         matching_node = [node for node in self.node_objects if node.name == node_name]
 
-        if len(matching_node) > 0:
+        if matching_node:
             return matching_node[0]
         else:
             message = "No node with name %s exists in the model" % node_name
@@ -1034,7 +1018,7 @@ class _MasterModel(object):
         dest_node_object = self.get_node_object(dest_node_name)
         added_lsp = RSVP_LSP(source_node_object, dest_node_object, name)
 
-        if added_lsp._key in set([lsp._key for lsp in self.rsvp_lsp_objects]):
+        if added_lsp._key in {lsp._key for lsp in self.rsvp_lsp_objects}:
             message = '{} already exists in rsvp_lsp_objects'.format(added_lsp)
             raise ModelException(message)
         self.rsvp_lsp_objects.add(added_lsp)
@@ -1051,7 +1035,7 @@ class _MasterModel(object):
         :param demand_name: name of Demand object
         :return: desired Demand object that matches parameters above
         """
-        model_demand_iterator = (demand for demand in self.demand_objects)
+        model_demand_iterator = iter(self.demand_objects)
 
         demand_to_return = None
 
@@ -1083,6 +1067,6 @@ class _MasterModel(object):
                    "does not exist in model" % (source_node_name, dest_node_name, lsp_name))
             raise ModelException(msg)
         else:
-            for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+            for lsp in iter(self.rsvp_lsp_objects):
                 if lsp._key == needed_key:
                     return lsp

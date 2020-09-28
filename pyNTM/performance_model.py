@@ -627,17 +627,13 @@ class PerformanceModel(_MasterModel):
 
         if circuit_id is None:
             circuit_ids = self.all_interface_circuit_ids
-            if len(circuit_ids) == 0:
-                circuit_id = 1
-            else:
-                circuit_id = max(circuit_ids) + 1
-
+            circuit_id = 1 if len(circuit_ids) == 0 else max(circuit_ids) + 1
         int_a = Interface(node_a_interface_name, cost_intf_a, capacity,
                           node_a_object, node_b_object, circuit_id)
         int_b = Interface(node_b_interface_name, cost_intf_b, capacity,
                           node_b_object, node_a_object, circuit_id)
 
-        existing_int_keys = set([interface._key for interface in self.interface_objects])
+        existing_int_keys = {interface._key for interface in self.interface_objects}
 
         if int_a._key in existing_int_keys:
             raise ModelException("interface {} on node {} already exists in model".format(int_a, node_a_object))
@@ -717,9 +713,7 @@ class PerformanceModel(_MasterModel):
         G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-
+        converted_path = {'path': []}
         # Find the simple paths in G between source and dest
         digraph_all_paths = nx.all_simple_paths(G, source_node_name, dest_node_name, cutoff=cutoff)
 
@@ -749,10 +743,7 @@ class PerformanceModel(_MasterModel):
         G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-        converted_path['cost'] = None
-
+        converted_path = {'path': [], 'cost': None}
         # Find the shortest paths in G between source and dest
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
                                                        dest_node_name,
@@ -798,10 +789,7 @@ class PerformanceModel(_MasterModel):
         G = self._make_weighted_network_graph_routed_lsp(lsp, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-        converted_path['cost'] = None
-
+        converted_path = {'path': [], 'cost': None}
         # Find the shortest paths in G between source and dest
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
         try:
@@ -1082,16 +1070,18 @@ class PerformanceModel(_MasterModel):
             new_interface = Interface(name, int(cost), float(capacity), Node(node_name), Node(remote_node_name),
                                       None, rsvp_enabled_bool, float(percent_reservable_bandwidth))
 
-            if new_interface._key not in set([interface._key for interface in interface_set]):
+            if new_interface._key not in {
+                interface._key for interface in interface_set
+            }:
                 interface_set.add(new_interface)
             else:
                 print("{} already exists in model; disregarding line {}".format(new_interface,
                                                                                 lines.index(interface_line)))
 
             # Derive Nodes from the Interface data
-            if node_name not in set([node.name for node in node_set]):
+            if node_name not in {node.name for node in node_set}:
                 node_set.add(new_interface.node_object)
-            if remote_node_name not in set([node.name for node in node_set]):
+            if remote_node_name not in {node.name for node in node_set}:
                 node_set.add(new_interface.remote_node_object)
 
         return interface_set, node_set
@@ -1103,11 +1093,7 @@ class PerformanceModel(_MasterModel):
         # In the model, in an interface is failed, set the traffic attribute
         # to 'Down', otherwise, initialize the traffic to zero
         for interface_object in self.interface_objects:
-            if interface_object.failed:
-                interface_object.traffic = 'Down'
-            else:
-                interface_object.traffic = 0.0
-
+            interface_object.traffic = 'Down' if interface_object.failed else 0.0
         routed_demand_object_generator = (demand_object for demand_object in self.demand_objects if
                                           'Unrouted' not in demand_object.path)
 
