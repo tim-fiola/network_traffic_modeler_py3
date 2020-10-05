@@ -288,11 +288,19 @@ class PerformanceModel(_MasterModel):
             demand.path = []
 
             # Find all LSPs that can carry the demand:
+            lsp_list = []
             for lsp in iter(model.rsvp_lsp_objects):
                 if (lsp.source_node_object == demand.source_node_object and
                         lsp.dest_node_object == demand.dest_node_object and
                         'Unrouted' not in lsp.path):
-                    demand.path.append(lsp)
+                    lsp_list.append(lsp)
+
+            # Check for manually assigned metrics
+            if len(lsp_list) > 0:
+                min_lsp_metric = min([lsp.effective_metric(self) for lsp in lsp_list])
+                for lsp in lsp_list:
+                    if lsp.effective_metric(self) == min_lsp_metric:
+                        demand.path.append(lsp)
 
             if demand.path == []:
                 src = demand.source_node_object.name

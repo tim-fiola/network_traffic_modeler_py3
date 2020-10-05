@@ -179,7 +179,6 @@ class TestIGPShortcuts(unittest.TestCase):
     def changed_metric(self):
 
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
-        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
 
         dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
 
