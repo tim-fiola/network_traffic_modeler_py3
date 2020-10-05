@@ -245,6 +245,8 @@ class FlexModel(_MasterModel):
 
         self.validate_model()
 
+    # TODO - for some reason this is getting called 2x when the model is being updated
+    #  initially.  Troubleshoot that.
     def _route_demands(self, model):
         """
         Routes demands in input 'model'
@@ -281,6 +283,8 @@ class FlexModel(_MasterModel):
                 # may include paths that have multiple links between nodes
                 all_paths = self._get_all_paths_mdg(G, nx_sp)
 
+                # Make sure that each path in all_paths only has a single link
+                # between each node.  This is path normalization
                 path_list = self._normalize_multidigraph_paths(all_paths)
 
                 # Check for IGP shortcuts
@@ -304,6 +308,7 @@ class FlexModel(_MasterModel):
         4.  For nodes that have IGP shortcuts, is there an LSP from that node to a downstream node on the path?
           - if yes, compare the IGP metric of the path to the LSP remote node to that of the LSP metric to that node
           - if no, look at next node downstream with IGP shortcuts
+        5.  Look for manually set RSVP LSP metrics that may alter the path calculations
 
         :param paths: List of lists; each list contains egress Interfaces along the path from
         source to destination (ordered from source to destination)
@@ -360,18 +365,27 @@ class FlexModel(_MasterModel):
                         # Take the LSPs whose source node matches source_node and whose dest node matches
                         # the destination we are iterating through and whose effective metric matches the
                         # shortest path from source_node to destination
-                        lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.source_node_object == source_node and
-                                lsp.dest_node_object == self.get_node_object(destination) if
-                                lsp.effective_metric(self) ==
-                                self.get_shortest_path(lsp.source_node_object.name, lsp.dest_node_object.name)['cost']]
+                        # TODO - update this to account for manually set metric that may be lower or higher
+                        #  than the default metric
+                        try:
+                            # TODO - iterate thru LSPs once for best_metric and lsps
+                            best_metric = min({lsp.effective_metric(self) for lsp in iter(self.rsvp_lsp_objects) if
+                                               lsp.source_node_object == source_node and
+                                               lsp.dest_node_object == self.get_node_object(destination)})
+                            lsps = [lsp for lsp in iter(self.rsvp_lsp_objects) if
+                                    lsp.source_node_object == source_node and
+                                    lsp.dest_node_object == self.get_node_object(destination) if
+                                    lsp.effective_metric(self) == best_metric]
 
-                        if len(lsps) > 0:
-                            # Break out of the destinations iteration as traffic will want to take
-                            # the first LSP(s) available the traffic farthest along the path
-                            path_lsps.append(lsps)
-                            lsp_end_node = lsps[0].dest_node_object.name
-                            next_node_to_check.append(lsp_end_node)
-                            break
+                            if len(lsps) > 0:
+                                # Break out of the destinations iteration as traffic will want to take
+                                # the first LSP(s) available the traffic farthest along the path
+                                path_lsps.append(lsps)
+                                lsp_end_node = lsps[0].dest_node_object.name
+                                next_node_to_check.append(lsp_end_node)
+                                break
+                        except ValueError:
+                            pass
 
             # Now that path_lsps is known, substitute those into path
             if len(path_lsps) > 0:
@@ -383,7 +397,42 @@ class FlexModel(_MasterModel):
                 # No LSPs on path;
                 paths_with_lsps.append(interface_path)
 
-        return paths_with_lsps
+        if len(paths_with_lsps) == 1:
+            return paths_with_lsps
+
+        # Inspect paths to determine if manually set LSP metrics affect path selection
+        finalized_paths = self._inspect_for_lsp_metrics(paths_with_lsps)
+
+        return finalized_paths
+
+    def _inspect_for_lsp_metrics(self, paths_with_lsps):
+        """
+        Checks for manually set LSP metrics and how they affect best path
+        """
+        if len(paths_with_lsps) > 1:
+            # Metrics for each path
+            path_metrics = set()
+            # List with each path and its metric
+            paths_with_metrics = []
+            for path in paths_with_lsps:
+                path_metric = 0
+                for item in path:
+                    if isinstance(item, Interface):
+                        path_metric += item.cost
+                    elif isinstance(item, RSVP_LSP):
+                        path_metric += item.effective_metric(self)
+                path_metrics.add(path_metric)
+                paths_with_metrics.append([path, path_metric])
+            # See if all paths have same metric
+            if len(path_metrics) == 1:
+                return paths_with_lsps
+            else:
+                lowest_metric = min(path_metrics)
+                returned_best_paths = []
+                for path_and_metric in paths_with_metrics:
+                    if path_and_metric[1] == lowest_metric:
+                        returned_best_paths.append(path_and_metric[0])
+                return returned_best_paths
 
     def _update_interface_utilization(self):
         """Updates each interface's utilization; returns Model object with
@@ -821,6 +870,9 @@ class FlexModel(_MasterModel):
         is a list of all the interfaces from the current node
         to the next node.
 
+        :return: List of lists.  Each component list is a list with a unique
+        Interface combination for the egress Interfaces from source to destination
+
         path_info example from source node 'B' to destination node 'D'.
         Example::
 
@@ -837,9 +889,6 @@ class FlexModel(_MasterModel):
                 [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
                         remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of path 2
             ]
-
-        :return: List of lists.  Each component list is a list with a unique
-        Interface combination for the egress Interfaces from source to destination
 
         Example::
 

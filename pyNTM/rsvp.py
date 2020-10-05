@@ -39,6 +39,7 @@ class RSVP_LSP(object):
         self.reserved_bandwidth = 'Unrouted - initial'
         self._setup_bandwidth = 'Unrouted - initial'
         self.configured_setup_bandwidth = configured_setup_bandwidth
+        self.__manual_metric = None
 
     @property
     def _key(self):
@@ -219,21 +220,51 @@ class RSVP_LSP(object):
 
     def effective_metric(self, model):
         """
-        Returns the metric for the best path. This value will be the
+        Returns the manually assigned manual_metric (if defined) or the
+        metric for the best path. The best path value will be the
         metric for the shortest possible path from LSP's source to dest,
         regardless of whether the LSP takes that shortest path or not.
 
         :param model: model object containing self
         :return: metric for the LSP's shortest possible path
         """
+        if self.__manual_metric:
+            return self.manual_metric
+        else:
+            return model.get_shortest_path(self.source_node_object.name,
+                                           self.dest_node_object.name, needed_bw=0)['cost']
 
-        return model.get_shortest_path(self.source_node_object.name,
-                                       self.dest_node_object.name, needed_bw=0)['cost']
+    @property
+    def manual_metric(self):
+        """
+        Manual metric for LSP.  If set, this value will override
+        the default (shortest path) metric for effective_metric.
 
-    def actual_metric(self, model):
+        This value must be a positive integer.
+
+        To restore the LSP's default metric (that of the shortest path),
+        set this value to -1.
+
+        """
+
+        return self.__manual_metric
+
+    @manual_metric.setter
+    def manual_metric(self, value):
+        if isinstance(value, int) and value > 0:
+            self.__manual_metric = value
+        elif value == -1:
+            self.__manual_metric = None
+        else:
+            msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric " \
+                  "to -1 to clear the manual_metric and have the LSP inherit " \
+                  "the default metric (that of the shortest path)"
+            raise ModelException(msg)
+
+    def topology_metric(self, model):
         """
         Returns the metric sum of the interfaces that the LSP actually
-        transits.
+        transits on the topology.
 
         :param model: model object containing self
         :return: sum of the metrics of the Interfaces that the LSP transits

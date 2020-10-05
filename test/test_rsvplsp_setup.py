@@ -46,14 +46,14 @@ class TestRSVPLSPInitial(unittest.TestCase):
     def test_traffic_on_lsp(self):
         self.assertEqual(self.lsp_a_d_1.traffic_on_lsp(self.model), 75)
 
-    # lsp_a_d_1 and lsp_a_d_2 take different paths, so actual_metric values
-    # should not be equal; one path actual_metric is 40, the other path's
+    # lsp_a_d_1 and lsp_a_d_2 take different paths, so topology_metric values
+    # should not be equal; one path topology_metric is 40, the other path's
     # actual metric is 60
     def test_lsp_actual_metrics(self):
-        self.assertNotEqual(self.lsp_a_d_1.actual_metric(self.model),
-                            self.lsp_a_d_2.actual_metric(self.model))
-        self.assertIn(self.lsp_a_d_1.actual_metric(self.model), [40, 60])
-        self.assertIn(self.lsp_a_d_2.actual_metric(self.model), [40, 60])
+        self.assertNotEqual(self.lsp_a_d_1.topology_metric(self.model),
+                            self.lsp_a_d_2.topology_metric(self.model))
+        self.assertIn(self.lsp_a_d_1.topology_metric(self.model), [40, 60])
+        self.assertIn(self.lsp_a_d_2.topology_metric(self.model), [40, 60])
 
     # lsp_f_e_1 should not be routed because
     # 1. It is trying to initially signal
@@ -64,7 +64,7 @@ class TestRSVPLSPInitial(unittest.TestCase):
         self.assertEqual(self.lsp_f_e_1.setup_bandwidth, 400.0)
 
     def test_unrouted_lsp_actual_metric(self):
-        self.assertEqual(self.lsp_f_e_1.actual_metric(self.model), 'Unrouted')
+        self.assertEqual(self.lsp_f_e_1.topology_metric(self.model), 'Unrouted')
 
     # Validate reserved and reservable bandwidth on int_a_b, int_a_c
     def test_reserved_bandwidth(self):

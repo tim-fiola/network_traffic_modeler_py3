@@ -174,8 +174,44 @@ class TestIGPShortcuts(unittest.TestCase):
             model.update_simulation()
         self.assertIn(err_msg, context.exception.args[0][1][0].keys())
 
-    # If the LSPs from B to D are assigned a lower metric, traffic should
+    # If one LSP from B to D is assigned a lower metric, traffic should
     # not split at A
     def changed_metric(self):
 
-        pass
+        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
+        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
+
+        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+
+        int_a_b = model.get_interface_object('A-B', 'A')
+        int_a_g = model.get_interface_object('A-G', 'A')
+        int_g_f = model.get_interface_object('G-F', 'G')
+
+        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
+        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
+        lsp_d_f_1 = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
+
+        # Give lsp a lower than default metric
+        lsp_b_d_1.manual_metric = 15
+        model.update_simulation()
+
+        dmd_path_1 = [int_a_b, lsp_b_d_1, lsp_d_f_1]
+
+        # Confirm demand path
+        self.assertEqual(dmd_a_f_1.path, dmd_path_1)
+        # TODO - test all traffic on interfaces, demands on LSPs, and demands on Interfaces
+
+        # Give lsp a higher than default metric
+        lsp_b_d_1.manual_metric = 25
+        model.update_simulation()
+
+        dmd_path_2_1 = [int_a_g, int_g_f]
+        dmd_path_2_2 = [int_a_b, lsp_b_d_2, lsp_d_f_1]
+
+        # Confirm demand path
+        self.assertIn(dmd_path_2_1, dmd_a_f_1.path)
+        self.assertIn(dmd_path_2_2, dmd_a_f_1.path)
+
+        # TODO - test all traffic on interfaces, demands on LSPs, and demands on Interfaces
+
+    # if an LSP from A to F is added, all traffic should take that LSP

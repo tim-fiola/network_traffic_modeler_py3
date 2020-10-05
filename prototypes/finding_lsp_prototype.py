@@ -22,9 +22,10 @@ for interface in model.interface_objects:
     if interface.traffic > 0:
         print([interface, interface.traffic, interface.utilization])
 print()
-# for dmd in model.demand_objects:
-#     pprint([dmd, dmd.path_detail])
-
+print("Detailed path for each demand:")
+for dmd in model.demand_objects:
+    pprint([dmd, dmd.path_detail])
+print()
 print("LSPs and their traffic")
 for lsp in model.rsvp_lsp_objects:
     print([lsp, lsp.traffic_on_lsp(model)])
@@ -34,15 +35,9 @@ lsp_d_f = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
 print("demands on lsp_d_f:")
 pprint(lsp_d_f.demands_on_lsp(model))
 
-# print()
-# print("Remove igp shortcuts from Node B:")
-#
-# node_b = model.get_node_object('B')
-# node_b.igp_shortcuts_enabled = False
-# model.update_simulation()
-#
-# lsp_c_e = model.get_rsvp_lsp('C', 'E', 'lsp_c_e_1')
-# print("Traffic on lsp_c_e = {}".format(lsp_c_e.traffic_on_lsp(model)))
+lsp_b_d_1.manual_metric = 15
+
+model.update_simulation()
 
 
 
