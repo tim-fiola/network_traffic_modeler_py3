@@ -48,7 +48,7 @@ pip3 install --upgrade pyNTM
 
 Training
 =========
-See the training modules on this repo's wiki page at https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-
+See the training modules at https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-
 
 
 Documentation
