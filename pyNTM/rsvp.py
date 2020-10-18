@@ -30,7 +30,7 @@ class RSVP_LSP(object):
     """
 
     def __init__(self, source_node_object, dest_node_object,
-                 lsp_name='none', configured_setup_bandwidth=None):
+                 lsp_name='none', configured_setup_bandwidth=None, manual_metric=-1):
 
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object

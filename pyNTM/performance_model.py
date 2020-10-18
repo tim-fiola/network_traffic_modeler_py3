@@ -829,13 +829,13 @@ class PerformanceModel(_MasterModel):
         names beneath:
 
         INTERFACES_TABLE
-        node_object_name - name of node	where interface resides
-        remote_node_object_name	- name of remote node
-        name - interface name
-        cost - IGP cost/metric for interface
-        capacity - capacity
-        rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-        percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+        - node_object_name - name of node	where interface resides
+        - remote_node_object_name	- name of remote node
+        - name - interface name
+        - cost - IGP cost/metric for interface
+        - capacity - capacity
+        - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+        - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
         value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
         Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
@@ -844,9 +844,9 @@ class PerformanceModel(_MasterModel):
         such as latitude/longitude
 
         NODES_TABLE -
-        name - name of node
-        lon	- longitude (or y-coordinate)
-        lat - latitude (or x-coordinate)
+        - name - name of node
+        - lon	- longitude (or y-coordinate) (optional)
+        - lat - latitude (or x-coordinate) (optional)
 
         Note - The NODES_TABLE is present for 2 reasons:
         - to add a Node that has no interfaces
@@ -854,16 +854,20 @@ class PerformanceModel(_MasterModel):
         the INTERFACES_TABLE
 
         DEMANDS_TABLE
-        source - source node name
-        dest - destination node name
-        traffic	- amount of traffic on demand
-        name - name of demand
-        RSVP_LSP_TABLE (this table is optional)
-        source - source node name
-        dest - destination node name
-        name - name of LSP
-        configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-        if LSP is auto-bandwidth, then leave this blank for the LSP
+        - source - source node name
+        - dest - destination node name
+        - traffic	- amount of traffic on demand
+        - name - name of demand
+
+        RSVP_LSP_TABLE
+        - source - LSP's source node
+        - dest - LSP's destination node
+        - name - name of LSP
+        - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+        if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
+        - lsp_metric - manually assigned metric for LSP, if not using default metric from topology
+        shortest path (optional)
+
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
@@ -886,9 +890,9 @@ class PerformanceModel(_MasterModel):
             A	B	80	dmd_a_b_1
 
             RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw
-            A	B	lsp_a_b_1   10
-            A	B	lsp_a_b_2
+            source	dest	name    configured_setup_bw lsp_metric
+            A	B	lsp_a_b_1   10  15
+            A	B	lsp_a_b_2       10
 
         :param data_file: file with model info
         :return: Model object

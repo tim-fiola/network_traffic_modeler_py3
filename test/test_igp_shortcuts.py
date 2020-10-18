@@ -6,12 +6,6 @@ from pyNTM import PerformanceModel
 
 class TestIGPShortcuts(unittest.TestCase):
 
-    def verify_demand_paths(self):
-        """
-        Verify demand paths in baseline model
-        """
-        pass
-
     def test_traffic_on_shortcut_lsps(self):
         """
         Verify Interface and LSP traffic when IGP shortcuts enabled

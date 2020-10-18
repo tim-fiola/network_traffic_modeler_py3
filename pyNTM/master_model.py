@@ -474,9 +474,15 @@ class _MasterModel(object):
             name = lsp_info[2]
             try:
                 configured_setup_bw = float(lsp_info[3])
-            except IndexError:
+            except (IndexError, ModelException):
                 configured_setup_bw = None
-            new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw)
+            try:
+                manual_metric = float(lsp_info[4])
+            except (IndexError, ModelException):
+                manual_metric = None
+
+            new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw,
+                               manual_metric=manual_metric)
 
             if new_lsp._key not in {lsp._key for lsp in lsp_set}:
                 lsp_set.add(new_lsp)

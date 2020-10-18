@@ -1507,6 +1507,8 @@ class FlexModel(_MasterModel):
         - name - name of LSP
         - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
         if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
+        lsp_metric - manually assigned metric for LSP, if not using default metric from topology
+        shortest path (optional)
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
