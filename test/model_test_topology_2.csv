@@ -16,17 +16,17 @@ B	G	B-to-G	10	100
 G	D	G-to-D	10	100
 G	B	G-to-B	10	100
 D	G	D-to-G	10	100
-A   F   A-to-F  1000    100
-F   A   F-to-A  1000    100
+A	F	A-to-F	1000	100
+F	A	F-to-A	1000	100
 
 NODES_TABLE
 name	lon	lat
 A	50	0
-B	0 50
+B	0	50
 C	0	50
-D 50	0
+D	50	0
 E	75	0
-F 75	0
+F	75	0
 G	30	30
 
 DEMANDS_TABLE
@@ -36,4 +36,4 @@ A	D	40	dmd_a_d_1
 RSVP_LSP_TABLE
 source	dest	name
 A	D	lsp_a_d_1
-E   A   lsp_e_a_1
+E	A	lsp_e_a_1

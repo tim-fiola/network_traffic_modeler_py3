@@ -142,8 +142,15 @@ class RSVP_LSP(object):
         """
 
         if self.initial_manual_metric:
-            self._manual_metric = self.initial_manual_metric
-            self.initial_manual_metric = None
+            if (isinstance(self.initial_manual_metric, int) and
+                    self.initial_manual_metric > 0):
+                self._manual_metric = self.initial_manual_metric
+                self.initial_manual_metric = None
+            else:
+                msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric " \
+                      "to -1 to clear the manual_metric and have the LSP inherit " \
+                      "the default metric (that of the shortest path)"
+                raise ModelException(msg)
 
         return self._manual_metric
 
@@ -152,18 +159,12 @@ class RSVP_LSP(object):
         if self.initial_manual_metric:
             if (isinstance(self.initial_manual_metric, int) and
                     self.initial_manual_metric > 0):
-                import pdb
-                pdb.set_trace()
                 self._manual_metric = self.initial_manual_metric
                 self.initial_manual_metric = None
         elif isinstance(value, int) and value > 0:
-            import pdb
-            pdb.set_trace()
             self.initial_manual_metric = None
             self._manual_metric = value
         elif value == -1:
-            import pdb
-            pdb.set_trace()
             self.initial_manual_metric = None
             self._manual_metric = 'not set'
         else:
@@ -182,7 +183,6 @@ class RSVP_LSP(object):
         """
         if 'Unrouted' in self.path:
             metric = 'Unrouted'
-
         else:
             metric = sum([interface.cost for interface in self.path['interfaces']])
 
