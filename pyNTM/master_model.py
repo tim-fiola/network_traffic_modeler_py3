@@ -458,7 +458,7 @@ class _MasterModel(object):
         lsp_info_begin_index = demands_info_end_index + 3
         lsp_lines = lines[lsp_info_begin_index:]
         for lsp_line in lsp_lines:
-            lsp_info = lsp_line.split()
+            lsp_info = lsp_line.split('\t')
             source = lsp_info[0]
             try:
                 source_node = [node for node in node_set if node.name == source][0]
@@ -474,15 +474,15 @@ class _MasterModel(object):
             name = lsp_info[2]
             try:
                 configured_setup_bw = float(lsp_info[3])
-            except (IndexError, ModelException):
+            except (IndexError, ModelException, ValueError):
                 configured_setup_bw = None
             try:
-                manual_metric = float(lsp_info[4])
-            except (IndexError, ModelException):
+                manual_metric = int(lsp_info[4])
+            except (IndexError, ModelException, ValueError):
                 manual_metric = None
 
             new_lsp = RSVP_LSP(source_node, dest_node, name, configured_setup_bandwidth=configured_setup_bw,
-                               manual_metric=manual_metric)
+                               configured_manual_metric=manual_metric)
 
             if new_lsp._key not in {lsp._key for lsp in lsp_set}:
                 lsp_set.add(new_lsp)

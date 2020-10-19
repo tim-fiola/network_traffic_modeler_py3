@@ -38,6 +38,6 @@ A	F	40	dmd_a_f_1
 
 RSVP_LSP_TABLE
 source	dest	name    configured_setup_bw manual_metric
-A	D	lsp_a_d_1   4   5
-A	D	lsp_a_d_2       10
-F	E	lsp_f_e_1   6
+A	D	lsp_a_d_1	4	5
+A	D	lsp_a_d_2		10
+F	E	lsp_f_e_1	6

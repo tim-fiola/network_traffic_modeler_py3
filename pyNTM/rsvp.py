@@ -30,7 +30,7 @@ class RSVP_LSP(object):
     """
 
     def __init__(self, source_node_object, dest_node_object,
-                 lsp_name='none', configured_setup_bandwidth=None, manual_metric=-1):
+                 lsp_name='none', configured_setup_bandwidth=None, configured_manual_metric=None):
 
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
@@ -39,7 +39,8 @@ class RSVP_LSP(object):
         self.reserved_bandwidth = 'Unrouted - initial'
         self._setup_bandwidth = 'Unrouted - initial'
         self.configured_setup_bandwidth = configured_setup_bandwidth
-        self.__manual_metric = None
+        self._manual_metric = 'not set'
+        self.initial_manual_metric = configured_manual_metric
 
     @property
     def _key(self):
@@ -126,6 +127,66 @@ class RSVP_LSP(object):
         elif proposed_setup_bw < 0:
             msg = "setup_bandwidth must be 0 or greater"
             raise ModelException(msg)
+
+    @property
+    def manual_metric(self):
+        """
+        Manual metric for LSP.  If set, this value will override
+        the default (shortest path) metric for effective_metric.
+
+        This value must be a positive integer.
+
+        To restore the LSP's default metric (that of the shortest path),
+        set this value to -1.
+
+        """
+
+        if self.initial_manual_metric:
+            self._manual_metric = self.initial_manual_metric
+            self.initial_manual_metric = None
+
+        return self._manual_metric
+
+    @manual_metric.setter
+    def manual_metric(self, value):
+        if self.initial_manual_metric:
+            if (isinstance(self.initial_manual_metric, int) and
+                    self.initial_manual_metric > 0):
+                import pdb
+                pdb.set_trace()
+                self._manual_metric = self.initial_manual_metric
+                self.initial_manual_metric = None
+        elif isinstance(value, int) and value > 0:
+            import pdb
+            pdb.set_trace()
+            self.initial_manual_metric = None
+            self._manual_metric = value
+        elif value == -1:
+            import pdb
+            pdb.set_trace()
+            self.initial_manual_metric = None
+            self._manual_metric = 'not set'
+        else:
+            msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric " \
+                  "to -1 to clear the manual_metric and have the LSP inherit " \
+                  "the default metric (that of the shortest path)"
+            raise ModelException(msg)
+
+    def topology_metric(self, model):
+        """
+        Returns the metric sum of the interfaces that the LSP actually
+        transits on the topology.
+
+        :param model: model object containing self
+        :return: sum of the metrics of the Interfaces that the LSP transits
+        """
+        if 'Unrouted' in self.path:
+            metric = 'Unrouted'
+
+        else:
+            metric = sum([interface.cost for interface in self.path['interfaces']])
+
+        return metric
 
     def find_rsvp_path_w_bw(self, requested_bandwidth, model):
         """
@@ -228,51 +289,9 @@ class RSVP_LSP(object):
         :param model: model object containing self
         :return: metric for the LSP's shortest possible path
         """
-        if self.__manual_metric:
+        if self.manual_metric != 'not set':
+            self.initial_manual_metric = None
             return self.manual_metric
         else:
             return model.get_shortest_path(self.source_node_object.name,
                                            self.dest_node_object.name, needed_bw=0)['cost']
-
-    @property
-    def manual_metric(self):
-        """
-        Manual metric for LSP.  If set, this value will override
-        the default (shortest path) metric for effective_metric.
-
-        This value must be a positive integer.
-
-        To restore the LSP's default metric (that of the shortest path),
-        set this value to -1.
-
-        """
-
-        return self.__manual_metric
-
-    @manual_metric.setter
-    def manual_metric(self, value):
-        if isinstance(value, int) and value > 0:
-            self.__manual_metric = value
-        elif value == -1:
-            self.__manual_metric = None
-        else:
-            msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric " \
-                  "to -1 to clear the manual_metric and have the LSP inherit " \
-                  "the default metric (that of the shortest path)"
-            raise ModelException(msg)
-
-    def topology_metric(self, model):
-        """
-        Returns the metric sum of the interfaces that the LSP actually
-        transits on the topology.
-
-        :param model: model object containing self
-        :return: sum of the metrics of the Interfaces that the LSP transits
-        """
-        if 'Unrouted' in self.path:
-            metric = 'Unrouted'
-
-        else:
-            metric = sum([interface.cost for interface in self.path['interfaces']])
-
-        return metric
