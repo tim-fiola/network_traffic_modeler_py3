@@ -500,7 +500,7 @@ class _MasterModel(object):
         :param node_set: set of Nodes from model
 
         """
-        demand_info = demand_line.split()
+        demand_info = demand_line.split('\t')
         source = demand_info[0]
         try:
             source_node = [node for node in node_set if node.name == source][0]
@@ -526,7 +526,7 @@ class _MasterModel(object):
 
     @classmethod
     def _add_node_from_data(cls, demand_set, interface_set, lsp_set, node_line, node_set):
-        node_info = node_line.split()
+        node_info = node_line.split('\t')
         node_name = node_info[0]
         # Set latitude
         try:

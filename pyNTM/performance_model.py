@@ -972,20 +972,20 @@ class PerformanceModel(_MasterModel):
         # Add the Interfaces to a set
         for interface_line in interface_lines:
             # Read interface characteristics
-            if len(interface_line.split()) == 5:
-                node_name, remote_node_name, name, cost, capacity = interface_line.split()
+            if len(interface_line.split('\t')) == 5:
+                node_name, remote_node_name, name, cost, capacity = interface_line.split('\t')
                 rsvp_enabled_bool = True
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) == 6:
-                node_name, remote_node_name, name, cost, capacity, rsvp_enabled = interface_line.split()
+            elif len(interface_line.split('\t')) == 6:
+                node_name, remote_node_name, name, cost, capacity, rsvp_enabled = interface_line.split('\t')
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:
                     rsvp_enabled_bool = False
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) >= 7:
+            elif len(interface_line.split('\t')) >= 7:
                 node_name, remote_node_name, name, cost, capacity, \
-                    rsvp_enabled, percent_reservable_bandwidth = interface_line.split()
+                    rsvp_enabled, percent_reservable_bandwidth = interface_line.split('\t')
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:

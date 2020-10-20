@@ -1566,7 +1566,7 @@ class FlexModel(_MasterModel):
         circuit_id_list = []
         for line in lines[int_info_begin_index:int_info_end_index]:
             try:
-                circuit_id_item = line.split()[5]
+                circuit_id_item = line.split('\t')[5]
                 circuit_id_list.append(circuit_id_item)
             except IndexError:
                 pass
@@ -1635,20 +1635,21 @@ class FlexModel(_MasterModel):
         # Add the Interfaces to a set
         for interface_line in interface_lines:
             # Read interface characteristics
-            if len(interface_line.split()) == 6:
-                [node_name, remote_node_name, name, cost, capacity, circuit_id] = interface_line.split()
+            if len(interface_line.split('\t')) == 6:
+                [node_name, remote_node_name, name, cost, capacity, circuit_id] = interface_line.split('\t')
                 rsvp_enabled_bool = True
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) == 7:
-                [node_name, remote_node_name, name, cost, capacity, circuit_id, rsvp_enabled] = interface_line.split()
+            elif len(interface_line.split('\t')) == 7:
+                [node_name, remote_node_name, name, cost, capacity, circuit_id,
+                 rsvp_enabled] = interface_line.split('\t')
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:
                     rsvp_enabled_bool = False
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) >= 8:
+            elif len(interface_line.split('\t')) >= 8:
                 [node_name, remote_node_name, name, cost, capacity, circuit_id, rsvp_enabled,
-                 percent_reservable_bandwidth] = interface_line.split()
+                 percent_reservable_bandwidth] = interface_line.split('\t')
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:
