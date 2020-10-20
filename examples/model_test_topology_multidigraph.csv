@@ -1,45 +1,45 @@
 INTERFACES_TABLE
-node_object_name	remote_node_object_name	name	cost	capacity    circuit_id
-A	B	A-to-B	4	100 1
-B	A	B-to-A	4	100 1
-A	B	A-to-B_2	4	50 2
-B	A	B-to-A_2	4	50 2
-A	C	A-to-C	1	200 3
-C	A	C-to-A	1	200 3
-A	D	A-to-D	8	150 4
-D	A	D-to-A	8	150 4
-B	D	B-to-D	4	200 5
-D	B	D-to-B	4	200 5
-B	D	B-to-D_2	4	200 6
-D	B	D-to-B_2	4	200 6
-B	E	B-to-E	3	200 7
-E	B	E-to-B	3	200 7
-B	E	B-to-E_2	3	200 17
-E	B	E-to-B_2	3	200 17
-B	E	B-to-E_3	3	200 27
-E	B	E-to-B_3	3	200 27
-D	C	D-to-C	9	150 8
-C	D	C-to-D	9	150 8
-D	E	D-to-E	4	100 9
-E	D	E-to-D	4	100 9
-D	F	D-to-F	3	100 10
-F	D	F-to-D	3	100 10
-F	B	F-to-B	6	100 11
-B	F	B-to-F	6	100 11
-G	H	G-to-H	4	150 12
-H	G	H-to-G	4	150 12
-G	D	G-to-D	2	50  13
-D	G	D-to-G	2	50  13
-H	E	H-to-E	4	100 14
-E	H	E-to-H	4	100 14
-E	F	E-to-F	3	100 15
-F	E	F-to-E	3	100 15
-H	D	H-to-D	4	100 16
-D	H	D-to-H	4	100 16
-A   X   A-to-X  10  100 38
-X   A   X-to-A  10  100 38
-Y   X   Y-to-X  10  100 39
-X   Y   X-to-Y  10  100 39
+node_object_name	remote_node_object_name	name	cost	capacity	circuit_id
+A	B	A-to-B	4	100	1
+B	A	B-to-A	4	100	1
+A	B	A-to-B_2	4	50	2
+B	A	B-to-A_2	4	50	2
+A	C	A-to-C	1	200	3
+C	A	C-to-A	1	200	3
+A	D	A-to-D	8	150	4
+D	A	D-to-A	8	150	4
+B	D	B-to-D	4	200	5
+D	B	D-to-B	4	200	5
+B	D	B-to-D_2	4	200	6
+D	B	D-to-B_2	4	200	6
+B	E	B-to-E	3	200	7
+E	B	E-to-B	3	200	7
+B	E	B-to-E_2	3	200	17
+E	B	E-to-B_2	3	200	17
+B	E	B-to-E_3	3	200	27
+E	B	E-to-B_3	3	200	27
+D	C	D-to-C	9	150	8
+C	D	C-to-D	9	150	8
+D	E	D-to-E	4	100	9
+E	D	E-to-D	4	100	9
+D	F	D-to-F	3	100	10
+F	D	F-to-D	3	100	10
+F	B	F-to-B	6	100	11
+B	F	B-to-F	6	100	11
+G	H	G-to-H	4	150	12
+H	G	H-to-G	4	150	12
+G	D	G-to-D	2	50	13
+D	G	D-to-G	2	50	13
+H	E	H-to-E	4	100	14
+E	H	E-to-H	4	100	14
+E	F	E-to-F	3	100	15
+F	E	F-to-E	3	100	15
+H	D	H-to-D	4	100	16
+D	H	D-to-H	4	100	16
+A	X	A-to-X	10	100	38
+X	A	X-to-A	10	100	38
+Y	X	Y-to-X	10	100	39
+X	Y	X-to-Y	10	100	39
 
 NODES_TABLE
 name	lon	lat
@@ -64,14 +64,14 @@ A	H	20	dmd_a_h_1
 C	E	20	dmd_c_e_1
 B	G	30	dmd_b_g_1
 E	C	20	dmd_e_c_1
-A   D   20  dmd_a_d_1
-A   D   20  dmd_a_d_2
-A   D   20  dmd_a_d_3
-A   Y   20  dmd_a_y_1
+A	D	20	dmd_a_d_1
+A	D	20	dmd_a_d_2
+A	D	20	dmd_a_d_3
+A	Y	20	dmd_a_y_1
 
 RSVP_LSP_TABLE
 source	dest	name
 A	D	lsp_a_d_1
 A	D	lsp_a_d_2
 F	E	lsp_f_e_1
-A   F   lsp_a_f_1
+A	F	lsp_a_f_1
