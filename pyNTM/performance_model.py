@@ -906,7 +906,7 @@ class PerformanceModel(_MasterModel):
         lsp_set = set()
 
         # Open the file with the data, read it, and split it into lines
-        with open(data_file, 'r') as f:
+        with open(data_file, 'r', encoding='utf-8-sig') as f:
             data = f.read()
 
         lines = data.splitlines()
@@ -943,14 +943,15 @@ class PerformanceModel(_MasterModel):
                 raise ModelException(err_msg)
 
         # Define the LSP info (if present)
-        # If the demands_info_end_index is the same as the length of the
-        # lines list, then there is no LSP section
-        if demands_info_end_index != len(lines):
-            try:
-                cls._add_lsp_from_data(demands_info_end_index, lines, lsp_set, node_set)
-            except ModelException as e:
-                err_msg = e.args[0]
-                raise ModelException(err_msg)
+        try:
+            lsp_info_begin_index = lines.index('RSVP_LSP_TABLE') + 2
+            cls._add_lsp_from_data(lsp_info_begin_index, lines, lsp_set, node_set)
+        except ValueError:
+            print("RSVP_LSP_TABLE not in file; no LSPs added to model")
+            pass
+        except ModelException as e:
+            err_msg = e.args[0]
+            raise ModelException(err_msg)
 
         return cls(interface_set, node_set, demand_set, lsp_set)
 

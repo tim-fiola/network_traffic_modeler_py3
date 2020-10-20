@@ -445,7 +445,7 @@ class _MasterModel(object):
         self.validate_model()
 
     @classmethod
-    def _add_lsp_from_data(cls, demands_info_end_index, lines, lsp_set, node_set):
+    def _add_lsp_from_data(cls, lsp_info_begin_index, lines, lsp_set, node_set):
         """
         Adds LSP data from info in a data file to Class
 
@@ -455,7 +455,7 @@ class _MasterModel(object):
         :param node_set: set of Node objects
 
         """
-        lsp_info_begin_index = demands_info_end_index + 3
+
         lsp_lines = lines[lsp_info_begin_index:]
         for lsp_line in lsp_lines:
             lsp_info = lsp_line.split('\t')
