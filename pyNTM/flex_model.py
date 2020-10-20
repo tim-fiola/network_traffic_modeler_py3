@@ -1559,7 +1559,7 @@ class FlexModel(_MasterModel):
 
         # Define the Interfaces from the data and extract the presence of
         # Nodes from the Interface data
-        int_info_begin_index = 2
+        int_info_begin_index = lines.index('INTERFACES_TABLE') + 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
 
         # Check that each circuit_id appears exactly 2 times
@@ -1582,14 +1582,14 @@ class FlexModel(_MasterModel):
         interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
                                                                                 int_info_end_index, lines)
         # Define the explicit nodes info from the file
-        nodes_info_begin_index = int_info_end_index + 3
+        nodes_info_begin_index = lines.index('NODES_TABLE') + 2
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
         for node_line in node_lines:
             node_set = cls._add_node_from_data(demand_set, interface_set, lsp_set, node_line, node_set)
 
         # Define the demands info
-        demands_info_begin_index = nodes_info_end_index + 3
+        demands_info_begin_index = lines.index('DEMANDS_TABLE') + 2
         demands_info_end_index = find_end_index(demands_info_begin_index, lines)
         # There may or may not be LSPs in the model, so if there are not,
         # set the demands_info_end_index as the last line in the file
