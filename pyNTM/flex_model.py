@@ -1479,6 +1479,8 @@ class FlexModel(_MasterModel):
         - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
         - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
         value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+        - manual_metric (optional) - manually assigned metric for LSP, if not using default metric from topology
+        shortest path
 
         Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
         So a Node created from an Interface does not have to appear in the
@@ -1536,9 +1538,9 @@ class FlexModel(_MasterModel):
             A	B	80	dmd_a_b_1
 
             RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw
-            A	B	lsp_a_b_1   10
-            A	B	lsp_a_b_2
+            source	dest	name    configured_setup_bw manual_metric
+            A	B	lsp_a_b_1   10  19
+            A	B	lsp_a_b_2       6
 
         :param data_file: file with model info
         :return: Model object

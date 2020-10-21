@@ -863,10 +863,10 @@ class PerformanceModel(_MasterModel):
         - source - LSP's source node
         - dest - LSP's destination node
         - name - name of LSP
-        - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-        if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
-        - lsp_metric - manually assigned metric for LSP, if not using default metric from topology
-        shortest path (optional)
+        - configured_setup_bw (optional) - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+        if LSP is auto-bandwidth, then leave this blank for the LSP
+        - manual_metric (optional) - manually assigned metric for LSP, if not using default metric from topology
+        shortest path
 
 
         Functional model files can be found in this directory in
@@ -890,7 +890,7 @@ class PerformanceModel(_MasterModel):
             A	B	80	dmd_a_b_1
 
             RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw lsp_metric
+            source	dest	name    configured_setup_bw manual_metric
             A	B	lsp_a_b_1   10  15
             A	B	lsp_a_b_2       10
 
