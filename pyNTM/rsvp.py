@@ -256,18 +256,23 @@ class RSVP_LSP(object):
         """
 
         # Find all LSPs with same source and dest as self
-        parallel_lsp_groups = model.parallel_lsp_groups()  # TODO - can this be optimized? cache it in model object
+        parallel_lsp_groups = model.parallel_lsp_groups()
 
         total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
         parallel_routed_lsps = [lsp for lsp in parallel_lsp_groups[key] if 'Unrouted' not in lsp.path]
 
+        # Find min metric within parallel_routed_lsps
+        min_metric = min({lsp.effective_metric(model) for lsp in parallel_routed_lsps})
+
+        min_cost_parallel_lsps = [lsp for lsp in parallel_routed_lsps if lsp.effective_metric(model) == min_metric]
+
         from .performance_model import PerformanceModel, Model
         if isinstance(model, PerformanceModel) or isinstance(model, Model):
             # If it's PerformanceModel, IGP shortcuts not supported, all traffic
             # routes on the parallel LSPs
-            source_dest_match_traffic = total_traffic / len(parallel_routed_lsps)
+            source_dest_match_traffic = total_traffic / len(min_cost_parallel_lsps)
         else:
             source_dest_match_traffic = 0
             # Account for possible IGP shortcut splits
