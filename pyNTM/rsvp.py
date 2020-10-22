@@ -268,21 +268,23 @@ class RSVP_LSP(object):
 
         min_cost_parallel_lsps = [lsp for lsp in parallel_routed_lsps if lsp.effective_metric(model) == min_metric]
 
+        source_dest_match_traffic = total_traffic / len(min_cost_parallel_lsps)
+
         from .performance_model import PerformanceModel, Model
         if isinstance(model, PerformanceModel) or isinstance(model, Model):
             # If it's PerformanceModel, IGP shortcuts not supported, all traffic
             # routes on the parallel LSPs
-            source_dest_match_traffic = total_traffic / len(min_cost_parallel_lsps)
-        else:
-            source_dest_match_traffic = 0
+            return source_dest_match_traffic
+        else:  # FlexModel/Parallel_Link_Model
+            igp_shortcut_traffic = 0
             # Account for possible IGP shortcut splits
             for demand_object in self.demands_on_lsp(model):
                 for path, path_data in demand_object.path_detail.items():
                     # Check if self is in path_data
                     if self in path_data['items']:
-                        source_dest_match_traffic += path_data['path_traffic']
+                        igp_shortcut_traffic += path_data['path_traffic']
 
-        return source_dest_match_traffic
+        return igp_shortcut_traffic
 
     def effective_metric(self, model):
         """

@@ -260,12 +260,27 @@ class FlexModel(_MasterModel):
         for demand in model.demand_objects:
             demand.path = []
 
+            # Find all LSPs that can carry the demand source to dest:
             # Find all LSPs that can carry the demand:
+            lsp_list = []
             for lsp in iter(model.rsvp_lsp_objects):
                 if (lsp.source_node_object == demand.source_node_object and
                         lsp.dest_node_object == demand.dest_node_object and
                         'Unrouted' not in lsp.path):
-                    demand.path.append(lsp)
+                    lsp_list.append(lsp)
+
+            # Check for manually assigned metrics
+            if len(lsp_list) > 0:
+                min_lsp_metric = min([lsp.effective_metric(self) for lsp in lsp_list])
+                for lsp in lsp_list:
+                    if lsp.effective_metric(self) == min_lsp_metric:
+                        demand.path.append(lsp)
+
+            # for lsp in iter(model.rsvp_lsp_objects):
+            #     if (lsp.source_node_object == demand.source_node_object and
+            #             lsp.dest_node_object == demand.dest_node_object and
+            #             'Unrouted' not in lsp.path):
+            #         demand.path.append(lsp)
 
             if demand.path == []:
                 src = demand.source_node_object.name
@@ -455,12 +470,24 @@ class FlexModel(_MasterModel):
             # to the LSP's path interfaces.
 
             # Can demand take LSP?
-            routed_lsp_generator = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
-            lsps_for_demand = []
-            for lsp in routed_lsp_generator:
-                if (lsp.source_node_object == demand_object.source_node_object and
-                        lsp.dest_node_object == demand_object.dest_node_object):
-                    lsps_for_demand.append(lsp)
+            # routed_lsp_generator = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
+            #
+            # for lsp in routed_lsp_generator:
+            #     if (lsp.source_node_object == demand_object.source_node_object and
+            #             lsp.dest_node_object == demand_object.dest_node_object):
+            #         import pdb
+            #         pdb.set_trace()
+            #         lsps_for_demand.append(lsp)
+
+            # Is there a parallel_lsp_group that matches the source and dest for the demand_object?
+            key = '{}-{}'.format(demand_object.source_node_object.name, demand_object.dest_node_object.name)
+
+            try:
+                candidate_lsps_for_demand = self.parallel_lsp_groups()[key]
+                min_metric = min([lsp.effective_metric(self) for lsp in candidate_lsps_for_demand])
+                lsps_for_demand = [lsp for lsp in candidate_lsps_for_demand if lsp.effective_metric(self) == min_metric]
+            except KeyError:
+                lsps_for_demand = []
 
             if lsps_for_demand != []:
                 self._update_int_traffic_for_end_to_end_lsps(demand_object, lsps_for_demand)
@@ -514,7 +541,10 @@ class FlexModel(_MasterModel):
         demand_object._path_detail = path_detail
         # Get the interfaces for each LSP in the demand's path
         for lsp in lsps_for_demand:
-            lsp_path_interfaces = lsp.path['interfaces']
+            try:
+                lsp_path_interfaces = lsp.path['interfaces']
+            except TypeError:  # Will error if lsp.path == 'Unrouted'
+                pass
 
             # Now that all interfaces are known,
             # update traffic on interfaces demand touches

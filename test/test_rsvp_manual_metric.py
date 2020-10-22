@@ -40,7 +40,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
         self.assertEqual(lsp_b_d_4.effective_metric(model), 20)
         self.assertNotEqual(lsp_b_d_4.path, 'Unrouted')
 
-    # Parallel LSPs source-dest, but one with a lower metric;
+    # Parallel LSPs in IGP shortcuts, but one with a lower metric;
     # traffic should only take lower metric LSP
     def test_lsp_metric_efficacy(self):
         model = FlexModel.load_model_file('test/lsp_manual_metric_test_flex_model.csv')
@@ -55,13 +55,24 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
         self.assertEqual(lsp_b_d_3.traffic_on_lsp(model), 0)
         self.assertEqual(lsp_b_d_4.traffic_on_lsp(model), 0)
 
+    # Parallel LSPs source-dest, but one with a lower metric;
+    # traffic should only take lower metric LSP
+    def test_lsp_metric_efficacy_2(self):
+        model = FlexModel.load_model_file('test/flex_model_parallel_source_dest_lsps.csv')
+        model.update_simulation()
+
+        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')  # lower metric
+        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')  # default metric (higher)
+
+        # dmd_a_d_1 = model.get_demand_object('A', 'D', 'dmd_a_d_1')
+        # dmd_b_d_1 = model.get_demand_object('B', 'D', 'dmd_b_d_1')
+
+        self.assertEqual(lsp_b_d_1.traffic_on_lsp(model), 22)
+        self.assertEqual(lsp_b_d_2.traffic_on_lsp(model), 0)
+
     # 1 LSP source-dest, but with higher than default metric;
     # traffic should take that LSP due to better protocol preference;
     # if that LSP fails, IGP routing
-
-    # 2 parallel LSPs source-dest, both with higher than default metric, but
-    # one LSP with a higher metric than the other.  Traffic should take lower
-    # metric LSP
 
     # Put a bad LSP metric in the model file (float, string); make sure it errors
 
