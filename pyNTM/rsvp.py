@@ -73,10 +73,7 @@ class RSVP_LSP(object):
 
         # Find the path cost and path headroom for each path candidate
         for path in candidate_paths['path']:
-            path_cost = 0
-            for interface in path:
-                path_cost += interface.cost
-
+            path_cost = sum(interface.cost for interface in path)
             # Find the path cost and reservable bandwidth on each path.
             # If the path you are examining has an interface that is on
             # the LSP's current path, add back in the
@@ -124,7 +121,7 @@ class RSVP_LSP(object):
             self._setup_bandwidth = float(self.configured_setup_bandwidth)
         elif proposed_setup_bw >= 0:
             self._setup_bandwidth = float(proposed_setup_bw)
-        elif proposed_setup_bw < 0:
+        else:
             msg = "setup_bandwidth must be 0 or greater"
             raise ModelException(msg)
 
@@ -184,7 +181,7 @@ class RSVP_LSP(object):
         if 'Unrouted' in self.path:
             metric = 'Unrouted'
         else:
-            metric = sum([interface.cost for interface in self.path['interfaces']])
+            metric = sum(interface.cost for interface in self.path['interfaces'])
 
         return metric
 
@@ -236,7 +233,7 @@ class RSVP_LSP(object):
         """
         from .flex_model import FlexModel
         demand_set = set()
-        for demand in (demand for demand in model.demand_objects):
+        for demand in iter(model.demand_objects):
             if self in demand.path:
                 demand_set.add(demand)
             if isinstance(model, FlexModel):
@@ -258,7 +255,7 @@ class RSVP_LSP(object):
         # Find all LSPs with same source and dest as self
         parallel_lsp_groups = model.parallel_lsp_groups()
 
-        total_traffic = sum([demand.traffic for demand in self.demands_on_lsp(model)])
+        total_traffic = sum(demand.traffic for demand in self.demands_on_lsp(model))
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
         parallel_routed_lsps = [lsp for lsp in parallel_lsp_groups[key] if 'Unrouted' not in lsp.path]

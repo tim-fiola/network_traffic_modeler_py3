@@ -16,6 +16,7 @@ This model type allows multiple links/parallel links between 2 nodes.
 There will be a performance impact in this model variant.
 """
 
+from datetime import datetime
 from pprint import pprint
 
 import itertools
@@ -29,6 +30,7 @@ from .master_model import _MasterModel
 from .rsvp import RSVP_LSP
 from .utilities import find_end_index
 from .node import Node
+
 
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add support for SRLGs in load_model_file
@@ -155,7 +157,7 @@ class FlexModel(_MasterModel):
         if circuits_with_mismatched_interface_capacity:
             int_status_error_dict = {
                 'circuits_with_mismatched_interface_capacity':
-                circuits_with_mismatched_interface_capacity
+                    circuits_with_mismatched_interface_capacity
             }
             error_data.append(int_status_error_dict)
 
@@ -235,13 +237,17 @@ class FlexModel(_MasterModel):
         for demand in iter(self.demand_objects):
             demand.path = 'Unrouted'
 
+        time_before_lsp_load = datetime.now()
         print("Routing the LSPs . . . ")
         # Route the RSVP LSPs
         self = self._route_lsps()
-        print("LSPs routed (if present); routing demands now . . .")
+        lsp_load_time = datetime.now() - time_before_lsp_load
+        print("LSPs routed (if present) in {}; routing demands now . . .".format(lsp_load_time))
         # Route the demands
+        demand_load_start_time = datetime.now()
         self = self._route_demands(non_failed_interfaces_model)
-        print("Demands routed; validating model . . . ")
+        demand_load_time = datetime.now() - demand_load_start_time
+        print("Demands routed in {}; validating model . . . ".format(demand_load_time))
 
         self.validate_model()
 
@@ -463,33 +469,25 @@ class FlexModel(_MasterModel):
         # For each demand that is not Unrouted, add its traffic value to each
         # interface object in the path
         for demand_object in routed_demand_object_generator:
-            # This model only allows demands to take RSVP LSPs if
-            # the demand's source/dest nodes match the LSP's source/dest nodes.
-
             # Expand each LSP into its interfaces and add that the traffic per LSP
             # to the LSP's path interfaces.
 
             # Can demand take LSP?
-            # routed_lsp_generator = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
-            #
-            # for lsp in routed_lsp_generator:
-            #     if (lsp.source_node_object == demand_object.source_node_object and
-            #             lsp.dest_node_object == demand_object.dest_node_object):
-            #         import pdb
-            #         pdb.set_trace()
-            #         lsps_for_demand.append(lsp)
-
             # Is there a parallel_lsp_group that matches the source and dest for the demand_object?
             key = '{}-{}'.format(demand_object.source_node_object.name, demand_object.dest_node_object.name)
 
             # Find the routed LSPs that can carry the demand
             try:
                 candidate_lsps_for_demand = self.parallel_lsp_groups()[key]
-                min_metric = min([lsp.effective_metric(self) for lsp in candidate_lsps_for_demand if
-                                  'Unrouted' not in lsp.path])
+                min_metric = min(
+                    lsp.effective_metric(self)
+                    for lsp in candidate_lsps_for_demand
+                    if 'Unrouted' not in lsp.path)
                 lsps_for_demand = [lsp for lsp in candidate_lsps_for_demand if
                                    lsp.effective_metric(self) == min_metric and 'Unrouted' not in lsp.path]
-            except KeyError:
+            except (KeyError, ValueError):
+                # If there is no LSP group that matches the demand source/dest (KeyError) or there are no routed
+                # LSPs for the demand (ValueError), then set lsps_for_demand to empty list
                 lsps_for_demand = []
 
             if lsps_for_demand != []:
@@ -704,22 +702,22 @@ class FlexModel(_MasterModel):
                 # For a given Interface's node_object, determine how many
                 # Interfaces on that Node are facing next hops
                 for hop in shortest_path_item_set:
-                    if isinstance(hop, Interface):
-                        if hop.node_object.name == item.node_object.name:
-                            unique_next_hops[item.node_object.name].append(hop)
-                    elif isinstance(hop, RSVP_LSP):
-                        if hop.source_node_object.name == item.node_object.name:
-                            unique_next_hops[item.node_object.name].append(hop)
+                    if (isinstance(hop, Interface) and hop.
+                            node_object.name == item.node_object.name or not
+                            isinstance(hop, Interface) and
+                            isinstance(hop, RSVP_LSP) and
+                            hop.source_node_object.name == item.node_object.name):
+                        unique_next_hops[item.node_object.name].append(hop)
             elif isinstance(item, RSVP_LSP):
                 unique_next_hops[item.source_node_object.name] = []
                 # For an LSP's source_node_object,
                 for hop in shortest_path_item_set:
-                    if isinstance(hop, Interface):
-                        if hop.node_object.name == item.source_node_object.name:
-                            unique_next_hops[item.source_node_object.name].append(hop)
-                    elif isinstance(hop, RSVP_LSP):
-                        if hop.source_node_object.name == item.source_node_object.name:
-                            unique_next_hops[item.source_node_object.name].append(hop)
+                    if (isinstance(hop, Interface) and
+                            hop.node_object.name == item.source_node_object.name or not
+                            isinstance(hop, Interface) and
+                            isinstance(hop, RSVP_LSP) and
+                            hop.source_node_object.name == item.source_node_object.name):
+                        unique_next_hops[item.source_node_object.name].append(hop)
         return unique_next_hops
 
     def _insert_lsps_into_path(self, path_lsps, path):
@@ -1395,7 +1393,7 @@ class FlexModel(_MasterModel):
             # Determine which candidate paths have enough reservable bandwidth
             for path in candidate_path_info:
                 if (
-                    min(interface.reservable_bandwidth for interface in path) >= lsp.setup_bandwidth
+                        min(interface.reservable_bandwidth for interface in path) >= lsp.setup_bandwidth
                 ):
                     candidate_path_info_w_reservable_bw.append(path)
 
@@ -1646,7 +1644,6 @@ class FlexModel(_MasterModel):
             cls._add_lsp_from_data(lsp_info_begin_index, lines, lsp_set, node_set)
         except ValueError:
             print("RSVP_LSP_TABLE not in file; no LSPs added to model")
-            pass
         except ModelException as e:
             err_msg = e.args[0]
             raise ModelException(err_msg)
@@ -1738,6 +1735,7 @@ class Parallel_Link_Model(FlexModel):
     This has been added to attempt to keep any legacy code, written in pyNTM 1.6
     or earlier, from breaking.
     """
+
     def __init__(self, interface_objects=set(), node_objects=set(),
                  demand_objects=set(), rsvp_lsp_objects=set()):
         self.interface_objects = interface_objects

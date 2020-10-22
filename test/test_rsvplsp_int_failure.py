@@ -86,3 +86,19 @@ class TestRSVPLSPIntFailure(unittest.TestCase):
         # reservable_bandwidth on int_a_c
         self.assertEqual(int_a_c.reserved_bandwidth, 150.0)
         self.assertEqual(int_a_c.reservable_bandwidth, 0.0)
+
+    def test_effective_metric_update(self):
+        model = PerformanceModel.load_model_file('test/rsvp_lsp_effective_metric_update.csv')
+        model.update_simulation()
+
+        lsp_a_b_1 = model.get_rsvp_lsp('A', 'B', 'lsp_a_b_1')
+
+        # Default effective_metric will be shortest path on topology
+        self.assertEqual(lsp_a_b_1.effective_metric(model), 20)
+
+        model.fail_interface('A-to-B', 'A')
+        model.update_simulation()
+
+        # Default effective_metric will update to 30, reflecting the metric
+        # for the shortest possible path on the new topology
+        self.assertEqual(lsp_a_b_1.effective_metric(model), 30)

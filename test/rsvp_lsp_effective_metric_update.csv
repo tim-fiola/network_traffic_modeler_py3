@@ -1,0 +1,22 @@
+INTERFACES_TABLE
+node_object_name	remote_node_object_name	name	cost	capacity
+A	B	A-to-B	20	125
+B	A	B-to-A	20	125
+A	C	A-to-C	15	100
+C	A	C-to-A	15	100
+B	C	B-to-C	15	100
+C	B	C-to-B	15	100
+
+NODES_TABLE
+name	lon	lat
+A	50	0
+B	0	-50
+C	0	50
+
+DEMANDS_TABLE
+source	dest	traffic	name
+A	C	80	dmd_a_c_1
+
+RSVP_LSP_TABLE
+source	dest	name    configured_setup_bw manual_metric
+A	B	lsp_a_b_1

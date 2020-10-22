@@ -26,6 +26,7 @@ This PerformanceModel class is the same as the legacy (version 1.6 and earlier) 
 
 """
 
+from datetime import datetime
 from pprint import pprint
 
 import networkx as nx
@@ -264,13 +265,17 @@ class PerformanceModel(_MasterModel):
         for demand in iter(self.demand_objects):
             demand.path = 'Unrouted'
 
+        time_before_lsp_load = datetime.now()
         print("Routing the LSPs . . . ")
         # Route the RSVP LSPs
         self = self._route_lsps()
-        print("LSPs routed (if present); routing demands now . . .")
+        lsp_load_time = datetime.now() - time_before_lsp_load
+        print("LSPs routed (if present) in {}; routing demands now . . .".format(lsp_load_time))
         # Route the demands
+        demand_load_start_time = datetime.now()
         self = self._route_demands(non_failed_interfaces_model)
-        print("Demands routed; validating model . . . ")
+        demand_load_time = datetime.now() - demand_load_start_time
+        print("Demands routed in {}; validating model . . . ".format(demand_load_time))
 
         self.validate_model()
 
@@ -288,16 +293,15 @@ class PerformanceModel(_MasterModel):
             demand.path = []
 
             # Find all LSPs that can carry the demand:
-            lsp_list = []
-            for lsp in iter(model.rsvp_lsp_objects):
+            lsp_list = [
+                lsp for lsp in iter(model.rsvp_lsp_objects)
                 if (lsp.source_node_object == demand.source_node_object and
-                        lsp.dest_node_object == demand.dest_node_object and
-                        'Unrouted' not in lsp.path):
-                    lsp_list.append(lsp)
-
+                    lsp.dest_node_object == demand.dest_node_object and
+                    'Unrouted' not in lsp.path)
+            ]
             # Check for manually assigned metrics
-            if len(lsp_list) > 0:
-                min_lsp_metric = min([lsp.effective_metric(self) for lsp in lsp_list])
+            if lsp_list:
+                min_lsp_metric = min(lsp.effective_metric(self) for lsp in lsp_list)
                 for lsp in lsp_list:
                     if lsp.effective_metric(self) == min_lsp_metric:
                         demand.path.append(lsp)
@@ -811,7 +815,7 @@ class PerformanceModel(_MasterModel):
         return G
 
     @classmethod
-    def load_model_file(cls, data_file):  # TODO - make sure doc strings for this come out well in docs dir
+    def load_model_file(cls, data_file):    # TODO - make sure doc strings for this come out well in docs dir
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
@@ -948,7 +952,6 @@ class PerformanceModel(_MasterModel):
             cls._add_lsp_from_data(lsp_info_begin_index, lines, lsp_set, node_set)
         except ValueError:
             print("RSVP_LSP_TABLE not in file; no LSPs added to model")
-            pass
         except ModelException as e:
             err_msg = e.args[0]
             raise ModelException(err_msg)
@@ -1037,12 +1040,22 @@ class PerformanceModel(_MasterModel):
             # to the LSP's path interfaces.
 
             # Can demand take LSP?
-            routed_lsp_generator = (lsp for lsp in self.rsvp_lsp_objects if 'Unrouted' not in lsp.path)
-            lsps_for_demand = []
-            for lsp in routed_lsp_generator:
-                if (lsp.source_node_object == demand_object.source_node_object and
-                        lsp.dest_node_object == demand_object.dest_node_object):
-                    lsps_for_demand.append(lsp)
+            # Is there a parallel_lsp_group that matches the source and dest for the demand_object?
+            key = '{}-{}'.format(demand_object.source_node_object.name, demand_object.dest_node_object.name)
+
+            # Find the routed LSPs that can carry the demand
+            try:
+                candidate_lsps_for_demand = self.parallel_lsp_groups()[key]
+                min_metric = min(
+                    lsp.effective_metric(self)
+                    for lsp in candidate_lsps_for_demand
+                    if 'Unrouted' not in lsp.path)
+                lsps_for_demand = [lsp for lsp in candidate_lsps_for_demand if
+                                   lsp.effective_metric(self) == min_metric and 'Unrouted' not in lsp.path]
+            except (KeyError, ValueError):
+                # If there is no LSP group that matches the demand source/dest (KeyError) or there are no routed
+                # LSPs for the demand (ValueError), then set lsps_for_demand to empty list
+                lsps_for_demand = []
 
             if lsps_for_demand != []:
                 # Find each demands path list, determine the ECMP split across the
