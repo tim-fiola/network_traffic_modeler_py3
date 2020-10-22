@@ -299,6 +299,8 @@ class RSVP_LSP(object):
         if self.manual_metric != 'not set':
             self.initial_manual_metric = None
             return self.manual_metric
+        elif 'Unrouted' in self.path:
+            return 'Unrouted'
         else:
             return model.get_shortest_path(self.source_node_object.name,
                                            self.dest_node_object.name, needed_bw=0)['cost']

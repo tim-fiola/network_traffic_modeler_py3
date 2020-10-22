@@ -482,10 +482,13 @@ class FlexModel(_MasterModel):
             # Is there a parallel_lsp_group that matches the source and dest for the demand_object?
             key = '{}-{}'.format(demand_object.source_node_object.name, demand_object.dest_node_object.name)
 
+            # Find the routed LSPs that can carry the demand
             try:
                 candidate_lsps_for_demand = self.parallel_lsp_groups()[key]
-                min_metric = min([lsp.effective_metric(self) for lsp in candidate_lsps_for_demand])
-                lsps_for_demand = [lsp for lsp in candidate_lsps_for_demand if lsp.effective_metric(self) == min_metric]
+                min_metric = min([lsp.effective_metric(self) for lsp in candidate_lsps_for_demand if
+                                  'Unrouted' not in lsp.path])
+                lsps_for_demand = [lsp for lsp in candidate_lsps_for_demand if
+                                   lsp.effective_metric(self) == min_metric and 'Unrouted' not in lsp.path]
             except KeyError:
                 lsps_for_demand = []
 

@@ -277,7 +277,8 @@ class _MasterModel(object):
         :param routed_lsps_in_group: LSPs in parallel LSP group with a path
         :param traffic_in_demand_group: aggregate traffic for all demands with
                the same source node and destination node as the parallel LSP group
-        :return:
+
+        :return: None
         """
         # This value would be the optimal setup bandwidth for each LSP
         # as it would allow the LSP to reserve bandwidth for the amount
