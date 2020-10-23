@@ -292,7 +292,7 @@ class FlexModel(_MasterModel):
                     demand.path = 'Unrouted'
                     continue
 
-                # all_paths is list of paths from source to destination; these paths
+                # all_paths is list of shortest paths from source to destination; these paths
                 # may include paths that have multiple links between nodes
                 all_paths = self._get_all_paths_mdg(G, nx_sp)
 
@@ -378,27 +378,29 @@ class FlexModel(_MasterModel):
                         # Take the LSPs whose source node matches source_node and whose dest node matches
                         # the destination we are iterating through and whose effective metric matches the
                         # shortest path from source_node to destination
-                        # TODO - update this to account for manually set metric that may be lower or higher
-                        #  than the default metric
-                        try:
-                            # TODO - iterate thru LSPs once for best_metric and lsps
-                            best_metric = min({lsp.effective_metric(self) for lsp in iter(self.rsvp_lsp_objects) if
-                                               lsp.source_node_object == source_node and
-                                               lsp.dest_node_object == self.get_node_object(destination)})
-                            lsps = [lsp for lsp in iter(self.rsvp_lsp_objects) if
-                                    lsp.source_node_object == source_node and
-                                    lsp.dest_node_object == self.get_node_object(destination) if
-                                    lsp.effective_metric(self) == best_metric]
 
-                            if len(lsps) > 0:
-                                # Break out of the destinations iteration as traffic will want to take
-                                # the first LSP(s) available the traffic farthest along the path
-                                path_lsps.append(lsps)
-                                lsp_end_node = lsps[0].dest_node_object.name
-                                next_node_to_check.append(lsp_end_node)
-                                break
-                        except ValueError:
-                            pass
+                        # TODO - use parallel LSP groups here ==============================
+                        key = '{}-{}'.format(source_node.name, destination)
+                        try:
+                            candidate_lsps_for_demand = self.parallel_lsp_groups()[key]
+                            min_metric = min(lsp.effective_metric(self) for lsp in candidate_lsps_for_demand if
+                                             'Unrouted' not in lsp.path)
+                            lsps = [lsp for lsp in candidate_lsps_for_demand if
+                                    lsp.effective_metric(self) == min_metric and
+                                    'Unrouted' not in lsp.path]
+                        except (KeyError, ValueError):
+                            # If there is no LSP group that matches the demand source/dest (KeyError) or
+                            # there are no routed LSPs for the demand (ValueError), then set lsps
+                            # to empty list
+                            lsps = []
+
+                        if lsps:
+                            # Break out of the destinations iteration as traffic will want to take
+                            # the first LSP(s) available the traffic farthest along the path
+                            path_lsps.append(lsps)
+                            lsp_end_node = lsps[0].dest_node_object.name
+                            next_node_to_check.append(lsp_end_node)
+                            break
 
             # Now that path_lsps is known, substitute those into path
             if len(path_lsps) > 0:
