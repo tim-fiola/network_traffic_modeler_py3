@@ -379,7 +379,6 @@ class FlexModel(_MasterModel):
                         # the destination we are iterating through and whose effective metric matches the
                         # shortest path from source_node to destination
 
-                        # TODO - use parallel LSP groups here ==============================
                         key = '{}-{}'.format(source_node.name, destination)
                         try:
                             candidate_lsps_for_demand = self.parallel_lsp_groups()[key]
@@ -424,30 +423,31 @@ class FlexModel(_MasterModel):
         """
         Checks for manually set LSP metrics and how they affect best path
         """
-        if len(paths_with_lsps) > 1:
-            # Metrics for each path
-            path_metrics = set()
-            # List with each path and its metric
-            paths_with_metrics = []
-            for path in paths_with_lsps:
-                path_metric = 0
-                for item in path:
-                    if isinstance(item, Interface):
-                        path_metric += item.cost
-                    elif isinstance(item, RSVP_LSP):
-                        path_metric += item.effective_metric(self)
-                path_metrics.add(path_metric)
-                paths_with_metrics.append([path, path_metric])
+        if len(paths_with_lsps) <= 1:
+            return
+        # Metrics for each path
+        path_metrics = set()
+        # List with each path and its metric
+        paths_with_metrics = []
+        for path in paths_with_lsps:
+            path_metric = 0
+            for item in path:
+                if isinstance(item, Interface):
+                    path_metric += item.cost
+                elif isinstance(item, RSVP_LSP):
+                    path_metric += item.effective_metric(self)
+            path_metrics.add(path_metric)
+            paths_with_metrics.append([path, path_metric])
             # See if all paths have same metric
-            if len(path_metrics) == 1:
-                return paths_with_lsps
-            else:
-                lowest_metric = min(path_metrics)
-                returned_best_paths = []
-                for path_and_metric in paths_with_metrics:
-                    if path_and_metric[1] == lowest_metric:
-                        returned_best_paths.append(path_and_metric[0])
-                return returned_best_paths
+        if len(path_metrics) == 1:
+            return paths_with_lsps
+        else:
+            lowest_metric = min(path_metrics)
+            return [
+                path_and_metric[0]
+                for path_and_metric in paths_with_metrics
+                if path_and_metric[1] == lowest_metric
+            ]
 
     def _update_interface_utilization(self):
         """Updates each interface's utilization; returns Model object with
