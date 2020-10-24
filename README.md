@@ -8,7 +8,7 @@
 pyNTM: network_traffic_modeler_py3
 ==================================
 
-This is a network traffic modeler written in python 3. This library allows users to define a layer 3 network topology, define a traffic matrix, and then run a simulation to determine how the traffic will traverse the topology, traverse a modified topology, and fail over. If you've used Cariden MATE or WANDL, this code solves for some of the same basic use cases those do.  This package is in no way related to those, or any, commercial products.  IGP and RSVP auto-bandwidth routing is supported. 
+This is a network traffic modeler written in python 3. This library allows users to define a layer 3 network topology, define a traffic matrix, and then run a simulation to determine how the traffic will traverse the topology, traverse a modified topology, and fail over. If you've used Cariden MATE or WANDL, this code solves for some of the same basic use cases those do.  This package is in no way related to those, or any, commercial products.  IGP and RSVP routing is supported. 
 
 
 pyNTM Model Classes
@@ -30,16 +30,18 @@ The PerformanceModel class is good to use for the following topology criteria:
 
 Which Model Class To Use
 ==================================
+All model classes support:
+- IGP routing
+- RSVP LSPs carrying traffic demands that have matching source and destination as the RSVP LSPs
+- RSVP auto-bandwidth or fixed bandwidth
+- RSVP LSP manual metrics
+
 The PerformanceModel class allows for:
 - Single Circuits between 2 Nodes
-- RSVP LSPs carrying traffic demands that have matching source and destination as the RSVP LSPs
-- RSVP LSP manual metrics
 - Error messages if it detects use of IGP shortcuts or multiple Circuits between 2 Nodes
 
 The FlexModel class allows for:
-- IGP shortcuts
 - Multiple Circuits between 2 Nodes
-- RSVP LSPs carrying traffic demands that have matching source and destination as the RSVP LSPs
 - RSVP LSP IGP shortcuts, whereby LSPs can carry traffic demands downstream, even if the demand does not have matching source and destination as the LSP
 
 In some cases, it's completely valid to model multiple Circuits between Nodes as a single Circuit.  For example: in the case where there are multiple Circuits between Nodes but each Interface has the same metric and the use case is to model capacity between Nodes, it's often valid to combine the Circuit capacities and model as a single Circuit.  In this case, the PerformanceModel object is recommended as it will give better performance.
