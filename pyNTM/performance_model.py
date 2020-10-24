@@ -46,8 +46,6 @@ from .node import Node
 # TODO - add attribute for Node/Interface whereby an object can be failed by itself
 #  and not unfail when a parent SRLG unfails
 
-# TODO 1.7 - test
-
 
 class PerformanceModel(_MasterModel):
     """

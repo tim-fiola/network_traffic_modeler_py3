@@ -184,10 +184,10 @@ class _MasterModel(object):
             interface.reserved_bandwidth = 0
 
         # Find parallel LSP groups
-        parallel_lsp_groups = self.parallel_lsp_groups()  # TODO - can this be optimized?
+        parallel_lsp_groups = self.parallel_lsp_groups()
 
         # Find all the parallel demand groups
-        parallel_demand_groups = self.parallel_demand_groups()  # TODO - can this be optimized?
+        parallel_demand_groups = self.parallel_demand_groups()
 
         # Route the LSPs by parallel group
         self._route_parallel_lsp_groups(parallel_demand_groups, parallel_lsp_groups)
@@ -344,7 +344,7 @@ class _MasterModel(object):
                             lsp.dest_node_object.name == dest_node_name):
                         parallel_lsp_groups[key].append(lsp)
 
-                if parallel_lsp_groups[key] == []:
+                if not parallel_lsp_groups[key]:
                     del parallel_lsp_groups[key]
 
         self._parallel_lsp_groups = parallel_lsp_groups
@@ -553,7 +553,6 @@ class _MasterModel(object):
             new_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
         else:
             existing_node = cls(interface_set, node_set, demand_set, lsp_set).get_node_object(node_name=node_name)
-            # existing_node = [node for node in node_set if node.name == node_name][0] # TODO - delete this
             existing_node.lat = node_lat
             existing_node.lon = node_lon
             existing_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
@@ -1079,7 +1078,7 @@ class _MasterModel(object):
                 if lsp._key == needed_key:
                     return lsp
 
-    def _make_network_interfaces(self, interface_info_list):  # TODO - move this to master_model.py
+    def _make_network_interfaces(self, interface_info_list):
         """
         Returns set of Interface objects and a set of Node objects for Nodes
         that are not already in the Model.
