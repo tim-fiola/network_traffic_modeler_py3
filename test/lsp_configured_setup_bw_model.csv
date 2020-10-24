@@ -22,11 +22,11 @@ D	G	D-to-G	10	100
 NODES_TABLE
 name	lon	lat
 A	50	0
-B	0 50
+B	0	50
 C	0	50
-D 50	0
+D	50	0
 E	75	0
-F 75	0
+F	75	0
 G	30	35
 
 DEMANDS_TABLE
@@ -37,8 +37,8 @@ F	E	400	dmd_f_e_1
 A	F	40	dmd_a_f_1
 
 RSVP_LSP_TABLE
-source	dest	name    configured_setup_bw
+source	dest	name	configured_setup_bw
 A	D	lsp_a_d_1
 A	D	lsp_a_d_2
-A	D	lsp_a_d_3   1
+A	D	lsp_a_d_3	1
 F	E	lsp_f_e_1

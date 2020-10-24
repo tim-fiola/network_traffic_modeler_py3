@@ -1,7 +1,7 @@
 """An object representing a Node interface"""
 
 from .exceptions import ModelException
-from .rsvp import RSVP_LSP
+# from .rsvp import RSVP_LSP
 from .srlg import SRLG
 
 
@@ -30,8 +30,8 @@ class Interface(object):
 
     # Modify the __hash__ and __eq__ methods to make comparisons easier
     def __eq__(self, other_object):
-        # if not isinstance(other_object, Interface):
-        #     return NotImplemented
+        if not isinstance(other_object, Interface):
+            return NotImplemented
 
         return [self.node_object, self.remote_node_object, self.name,
                 self.capacity, self.circuit_id] == [other_object.node_object,
@@ -181,7 +181,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         """
 
         # find the remote interface
-        remote_interface = Interface.get_remote_interface(self, model)
+        remote_interface = Interface.get_remote_interface(self, model)  # TODO - use self instead of Interface?
 
         # check to see if the local and remote node are failed
         if self.node_object.failed is False and self.remote_node_object.failed is False:
@@ -243,6 +243,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
             for dmd_path in demand.path:
                 # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
                 # look at the LSP path and get demands on the LSP and add them to dmd_set
+                from .rsvp import RSVP_LSP
                 if isinstance(dmd_path, RSVP_LSP):
                     if self in dmd_path.path['interfaces']:
                         dmd_set.add(demand)

@@ -19,6 +19,7 @@ class Node(object):
         self._lat = lat
         self._lon = lon
         self._srlgs = set()
+        self._igp_shortcuts_enabled = False
 
         # Validate lat, lon values
         if not(isinstance(lat, float)) and not(isinstance(lat, int)):
@@ -96,6 +97,25 @@ class Node(object):
             self._lon = status
         else:
             raise ValueError("lon attribute must be integer or float.")
+
+    @property
+    def igp_shortcuts_enabled(self):
+        """Are IGP shortcuts enabled for RSVP LSPs on this Node?
+        This is only applicable in the FlexModel; PerformanceModel
+        subclass ignores this attribute
+        """
+        return self._igp_shortcuts_enabled
+
+    @igp_shortcuts_enabled.setter
+    def igp_shortcuts_enabled(self, status):
+        if isinstance(status, bool):
+            self._igp_shortcuts_enabled = status
+        elif status == 'True':
+            self.igp_shortcuts_enabled = True
+        elif status == 'False':
+            self.igp_shortcuts_enabled = False
+        else:
+            raise ValueError("igp_shortcuts must be boolean")
 
     def interfaces(self, model):
         """

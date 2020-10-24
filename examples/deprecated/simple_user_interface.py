@@ -4,7 +4,7 @@ demands, interfaces, and nodes."""
 
 # This is a temp hack to get this to see pyNTM and let it import
 import sys  # noqa
-sys.path.append('../')  # noqa
+sys.path.append('../../')  # noqa
 
 from pyNTM import PerformanceModel
 from pyNTM import FlexModel

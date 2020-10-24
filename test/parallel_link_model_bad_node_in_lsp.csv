@@ -1,24 +1,23 @@
 INTERFACES_TABLE
-node_object_name	remote_node_object_name	name	cost	capacity    circuit_id
-A	B	A-to-B	4	100 1
-B	A	B-to-A	4	100 1
-A	B	A-to-B_2	4	50 2
-B	A	B-to-A_2	4	50 2
-A	C	A-to-C	1	200 3
-C	A	C-to-A	1	200 3
-A	D	A-to-D	8	150 4
-D	A	D-to-A	8	150 4
-B	D	B-to-D	4	200 5
-D	B	D-to-B	4	200 5
-B	D	B-to-D_2	4	200 6
-D	B	D-to-B_2	4	200 6
-B	E	B-to-E	3	200 7
-E	B	E-to-B	3	200 7
-B	E	B-to-E_2	3	200 17
-E	B	E-to-B_2	3	200 17
-B	E	B-to-E_3	3	200 27
-E	B	E-to-B_3	3	200 27
-
+node_object_name	remote_node_object_name	name	cost	capacity	circuit_id
+A	B	A-to-B	4	100	1
+B	A	B-to-A	4	100	1
+A	B	A-to-B_2	4	50	2
+B	A	B-to-A_2	4	50	2
+A	C	A-to-C	1	200	3
+C	A	C-to-A	1	200	3
+A	D	A-to-D	8	150	4
+D	A	D-to-A	8	150	4
+B	D	B-to-D	4	200	5
+D	B	D-to-B	4	200	5
+B	D	B-to-D_2	4	200	6
+D	B	D-to-B_2	4	200	6
+B	E	B-to-E	3	200	7
+E	B	E-to-B	3	200	7
+B	E	B-to-E_2	3	200	17
+E	B	E-to-B_2	3	200	17
+B	E	B-to-E_3	3	200	27
+E	B	E-to-B_3	3	200	27
 
 NODES_TABLE
 name	lon	lat
@@ -43,16 +42,16 @@ A	H	20	dmd_a_h_1
 C	E	20	dmd_c_e_1
 B	G	30	dmd_b_g_1
 E	C	20	dmd_e_c_1
-A   D   20  dmd_a_d_1
-A   D   20  dmd_a_d_2
-A   D   20  dmd_a_d_3
-B   E   30  dmd_b_e_1
+A	D	20	dmd_a_d_1
+A	D	20	dmd_a_d_2
+A	D	20	dmd_a_d_3
+B	E	30	dmd_b_e_1
 
 RSVP_LSP_TABLE
 source	dest	name
 A	D	lsp_a_d_1
 A	D	lsp_a_d_2
 F	E	lsp_f_e_1
-A   F   lsp_a_f_1
-A   B   lsp_a_b_1
-Y   A   lsp_y_a_1
+A	F	lsp_a_f_1
+A	B	lsp_a_b_1
+Y	A	lsp_y_a_1

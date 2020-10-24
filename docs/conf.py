@@ -22,7 +22,7 @@ copyright = '2019, Tim Fiola'
 author = 'Tim Fiola'
 
 # The full version, including alpha/beta/rc tags
-release = '2.0'
+release = '2.1'
 
 # index file
 master_doc = 'index'

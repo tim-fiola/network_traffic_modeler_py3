@@ -22,11 +22,11 @@ D	G	D-to-G	10	100
 NODES_TABLE
 name	lon	lat
 A	50	0
-B	0 50
+B	0	50
 C	0	50
-D 50	0
+D	50	0
 E	75	0
-F 75	0
+F	75	0
 G	30	35
 
 DEMANDS_TABLE

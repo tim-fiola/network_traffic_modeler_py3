@@ -412,11 +412,11 @@ class TestModel(unittest.TestCase):
 
         int_a_b = Interface('A-to-B', 4, 100, node_a, node_b, 67)
 
-        err_msg = "Interface names must be unique per node"
+        err_msg = "No matching Interface Object found: source node B, dest node A circuit_id 67"
 
         model.interface_objects.add(int_a_b)
         with self.assertRaises(ModelException) as context:
-            model._unique_interface_per_node()
+            model.update_simulation()
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_implied_node(self):

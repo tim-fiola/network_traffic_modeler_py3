@@ -26,9 +26,9 @@ This PerformanceModel class is the same as the legacy (version 1.6 and earlier) 
 
 """
 
+from datetime import datetime
 from pprint import pprint
 
-import itertools
 import networkx as nx
 import random
 
@@ -45,8 +45,6 @@ from .node import Node
 # TODO - add support for SRLGs in load_model_file
 # TODO - add attribute for Node/Interface whereby an object can be failed by itself
 #  and not unfail when a parent SRLG unfails
-
-# TODO 1.7 - test
 
 
 class PerformanceModel(_MasterModel):
@@ -132,7 +130,7 @@ class PerformanceModel(_MasterModel):
 
         error_data = []  # list of all errored checks
 
-        for interface in (interface for interface in self.interface_objects):  # pragma: no cover
+        for interface in iter(self.interface_objects):  # pragma: no cover
             self._reserved_bw_error_checks(int_info, int_res_bw_sum_error, int_res_bw_too_high, interface)
 
         # If creation of circuits returns a dict, there are problems
@@ -140,10 +138,10 @@ class PerformanceModel(_MasterModel):
             error_data.append({'ints_w_no_remote_int': circuits['data']})
 
         # Append any failed checks to error_data
-        if len(int_res_bw_too_high) > 0:  # pragma: no cover
+        if int_res_bw_too_high:  # pragma: no cover
             error_data.append({'int_res_bw_too_high': int_res_bw_too_high})
 
-        if len(int_res_bw_sum_error) > 0:  # pragma: no cover
+        if int_res_bw_sum_error:  # pragma: no cover
             error_data.append({'int_res_bw_sum_error': int_res_bw_sum_error})
 
         # Validate there are no duplicate interfaces
@@ -153,13 +151,19 @@ class PerformanceModel(_MasterModel):
         if not unique_interfaces_per_node:  # pragma: no cover
             error_data.append(unique_interfaces_per_node)
 
+        # Log any Nodes with IGP shortcuts enabled
+        igp_shortcut_nodes = [node for node in self.node_objects if node.igp_shortcuts_enabled is True]
+        if igp_shortcut_nodes:
+            igp_shortcut_key = 'igp_shortcuts_enabled not allowed in PerformanceModel, but present on these Nodes'
+            error_data.append({igp_shortcut_key: igp_shortcut_nodes})
+
         # Make validate_model() check for matching failed statuses
         # on the interfaces and matching interface capacity
         circuits_with_mismatched_interface_capacity = []
-        for ckt in (ckt for ckt in self.circuit_objects):
+        for ckt in iter(self.circuit_objects):
             self._validate_circuit_interface_capacity(circuits_with_mismatched_interface_capacity, ckt)
 
-        if len(circuits_with_mismatched_interface_capacity) > 0:
+        if circuits_with_mismatched_interface_capacity:
             int_status_error_dict = {
                 'circuits_with_mismatched_interface_capacity':
                 circuits_with_mismatched_interface_capacity
@@ -168,9 +172,11 @@ class PerformanceModel(_MasterModel):
 
         # Look for multiple links between nodes (not allowed in Model)
         if len(self.multiple_links_between_nodes()) > 0:
-            multiple_links_between_nodes = {}
-            multiple_links_between_nodes['multiple links between nodes detected; not allowed in Model object'
-                                         '(use Parallel_Link_Model)'] = self.multiple_links_between_nodes()
+            multiple_links_between_nodes = {
+                'multiple links between nodes detected; not allowed in Model object'
+                '(use Parallel_Link_Model)': self.multiple_links_between_nodes()
+            }
+
             error_data.append(multiple_links_between_nodes)
 
         srlg_errors = self.validate_srlg_nodes()
@@ -179,14 +185,14 @@ class PerformanceModel(_MasterModel):
             error_data.append(srlg_errors)
 
         # Verify no duplicate nodes
-        node_names = set([node.name for node in self.node_objects])
+        node_names = {node.name for node in self.node_objects}
         if (len(self.node_objects)) != (len(node_names)):  # pragma: no cover
             node_dict = {'len_node_objects': len(self.node_objects),
                          'len_node_names': len(node_names)}
             error_data.append(node_dict)
 
         # Read error_data
-        if len(error_data) > 0:
+        if error_data:
             message = 'network interface validation failed, see returned data'
             pprint(message)
             pprint(error_data)
@@ -247,23 +253,27 @@ class PerformanceModel(_MasterModel):
                                                        self.rsvp_lsp_objects)
 
         # Reset the reserved_bandwidth, traffic on each interface
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             interface.reserved_bandwidth = 0
             interface.traffic = 0
 
-        for lsp in (lsp for lsp in self.rsvp_lsp_objects):
+        for lsp in iter(self.rsvp_lsp_objects):
             lsp.path = 'Unrouted'
 
-        for demand in (demand for demand in self.demand_objects):
+        for demand in iter(self.demand_objects):
             demand.path = 'Unrouted'
 
+        time_before_lsp_load = datetime.now()
         print("Routing the LSPs . . . ")
         # Route the RSVP LSPs
         self = self._route_lsps()
-        print("LSPs routed (if present); routing demands now . . .")
+        lsp_load_time = datetime.now() - time_before_lsp_load
+        print("LSPs routed (if present) in {}; routing demands now . . .".format(lsp_load_time))
         # Route the demands
+        demand_load_start_time = datetime.now()
         self = self._route_demands(non_failed_interfaces_model)
-        print("Demands routed; validating model . . . ")
+        demand_load_time = datetime.now() - demand_load_start_time
+        print("Demands routed in {}; validating model . . . ".format(demand_load_time))
 
         self.validate_model()
 
@@ -280,12 +290,19 @@ class PerformanceModel(_MasterModel):
         for demand in model.demand_objects:
             demand.path = []
 
-            # Find all LSPs that can carry the demand:
-            for lsp in (lsp for lsp in model.rsvp_lsp_objects):
-                if (lsp.source_node_object == demand.source_node_object and
-                        lsp.dest_node_object == demand.dest_node_object and
-                        'Unrouted' not in lsp.path):
-                    demand.path.append(lsp)
+            # Find all LSPs that can carry the demand from source to dest:
+            key = "{}-{}".format(demand.source_node_object.name, demand.dest_node_object.name)
+            try:
+                lsp_list = [lsp for lsp in self.parallel_lsp_groups()[key] if 'Unrouted' not in lsp.path]
+            except KeyError:
+                lsp_list = []
+
+            # Check for manually assigned metrics
+            if lsp_list:
+                min_lsp_metric = min(lsp.effective_metric(self) for lsp in lsp_list)
+                for lsp in lsp_list:
+                    if lsp.effective_metric(self) == min_lsp_metric:
+                        demand.path.append(lsp)
 
             if demand.path == []:
                 src = demand.source_node_object.name
@@ -468,59 +485,6 @@ class PerformanceModel(_MasterModel):
 
         return G
 
-    def _normalize_multigraph_paths(self, path_info):  # TODO - static?
-        """
-        Takes the multigraph_path_info and normalizes it to create all the
-        path combos that only have one link between each node.
-
-        :param path_info: List of of interface hops from a source
-        node to a destination node.  Each hop in the path
-        is a list of all the interfaces from the current node
-        to the next node.
-
-        path_info example from source node 'B' to destination node 'D':
-        [
-            [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')]],
-            [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28')],
-            [[Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]]
-        ]
-
-
-
-        :return: List of lists.  Each component list is a list with a unique
-        Interface combination for the egress Interfaces from source to destination
-        example:
-
-            [
-                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
-                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '18'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '8'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
-            ]
-        """
-        # List to hold unique path(s)
-        path_list = []
-
-        for path in path_info:
-            path = list(itertools.product(*path))
-            for path_option in path:
-                path_list.append(list(path_option))
-
-        return path_list
-
     def _make_circuits(self, return_exception=True, include_failed_circuits=True):
         """
         Matches interface objects into circuits and returns the circuits list
@@ -541,7 +505,7 @@ class PerformanceModel(_MasterModel):
                                                               local_node_name))
 
         # Set interface object in_ckt = False and baseline the circuit_id
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             interface.in_ckt = False
         circuit_id_number = 1
         circuits = set([])
@@ -549,7 +513,7 @@ class PerformanceModel(_MasterModel):
         # Using the paired interfaces (source_node, dest_node) pairs from G,
         # get the corresponding interface objects from the model to create
         # the circuit object
-        for interface in (interface for interface in paired_interfaces):
+        for interface in iter(paired_interfaces):
             # Get each interface from model for each
             int1 = self.get_interface_object_from_nodes(interface[0],
                                                         interface[1])
@@ -564,7 +528,7 @@ class PerformanceModel(_MasterModel):
                 # Add circuit_id to interface objects
                 int1.circuit_id = circuit_id_number
                 int2.circuit_id = circuit_id_number
-                circuit_id_number = circuit_id_number + 1
+                circuit_id_number += 1
 
                 ckt = Circuit(int1, int2)
                 circuits.add(ckt)
@@ -574,7 +538,7 @@ class PerformanceModel(_MasterModel):
                                      for (local_node_name, remote_node_name, data) in
                                      G.edges(data=True) if not (G.has_edge(remote_node_name, local_node_name))]
 
-        if len(exception_ints_not_in_ckt) > 0:
+        if exception_ints_not_in_ckt:
             exception_msg = ('WARNING: These interfaces were not matched '
                              'into a circuit {}'.format(exception_ints_not_in_ckt))
             if return_exception:
@@ -593,7 +557,7 @@ class PerformanceModel(_MasterModel):
         :param remote_node_name:
         :return: Interface object with specified local node and remote node names
         """
-        for interface in (interface for interface in self.interface_objects):
+        for interface in iter(self.interface_objects):
             if interface.node_object.name == local_node_name and \
                     interface.remote_node_object.name == remote_node_name:
                 return interface
@@ -619,17 +583,13 @@ class PerformanceModel(_MasterModel):
 
         if circuit_id is None:
             circuit_ids = self.all_interface_circuit_ids
-            if len(circuit_ids) == 0:
-                circuit_id = 1
-            else:
-                circuit_id = max(circuit_ids) + 1
-
+            circuit_id = 1 if len(circuit_ids) == 0 else max(circuit_ids) + 1
         int_a = Interface(node_a_interface_name, cost_intf_a, capacity,
                           node_a_object, node_b_object, circuit_id)
         int_b = Interface(node_b_interface_name, cost_intf_b, capacity,
                           node_b_object, node_a_object, circuit_id)
 
-        existing_int_keys = set([interface._key for interface in self.interface_objects])
+        existing_int_keys = {interface._key for interface in self.interface_objects}
 
         if int_a._key in existing_int_keys:
             raise ModelException("interface {} on node {} already exists in model".format(int_a, node_a_object))
@@ -640,35 +600,6 @@ class PerformanceModel(_MasterModel):
         self.interface_objects.add(int_b)
 
         self.validate_model()
-
-    def _make_network_interfaces(self, interface_info_list):
-        """
-        Returns set of Interface objects and a set of Node objects for Nodes
-        that are not already in the Model.
-
-        :param interface_info_list: list of dicts with interface specs;
-        :return: Set of Interface objects and set of Node objects for the
-        new Interfaces for Nodes that are not already in the model
-        """
-        network_interface_objects = set([])
-        network_node_objects = set([])
-
-        # Create the Interface objects
-        for interface in interface_info_list:
-            intf = Interface(interface['name'], interface['cost'],
-                             interface['capacity'], Node(interface['node']),
-                             Node(interface['remote_node']),
-                             interface['circuit_id'])
-            network_interface_objects.add(intf)
-
-            # Check to see if the Interface's Node already exists, if not, add it
-            node_names = ([node.name for node in self.node_objects])
-            if interface['node'] not in node_names:
-                network_node_objects.add(Node(interface['node']))
-            if interface['remote_node'] not in node_names:
-                network_node_objects.add(Node(interface['remote_node']))
-
-        return (network_interface_objects, network_node_objects)
 
     def get_all_paths_reservable_bw(self, source_node_name, dest_node_name, include_failed_circuits=True,
                                     cutoff=10, needed_bw=0):
@@ -709,9 +640,7 @@ class PerformanceModel(_MasterModel):
         G = self._make_weighted_network_graph(include_failed_circuits=include_failed_circuits, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-
+        converted_path = {'path': []}
         # Find the simple paths in G between source and dest
         digraph_all_paths = nx.all_simple_paths(G, source_node_name, dest_node_name, cutoff=cutoff)
 
@@ -741,10 +670,7 @@ class PerformanceModel(_MasterModel):
         G = self._make_weighted_network_graph(include_failed_circuits=False, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-        converted_path['cost'] = None
-
+        converted_path = {'path': [], 'cost': None}
         # Find the shortest paths in G between source and dest
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name,
                                                        dest_node_name,
@@ -790,10 +716,7 @@ class PerformanceModel(_MasterModel):
         G = self._make_weighted_network_graph_routed_lsp(lsp, needed_bw=needed_bw)
 
         # Define the Model-style path to be built
-        converted_path = dict()
-        converted_path['path'] = []
-        converted_path['cost'] = None
-
+        converted_path = {'path': [], 'cost': None}
         # Find the shortest paths in G between source and dest
         digraph_shortest_paths = nx.all_shortest_paths(G, source_node_name, dest_node_name, weight='cost')
         try:
@@ -890,7 +813,7 @@ class PerformanceModel(_MasterModel):
         return G
 
     @classmethod
-    def load_model_file(cls, data_file):  # TODO - make sure doc strings for this come out well in docs dir
+    def load_model_file(cls, data_file):    # TODO - make sure doc strings for this come out well in docs dir
         """
         Opens a network_modeling data file and returns a model containing
         the info in the data file.  The data file must be of the appropriate
@@ -908,13 +831,13 @@ class PerformanceModel(_MasterModel):
         names beneath:
 
         INTERFACES_TABLE
-        node_object_name - name of node	where interface resides
-        remote_node_object_name	- name of remote node
-        name - interface name
-        cost - IGP cost/metric for interface
-        capacity - capacity
-        rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-        percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+        - node_object_name - name of node	where interface resides
+        - remote_node_object_name	- name of remote node
+        - name - interface name
+        - cost - IGP cost/metric for interface
+        - capacity - capacity
+        - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+        - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
         value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
         Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
@@ -923,9 +846,9 @@ class PerformanceModel(_MasterModel):
         such as latitude/longitude
 
         NODES_TABLE -
-        name - name of node
-        lon	- longitude (or y-coordinate)
-        lat - latitude (or x-coordinate)
+        - name - name of node
+        - lon	- longitude (or y-coordinate) (optional)
+        - lat - latitude (or x-coordinate) (optional)
 
         Note - The NODES_TABLE is present for 2 reasons:
         - to add a Node that has no interfaces
@@ -933,16 +856,20 @@ class PerformanceModel(_MasterModel):
         the INTERFACES_TABLE
 
         DEMANDS_TABLE
-        source - source node name
-        dest - destination node name
-        traffic	- amount of traffic on demand
-        name - name of demand
-        RSVP_LSP_TABLE (this table is optional)
-        source - source node name
-        dest - destination node name
-        name - name of LSP
-        configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+        - source - source node name
+        - dest - destination node name
+        - traffic	- amount of traffic on demand
+        - name - name of demand
+
+        RSVP_LSP_TABLE
+        - source - LSP's source node
+        - dest - LSP's destination node
+        - name - name of LSP
+        - configured_setup_bw (optional) - if LSP has a fixed, static configured setup bandwidth, place that static value here,
         if LSP is auto-bandwidth, then leave this blank for the LSP
+        - manual_metric (optional) - manually assigned metric for LSP, if not using default metric from topology
+        shortest path
+
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
@@ -965,9 +892,9 @@ class PerformanceModel(_MasterModel):
             A	B	80	dmd_a_b_1
 
             RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw
-            A	B	lsp_a_b_1   10
-            A	B	lsp_a_b_2
+            source	dest	name    configured_setup_bw manual_metric
+            A	B	lsp_a_b_1   10  15
+            A	B	lsp_a_b_2       10
 
         :param data_file: file with model info
         :return: Model object
@@ -981,27 +908,27 @@ class PerformanceModel(_MasterModel):
         lsp_set = set()
 
         # Open the file with the data, read it, and split it into lines
-        with open(data_file, 'r') as f:
+        with open(data_file, 'r', encoding='utf-8-sig') as f:
             data = f.read()
 
         lines = data.splitlines()
 
         # Define the Interfaces from the data and extract the presence of
         # Nodes from the Interface data
-        int_info_begin_index = 2
+        int_info_begin_index = lines.index('INTERFACES_TABLE') + 2
         int_info_end_index = find_end_index(int_info_begin_index, lines)
         interface_set, node_set = cls._extract_interface_data_and_implied_nodes(int_info_begin_index,
                                                                                 int_info_end_index, lines)
 
         # Define the explicit nodes info from the file
-        nodes_info_begin_index = int_info_end_index + 3
+        nodes_info_begin_index = lines.index('NODES_TABLE') + 2
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
         for node_line in node_lines:
-            cls._add_node_from_data(demand_set, interface_set, lines, lsp_set, node_line, node_set)
+            cls._add_node_from_data(demand_set, interface_set, lsp_set, node_line, node_set)
 
         # Define the demands info
-        demands_info_begin_index = nodes_info_end_index + 3
+        demands_info_begin_index = lines.index('DEMANDS_TABLE') + 2
         demands_info_end_index = find_end_index(demands_info_begin_index, lines)
         # There may or may not be LSPs in the model, so if there are not,
         # set the demands_info_end_index as the last line in the file
@@ -1018,14 +945,14 @@ class PerformanceModel(_MasterModel):
                 raise ModelException(err_msg)
 
         # Define the LSP info (if present)
-        # If the demands_info_end_index is the same as the length of the
-        # lines list, then there is no LSP section
-        if demands_info_end_index != len(lines):
-            try:
-                cls._add_lsp_from_data(demands_info_end_index, lines, lsp_set, node_set)
-            except ModelException as e:
-                err_msg = e.args[0]
-                raise ModelException(err_msg)
+        try:
+            lsp_info_begin_index = lines.index('RSVP_LSP_TABLE') + 2
+            cls._add_lsp_from_data(lsp_info_begin_index, lines, lsp_set, node_set)
+        except ValueError:
+            print("RSVP_LSP_TABLE not in file; no LSPs added to model")
+        except ModelException as e:
+            err_msg = e.args[0]
+            raise ModelException(err_msg)
 
         return cls(interface_set, node_set, demand_set, lsp_set)
 
@@ -1047,20 +974,20 @@ class PerformanceModel(_MasterModel):
         # Add the Interfaces to a set
         for interface_line in interface_lines:
             # Read interface characteristics
-            if len(interface_line.split()) == 5:
-                node_name, remote_node_name, name, cost, capacity = interface_line.split()
+            if len(interface_line.split('\t')) == 5:
+                node_name, remote_node_name, name, cost, capacity = interface_line.split('\t')
                 rsvp_enabled_bool = True
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) == 6:
-                node_name, remote_node_name, name, cost, capacity, rsvp_enabled = interface_line.split()
+            elif len(interface_line.split('\t')) == 6:
+                node_name, remote_node_name, name, cost, capacity, rsvp_enabled = interface_line.split('\t')
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:
                     rsvp_enabled_bool = False
                 percent_reservable_bandwidth = 100
-            elif len(interface_line.split()) >= 7:
+            elif len(interface_line.split('\t')) >= 7:
                 node_name, remote_node_name, name, cost, capacity, \
-                    rsvp_enabled, percent_reservable_bandwidth = interface_line.split()
+                    rsvp_enabled, percent_reservable_bandwidth = interface_line.split('\t')
                 if rsvp_enabled in [True, 'T', 'True', 'true']:
                     rsvp_enabled_bool = True
                 else:
@@ -1074,19 +1001,244 @@ class PerformanceModel(_MasterModel):
             new_interface = Interface(name, int(cost), float(capacity), Node(node_name), Node(remote_node_name),
                                       None, rsvp_enabled_bool, float(percent_reservable_bandwidth))
 
-            if new_interface._key not in set([interface._key for interface in interface_set]):
+            if new_interface._key not in {
+                interface._key for interface in interface_set
+            }:
                 interface_set.add(new_interface)
             else:
                 print("{} already exists in model; disregarding line {}".format(new_interface,
                                                                                 lines.index(interface_line)))
 
             # Derive Nodes from the Interface data
-            if node_name not in set([node.name for node in node_set]):
+            if node_name not in {node.name for node in node_set}:
                 node_set.add(new_interface.node_object)
-            if remote_node_name not in set([node.name for node in node_set]):
+            if remote_node_name not in {node.name for node in node_set}:
                 node_set.add(new_interface.remote_node_object)
 
         return interface_set, node_set
+
+    def _update_interface_utilization(self):
+        """Updates each interface's utilization; returns Model object with
+        updated interface utilization."""
+
+        # In the model, in an interface is failed, set the traffic attribute
+        # to 'Down', otherwise, initialize the traffic to zero
+        for interface_object in self.interface_objects:
+            interface_object.traffic = 'Down' if interface_object.failed else 0.0
+        routed_demand_object_generator = (demand_object for demand_object in self.demand_objects if
+                                          'Unrouted' not in demand_object.path)
+
+        # For each demand that is not Unrouted, add its traffic value to each
+        # interface object in the path
+        for demand_object in routed_demand_object_generator:
+            # This model only allows demands to take RSVP LSPs if
+            # the demand's source/dest nodes match the LSP's source/dest nodes.
+
+            # Expand each LSP into its interfaces and add that the traffic per LSP
+            # to the LSP's path interfaces.
+
+            # Can demand take LSP?
+            # Is there a parallel_lsp_group that matches the source and dest for the demand_object?
+            key = '{}-{}'.format(demand_object.source_node_object.name, demand_object.dest_node_object.name)
+
+            # Find the routed LSPs that can carry the demand
+            try:
+                candidate_lsps_for_demand = self.parallel_lsp_groups()[key]
+                min_metric = min(
+                    lsp.effective_metric(self)
+                    for lsp in candidate_lsps_for_demand
+                    if 'Unrouted' not in lsp.path)
+                lsps_for_demand = [lsp for lsp in candidate_lsps_for_demand if
+                                   lsp.effective_metric(self) == min_metric and 'Unrouted' not in lsp.path]
+            except (KeyError, ValueError):
+                # If there is no LSP group that matches the demand source/dest (KeyError) or there are no routed
+                # LSPs for the demand (ValueError), then set lsps_for_demand to empty list
+                lsps_for_demand = []
+
+            if lsps_for_demand != []:
+                # Find each demands path list, determine the ECMP split across the
+                # routed LSPs, and find the traffic per path (LSP)
+                num_routed_lsps_for_demand = len(lsps_for_demand)
+
+                traffic_per_demand_path = demand_object.traffic / num_routed_lsps_for_demand
+
+                # Get the interfaces for each LSP in the demand's path
+                for lsp in lsps_for_demand:
+
+                    lsp_path_interfaces = lsp.path['interfaces']
+
+                    # Now that all interfaces are known,
+                    # update traffic on interfaces demand touches
+                    for interface in lsp_path_interfaces:
+                        # Get the interface's existing traffic and add the
+                        # portion of the demand's traffic
+                        interface.traffic += traffic_per_demand_path
+
+            # If demand_object is not taking LSPs end to end, IGP route it, using hop by hop ECMP
+            else:
+                # demand_traffic_per_int will be dict of
+                # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
+                #
+                # Example: The interface from node G to node D has 2.5 units of traffic from 'demand'
+                # {'G-D': 2.5, 'A-B': 10.0, 'B-D': 2.5, 'A-D': 5.0, 'D-F': 10.0, 'B-G': 2.5}
+                demand_traffic_per_int = self._demand_traffic_per_int(demand_object)
+
+                # Get the interface objects and update them with the traffic
+                for interface, traffic_from_demand in demand_traffic_per_int.items():
+                    interface.traffic += traffic_from_demand
+
+        return self
+
+    def _demand_traffic_per_int(self, demand):
+        """
+        Given a Demand object, return the (key, value) pairs for how much traffic each
+        Interface gets from the routing of the traffic load over Model Interfaces.
+
+        : demand: Demand object
+        : return: dict of (Interface: <traffic from demand> ) k, v pairs
+
+        Example::
+
+            The interface from node B to E (name='B-to-E') below has 8.0 units of
+            traffic from 'demand'; the interface from A to B has 12.0, etc.
+
+            {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
+            remote_node_object = Node('B'), circuit_id = '1'): 12.0,
+             Interface(name = 'A-to-B_2', cost = 4, capacity = 50, node_object = Node('A'),
+             remote_node_object = Node('B'), circuit_id = '2'): 12.0,
+             Interface(name = 'B-to-E', cost = 3, capacity = 200, node_object = Node('B'),
+             remote_node_object = Node('E'), circuit_id = '7'): 8.0,
+             Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
+             remote_node_object = Node('E'), circuit_id = '27'): 8.0,
+             Interface(name = 'B-to-E_2', cost = 3, capacity = 200, node_object = Node('B'),
+             remote_node_object = Node('E'), circuit_id = '17'): 8.0}
+
+        """
+
+        shortest_path_int_list = []
+        for path in demand.path:
+            shortest_path_int_list += path
+
+        # Unique interfaces across all shortest paths
+        shortest_path_int_set = set(shortest_path_int_list)
+
+        # Dict to store how many unique next hops each node has in the shortest paths
+        unique_next_hops = {}
+
+        # Iterate through all the interfaces
+        for interface in shortest_path_int_set:
+            # For a given Interface's node_object, determine how many
+            # Interfaces on that Node are facing next hops
+            unique_next_hops[interface.node_object.name] = [intf.node_object.name for intf in shortest_path_int_set
+                                                            if intf.node_object.name == interface.node_object.name]
+
+        # TODO - find shorter example here
+        # shortest_path_info will be a dict with the following info for each path:
+        # - an ordered list of interfaces in the path
+        # - a dict of cumulative splits for each interface at that point in the path
+        # - the amount of traffic on the path
+        # Example:
+        # shortest_path_info =
+        # {'path_0': {'interfaces': [
+        #     Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
+        #               circuit_id='2'),
+        #     Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #               circuit_id='17')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
+        #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), circuit_id='17'): 6}},
+        #  'path_1': {'interfaces': [
+        #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
+        #                circuit_id='2'),
+        #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                circuit_id='7')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
+        #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
+        #  'path_2': {'interfaces': [
+        #      Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'), remote_node_object=Node('B'),
+        #                circuit_id='2'),
+        #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                circuit_id='27')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B_2', cost=4, capacity=50, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), circuit_id='2'): 2,
+        #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}},
+        #  'path_3': {'interfaces': [
+        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
+        #                circuit_id='1'),
+        #      Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                circuit_id='17')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
+        #                        Interface(name='B-to-E_2', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), circuit_id='17'): 6}},
+        #  'path_4': {'interfaces': [
+        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
+        #                circuit_id='1'),
+        #      Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                circuit_id='7')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
+        #                        Interface(name='B-to-E', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), circuit_id='7'): 6}},
+        #  'path_5': {'interfaces': [
+        #      Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'), remote_node_object=Node('B'),
+        #                circuit_id='1'),
+        #      Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'), remote_node_object=Node('E'),
+        #                circuit_id='27')],
+        #             'path_traffic': 4.0,
+        #             'splits': {Interface(name='A-to-B', cost=4, capacity=100, node_object=Node('A'),
+        #                                  remote_node_object=Node('B'), circuit_id='1'): 2,
+        #                        Interface(name='B-to-E_3', cost=3, capacity=200, node_object=Node('B'),
+        #                                  remote_node_object=Node('E'), circuit_id='27'): 6}}}
+        shortest_path_info = {}
+        path_counter = 0
+
+        # Iterate thru each path for the demand
+        for path in demand.path:
+            # Dict of cumulative splits per interface
+            traffic_splits_per_interface = {}
+
+            path_key = 'path_' + str(path_counter)
+
+            shortest_path_info[path_key] = {}
+
+            # Create cumulative path splits for each interface
+            total_splits = 1
+            for interface in path:
+                total_splits = total_splits * len(unique_next_hops[interface.node_object.name])
+                traffic_splits_per_interface[interface] = total_splits
+
+            # Find path traffic
+            max_split = max([split for split in traffic_splits_per_interface.values()])
+            path_traffic = float(demand.traffic) / float(max_split)
+
+            shortest_path_info[path_key]['interfaces'] = path
+            shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
+            shortest_path_info[path_key]['path_traffic'] = path_traffic
+            path_counter += 1
+
+        # For each path, determine which interfaces it transits and add
+        # that path's traffic to the interface
+
+        # Create dict to hold cumulative traffic for each interface for demand
+        traff_per_int = dict.fromkeys(shortest_path_int_set, 0)
+        for path, info in shortest_path_info.items():
+            for interface in info['interfaces']:
+                traff_per_int[interface] += info['path_traffic']
+
+        # Round all traffic values to 1 decimal place
+        traff_per_int = {interface: round(traffic, 1) for interface, traffic in traff_per_int.items()}
+
+        return traff_per_int
 
     def multiple_links_between_nodes(self):
         """

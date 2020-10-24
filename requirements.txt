@@ -1,4 +1,2 @@
 networkx==2.4
-matplotlib
-mpld3
 jinja2

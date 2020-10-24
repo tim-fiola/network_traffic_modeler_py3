@@ -1,12 +1,19 @@
 Changelog
 =========
 
+2.1
+---
+*  Enforcing tab-separated data in model data files (used to allow spaces or tabs between data entries)
+*  FlexModel class allows IGP RSVP shortcuts
+*  FlexModel and PerformanceModel classes allow/honor RSVP LSP manual metrics
+*  Made load_model_file for FlexModel and PerformanceModel classes more forgiving for number of lines allowed between tables
+
 2.0
---
+---
 *  Made version 1.7 into major version 2.0 to account for possible backwards compatibilty
 
 1.7
---
+---
 * Renamed Model class to PerformanceModel
 * Renamed Parallel_Link_Model class to FlexModel
 * Optimization: general 18-25% performance improvement when measured by time to converge

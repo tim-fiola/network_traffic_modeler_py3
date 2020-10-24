@@ -33,7 +33,7 @@ print()
 model.update_simulation()
 print("Here are the LSPs are their effective and actual metrics")
 for lsp in model.rsvp_lsp_objects:
-    print(lsp, lsp.effective_metric(model), lsp.actual_metric(model))
+    print(lsp, lsp.effective_metric(model), lsp.topology_metric(model))
 
 # Check/validate metrics for LSPs
 if lsp_a_d_1.effective_metric(model) != 40:
@@ -42,7 +42,7 @@ if lsp_a_d_1.effective_metric(model) != 40:
 if lsp_a_d_2.effective_metric(model) != 40:
     msg = "lsp_a_d_2 effective_metric should be 40"
     raise Exception(msg)
-if lsp_a_d_1.actual_metric == lsp_a_d_2.actual_metric:
+if lsp_a_d_1.topology_metric == lsp_a_d_2.topology_metric:
     msg = "lsp_a_d_1 and lsp_a_d_2 should have different actual_metrics"
     raise Exception(msg)
 

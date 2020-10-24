@@ -13,6 +13,7 @@ class Demand(object):
         self.traffic = traffic
         self.name = name
         self.path = 'Unrouted'
+        self._path_detail = 'Unrouted_detail'
 
         # Validate traffic value
         if not(isinstance(traffic, (int, float))) or traffic < 0:
@@ -60,3 +61,7 @@ class Demand(object):
         self.path = demand_path
 
         return self
+
+    @property
+    def path_detail(self):
+        return self._path_detail

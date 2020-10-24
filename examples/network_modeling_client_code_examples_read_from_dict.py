@@ -13,7 +13,11 @@ sys.path.append('../')  # noqa
 from pyNTM import PerformanceModel
 from pyNTM import Node
 
-from graph_network import graph_network_interactive
+# Try/except in case there are mpld3/tkinter import errors in graph_network_interactive
+try:
+    from graph_network import graph_network_interactive
+except ModuleNotFoundError as e:
+    print("Could not import graph_network due to error: {}".format(e))
 
 from pprint import pprint
 import time
@@ -307,5 +311,9 @@ tot_time = t2 - t1
 print('tot_time = ', tot_time)
 print()
 
-print("Making interactive network graph in browser.")
-graph_network_interactive.make_interactive_network_graph(model1)
+# Try/except in case there are mpld3/tkinter import errors in graph_network_interactive
+print("Attempting to make interactive network graph in browser.")
+try:
+    graph_network_interactive.make_interactive_network_graph(model1)
+except Exception as e:
+    print("Could not print graph due to error: {}".format(e))
