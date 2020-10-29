@@ -2,15 +2,17 @@ import dash
 import dash_cytoscape as cyto
 import dash_html_components as html
 from dash.dependencies import Input, Output
+import dash_core_components as dcc
 
-# TODO - make interactive legend - https://dash.plotly.com/layout
+# TODO - need to make callback to show only items selected in dropdown
+# https://dash.plotly.com/layout Core Components section
 
-util_ranges = {'0-24': '#002366',
-               '25-49': '#008000',
-               '50-74': '#FFFF00',
-               '75-89': '#FF4500',
-               '90-99': '#8B0000',
-               '100-': '#9400D3'}
+util_ranges = {'0-24': 'royalblue',
+               '25-49': 'green',
+               '50-74': 'yellow',
+               '75-89': 'orangered',
+               '90-99': 'darkred',
+               '100-': 'darkviolet'}
 
 default_stylesheet = [
     {
@@ -55,6 +57,12 @@ default_stylesheet = [
 
         }
     },
+    {
+        "selector": 'edge[group=\"util_ranges\", group not in \"util_display_options\"]',
+        "style": {
+            "opacity": 0.4
+        }
+    }
 ]
 
 app = dash.Dash(__name__)
@@ -71,11 +79,19 @@ elements = [
               'utilization': 'failed'}},
     {'data': {'source': 'three', 'target': 'one', "group": "failed", 'label': 'Ckt1',
               'utilization': 'failed'}},
-    {'data': {'source': 'one', 'target': 'three', "group": util_ranges["25-49"], 'label': 'Ckt2'}},
-    {'data': {'source': 'three', 'target': 'one', "group": util_ranges["75-89"], 'label': 'Ckt2'}},
-    {'data': {'source': 'one', 'target': 'three', "group": util_ranges["100-"], 'label': 'Ckt3'}},
-    {'data': {'source': 'three', 'target': 'one', "group": util_ranges["0-24"], 'label': 'Ckt3'}},
+    {'data': {'source': 'one', 'target': 'three', "group": util_ranges["25-49"], 'label': 'Ckt2',
+              'utilization': 40}},
+    {'data': {'source': 'three', 'target': 'one', "group": util_ranges["75-89"], 'label': 'Ckt2',
+              'utilization': 78}},
+    {'data': {'source': 'one', 'target': 'three', "group": util_ranges["100-"], 'label': 'Ckt3',
+              'utilization': 110}},
+    {'data': {'source': 'three', 'target': 'one', "group": util_ranges["0-24"], 'label': 'Ckt3',
+              'utilization': 15}},
 ]
+
+util_display_options = []
+for item in util_ranges.keys():
+    util_display_options.append({'label': item, 'value': item})
 
 app.layout = html.Div([
     cyto.Cytoscape(
@@ -85,15 +101,22 @@ app.layout = html.Div([
         elements=elements,
         stylesheet=default_stylesheet,
     ),
-    html.P(id='cytoscape-mouseoverEdgeData-output')
+    html.P(id='cytoscape-mouseoverEdgeData-output'),
+    html.Label('Multi-Select Dropdown'),
+    dcc.Dropdown(options=util_display_options,
+                 value=[entry['value'] for entry in util_display_options],
+                 multi=True)
 ])
 
+
+# Need to select interfaces that have utilization ranges selected in values from dropdown
 
 @app.callback(Output('cytoscape-mouseoverEdgeData-output', 'children'),
               [Input('cytoscape-two-nodes', 'mouseoverEdgeData')])
 def displayTapEdgeData(data):
     if data:
-        return "You recently hovered over the edge between " + data['source'].upper() + " and " + data['target'].upper()
+        msg = "Source: {}, Dest: {}, utilization {}%".format(data['source'], data['target'], data['utilization'])
+        return msg
 
 
 if __name__ == '__main__':
