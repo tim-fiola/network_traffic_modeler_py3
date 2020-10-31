@@ -37,3 +37,10 @@ class Circuit(object):
             return True
         else:
             return False
+
+    def circuit_id(self):  # TODO - unit test this
+        """
+        Returns the circuit_id, which bonds the two component Interfaces to the Circuit
+        """
+
+        return self.interface_a.circuit_id
