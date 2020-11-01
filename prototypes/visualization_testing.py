@@ -27,6 +27,9 @@ def make_json_node(x, y, id, label, midpoint=False):
     json_node['position'] = {'x': x, 'y': y}
     json_node['data'] = {'id': id, 'label': label, 'group': ''}
 
+    if midpoint:
+        json_node['data']['group'] = 'midpoint'
+
     return json_node
 
 
@@ -101,7 +104,7 @@ for ckt in model.circuit_objects:
     # Create the midpoint node between the endpoints
     # midpoint_label = 'midpoint-{}'.format(ckt_id)
     midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
-    new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label)
+    new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label, midpoint=True)
     nodes.append(new_node)
     # Create each end node
     nodes.append(make_json_node(node_a.lon, node_a.lat, node_a.name, node_a.name))
@@ -124,7 +127,7 @@ default_stylesheet = [
             "curve-style": "bezier",
             'label': "data(label)",
             'line-color': "data(group)",
-            "font-size": "8px",
+            "font-size": "9px",
             "opacity": 0.4
         }
     },
@@ -142,11 +145,15 @@ default_stylesheet = [
         "selector": "node",
         "style": {
             "label": "data(label)",
+            'background-color': 'lightgrey',
             "font-size": "8px",
             "text-halign": 'center',
             'text-valign': 'center',
             'text-wrap': 'wrap',
-            "size": "10px"
+            'width': '15px',
+            'height': '15px',
+            'border-width': 1,
+            'border-color': 'dimgrey'
         }
     },
     {
@@ -157,6 +164,15 @@ default_stylesheet = [
             'label': "data(label)",
             'background-color': 'red'
 
+        }
+    },
+    {
+        "selector": 'node[group=\"midpoint\"]',
+        "style": {
+            'label': "data(label)",
+            'shape': 'rectangle',
+            'width': '10px',
+            'height': '10px'
         }
     },
 ]
