@@ -80,7 +80,16 @@ model.update_simulation()
 print()
 
 
-def create_elements(model):
+def create_elements(model, group_midpoints=True):
+    """
+
+    :param model: pyNTM Model object
+    :param group_midpoints: True|False.  Group all circuit midpoints that have common nodes.  This
+    is helpful if you have multiple circuits between common nodes.  It will collapse the midpoint
+    nodes for all the circuits into a common midpoint node.
+
+    :return: element data (nodes, edges) for graphing in dash_cytoscape
+    """
 
     edges = []
     nodes = []
@@ -103,8 +112,10 @@ def create_elements(model):
         midpoint_y = sum([node_a_y, node_b_y]) / 2
 
         # Create the midpoint node between the endpoints
-        # midpoint_label = 'midpoint-{}'.format(ckt_id)
-        midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
+        if group_midpoints:
+            midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
+        else:
+            midpoint_label = 'midpoint-{}'.format(ckt_id)
         new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label, midpoint=True)
         nodes.append(new_node)
         # Create each end node
