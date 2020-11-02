@@ -137,7 +137,6 @@ default_stylesheet = [
             "line-color": "#808080",
             "curve-style": "bezier",
             'label': "data(label)",
-            "font-size": "8px",
             'line-style': 'dashed'
         }
     },
@@ -146,12 +145,12 @@ default_stylesheet = [
         "style": {
             "label": "data(label)",
             'background-color': 'lightgrey',
-            "font-size": "8px",
+            "font-size": "9px",
             "text-halign": 'center',
             'text-valign': 'center',
             'text-wrap': 'wrap',
-            'width': '15px',
-            'height': '15px',
+            'width': '20px',
+            'height': '20px',
             'border-width': 1,
             'border-color': 'dimgrey'
         }
@@ -193,11 +192,21 @@ app.layout = html.Div([
         elements=elements,
         stylesheet=default_stylesheet,
     ),
-    html.P(id='cytoscape-mouseoverEdgeData-output'),
-    html.Label('Multi-Select Dropdown'),
-    dcc.Dropdown(id='utilization-dropdown-callback', options=util_display_options,
-                 value=[entry['value'] for entry in util_display_options],
-                 multi=True)
+
+
+    html.Div(className='four columns', children=[
+        dcc.Tabs(id='tabs', children=[
+            dcc.Tab(label='Multi-Select Dropdown', children=[
+                html.P(id='cytoscape-mouseoverEdgeData-output'),
+                dcc.Dropdown(
+                    id='utilization-dropdown-callback', options=util_display_options,
+                    value=[entry['value'] for entry in util_display_options],
+                    multi=True,
+                )]
+            ),
+       ])
+    ]
+    )
 ])
 
 
