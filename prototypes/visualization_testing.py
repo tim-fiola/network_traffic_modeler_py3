@@ -185,32 +185,33 @@ for util_range, color in util_ranges.items():
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
-    cyto.Cytoscape(
-        id='cytoscape-prototypes',
-        layout={'name': 'preset'},
-        style={'width': '100%', 'height': '800px'},
-        elements=elements,
-        stylesheet=default_stylesheet,
-    ),
 
+    html.Div(className='eight columns', children=[
+        cyto.Cytoscape(
+            id='cytoscape-prototypes',
+            layout={'name': 'preset'},
+            style={'width': '100%', 'height': '95vh'},
+            elements=elements,
+            stylesheet=default_stylesheet,
+        ),
+        html.P(id='cytoscape-mouseoverEdgeData-output'),
+        ]),
 
-    html.Div(className='four columns', children=[
-        dcc.Tabs(id='tabs', children=[
-            dcc.Tab(label='Multi-Select Dropdown', children=[
-                html.P(id='cytoscape-mouseoverEdgeData-output'),
-                dcc.Dropdown(
-                    id='utilization-dropdown-callback', options=util_display_options,
-                    value=[entry['value'] for entry in util_display_options],
-                    multi=True,
-                )]
-            ),
-       ])
-    ]
-    )
+        html.Div(className='four columns', children=[
+            dcc.Tabs(id='tabs', children=[
+                dcc.Tab(label='Multi-Select Dropdown', children=[
+                    dcc.Dropdown(
+                        id='utilization-dropdown-callback', options=util_display_options,
+                        value=[entry['value'] for entry in util_display_options],
+                        multi=True,
+                    )
+                ]),
+           ]),
+        ])
 ])
 
 
-# Need to select interfaces that have utilization ranges selected in values from dropdown
+# Display info about edge user hovers over
 @app.callback(Output('cytoscape-mouseoverEdgeData-output', 'children'),
               [Input('cytoscape-prototypes', 'mouseoverEdgeData')])
 def displayTapEdgeData(data):
@@ -218,7 +219,7 @@ def displayTapEdgeData(data):
         msg = "Source: {}, Dest: {}, utilization {}%".format(data['source'], data['target'], data['utilization'])
         return msg
 
-
+# Need to select interfaces that have utilization ranges selected in values from dropdown
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'), [Input('utilization-dropdown-callback', 'value')])
 def update_stylesheet(edges_to_highlight):
     new_style = []
