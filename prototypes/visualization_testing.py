@@ -79,44 +79,51 @@ model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
 model.update_simulation()
 print()
 
-edges = []
-nodes = []
+
+def create_elements(model):
+
+    edges = []
+    nodes = []
+    for ckt in model.circuit_objects:
+        int_a = ckt.interface_a
+        int_b = ckt.interface_b
+        node_a = int_a.node_object
+        node_b = int_b.node_object
+        node_a_y = node_a.lat
+        node_a_x = node_a.lon
+        node_b_y = node_b.lat
+        node_b_x = node_b.lon
+
+        try:
+            ckt_id = int_a.circuit_id
+        except (AttributeError, ValueError):
+            ckt_id = "circuit_{}-{}".format(node_a.name, node_b.name)
+
+        midpoint_x = sum([node_a_x, node_b_x]) / 2
+        midpoint_y = sum([node_a_y, node_b_y]) / 2
+
+        # Create the midpoint node between the endpoints
+        # midpoint_label = 'midpoint-{}'.format(ckt_id)
+        midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
+        new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label, midpoint=True)
+        nodes.append(new_node)
+        # Create each end node
+        nodes.append(make_json_node(node_a.lon, node_a.lat, node_a.name, node_a.name))
+        nodes.append(make_json_node(node_b.lon, node_b.lat, node_b.name, node_b.name))
+
+        # Create the edges
+        # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
+        #           'utilization': 'failed'}}
+
+        # Make edges with midpoints
+        edges.append(make_json_edge(node_a.name, midpoint_label, ckt_id, int_a.utilization, util_ranges))
+        edges.append(make_json_edge(node_b.name, midpoint_label, ckt_id, int_b.utilization, util_ranges))
+    elements = nodes + edges
+
+    return elements
 
 
-for ckt in model.circuit_objects:
-    int_a = ckt.interface_a
-    int_b = ckt.interface_b
-    node_a = int_a.node_object
-    node_b = int_b.node_object
-    node_a_y = node_a.lat
-    node_a_x = node_a.lon
-    node_b_y = node_b.lat
-    node_b_x = node_b.lon
-
-    try:
-        ckt_id = int_a.circuit_id
-    except (AttributeError, ValueError):
-        ckt_id = "circuit_{}-{}".format(node_a.name, node_b.name)
-
-    midpoint_x = sum([node_a_x, node_b_x])/2
-    midpoint_y = sum([node_a_y, node_b_y])/2
-
-    # Create the midpoint node between the endpoints
-    # midpoint_label = 'midpoint-{}'.format(ckt_id)
-    midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
-    new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label, midpoint=True)
-    nodes.append(new_node)
-    # Create each end node
-    nodes.append(make_json_node(node_a.lon, node_a.lat, node_a.name, node_a.name))
-    nodes.append(make_json_node(node_b.lon, node_b.lat, node_b.name, node_b.name))
-
-    # Create the edges
-    # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
-    #           'utilization': 'failed'}}
-
-    # Make edges with midpoints
-    edges.append(make_json_edge(node_a.name, midpoint_label, ckt_id, int_a.utilization, util_ranges))
-    edges.append(make_json_edge(node_b.name, midpoint_label, ckt_id, int_b.utilization, util_ranges))
+elements = create_elements(model)
 
 default_stylesheet = [
     {
@@ -176,27 +183,47 @@ default_stylesheet = [
     },
 ]
 
-elements = nodes + edges
-
 util_display_options = []
 for util_range, color in util_ranges.items():
     util_display_options.append({'label': util_range, 'value': color})
 
+
+styles = {
+    'container': {
+        'position': 'fixed',
+        'display': 'flex',
+        'flex-direction': 'column',
+        'height': '95vh',
+        'width': '100%',
+    },
+    'cy-container': {
+        'flex': '1',
+        'position': 'relative'
+    },
+    'cytoscape': {
+        'position': 'absolute',
+        'width': '100%',
+        'height': '100%',
+        'z-index': 999
+    },
+    'tab': {'height': 'calc(98vh - 80px)'}
+}
+
 app = dash.Dash(__name__)
 
-app.layout = html.Div([
+app.layout = html.Div(style=styles['container'], children=[
 
-    html.Div(className='eight columns', children=[
+    html.Div(className='eight columns', style=styles['cy-container'], children=[
         cyto.Cytoscape(
             id='cytoscape-prototypes',
             layout={'name': 'preset'},
-            style={'width': '100%', 'height': '95vh'},
+            style=styles['cytoscape'],
             elements=elements,
             stylesheet=default_stylesheet,
+            responsive=True
         ),
         html.P(id='cytoscape-mouseoverEdgeData-output'),
         ]),
-
         html.Div(className='four columns', children=[
             dcc.Tabs(id='tabs', children=[
                 dcc.Tab(label='Multi-Select Dropdown', children=[
@@ -219,6 +246,7 @@ def displayTapEdgeData(data):
         msg = "Source: {}, Dest: {}, utilization {}%".format(data['source'], data['target'], data['utilization'])
         return msg
 
+
 # Need to select interfaces that have utilization ranges selected in values from dropdown
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'), [Input('utilization-dropdown-callback', 'value')])
 def update_stylesheet(edges_to_highlight):
@@ -234,6 +262,5 @@ def update_stylesheet(edges_to_highlight):
         new_style.append(new_entry)
 
     return default_stylesheet + new_style
-
 
 app.run_server(debug=True)
