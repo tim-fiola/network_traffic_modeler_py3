@@ -7,6 +7,8 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 
+from pyNTM import RSVP_LSP
+
 from pprint import pprint
 
 from pyNTM import FlexModel
@@ -237,13 +239,22 @@ app.layout = html.Div(style=styles['container'], children=[
         ]),
         html.Div(className='four columns', children=[
             dcc.Tabs(id='tabs', children=[
-                dcc.Tab(label='Multi-Select Dropdown', children=[
+                dcc.Tab(label='Utilization Visualization Dropdown', children=[
                     dcc.Dropdown(
                         id='utilization-dropdown-callback', options=util_display_options,
                         value=[entry['value'] for entry in util_display_options],
                         multi=True,
                     )
                 ]),
+
+                dcc.Tab(label='Demand Paths', children=[
+                    dcc.Dropdown(
+                        id='demand-source-callback', options=[node.name for node in model.node_objects]
+                    ),
+                    dcc.Dropdown(
+                        id='demand-destination-callback', options=[node.name for node in model.node_objects]
+                    ),
+                ])
            ]),
         ])
 ])
@@ -273,5 +284,46 @@ def update_stylesheet(edges_to_highlight):
         new_style.append(new_entry)
 
     return default_stylesheet + new_style
+
+@app.callback(Output('cytoscape-prototypes', 'stylesheet'),
+              [Input('demand-source-callback', 'value'), ['demand-destination-callback', 'value']])
+def highlight_demand_paths(source, destination):
+    # Find the demands that match the source and destination
+    dmds = []
+    for demand in model.demand_objects:
+        if (demand.source_node_object.name == source and
+                demand.dest_node_object.name == destination):
+            dmds.append(demand)
+
+    # Find the demand paths for each demand
+    for dmd in dmds:
+        dmd_path = dmd.path
+        dmd_path_modified = []  # Will hold the final paths that only have Interfaces
+        for path in dmd_path:
+            for hop_num in range(len(path)-1, -1, -1 ):
+                if isinstance(path[hop_num], RSVP_LSP):
+                    # Replace the LSP with its interfaces in path
+                    lsp_interfaces = path[hop_num].path['interfaces']
+                    for i in range(len(lsp_interfaces)):
+                        path.insert(i + hop_num, lsp_interfaces[i])
+
+        dmd_path_modified.append(path)
+
+    # Find edges that match the Interfaces in each path in dmd_path_modified
+    edges_to_highlight = []
+
+    for path in dmd_path_modified:
+        for interface in path:
+            edge_to_get =
+
+
+
+
+
+
+
+
+
+
 
 app.run_server(debug=True)
