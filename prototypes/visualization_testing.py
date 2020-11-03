@@ -295,26 +295,32 @@ def highlight_demand_paths(source, destination):
                 demand.dest_node_object.name == destination):
             dmds.append(demand)
 
+    # Find edges that match the Interfaces in each path in dmd_path_modified
+    edges_to_highlight = []
+
     # Find the demand paths for each demand
     for dmd in dmds:
         dmd_path = dmd.path
         dmd_path_modified = []  # Will hold the final paths that only have Interfaces
         for path in dmd_path:
-            for hop_num in range(len(path)-1, -1, -1 ):
-                if isinstance(path[hop_num], RSVP_LSP):
-                    # Replace the LSP with its interfaces in path
-                    lsp_interfaces = path[hop_num].path['interfaces']
-                    for i in range(len(lsp_interfaces)):
-                        path.insert(i + hop_num, lsp_interfaces[i])
+            for hop in dmd_path:
+                if isinstance(hop, RSVP_LSP):
+                    for lsp_hop in hop:
+                        dmd_path_modified.append(hop)
+                else:
+                    dmd_path_modified.append(hop)
 
         dmd_path_modified.append(path)
 
-    # Find edges that match the Interfaces in each path in dmd_path_modified
-    edges_to_highlight = []
+        for path in dmd_path_modified:
+            for interface in path:
+                # Get edge with matching interface source and ckt id (label)
+                edge_to_get = [element for element in elements if
+                               element['data']['source'] == interface.source_node_object.name and
+                               element['data']['label'] == interface.circuit_id]
+                edges_to_highlight.append(edge_to_get)
 
-    for path in dmd_path_modified:
-        for interface in path:
-            edge_to_get =
+    # Modify the stylesheet for edges_to_highlight
 
 
 
