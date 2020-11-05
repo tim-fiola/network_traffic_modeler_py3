@@ -259,6 +259,12 @@ def get_demand_object_from_repr(demand_repr):
 
 
 def get_lsp_object_from_repr(lsp_repr):
+    """
+    Get lsp object from lsp string
+
+    Args:
+        lsp_repr: (str): write your description
+    """
 
     try:
         lsp_info = re.split(', | |\)', lsp_repr)

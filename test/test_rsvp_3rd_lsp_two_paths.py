@@ -7,6 +7,12 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up the lsp class
+
+        Args:
+            self: (todo): write your description
+        """
         self.model = PerformanceModel.load_model_file('test/model_test_topology.csv')
 
         self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -24,6 +30,12 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
     # Since any path from A to D cannot fit 83.3*2 traffic, only 2 of the LSPs
     # will be able to signal and reserve a setup bandwidth of 83.3 traffic
     def test_1_lsp_unrouted(self):
+        """
+        Test if lsp lsp lsp.
+
+        Args:
+            self: (todo): write your description
+        """
         # One of the 3 LSPs will not set up
         self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
                           self.lsp_a_d_2.reserved_bandwidth,
@@ -32,6 +44,12 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
     # Once the 2 LSPs that do initially signal for 83.3 traffic, each will have
     # room to signal for and reserve more traffic: 250 traffic/2 lsps = 125 traffic/lsp
     def test_auto_bw_adjust(self):
+        """
+        Test if the bandwidth in the bandwidth - place.
+
+        Args:
+            self: (todo): write your description
+        """
         # The 2 LSPs that do set up will have setup_bandwidth of 125
         self.assertEqual([self.lsp_a_d_1.reserved_bandwidth,
                           self.lsp_a_d_2.reserved_bandwidth,

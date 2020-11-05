@@ -13,6 +13,12 @@ class TestModel(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up the class and lspsp.
+
+        Args:
+            self: (todo): write your description
+        """
         self.model = PerformanceModel.load_model_file('test/traffic_eng_test_model.csv')
         self.model.update_simulation()
 
@@ -53,6 +59,12 @@ class TestParallelLinkModel(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up the class and lspulation class
+
+        Args:
+            self: (todo): write your description
+        """
         self.model = FlexModel.load_model_file('test/traffic_eng_test_parallel_link_model.csv')
         self.model.update_simulation()
 

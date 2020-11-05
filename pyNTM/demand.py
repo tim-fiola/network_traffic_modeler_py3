@@ -8,6 +8,16 @@ class Demand(object):
     """
 
     def __init__(self, source_node_object, dest_node_object, traffic=0, name='none'):
+        """
+        Initialize a single source path.
+
+        Args:
+            self: (todo): write your description
+            source_node_object: (str): write your description
+            dest_node_object: (todo): write your description
+            traffic: (todo): write your description
+            name: (str): write your description
+        """
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.traffic = traffic
@@ -25,6 +35,12 @@ class Demand(object):
         return (self.source_node_object.name, self.dest_node_object.name, self.name)
 
     def __repr__(self):
+        """
+        Return a repr representation of this object.
+
+        Args:
+            self: (todo): write your description
+        """
         return 'Demand(source = %s, dest = %s, traffic = %s, name = %r)' % \
                (self.source_node_object.name,
                 self.dest_node_object.name,
@@ -64,4 +80,10 @@ class Demand(object):
 
     @property
     def path_detail(self):
+        """
+        Return the detail path.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._path_detail

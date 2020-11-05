@@ -14,6 +14,15 @@ class Node(object):
     """
 
     def __init__(self, name, lat=0, lon=0):
+        """
+        Initialize a new instance.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            lat: (str): write your description
+            lon: (str): write your description
+        """
         self.name = name
         self._failed = False
         self._lat = lat
@@ -28,6 +37,12 @@ class Node(object):
             raise ValueError('lon must be a float value')
 
     def __repr__(self):
+        """
+        Return a human - friendly name.
+
+        Args:
+            self: (todo): write your description
+        """
         return 'Node(%r)' % self.name
 
     # Modify __eq__ and __hash__ default behavior for Node class
@@ -37,13 +52,32 @@ class Node(object):
     # focus on the Node.name equivalency and and __hash__ to focus on the
     # hash of the Node.name will make equivalency testing possible
     def __eq__(self, other_node):
+        """
+        Return true if self and other_node.
+
+        Args:
+            self: (todo): write your description
+            other_node: (todo): write your description
+        """
         return self.__dict__ == other_node.__dict__
 
     def __hash__(self):
+        """
+        Return the hash of the name.
+
+        Args:
+            self: (todo): write your description
+        """
         # return hash(tuple(sorted(self.__dict__.items())))
         return hash(self.name)
 
     def _key(self):
+        """
+        Returns the key for this key.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.name
 
     @property
@@ -58,6 +92,13 @@ class Node(object):
 
     @failed.setter
     def failed(self, status):
+        """
+        Return the status of the failed.
+
+        Args:
+            self: (todo): write your description
+            status: (str): write your description
+        """
         if not isinstance(status, bool):
             raise ModelException('must be boolean')
 
@@ -81,6 +122,13 @@ class Node(object):
 
     @lat.setter
     def lat(self, status):
+        """
+        Set the latitude.
+
+        Args:
+            self: (todo): write your description
+            status: (str): write your description
+        """
         if isinstance(status, float) or isinstance(status, int):
             self._lat = status
         else:
@@ -93,6 +141,13 @@ class Node(object):
 
     @lon.setter
     def lon(self, status):
+        """
+        Set the longitude
+
+        Args:
+            self: (todo): write your description
+            status: (str): write your description
+        """
         if isinstance(status, float) or isinstance(status, int):
             self._lon = status
         else:
@@ -108,6 +163,13 @@ class Node(object):
 
     @igp_shortcuts_enabled.setter
     def igp_shortcuts_enabled(self, status):
+        """
+        Check if the status is enabled.
+
+        Args:
+            self: (todo): write your description
+            status: (str): write your description
+        """
         if isinstance(status, bool):
             self._igp_shortcuts_enabled = status
         elif status == 'True':
@@ -225,6 +287,12 @@ class Node(object):
 
     @property
     def srlgs(self):
+        """
+        Returns a list of the server.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._srlgs
 
     # TODO add node.fail and node.unfail - low priority - not really

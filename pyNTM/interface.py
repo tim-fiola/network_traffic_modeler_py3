@@ -10,6 +10,20 @@ class Interface(object):
 
     def __init__(self, name, cost, capacity, node_object, remote_node_object,
                  circuit_id=None, rsvp_enabled=True, percent_reservable_bandwidth=100):
+        """
+        Initialize a bandwidth.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            cost: (int): write your description
+            capacity: (int): write your description
+            node_object: (todo): write your description
+            remote_node_object: (todo): write your description
+            circuit_id: (str): write your description
+            rsvp_enabled: (bool): write your description
+            percent_reservable_bandwidth: (str): write your description
+        """
         self.name = name
         self.cost = cost
         self.capacity = capacity
@@ -30,6 +44,13 @@ class Interface(object):
 
     # Modify the __hash__ and __eq__ methods to make comparisons easier
     def __eq__(self, other_object):
+        """
+        Return true if this node objects.
+
+        Args:
+            self: (todo): write your description
+            other_object: (todo): write your description
+        """
         if not isinstance(other_object, Interface):
             return NotImplemented
 
@@ -39,16 +60,35 @@ class Interface(object):
                                                     other_object.capacity, other_object.circuit_id]
 
     def __ne__(self, other_object):
+        """
+        Return the difference between two node objects of another node.
+
+        Args:
+            self: (todo): write your description
+            other_object: (todo): write your description
+        """
         return [self.node_object, self.remote_node_object, self.name,
                 self.capacity, self.circuit_id] != [other_object.node_object,
                                                     other_object.remote_node_object, other_object.name,
                                                     other_object.capacity, other_object.circuit_id]
 
     def __hash__(self):
+        """
+        Return the hash of the node.
+
+        Args:
+            self: (todo): write your description
+        """
         # return hash(tuple(sorted(self.__dict__.items())))
         return hash(self.name+self.node_object.name)
 
     def __repr__(self):
+        """
+        Return a human - readable representation of this node.
+
+        Args:
+            self: (todo): write your description
+        """
         return '%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
 remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
                                               self.name,
@@ -137,10 +177,23 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
     @property
     def cost(self):
+        """
+        : returns : the cost
+
+        Args:
+            self: (todo): write your description
+        """
         return self._cost
 
     @cost.setter
     def cost(self, cost):
+        """
+        Cost cost
+
+        Args:
+            self: (todo): write your description
+            cost: (todo): write your description
+        """
         if cost < 1:
             raise ModelException("Interface cost cannot be less than 1")
         if not isinstance(cost, int):
@@ -149,10 +202,23 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
     @property
     def capacity(self):
+        """
+        Returns a list.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._capacity
 
     @capacity.setter
     def capacity(self, capacity):
+        """
+        Set the capacity of the capacity.
+
+        Args:
+            self: (todo): write your description
+            capacity: (str): write your description
+        """
         if not(capacity > 0):
             raise ModelException("Interface capacity must be greater than 0")
         self._capacity = capacity
@@ -288,6 +354,12 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
     @property
     def srlgs(self):
+        """
+        Returns a list of the server.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._srlgs
 
     def add_to_srlg(self, srlg_name, model, create_if_not_present=False):

@@ -28,6 +28,20 @@ class _MasterModel(object):
 
     def __init__(self, interface_objects=set(), node_objects=set(),
                  demand_objects=set(), rsvp_lsp_objects=set()):
+        """
+        Initialize a set of interfaces.
+
+        Args:
+            self: (todo): write your description
+            interface_objects: (todo): write your description
+            set: (todo): write your description
+            node_objects: (todo): write your description
+            set: (todo): write your description
+            demand_objects: (todo): write your description
+            set: (todo): write your description
+            rsvp_lsp_objects: (todo): write your description
+            set: (todo): write your description
+        """
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
@@ -527,6 +541,17 @@ class _MasterModel(object):
 
     @classmethod
     def _add_node_from_data(cls, demand_set, interface_set, lsp_set, node_line, node_set):
+        """
+        Add a node to a node.
+
+        Args:
+            cls: (todo): write your description
+            demand_set: (todo): write your description
+            interface_set: (todo): write your description
+            lsp_set: (todo): write your description
+            node_line: (str): write your description
+            node_set: (todo): write your description
+        """
         node_info = node_line.split('\t')
         node_name = node_info[0]
         # Set latitude

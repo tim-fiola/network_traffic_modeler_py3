@@ -12,6 +12,12 @@ class TestModel(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up the class type
+
+        Args:
+            self: (todo): write your description
+        """
         self.model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
 
         self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -25,23 +31,47 @@ class TestModel(unittest.TestCase):
         self.model.update_simulation()
 
     def test_lat_lon(self):
+        """
+        Set latitude and set of latitude of the given node
+
+        Args:
+            self: (todo): write your description
+        """
         node_g = self.model.get_node_object('G')
         self.assertEqual(node_g.lat, 90)
         self.assertEqual(node_g.lon, 30)
 
     def test_demand_add(self):
+        """
+        Test if the model todo to the model.
+
+        Args:
+            self: (todo): write your description
+        """
         self.model.add_demand('A', 'B', 40, 'dmd_a_b')
         self.model.update_simulation()
         self.assertEqual(self.model.__repr__(),
                          'FlexModel(Interfaces: 40, Nodes: 10, Demands: 15, RSVP_LSPs: 4)')
 
     def test_rsvp_lsp_add(self):
+        """
+        Add all lsp terms in - place.
+
+        Args:
+            self: (todo): write your description
+        """
         self.model.add_rsvp_lsp('A', 'B', 'lsp_a_b_1')
         self.model.update_simulation()
         self.assertEqual(self.model.__repr__(),
                          'FlexModel(Interfaces: 40, Nodes: 10, Demands: 15, RSVP_LSPs: 5)')
 
     def test_node_source_demands(self):
+        """
+        Test if the source model of the test.
+
+        Args:
+            self: (todo): write your description
+        """
         dmd_a_b = self.model.get_demand_object('A', 'B', 'dmd_a_b')
         self.assertTrue(dmd_a_b in self.model.get_demand_objects_source_node('A'))
         self.assertTrue(self.dmd_a_d_1 in self.model.get_demand_objects_source_node('A'))
@@ -49,6 +79,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(self.dmd_a_f_1 in self.model.get_demand_objects_source_node('A'))
 
     def test_node_dest_demands(self):
+        """
+        Test for destination destination destination.
+
+        Args:
+            self: (todo): write your description
+        """
         # dmd_a_b was added in test_source_demands test
         dmd_a_b = self.model.get_demand_object('A', 'B', 'dmd_a_b')
         dmd_a_b_1 = self.model.get_demand_object('A', 'B', 'dmd_a_b_1')
@@ -60,13 +96,31 @@ class TestModel(unittest.TestCase):
 
     # No interfaces are failed
     def test_get_failed_ints_1(self):
+        """
+        Gets the test test test test test.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(self.model.get_failed_interface_objects(), [])
 
     def test_get_unfailed_ints(self):
+        """
+        Test if this interface as a list of the test.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertTrue(len(self.model.get_unfailed_interface_objects()), 24)
 
     # Fail interface; 2 interfaces should be down
     def test_get_failed_ints_2(self):
+        """
+        Load failed failed failed failed failed failed.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         model.fail_interface('A-to-B', 'A')
@@ -77,6 +131,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(failed_int_list), set([int_a_b, int_b_a]))
 
     def test_get_unfailed_ints_2(self):
+        """
+        Test for unfailed unfailed unfailed unfailed
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         model.fail_interface('A-to-B', 'A')
@@ -84,6 +144,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(len(model.get_unfailed_interface_objects()), 38)
 
     def test_unfail_interface(self):
+        """
+        Test if a test interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         model.fail_interface('A-to-B', 'A')
@@ -97,6 +163,12 @@ class TestModel(unittest.TestCase):
     # When Node A fails, all of its Interfaces and adjacent Interfaces
     # should also fail
     def test_fail_node(self):
+        """
+        Updates the simulation was created.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         model.fail_node('A')
@@ -104,6 +176,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(model.get_node_object('A').failed)
 
     def test_failed_node_interfaces(self):
+        """
+        Loads the failed failed.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         model.fail_node('A')
@@ -113,6 +191,12 @@ class TestModel(unittest.TestCase):
     # When a Node is failed, all of its Interfaces must stay failed
     # until the Node is unfailed
     def test_int_stays_down(self):
+        """
+        Test interface down down interface interface.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = model.get_interface_object('B-to-A', 'B')
@@ -127,6 +211,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(int_b_a.failed)
 
     def test_int_comes_up(self):
+        """
+        Test if the simulation is up.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = model.get_interface_object('B-to-A', 'B')
@@ -147,6 +237,12 @@ class TestModel(unittest.TestCase):
     # Find all simple paths less than 2 hops from A to D; no required
     # bandwidth needed
     def test_all_paths_cutoff(self):  # TODO - may need to modify this after adding parallel links
+        """
+        Load all paths in - only paths from all paths.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 2, 0)
@@ -158,6 +254,12 @@ class TestModel(unittest.TestCase):
     # Find all simple paths from A to D with at least 105 units of
     # reservable bandwidth
     def test_all_paths_needed_bw(self):
+        """
+        Test if all paths in a list of all paths.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 3, 105)
@@ -167,6 +269,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(path_lengths, [2])
 
     def test_get_failed_nodes(self):
+        """
+        Test for failed nodes.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -180,6 +288,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(model.get_failed_node_objects()), set([node_a, node_g]))
 
     def test_get_non_failed_nodes(self):
+        """
+        Test for non - non - failures.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -201,12 +315,24 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(model.get_non_failed_node_objects()), set(unfailed_node_list))
 
     def test_interface_fields_missing_model_file_load(self):
+        """
+        Load all fields that all fields exist.
+
+        Args:
+            self: (todo): write your description
+        """
         err_msg = 'node_name, remote_node_name, name, cost, capacity, circuit_id must be defined for line'
         with self.assertRaises(ModelException) as context:
             FlexModel.load_model_file('test/interface_field_info_missing_routing_topology_multidigraph.csv')
         self.assertTrue(err_msg in err_msg in context.exception.args[0])
 
     def test_ckt_mismatch_int_capacity_file_load(self):
+        """
+        Loads the total capacity file
+
+        Args:
+            self: (todo): write your description
+        """
         err_msg = 'circuits_with_mismatched_interface_capacity'
         model = FlexModel.load_model_file('test/mismatched_ckt_int_capacity_topology_parallel_links.csv')
         with self.assertRaises(ModelException) as context:
@@ -214,6 +340,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0][1][0].keys())
 
     def test_get_bad_node(self):
+        """
+        Get the bad node
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -224,6 +356,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_add_duplicate_node(self):
+        """
+        Add a duplicate node to the model.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -236,6 +374,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_add_node(self):
+        """
+        Adds a node to the model
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -247,6 +391,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(node_z, model.node_objects)
 
     def test_get_bad_interface(self):
+        """
+        Load bad bad bad interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -255,6 +405,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue('specified interface does not exist' in context.exception.args[0])
 
     def test_bad_ckt(self):
+        """
+        Test if this load balancer was created
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -263,6 +419,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue('specified interface does not exist' in context.exception.args[0])
 
     def test_get_ckt(self):
+        """
+        Load all cross - section of simulation
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -271,6 +433,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(ckt, model.circuit_objects)
 
     def test_get_unrouted_dmds(self):
+        """
+        Test for unrouted simulation
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         model.fail_node('X')
@@ -280,6 +448,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(dmd_a_y, model.get_unrouted_demand_objects())
 
     def test_get_bad_dmd(self):
+        """
+        Get bad bad bad bad bad bad bad bad
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -288,6 +462,12 @@ class TestModel(unittest.TestCase):
         self.assertIn('no matching demand', context.exception.args[0])
 
     def test_get_bad_lsp(self):
+        """
+        Test for lsp
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -298,6 +478,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_add_duplicate_lsp(self):
+        """
+        Test for lsp file to lsp.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -308,6 +494,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_node_orphan(self):
+        """
+        Test if a single node
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -320,6 +512,12 @@ class TestModel(unittest.TestCase):
         self.assertFalse(model.is_node_an_orphan(node_a))
 
     def test_ckt_add(self):
+        """
+        Add a cross - section to the simulation
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -337,6 +535,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(isinstance(ckt, Circuit))
 
     def test_duplicate_ckt(self):
+        """
+        Duplicate the circuit
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         node_a = model.get_node_object('A')
@@ -367,6 +571,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_non_unique_interface_name(self):
+        """
+        Load the non - unique non - unique non - unique non - unique name.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -382,6 +592,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_int_name_change(self):
+        """
+        Set the name of an interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -392,6 +608,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(interface.name, 'A-to-B-changed')
 
     def test_duplicate_int_near_side(self):
+        """
+        Duplicate is true models
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -404,6 +626,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_duplicate_interface(self):
+        """
+        Duplicate ising interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -420,6 +648,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_implied_node(self):
+        """
+        Test if the given xml file exists.
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
 
         node_x = model.get_node_object('X')
@@ -427,6 +661,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(node_x in model.node_objects)
 
     def test_int_not_in_ckt(self):
+        """
+        Loads the test is in the simulation
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
 
@@ -469,6 +709,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_for_bad_node_in_demand_data(self):
+        """
+        Test for bad bad bad bad bad bad.
+
+        Args:
+            self: (todo): write your description
+        """
 
         err_msg = "No Node with name Y in Model"
 
@@ -477,6 +723,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_for_bad_node_in_lsp_data(self):
+        """
+        Test for bad bad test for bad.
+
+        Args:
+            self: (todo): write your description
+        """
 
         err_msg = "No Node with name Y in Model"
 
@@ -533,6 +785,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(routed_lsps_no_demands, [])
 
     def test_parallel_link_model_repr(self):
+        """
+        Test for all parallel model was created.
+
+        Args:
+            self: (todo): write your description
+        """
         model = Parallel_Link_Model.load_model_file('test/parallel_link_model_test_topology.csv')
         model.add_demand('A', 'B', 40, 'dmd_a_b')
         model.update_simulation()

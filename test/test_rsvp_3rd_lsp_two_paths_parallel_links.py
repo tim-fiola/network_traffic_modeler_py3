@@ -7,6 +7,12 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up class attributes.
+
+        Args:
+            self: (todo): write your description
+        """
         self.model = FlexModel.load_model_file('test/test_rsvp_3rd_lsp_2_paths_parallel_links.csv')
         self.lsp_a_e_1 = self.model.get_rsvp_lsp('A', 'E', 'lsp_a_e_1')
         self.lsp_a_e_2 = self.model.get_rsvp_lsp('A', 'E', 'lsp_a_e_2')
@@ -17,12 +23,24 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
     # Since any path from A to E cannot fit 90*2 traffic, only 2 of the LSPs
     # will be able to signal and reserve a setup bandwidth of 90 traffic
     def test_1_lsp_unrouted(self):
+        """
+        Test if the cross - band.
+
+        Args:
+            self: (todo): write your description
+        """
         # One of the 3 LSPs will not set up
         self.assertEqual([self.lsp_a_e_1.reserved_bandwidth,
                           self.lsp_a_e_2.reserved_bandwidth,
                           self.lsp_a_e_3.reserved_bandwidth].count('Unrouted'), 1)
 
     def test_auto_bw_adjust(self):
+        """
+        Adjusts : pysp_adjust_a_bw_adjust_band.
+
+        Args:
+            self: (todo): write your description
+        """
         # Once the 2 LSPs that do initially signal for 90 traffic,
         # each will have room to signal for and reserve more
         # traffic: 270 traffic/2 lsps = 135 traffic/lsp
@@ -37,6 +55,12 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
         self.assertEqual(int_a_b_2.reserved_bandwidth, 135.0)
 
     def test_auto_bw_adjust_2(self):
+        """
+        Perform auto - auto - auto - auto - auto - auto - auto - auto - auto - linearization.
+
+        Args:
+            self: (todo): write your description
+        """
         # Add 4th LSP from A to E
         self.model.add_rsvp_lsp('A', 'E', 'lsp_a_e_4')
         self.model.update_simulation()
@@ -63,6 +87,12 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
                          int_a_b_2.reserved_bandwidth].count(135.0) >= 1)
 
     def test_add_more_traffic(self):
+        """
+        Creates an observed set of the sum of all elements of - qubits.
+
+        Args:
+            self: (todo): write your description
+        """
         # Add 4th LSP from A to E (use an isolated model for this)
         model = FlexModel.load_model_file('test/test_rsvp_3rd_lsp_2_paths_parallel_links.csv')
         model.add_rsvp_lsp('A', 'E', 'lsp_a_e_4')

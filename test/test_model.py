@@ -12,6 +12,12 @@ class TestModel(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up the class and lsp class
+
+        Args:
+            self: (todo): write your description
+        """
         self.model = PerformanceModel.load_model_file('test/model_test_topology.csv')
 
         self.lsp_a_d_1 = self.model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -25,21 +31,45 @@ class TestModel(unittest.TestCase):
         self.model.update_simulation()
 
     def test_lat_lon(self):
+        """
+        Set latitude and longitude of the element
+
+        Args:
+            self: (todo): write your description
+        """
         node_g = self.model.get_node_object('G')
         self.assertEqual(node_g.lat, 35)
         self.assertEqual(node_g.lon, 30)
 
     def test_demand_add(self):
+        """
+        Test if the model todo to the model.
+
+        Args:
+            self: (todo): write your description
+        """
         self.model.add_demand('A', 'B', 40, 'dmd_a_b')
         self.model.update_simulation()
         self.assertEqual(self.model.__repr__(), 'PerformanceModel(Interfaces: 18, Nodes: 7, Demands: 5, RSVP_LSPs: 3)')
 
     def test_rsvp_lsp_add(self):
+        """
+        Add all lsp terms in - place.
+
+        Args:
+            self: (todo): write your description
+        """
         self.model.add_rsvp_lsp('A', 'B', 'lsp_a_b_1')
         self.model.update_simulation()
         self.assertEqual(self.model.__repr__(), 'PerformanceModel(Interfaces: 18, Nodes: 7, Demands: 5, RSVP_LSPs: 4)')
 
     def test_node_source_demands(self):
+        """
+        Test if the source model of the test.
+
+        Args:
+            self: (todo): write your description
+        """
         dmd_a_b = self.model.get_demand_object('A', 'B', 'dmd_a_b')
         self.assertTrue(dmd_a_b in self.model.get_demand_objects_source_node('A'))
         self.assertTrue(self.dmd_a_d_1 in self.model.get_demand_objects_source_node('A'))
@@ -47,18 +77,42 @@ class TestModel(unittest.TestCase):
         self.assertTrue(self.dmd_a_f_1 in self.model.get_demand_objects_source_node('A'))
 
     def test_node_dest_demands(self):
+        """
+        Test for destination destination destination.
+
+        Args:
+            self: (todo): write your description
+        """
         dmd_a_b = self.model.get_demand_object('A', 'B', 'dmd_a_b')
         self.assertEqual(self.model.get_demand_objects_dest_node('B'), [dmd_a_b])
 
     # No interfaces are failed
     def test_get_failed_ints_1(self):
+        """
+        Gets the test test test test test.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(self.model.get_failed_interface_objects(), [])
 
     def test_get_unfailed_ints(self):
+        """
+        Return the test ids for this object.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertTrue(len(self.model.get_unfailed_interface_objects()), 18)
 
     # Fail interface; 2 interfaces should be down
     def test_get_failed_ints_2(self):
+        """
+        Get failed failed failed failed failed failed.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         model.fail_interface('A-to-B', 'A')
@@ -69,6 +123,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(failed_int_list), set([int_a_b, int_b_a]))
 
     def test_get_unfailed_ints_2(self):
+        """
+        Test for unfailed unfailed unfailed unfailed
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         model.fail_interface('A-to-B', 'A')
@@ -76,6 +136,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(len(model.get_unfailed_interface_objects()), 16)
 
     def test_unfail_interface(self):
+        """
+        Test if a test interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         model.fail_interface('A-to-B', 'A')
@@ -89,6 +155,12 @@ class TestModel(unittest.TestCase):
     # When Node A fails, all of its Interfaces and adjacent Interfaces
     # should also fail
     def test_fail_node(self):
+        """
+        Update the test node
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         model.fail_node('A')
@@ -96,6 +168,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(model.get_node_object('A').failed)
 
     def test_failed_node_interfaces(self):
+        """
+        Test if the failed failed.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         model.fail_node('A')
@@ -105,6 +183,12 @@ class TestModel(unittest.TestCase):
     # When a Node is failed, all of its Interfaces must stay failed
     # until the Node is unfailed
     def test_int_stays_down(self):
+        """
+        Test the interface ising interface.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = model.get_interface_object('B-to-A', 'B')
@@ -119,6 +203,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(int_b_a.failed)
 
     def test_int_comes_up(self):
+        """
+        Test if the simulation is up.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         int_a_b = model.get_interface_object('A-to-B', 'A')
         int_b_a = model.get_interface_object('B-to-A', 'B')
@@ -139,6 +229,12 @@ class TestModel(unittest.TestCase):
     # Find all simple paths less than 2 hops from A to D; no required
     # bandwidth needed
     def test_all_paths_cutoff(self):
+        """
+        Load all paths in - paths to all paths.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 2, 0)
@@ -150,6 +246,12 @@ class TestModel(unittest.TestCase):
     # Find all simple paths from A to D with at least 10 unit of
     # reservable bandwidth
     def test_all_paths_needed_bw(self):
+        """
+        Determine paths to all models. csv.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
         all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 10)
@@ -159,6 +261,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(path_lengths, [1, 2, 2, 3])
 
     def test_get_failed_nodes(self):
+        """
+        Test for failed nodes of the nodes are failed nodes.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -172,6 +280,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(model.get_failed_node_objects()), set([node_a, node_g]))
 
     def test_get_non_failed_nodes(self):
+        """
+        Load all non - failed nodes.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -190,12 +304,24 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(model.get_non_failed_node_objects()), set(unfailed_node_list))
 
     def test_interface_fields_missing_model_file_load(self):
+        """
+        Load all fields that were not found.
+
+        Args:
+            self: (todo): write your description
+        """
         err_msg = 'node_name, remote_node_name, name, cost, and capacity must be defined for line'
         with self.assertRaises(ModelException) as context:
             PerformanceModel.load_model_file('test/interface_field_info_missing_routing_topology.csv')
         self.assertTrue(err_msg in err_msg in context.exception.args[0])
 
     def test_ckt_mismatch_int_capacity_file_load(self):
+        """
+        Loads the capacity file
+
+        Args:
+            self: (todo): write your description
+        """
         err_msg = 'circuits_with_mismatched_interface_capacity'
         model = PerformanceModel.load_model_file('test/mismatched_ckt_int_capacity_topology_file.csv')
         with self.assertRaises(ModelException) as context:
@@ -203,6 +329,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0][1][0].keys())
 
     def test_get_bad_node(self):
+        """
+        Load the badge node
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -213,6 +345,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_add_duplicate_node(self):
+        """
+        Add a duplicate node to the model.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -225,6 +363,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(err_msg in context.exception.args[0])
 
     def test_add_node(self):
+        """
+        Adds a test node to the graph
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -236,6 +380,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(node_z, model.node_objects)
 
     def test_get_bad_interface(self):
+        """
+        Load bad bad interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -244,6 +394,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue('specified interface does not exist' in context.exception.args[0])
 
     def test_bad_ckt(self):
+        """
+        Test if all players
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -252,6 +408,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue('specified interface does not exist' in context.exception.args[0])
 
     def test_get_ckt(self):
+        """
+        Updates all throats
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -260,6 +422,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(ckt, model.circuit_objects)
 
     def test_get_unrouted_dmds(self):
+        """
+        Test for unrouted
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
         model.fail_node('D')
@@ -269,6 +437,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(dmd_a_f, model.get_unrouted_demand_objects())
 
     def test_get_bad_dmd(self):
+        """
+        Load bad bad bad bad bad bad bad bad bad bad
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -277,6 +451,12 @@ class TestModel(unittest.TestCase):
         self.assertIn('no matching demand', context.exception.args[0])
 
     def test_get_bad_lsp(self):
+        """
+        Run lsp
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -287,6 +467,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_add_duplicate_lsp(self):
+        """
+        Add lsp file to lsp.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/model_test_topology.csv')
         model.update_simulation()
 
@@ -297,6 +483,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_node_orphan(self):
+        """
+        Test if a single model is a supernode.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -309,6 +501,12 @@ class TestModel(unittest.TestCase):
         self.assertFalse(model.is_node_an_orphan(node_a))
 
     def test_ckt_add(self):
+        """
+        Add a cross - style to see : class
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -326,6 +524,12 @@ class TestModel(unittest.TestCase):
         self.assertTrue(isinstance(ckt, Circuit))
 
     def test_add_duplicate_int(self):
+        """
+        Add an ibis binding.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -341,6 +545,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0][1][0].keys())
 
     def test_int_not_in_ckt(self):
+        """
+        Test if the test test interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -356,6 +566,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_int_name_change(self):
+        """
+        Load the name of an interface name interface
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -366,6 +582,12 @@ class TestModel(unittest.TestCase):
         self.assertEqual(interface.name, 'A-to-B-changed')
 
     def test_duplicate_int_near_side(self):
+        """
+        Duplicate the number of the two models.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -378,6 +600,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_duplicate_int_remote_side(self):
+        """
+        Duplicate on remote node
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
         model.update_simulation()
 
@@ -390,6 +618,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_for_bad_node_in_demand_data(self):
+        """
+        Test for bad bad bad bad bad test.
+
+        Args:
+            self: (todo): write your description
+        """
 
         err_msg = "No Node with name Y in Model"
 
@@ -398,6 +632,12 @@ class TestModel(unittest.TestCase):
         self.assertIn(err_msg, context.exception.args[0])
 
     def test_for_bad_node_in_lsp_data(self):
+        """
+        Test for bad bad bad bad bad bad test files.
+
+        Args:
+            self: (todo): write your description
+        """
 
         err_msg = "No Node with name Y in Model"
 
