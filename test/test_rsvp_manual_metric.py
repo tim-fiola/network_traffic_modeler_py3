@@ -8,6 +8,12 @@ from pyNTM import PerformanceModel
 class TestIGPShortcutsFlexModel(unittest.TestCase):
     # Load FlexModel, verify LSP metrics
     def test_model_load_flex_model(self):
+        """
+        Loads the flex flex model
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/lsp_manual_metric_test_flex_model.csv')
         model.update_simulation()
         lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
@@ -43,6 +49,12 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # Parallel LSPs in IGP shortcuts, but one with a lower metric;
     # traffic should only take lower metric LSP
     def test_lsp_metric_efficacy(self):
+        """
+        Calculate lsp metric
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/lsp_manual_metric_test_flex_model.csv')
         model.update_simulation()
         lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
@@ -58,6 +70,12 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # Parallel LSPs source-dest, but one with a lower metric;
     # traffic should only take lower metric LSP
     def test_lsp_metric_efficacy_2(self):
+        """
+        Test for lsp lsp lsp model
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/flex_model_parallel_source_dest_lsps.csv')
         model.update_simulation()
 
@@ -82,6 +100,12 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
 class TestIGPShortcutsPerfModel(unittest.TestCase):
     # Load PerformanceModel, verify LSP metrics and LSP routing
     def test_model_load_perf_model(self):
+        """
+        Loads the perf model
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_manual_metric_test_model.csv')
         model.update_simulation()
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -116,6 +140,12 @@ class TestIGPShortcutsPerfModel(unittest.TestCase):
     # Parallel LSPs source-dest, but one with a lower metric;
     # traffic should only take lower metric LSP
     def test_perf_model_metric_efficacy(self):
+        """
+        Calculate the metric model
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_manual_metric_test_model.csv')
         model.update_simulation()
 

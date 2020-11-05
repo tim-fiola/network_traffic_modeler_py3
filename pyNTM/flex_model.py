@@ -66,6 +66,20 @@ class FlexModel(_MasterModel):
 
     def __init__(self, interface_objects=set(), node_objects=set(),
                  demand_objects=set(), rsvp_lsp_objects=set()):
+        """
+        Initialize the interface.
+
+        Args:
+            self: (todo): write your description
+            interface_objects: (todo): write your description
+            set: (todo): write your description
+            node_objects: (todo): write your description
+            set: (todo): write your description
+            demand_objects: (todo): write your description
+            set: (todo): write your description
+            rsvp_lsp_objects: (todo): write your description
+            set: (todo): write your description
+        """
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects
@@ -77,6 +91,12 @@ class FlexModel(_MasterModel):
         super().__init__(interface_objects, node_objects, demand_objects, rsvp_lsp_objects)
 
     def __repr__(self):
+        """
+        Return a representation of this node.
+
+        Args:
+            self: (todo): write your description
+        """
         return 'FlexModel(Interfaces: %s, Nodes: %s, ' \
                'Demands: %s, RSVP_LSPs: %s)' % (len(self.interface_objects),
                                                 len(self.node_objects),
@@ -1732,6 +1752,20 @@ class Parallel_Link_Model(FlexModel):
 
     def __init__(self, interface_objects=set(), node_objects=set(),
                  demand_objects=set(), rsvp_lsp_objects=set()):
+        """
+        Initialize the interface.
+
+        Args:
+            self: (todo): write your description
+            interface_objects: (todo): write your description
+            set: (todo): write your description
+            node_objects: (todo): write your description
+            set: (todo): write your description
+            demand_objects: (todo): write your description
+            set: (todo): write your description
+            rsvp_lsp_objects: (todo): write your description
+            set: (todo): write your description
+        """
         self.interface_objects = interface_objects
         self.node_objects = node_objects
         self.demand_objects = demand_objects

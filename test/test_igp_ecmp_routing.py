@@ -5,6 +5,12 @@ from pyNTM import PerformanceModel
 
 class TestIGPRouting(unittest.TestCase):
     def test_ecmp(self):
+        """
+        Test for ecmp ecmp
+
+        Args:
+            self: (todo): write your description
+        """
 
         model8 = PerformanceModel()
         model8.rsvp_lsp_objects = set([])

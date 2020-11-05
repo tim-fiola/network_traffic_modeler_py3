@@ -10,6 +10,12 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
     # with int_a_b failed; the one that does signal will reserved will
     # attempt to reserve 250/2 = 125 units of bandwidth
     def test_reserved_bandwidth(self):
+        """
+        Test the bandwidth.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel()
         model.rsvp_lsp_objects = set([])
         model.demand_objects = set([])
@@ -81,6 +87,12 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
 
     # lsp_a_d_1/2 will each try to set up at 125.0 traffic units
     def test_setup_bandwidth(self):
+        """
+        Create the bandwidth
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel()
         model.rsvp_lsp_objects = set([])
         model.demand_objects = set([])
@@ -149,6 +161,12 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
     # int_a_c has 150 capacity; one lsp_a_d_1/2 will take 125 of
     # that reserved_bandwidth; there will be a 25 unit remainder
     def test_int_bw(self):
+        """
+        Test if all models.
+
+        Args:
+            self: (todo): write your description
+        """
 
         model = PerformanceModel()
         model.rsvp_lsp_objects = set([])

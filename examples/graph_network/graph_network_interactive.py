@@ -80,6 +80,14 @@ class LinkedDragPlugin(plugins.PluginBase):
     """
 
     def __init__(self, points, line):
+        """
+        Initialize points
+
+        Args:
+            self: (todo): write your description
+            points: (todo): write your description
+            line: (str): write your description
+        """
         if isinstance(points, mpl.lines.Line2D):
             suffix = "pts"
         else:
@@ -425,6 +433,11 @@ def _create_interactive_network_graph(json_data):
 
 
 def _run_plot():
+    """
+    Runs the plot
+
+    Args:
+    """
     try:
         mpld3.show()
     except Exception as e:

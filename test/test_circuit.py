@@ -10,6 +10,12 @@ class TestCircuit(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up the interface
+
+        Args:
+            self: (todo): write your description
+        """
         self.maxDiff = None
         self.node_a = Node(name='nodeA', lat=0, lon=0)
         self.node_b = Node(name='nodeB', lat=0, lon=0)
@@ -23,12 +29,30 @@ class TestCircuit(unittest.TestCase):
         self.circuit = Circuit(self.interface_a, self.interface_b)
 
     def test_repr(self):
+        """
+        Create a new circuit has a circuit.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(repr(self.circuit), "Circuit(Interface(name = 'inerfaceA-to-B', cost = 4, capacity = 100, node_object = Node('nodeA'), remote_node_object = Node('nodeB'), circuit_id = 1), Interface(name = 'inerfaceB-to-A', cost = 4, capacity = 100, node_object = Node('nodeB'), remote_node_object = Node('nodeA'), circuit_id = 1))")  # noqa E501
 
     def test_key(self):
+        """
+        Test if this key to see if it exists.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(self.circuit._key(), (('inerfaceA-to-B', 'nodeA'), ('inerfaceB-to-A', 'nodeB')))
 
     def test_get_circuit_interfaces(self):
+        """
+        Test for all interfaces
+
+        Args:
+            self: (todo): write your description
+        """
         (interface_a, interface_b) = self.circuit.get_circuit_interfaces(self.model)
         self.assertEqual(interface_a, self.interface_a)
         self.assertEqual(interface_b, self.interface_b)

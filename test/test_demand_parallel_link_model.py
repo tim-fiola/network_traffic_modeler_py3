@@ -15,6 +15,12 @@ class TestDemand(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        """
+        Set up the interface
+
+        Args:
+            self: (todo): write your description
+        """
         self.maxDiff = None
         self.node_a = Node(name='nodeA', lat=0, lon=0)
         self.node_b = Node(name='nodeB', lat=0, lon=0)
@@ -29,19 +35,49 @@ class TestDemand(unittest.TestCase):
         self.demand = Demand(source_node_object=self.node_a, dest_node_object=self.node_b, traffic=10, name='A-to-B')
 
     def test_init_fail_neg_traffic(self):
+        """
+        Test if initial initial initial initial initial initial initial conditions.
+
+        Args:
+            self: (todo): write your description
+        """
         with self.assertRaises(ValueError):
             Demand(source_node_object=self.node_a, dest_node_object=self.node_b, traffic=-1, name='A-to-B')
 
     def test_repr(self):
+        """
+        Evaluate a test.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(repr(self.demand), "Demand(source = nodeA, dest = nodeB, traffic = 10, name = 'A-to-B')")
 
     def test_key(self):
+        """
+        Test if the test key for this key.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(self.demand._key, (Node('nodeA').name, Node('nodeB').name, 'A-to-B'))
 
     def test_add_demand_path(self):
+        """
+        Set the test path to the model.
+
+        Args:
+            self: (todo): write your description
+        """
         self.demand._add_demand_path(self.model)
 
     def test_demand_behavior(self):
+        """
+        Test for a dmd model
+
+        Args:
+            self: (todo): write your description
+        """
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
 
         model.update_simulation()
@@ -80,6 +116,12 @@ class TestDemand(unittest.TestCase):
         self.assertNotEqual(dmd_a_f.path, 'Unrouted')
 
     def test_unroutable_demand(self):
+        """
+        Unroutable interface for a node
+
+        Args:
+            self: (todo): write your description
+        """
         node_a = Node(name='nodeA', lat=0, lon=0)
         node_b = Node(name='nodeB', lat=0, lon=0)
         node_d = Node(name='nodeD')

@@ -16,6 +16,18 @@ class SRLG(object):
     """
 
     def __init__(self, name, model, circuit_objects=set(), node_objects=set()):
+        """
+        Initialize a new model.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            model: (todo): write your description
+            circuit_objects: (todo): write your description
+            set: (todo): write your description
+            node_objects: (todo): write your description
+            set: (todo): write your description
+        """
         # self.circuit_objects = circuit_objects
         # self.node_objects = node_objects
         if name in set([srlg.name for srlg in model.srlg_objects]):
@@ -27,14 +39,33 @@ class SRLG(object):
             model.srlg_objects.add(self)
 
     def __repr__(self):
+        """
+        Return a human - friendly name.
+
+        Args:
+            self: (todo): write your description
+        """
         return "SRLG(Name: {})".format(self.name)
 
     @property
     def failed(self):
+        """
+        Return the failed failed failed.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._failed
 
     @failed.setter
     def failed(self, status):
+        """
+        Return a status is failed status.
+
+        Args:
+            self: (todo): write your description
+            status: (str): write your description
+        """
         if isinstance(status, bool):
             self._failed = status
         else:
@@ -42,10 +73,22 @@ class SRLG(object):
 
     @property
     def node_objects(self):
+        """
+        Return a list of the node objects in the node.
+
+        Args:
+            self: (todo): write your description
+        """
         nodes = set([node for node in self.model.node_objects if self in node.srlgs])
         return nodes
 
     @property
     def interface_objects(self):
+        """
+        Returns a list of this interface
+
+        Args:
+            self: (todo): write your description
+        """
         interfaces = set([interface for interface in self.model.interface_objects if self in interface.srlgs])
         return interfaces

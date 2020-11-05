@@ -44,6 +44,12 @@ def _set_graph_node_name_and_position(model, G):
 
 
 def _draw_node_labels(G):
+    """
+    Draws node labels for a node g.
+
+    Args:
+        G: (todo): write your description
+    """
   # Given networkx graph G, draw node labels
   nx.draw_networkx_labels(G, pos=nx.get_node_attributes(G, 'pos'),
                           labels={data['name']: data['name']

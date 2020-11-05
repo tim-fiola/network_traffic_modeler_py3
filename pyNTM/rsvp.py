@@ -31,6 +31,17 @@ class RSVP_LSP(object):
 
     def __init__(self, source_node_object, dest_node_object,
                  lsp_name='none', configured_setup_bandwidth=None, configured_manual_metric=None):
+        """
+        Initialize a bandwidth.
+
+        Args:
+            self: (todo): write your description
+            source_node_object: (str): write your description
+            dest_node_object: (todo): write your description
+            lsp_name: (str): write your description
+            configured_setup_bandwidth: (todo): write your description
+            configured_manual_metric: (todo): write your description
+        """
 
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
@@ -48,6 +59,12 @@ class RSVP_LSP(object):
         return (self.source_node_object.name, self.dest_node_object.name, self.lsp_name)
 
     def __repr__(self):
+        """
+        Return a human - readable representation of this object.
+
+        Args:
+            self: (todo): write your description
+        """
         return 'RSVP_LSP(source = %s, dest = %s, lsp_name = %r)' % \
                (self.source_node_object.name,
                 self.dest_node_object.name,
@@ -153,6 +170,13 @@ class RSVP_LSP(object):
 
     @manual_metric.setter
     def manual_metric(self, value):
+        """
+        Manage the initial value.
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         if self.initial_manual_metric:
             if (isinstance(self.initial_manual_metric, int) and
                     self.initial_manual_metric > 0):

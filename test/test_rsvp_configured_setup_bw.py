@@ -6,11 +6,23 @@ from pyNTM import PerformanceModel
 class TestRSVPLSPConfigSetupBW(unittest.TestCase):
 
     def test_config_setup_bw_model_load(self):
+        """
+        Load the model config file
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_configured_setup_bw_model.csv')
         model.update_simulation()
         self.assertEqual(model.__repr__(), 'PerformanceModel(Interfaces: 18, Nodes: 7, Demands: 4, RSVP_LSPs: 4)')
 
     def test_lsp_setup_bw(self):
+        """
+        This function for the lsp and lsp
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_configured_setup_bw_model.csv')
         model.update_simulation()
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -22,6 +34,12 @@ class TestRSVPLSPConfigSetupBW(unittest.TestCase):
         self.assertEqual(lsp_a_d_3.setup_bandwidth, 1)
 
     def test_lsp_traffic(self):
+        """
+        This function for lsp and lsp
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_configured_setup_bw_model.csv')
         model.update_simulation()
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -33,6 +51,12 @@ class TestRSVPLSPConfigSetupBW(unittest.TestCase):
         self.assertEqual(lsp_a_d_3.traffic_on_lsp(model), 50)
 
     def test_lsp_res_bw(self):
+        """
+        Run lsp lsp and lsp.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_configured_setup_bw_model.csv')
         model.update_simulation()
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -44,6 +68,12 @@ class TestRSVPLSPConfigSetupBW(unittest.TestCase):
         self.assertEqual(lsp_a_d_3.reserved_bandwidth, 1)
 
     def test_lsp_dmds(self):
+        """
+        Load lspates all lsp model
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_configured_setup_bw_model.csv')
         model.update_simulation()
         lsp_a_d_1 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_1')
@@ -61,6 +91,12 @@ class TestRSVPLSPConfigSetupBW(unittest.TestCase):
     # it only has a setup_bw of 1.  That interface has a capacity of 40 so lsp_a_d_1/2
     # can't take it since they have a setup_bw of 50
     def test_shortest_path(self):
+        """
+        Test if the model path is ini file.
+
+        Args:
+            self: (todo): write your description
+        """
         model = PerformanceModel.load_model_file('test/lsp_configured_setup_bw_model.csv')
         model.update_simulation()
         lsp_a_d_3 = model.get_rsvp_lsp('A', 'D', 'lsp_a_d_3')
