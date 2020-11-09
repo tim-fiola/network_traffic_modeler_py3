@@ -296,36 +296,77 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
         # Find the demands that match the source and destination
         dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
 
-        circuit_ids = set()
         # Find the demand paths for each demand
+        interfaces_to_highlight = set()
         for dmd in dmds:
             dmd_path = dmd.path[:]
             for path in dmd_path:
                 for hop in dmd_path:
                     if isinstance(hop, RSVP_LSP):
                         for lsp_hop in hop.path['interfaces']:
-                            circuit_ids.add(lsp_hop.circuit_id)
+                            interfaces_to_highlight.add(lsp_hop)
                         dmd_path.remove(hop)
                     else:
                         for interface in hop:
-                            circuit_ids.add(interface.circuit_id)
+                            interfaces_to_highlight.add(interface)
 
-        for ckt_id in circuit_ids:
+        for interface in interfaces_to_highlight:
             new_entry = {
-                "selector": "edge[label=\"{}\"]['midpoint' in target]".format(ckt_id),
+                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                       interface.node_object.name),
                 "style": {
                     "width": '4',
                     'line-style': 'dashed',
-                    'source-arrow-color': "pink",
-                    'source-arrow-shape': 'triangle',
                     'target-arrow-color': "pink",
                     'target-arrow-shape': 'triangle',
-
-
+                    'stroke-color': 'black'
                 }
             }
 
             new_style.append(new_entry)
+
+            new_entry_2 = {
+                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                       interface.remote_node_object.name),
+                "style": {
+                    "width": '4',
+                    'source-arrow-color': "pink",
+                    'source-arrow-shape': 'triangle',
+                }
+            }
+
+            new_style.append(new_entry_2)
+
+        # circuit_ids = set()
+        # # Find the demand paths for each demand
+        # for dmd in dmds:
+        #     dmd_path = dmd.path[:]
+        #     for path in dmd_path:
+        #         for hop in dmd_path:
+        #             if isinstance(hop, RSVP_LSP):
+        #                 for lsp_hop in hop.path['interfaces']:
+        #                     circuit_ids.add(lsp_hop.circuit_id)
+        #                 dmd_path.remove(hop)
+        #             else:
+        #                 for interface in hop:
+        #                     circuit_ids.add(interface.circuit_id)
+        #
+        # for ckt_id in circuit_ids:
+        #     new_entry = {
+        #         "selector": "edge[label=\"{}\"]['midpoint' in target]".format(ckt_id),
+        #         "style": {
+        #             "width": '4',
+        #             'line-style': 'dashed',
+        #             'source-arrow-color': "pink",
+        #             'source-arrow-shape': 'triangle',
+        #             'target-arrow-color': "pink",
+        #             'target-arrow-shape': 'triangle',
+        #
+        #
+        #         }
+        #     }
+        #
+        #     new_style.append(new_entry)
 
     return default_stylesheet + new_style
 
