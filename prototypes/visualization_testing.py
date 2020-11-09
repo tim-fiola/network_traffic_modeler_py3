@@ -267,8 +267,9 @@ app.layout = html.Div(style=styles['container'], children=[
 @app.callback(Output('cytoscape-mouseoverEdgeData-output', 'children'),
               [Input('cytoscape-prototypes', 'mouseoverEdgeData')])
 def display_tap_edge_data(data):
-    msg = "Source: {}, Dest: {}, utilization {}%".format(data['source'], data['target'], data['utilization'])
-    return msg
+    if data:
+        msg = "Source: {}, Dest: {}, utilization {}%".format(data['source'], data['target'], data['utilization'])
+        return msg
 
 
 # Need to select interfaces that have utilization ranges selected in values from dropdown
@@ -311,10 +312,15 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
 
         for ckt_id in circuit_ids:
             new_entry = {
-                "selector": "edge[label=\"{}\"]".format(ckt_id),
+                "selector": "edge[label=\"{}\"]['midpoint' in target]".format(ckt_id),
                 "style": {
                     "width": '4',
-                    'line-style': 'dashed'
+                    'line-style': 'dashed',
+                    'source-arrow-color': "pink",
+                    'source-arrow-shape': 'triangle',
+                    'target-arrow-color': "pink",
+                    'target-arrow-shape': 'triangle',
+
 
                 }
             }
