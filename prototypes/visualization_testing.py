@@ -370,99 +370,50 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
 
     return default_stylesheet + new_style
 
+# TODO - refactor this one to add highlighted edges for demand path
+@app.callback(Output('cytoscape-prototypes', 'elements'),
+              [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
+def highlight_demand_paths(source, destination):
+    # Find edges that match the Interfaces in each path in dmd_path_modified
+    interfaces_to_highlight = set()
 
-# @app.callback(Output('cytoscape-prototypes', 'elements'),
-#               [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
-# def highlight_demand_paths(source, destination):
-#     # Find edges that match the Interfaces in each path in dmd_path_modified
-#     interfaces_to_highlight = set()
-#
-#     if source is not None and destination is not None:
-#         # Find the demands that match the source and destination
-#         dmds = []
-#         for demand in model.demand_objects:  # TODO - use parallel_demand_groups
-#             if (demand.source_node_object.name == source and
-#                     demand.dest_node_object.name == destination):
-#                 dmds.append(demand)
-#
-#         # Find the demand paths for each demand
-#         for dmd in dmds:
-#             dmd_path = dmd.path[:]
-#             for path in dmd_path:
-#                 for hop in dmd_path:
-#                     if isinstance(hop, RSVP_LSP):
-#                         for lsp_hop in hop.path['interfaces']:
-#                             interfaces_to_highlight.add(lsp_hop)
-#                         dmd_path.remove(hop)
-#                     else:
-#                         for interface in hop:
-#                             interfaces_to_highlight.add(interface)
-#
-#     # Create new edges
-#     elements_to_highlight = []
-#     label = 'demand_path_{}-to-{}'.format(source, destination)
-#     for entry in interfaces_to_highlight:
-#         source = entry.node_object.name
-#         target = entry.remote_node_object.name
-#
-#         new_edge = {
-#             'data': {
-#                 'source': "{}".format(source),
-#                 'target': "{}".format(target),
-#                 'label': label,
-#                 'group': "path-info",
-#                 "curve-style": "bezier",
-#             }
-#         }
-#         elements_to_highlight.append(new_edge)
-#
-#     return elements + elements_to_highlight
+    if source is not None and destination is not None:
+        # Find the demands that match the source and destination
+        dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
 
-# TODO - make a new interface highlighter that finds the
-#  interfaces between source and dest via circuit id
-#  and then increases the interface width for the edges that
-#  touch the circuit id midpoint
-# @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
-#               [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
-# def highlight_demand_edges(source, destination):
-#
-#     if source is not None and destination is not None:
-#         # Find the demands that match the source and destination
-#         dmds = []
-#         for demand in model.demand_objects:  # TODO - use parallel_demand_groups
-#             if (demand.source_node_object.name == source and
-#                     demand.dest_node_object.name == destination):
-#                 dmds.append(demand)
-#
-#         circuit_ids = set()
-#         # Find the demand paths for each demand
-#         for dmd in dmds:
-#             dmd_path = dmd.path[:]
-#             for path in dmd_path:
-#                 for hop in dmd_path:
-#                     if isinstance(hop, RSVP_LSP):
-#                         for lsp_hop in hop.path['interfaces']:
-#                             circuit_ids.add(lsp_hop.circuit_id)
-#                         dmd_path.remove(hop)
-#                     else:
-#                         for interface in hop:
-#                             circuit_ids.add(interface.circuit_id)
-#
-#         new_style = []
-#         for ckt_id in circuit_ids:
-#             new_entry = {
-#                 "selector": "edge[label=\"{}\"]".format(ckt_id),
-#                 "style": {
-#                     "weight": 3.0
-#                 }
-#             }
-#
-#             new_style.append(new_entry)
-#
-#
-#
-#
-#     return default_stylesheet + new_style
+        # Find the demand paths for each demand
+        for dmd in dmds:
+            dmd_path = dmd.path[:]
+            for path in dmd_path:
+                for hop in dmd_path:
+                    if isinstance(hop, RSVP_LSP):
+                        for lsp_hop in hop.path['interfaces']:
+                            interfaces_to_highlight.add(lsp_hop)
+                        dmd_path.remove(hop)
+                    else:
+                        for interface in hop:
+                            interfaces_to_highlight.add(interface)
 
+    # Create new edges  # TODO - left off here . . . make edge from interface source to midpoint, and midpoint to interface dest
+    elements_to_highlight = []
+    label = 'demand_path_{}-to-{}'.format(source, destination)
+    for entry in interfaces_to_highlight:
+        source = entry.node_object.name
+
+        target = elements['data']['group']
+        target = entry.remote_node_object.name
+
+        new_edge = {
+            'data': {
+                'source': "{}".format(source),
+                'target': "{}".format(target),
+                'label': label,
+                'group': "path-info",
+                "curve-style": "bezier",
+            }
+        }
+        elements_to_highlight.append(new_edge)
+
+    return elements + elements_to_highlight
 
 app.run_server(debug=True)
