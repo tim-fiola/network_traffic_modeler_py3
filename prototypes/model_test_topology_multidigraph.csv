@@ -69,6 +69,7 @@ A	D	20	dmd_a_d_2
 A	D	20	dmd_a_d_3
 A	Y	20	dmd_a_y_1
 
+
 RSVP_LSP_TABLE
 source	dest	name
 A	D	lsp_a_d_1
