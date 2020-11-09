@@ -194,8 +194,19 @@ default_stylesheet = [
             'height': '10px'
         }
     },
+    {
+        "selector": "edge[group=\"path-info\"]",
+        "style": {
+            "line-color": "#FF69B4",
+            "curve-style": "bezier",
+            'label': "data(label)",
+            'weight': '20'
+        }
+    },
+
 ]
 
+# list of utilization ranges to display
 util_display_options = []
 for util_range, color in util_ranges.items():
     util_display_options.append({'label': util_range, 'value': color})
@@ -249,10 +260,12 @@ app.layout = html.Div(style=styles['container'], children=[
 
                 dcc.Tab(label='Demand Paths', children=[
                     dcc.Dropdown(
-                        id='demand-source-callback', options=[node.name for node in model.node_objects]
+                        id='demand-source-callback', options=[{'label': node.name, 'value': node.name}
+                                                              for node in model.node_objects]
                     ),
                     dcc.Dropdown(
-                        id='demand-destination-callback', options=[node.name for node in model.node_objects]
+                        id='demand-destination-callback', options=[{'label': node.name, 'value': node.name}
+                                                                   for node in model.node_objects]
                     ),
                 ])
            ]),
@@ -285,42 +298,61 @@ def update_stylesheet(edges_to_highlight):
 
     return default_stylesheet + new_style
 
-@app.callback(Output('cytoscape-prototypes', 'stylesheet'),
-              [Input('demand-source-callback', 'value'), ['demand-destination-callback', 'value']])
+
+@app.callback(Output('cytoscape-prototypes', 'elements'),
+              [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
 def highlight_demand_paths(source, destination):
-    # Find the demands that match the source and destination
-    dmds = []
-    for demand in model.demand_objects:
-        if (demand.source_node_object.name == source and
-                demand.dest_node_object.name == destination):
-            dmds.append(demand)
-
     # Find edges that match the Interfaces in each path in dmd_path_modified
-    edges_to_highlight = []
+    interfaces_to_highlight = set()
 
-    # Find the demand paths for each demand
-    for dmd in dmds:
-        dmd_path = dmd.path
-        dmd_path_modified = []  # Will hold the final paths that only have Interfaces
-        for path in dmd_path:
-            for hop in dmd_path:
-                if isinstance(hop, RSVP_LSP):
-                    for lsp_hop in hop:
-                        dmd_path_modified.append(hop)
-                else:
-                    dmd_path_modified.append(hop)
+    if source is not None and destination is not None:
+        # Find the demands that match the source and destination
+        dmds = []
+        for demand in model.demand_objects:  # TODO - use parallel_demand_groups
+            if (demand.source_node_object.name == source and
+                    demand.dest_node_object.name == destination):
+                dmds.append(demand)
 
-        dmd_path_modified.append(path)
+        # Find the demand paths for each demand
+        for dmd in dmds:
+            dmd_path = dmd.path[:]
+            for path in dmd_path:
+                for hop in dmd_path:
+                    if isinstance(hop, RSVP_LSP):
+                        for lsp_hop in hop.path['interfaces']:
+                            interfaces_to_highlight.add(lsp_hop)
+                        dmd_path.remove(hop)
+                    else:
+                        for interface in hop:
+                            interfaces_to_highlight.add(interface)
 
-        for path in dmd_path_modified:
-            for interface in path:
-                # Get edge with matching interface source and ckt id (label)
-                edge_to_get = [element for element in elements if
-                               element['data']['source'] == interface.source_node_object.name and
-                               element['data']['label'] == interface.circuit_id]
-                edges_to_highlight.append(edge_to_get)
+    pprint(interfaces_to_highlight)
 
-    # Modify the stylesheet for edges_to_highlight
+            # for path in dmd_path_modified:
+            #     for interface in path:
+            #         # Get edge with matching interface source and ckt id (label)
+            #         edge_to_get = [element for element in elements if
+            #                        element['data']['source'] == interface.source_node_object.name and
+            #                        element['data']['label'] == interface.circuit_id]
+            #         edges_to_highlight.append(edge_to_get)
+
+    # Create new edges
+    elements_to_highlight = []
+    for entry in interfaces_to_highlight:
+        source = entry.node_object.name
+        target = entry.remote_node_object.name
+
+        new_edge = {
+            'data': {
+                'source': "{}".format(source),
+                'target': "{}".format(target),
+                'group': "path-info",
+            }
+        }
+        elements_to_highlight.append(new_edge)
+
+    return elements + elements_to_highlight
+
 
 
 
