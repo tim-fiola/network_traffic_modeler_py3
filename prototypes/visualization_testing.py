@@ -330,7 +330,10 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
     # Demand source and destination path visualization
     if source is not None and destination is not None:
         # Find the demands that match the source and destination
-        dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
+        try:
+            dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
+        except KeyError:
+            return default_stylesheet + new_style
 
         # Find the demand paths for each demand
         interfaces_to_highlight = set()
@@ -403,6 +406,8 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
             new_style.append(new_entry_4)
 
     return default_stylesheet + new_style
+
+
 
 
 # THIS DOES NOT WORK; CREATES ADDITIONAL EDGES THAT ARE SEPARATE FROM THE EXISTING EDGES
