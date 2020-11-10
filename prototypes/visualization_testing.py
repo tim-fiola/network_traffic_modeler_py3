@@ -13,7 +13,7 @@ from pprint import pprint
 
 from pyNTM import FlexModel
 
-def make_json_node(x, y, id, label, midpoint=False):
+def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
     """
 
     :param x: x-coordinate (or longitude) of node
@@ -21,6 +21,7 @@ def make_json_node(x, y, id, label, midpoint=False):
     :param id: node identifier within code
     :param label: Node's displayed label on on layout
     :param midpoint: Is this a midpoint node?  True|False
+    :param neighbors: directly connected nodes
 
     :return:
     """
@@ -31,6 +32,8 @@ def make_json_node(x, y, id, label, midpoint=False):
 
     if midpoint:
         json_node['data']['group'] = 'midpoint'
+        if neighbors:
+            json_node['data']['neighbors'] = neighbors
 
     return json_node
 
@@ -118,7 +121,8 @@ def create_elements(model, group_midpoints=True):
             midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
         else:
             midpoint_label = 'midpoint-{}'.format(ckt_id)
-        new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label, midpoint=True)
+        new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
+                                  midpoint=True, neighbors=[node_a.name, node_b.name])
         nodes.append(new_node)
         # Create each end node
         nodes.append(make_json_node(node_a.lon, node_a.lat, node_a.name, node_a.name))
@@ -137,6 +141,14 @@ def create_elements(model, group_midpoints=True):
 
 
 elements = create_elements(model)
+
+pprint("Elements are")
+pprint(elements)
+print()
+
+
+
+midpoints = [element for element in elements if element['data']['group'] == 'midpoint']
 
 default_stylesheet = [
     {
@@ -235,10 +247,16 @@ styles_2 = {
     },
     ".top_content": {
         'height': '100px',
-        'width': '80%',
-        'position': 'absolute',
+        'width': '100%',
+        'position': 'relative',
         'top': '0',
         'right': '0'
+    },
+    ".left_content": {
+        "width": '85%',
+        'position': 'absolute',
+        'top': '0',
+        'left': '0'
     }
 
 
@@ -248,9 +266,9 @@ styles_2 = {
 
 app = dash.Dash(__name__)
 
-app.layout = html.Div(style=styles['container'], children=[
+app.layout = html.Div(style=styles['container'], className='content', children=[
 
-    html.Div(className='eight columns', style=styles['cy-container'], children=[
+    html.Div(className='left_content', style=styles['cy-container'], children=[
         cyto.Cytoscape(
             id='cytoscape-prototypes',
             layout={'name': 'preset'},
@@ -261,7 +279,7 @@ app.layout = html.Div(style=styles['container'], children=[
         ),
         html.P(id='cytoscape-mouseoverEdgeData-output'),
     ]),
-    html.Div(className='four columns', children=[
+    html.Div(className='right_content', children=[
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
@@ -291,7 +309,8 @@ app.layout = html.Div(style=styles['container'], children=[
               [Input('cytoscape-prototypes', 'mouseoverEdgeData')])
 def display_tap_edge_data(data):
     if data:
-        msg = "Source: {}, Dest: {}, utilization {}%".format(data['source'], data['target'], data['utilization'])
+        msg = "Source: {}, Dest: {}, ckt_id {}, utilization {}%".format(data['source'], data['target'],
+                                                                        data['label'], data['utilization'])
         return msg
 
 
@@ -342,6 +361,10 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
                     'line-style': 'dashed',
                     'target-arrow-color': "pink",
                     'target-arrow-shape': 'triangle',
+                    'mid-target-arrow-color': 'pink',
+                    'mid-target-arrow-shape': 'triangle',
+                    'source-arrow-color': "pink",
+                    'source-arrow-shape': 'circle',
                     'stroke-color': 'black'
                 }
             }
@@ -353,89 +376,102 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
                                                                        interface.remote_node_object.name),
                 "style": {
                     "width": '4',
+                    'line-style': 'dashed',
                     'source-arrow-color': "pink",
                     'source-arrow-shape': 'triangle',
+                    'mid-source-arrow-color': 'pink',
+                    'mid-source-arrow-shape': 'triangle',
+                    'target-arrow-color': "pink",
+                    'target-arrow-shape': 'circle',
                 }
             }
 
             new_style.append(new_entry_2)
 
-        # circuit_ids = set()
-        # # Find the demand paths for each demand
-        # for dmd in dmds:
-        #     dmd_path = dmd.path[:]
-        #     for path in dmd_path:
-        #         for hop in dmd_path:
-        #             if isinstance(hop, RSVP_LSP):
-        #                 for lsp_hop in hop.path['interfaces']:
-        #                     circuit_ids.add(lsp_hop.circuit_id)
-        #                 dmd_path.remove(hop)
-        #             else:
-        #                 for interface in hop:
-        #                     circuit_ids.add(interface.circuit_id)
-        #
-        # for ckt_id in circuit_ids:
-        #     new_entry = {
-        #         "selector": "edge[label=\"{}\"]['midpoint' in target]".format(ckt_id),
-        #         "style": {
-        #             "width": '4',
-        #             'line-style': 'dashed',
-        #             'source-arrow-color': "pink",
-        #             'source-arrow-shape': 'triangle',
-        #             'target-arrow-color': "pink",
-        #             'target-arrow-shape': 'triangle',
-        #
-        #
-        #         }
-        #     }
-        #
-        #     new_style.append(new_entry)
-
     return default_stylesheet + new_style
 
 # TODO - refactor this one to add highlighted edges for demand path
-@app.callback(Output('cytoscape-prototypes', 'elements'),
-              [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
-def highlight_demand_paths(source, destination):
-    # Find edges that match the Interfaces in each path in dmd_path_modified
-    interfaces_to_highlight = set()
-
-    if source is not None and destination is not None:
-        # Find the demands that match the source and destination
-        dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
-
-        # Find the demand paths for each demand
-        for dmd in dmds:
-            dmd_path = dmd.path[:]
-            for path in dmd_path:
-                for hop in dmd_path:
-                    if isinstance(hop, RSVP_LSP):
-                        for lsp_hop in hop.path['interfaces']:
-                            interfaces_to_highlight.add(lsp_hop)
-                        dmd_path.remove(hop)
-                    else:
-                        for interface in hop:
-                            interfaces_to_highlight.add(interface)
-
-    # Create new edges  # TODO - left off here . . . make edge from interface source to midpoint, and midpoint to interface dest
-    elements_to_highlight = []
-    label = 'demand_path_{}-to-{}'.format(source, destination)
-    for entry in interfaces_to_highlight:
-        source = entry.node_object.name
-
-        target = entry.remote_node_object.name
-
-        new_edge = {
-            'data': {
-                'source': "{}".format(source),
-                'target': "{}".format(target),
-                'label': label,
-                'group': "path-info",
-                "curve-style": "bezier",
-            }
-        }
-        elements_to_highlight.append(new_edge)
-
-    return elements + elements_to_highlight
+# @app.callback(Output('cytoscape-prototypes', 'elements'),
+#               [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
+# def highlight_demand_paths(source, destination):
+#     # Find edges that match the Interfaces in each path in dmd_path_modified
+#     interfaces_to_highlight = set()
+#
+#     if source is not None and destination is not None:
+#         # Find the demands that match the source and destination
+#         dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
+#
+#         # Find the demand paths for each demand
+#         for dmd in dmds:
+#             dmd_path = dmd.path[:]
+#             for path in dmd_path:
+#                 for hop in dmd_path:
+#                     if isinstance(hop, RSVP_LSP):
+#                         for lsp_hop in hop.path['interfaces']:
+#                             interfaces_to_highlight.add(lsp_hop)
+#                         dmd_path.remove(hop)
+#                     else:
+#                         for interface in hop:
+#                             interfaces_to_highlight.add(interface)
+#
+#     pprint('interfaces_to_highlight:')
+#     pprint(interfaces_to_highlight)
+#     print()
+#     print()
+#
+#     # Create new edges  # TODO - left off here . . . make edge from interface source to midpoint, and midpoint to interface dest
+#     elements_to_highlight = []
+#     label = 'demand_path_{}-to-{}'.format(source, destination)
+#     for entry in interfaces_to_highlight:
+#         interface_source = entry.node_object.name
+#         interface_destination = entry.remote_node_object.name
+#
+#         midpoint_nodes = [node for node in midpoints if
+#                          node['data']['group']=='midpoint' and
+#                          interface_source in node['data']['neighbors'] and
+#                          interface_destination in node['data']['neighbors']]
+#
+#         print('midpoint_nodes =')
+#         pprint(midpoint_nodes)
+#
+#         midpoint_node = midpoint_nodes[0]
+#
+#         print('midpoint_node = {}'.format(midpoint_node))  # Todo - debug
+#
+#         target = midpoint_node['data']['label']
+#
+#         new_edge_1 = {
+#             'data': {
+#                 'source': "{}".format(interface_source),
+#                 'target': "{}".format(target),
+#                 'label': label,
+#                 'group': "path-info",
+#                 "curve-style": "bezier",
+#                 'width': '6',
+#                 'line-style': 'dashed',
+#                 'target-arrow-color': "pink",
+#                 'target-arrow-shape': 'triangle',
+#             }
+#         }
+#
+#         new_edge_2 = {
+#             'data': {
+#                 'source': "{}".format(entry.remote_node_object.name),
+#                 'target': "{}".format(target),
+#                 'label': label,
+#                 'group': "path-info",
+#                 "curve-style": "bezier",
+#                 'width': '6',
+#                 'line-style': 'dashed',
+#                 'target-arrow-color': "pink",
+#                 'target-arrow-shape': 'triangle',
+#             }
+#         }
+#
+#
+#         elements_to_highlight.append(new_edge_1)
+#         elements_to_highlight.append(new_edge_2)
+#
+#     return elements + elements_to_highlight
 
 app.run_server(debug=True)
