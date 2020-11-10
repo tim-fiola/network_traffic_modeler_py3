@@ -352,7 +352,7 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
                         for interface in hop:
                             interfaces_to_highlight.add(interface)
 
-        for interface in interfaces_to_highlight:
+        for interface in interfaces_to_highlight:  # TODO - color nodes on path pink as well
             new_entry = {
                 "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                        interface.node_object.name),
@@ -365,7 +365,6 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
                     'mid-target-arrow-shape': 'triangle',
                     'source-arrow-color': "pink",
                     'source-arrow-shape': 'circle',
-                    'stroke-color': 'black'
                 }
             }
 
@@ -391,6 +390,7 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
     return default_stylesheet + new_style
 
 # TODO - refactor this one to add highlighted edges for demand path
+# THIS DOES NOT WORK; CREATES ADDITIONAL EDGES THAT ARE SEPARATE FROM THE EXISTING EDGES
 # @app.callback(Output('cytoscape-prototypes', 'elements'),
 #               [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
 # def highlight_demand_paths(source, destination):
