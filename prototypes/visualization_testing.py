@@ -223,6 +223,29 @@ styles = {
     'tab': {'height': 'calc(98vh - 80px)'}
 }
 
+styles_2 = {
+    ".content": {
+        'width': '100%',
+    },
+    ".right_menu": {
+        'width': '15%',
+        'position': 'absolute',
+        'top': '0',
+        'right': '0'
+    },
+    ".top_content": {
+        'height': '100px',
+        'width': '80%',
+        'position': 'absolute',
+        'top': '0',
+        'right': '0'
+    }
+
+
+}
+
+# Check here for layout example: https://stackoverflow.com/questions/56175268/how-to-properly-add-style-to-my-dash-app
+
 app = dash.Dash(__name__)
 
 app.layout = html.Div(style=styles['container'], children=[
@@ -237,29 +260,29 @@ app.layout = html.Div(style=styles['container'], children=[
             responsive=True
         ),
         html.P(id='cytoscape-mouseoverEdgeData-output'),
-        ]),
-        html.Div(className='four columns', children=[
-            dcc.Tabs(id='tabs', children=[
-                dcc.Tab(label='Utilization Visualization Dropdown', children=[
-                    dcc.Dropdown(
-                        id='utilization-dropdown-callback', options=util_display_options,
-                        value=[entry['value'] for entry in util_display_options],
-                        multi=True,
-                    )
-                ]),
+    ]),
+    html.Div(className='four columns', children=[
+        dcc.Tabs(id='tabs', children=[
+            dcc.Tab(label='Utilization Visualization Dropdown', children=[
+                dcc.Dropdown(
+                    id='utilization-dropdown-callback', options=util_display_options,
+                    value=[entry['value'] for entry in util_display_options],
+                    multi=True,
+                )
+            ]),
 
-                dcc.Tab(label='Demand Paths', children=[
-                    dcc.Dropdown(
-                        id='demand-source-callback', options=[{'label': node.name, 'value': node.name}
-                                                              for node in model.node_objects]
-                    ),
-                    dcc.Dropdown(
-                        id='demand-destination-callback', options=[{'label': node.name, 'value': node.name}
-                                                                   for node in model.node_objects]
-                    ),
-                ])
-           ]),
-        ])
+            dcc.Tab(label='Demand Paths', children=[
+                dcc.Dropdown(
+                    id='demand-source-callback', options=[{'label': node.name, 'value': node.name}
+                                                          for node in model.node_objects]
+                ),
+                dcc.Dropdown(
+                    id='demand-destination-callback', options=[{'label': node.name, 'value': node.name}
+                                                               for node in model.node_objects]
+                ),
+            ])
+       ]),
+    ])
 ])
 
 
@@ -400,7 +423,6 @@ def highlight_demand_paths(source, destination):
     for entry in interfaces_to_highlight:
         source = entry.node_object.name
 
-        target = elements['data']['group']
         target = entry.remote_node_object.name
 
         new_edge = {
