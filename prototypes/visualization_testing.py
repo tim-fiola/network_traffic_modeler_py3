@@ -230,23 +230,23 @@ styles = {
 }
 
 styles_2 = {
-    ".content": {
+    "content": {
         'width': '100%',
     },
-    ".right_menu": {
-        'width': '15%',
+    "right_menu": {
+        'width': '25%',
         'position': 'absolute',
         'top': '0',
         'right': '0'
     },
-    ".top_content": {
+    "top_content": {
         'height': '100px',
         'width': '100%',
         'position': 'relative',
         'top': '0',
         'right': '0'
     },
-    ".left_content": {
+    "left_content": {
         "width": '85%',
         'position': 'absolute',
         'top': '0',
@@ -260,9 +260,9 @@ styles_2 = {
 
 app = dash.Dash(__name__)
 
-app.layout = html.Div(style=styles['container'], className='content', children=[
+app.layout = html.Div(className='content', style=styles_2['content'], children=[
 
-    html.Div(className='left_content', style=styles['cy-container'], children=[
+    html.Div(className='left_content', children=[
         cyto.Cytoscape(
             id='cytoscape-prototypes',
             layout={'name': 'preset'},
@@ -273,7 +273,7 @@ app.layout = html.Div(style=styles['container'], className='content', children=[
         ),
         html.P(id='cytoscape-mouseoverEdgeData-output'),
     ]),
-    html.Div(className='right_content', children=[
+    html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
