@@ -82,7 +82,7 @@ util_ranges = {'0-24': 'royalblue',
 # Make the Parallel_Link_Model
 model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
 model.update_simulation()
-print()
+
 
 
 def create_elements(model, group_midpoints=True):
@@ -141,12 +141,6 @@ def create_elements(model, group_midpoints=True):
 
 
 elements = create_elements(model)
-
-pprint("Elements are")
-pprint(elements)
-print()
-
-
 
 midpoints = [element for element in elements if element['data']['group'] == 'midpoint']
 
@@ -353,6 +347,8 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
                             interfaces_to_highlight.add(interface)
 
         for interface in interfaces_to_highlight:  # TODO - color nodes on path pink as well
+
+            # Add the edge selectors
             new_entry = {
                 "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                        interface.node_object.name),
@@ -387,9 +383,28 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
 
             new_style.append(new_entry_2)
 
+            # Add the node selectors
+            new_entry_3 = {
+                "selector": "node[id=\"{}\"]".format(interface.node_object.name),
+                "style": {
+                    'background-color': 'pink'
+                }
+            }
+
+            new_style.append(new_entry_3)
+
+            new_entry_4 = {
+                "selector": "node[id=\"{}\"]".format(interface.remote_node_object.name),
+                "style": {
+                    'background-color': 'pink'
+                }
+            }
+
+            new_style.append(new_entry_4)
+
     return default_stylesheet + new_style
 
-# TODO - refactor this one to add highlighted edges for demand path
+
 # THIS DOES NOT WORK; CREATES ADDITIONAL EDGES THAT ARE SEPARATE FROM THE EXISTING EDGES
 # @app.callback(Output('cytoscape-prototypes', 'elements'),
 #               [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
@@ -419,7 +434,7 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
 #     print()
 #     print()
 #
-#     # Create new edges  # TODO - left off here . . . make edge from interface source to midpoint, and midpoint to interface dest
+#     # Create new edges
 #     elements_to_highlight = []
 #     label = 'demand_path_{}-to-{}'.format(source, destination)
 #     for entry in interfaces_to_highlight:
