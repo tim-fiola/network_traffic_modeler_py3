@@ -220,33 +220,36 @@ demand_sources_list.sort()
 demand_destinations_list.sort()
 
 
-styles = {
-    'container': {
-        'position': 'fixed',
-        'display': 'flex',
-        'flex-direction': 'column',
-        'height': '95vh',
-        'width': '100%',
-    },
-    'cy-container': {
-        'flex': '1',
-        'position': 'relative'
-    },
-    'cytoscape': {
-        'position': 'absolute',
-        'width': '100%',
-        'height': '100%',
-        'z-index': 999
-    },
-    'tab': {'height': 'calc(98vh - 80px)'}
-}
+# styles = {
+#     'container': {
+#         'position': 'fixed',
+#         'display': 'flex',
+#         'flex-direction': 'column',
+#         'height': '95vh',
+#         'width': '100%',
+#     },
+#     'cy-container': {
+#         'flex': '1',
+#         'position': 'relative'
+#     },
+#     'cytoscape': {
+#         'position': 'absolute',
+#         'width': '100%',
+#         'height': '100%',
+#         'z-index': 999,
+#         'backgroundColor': '#D2B48C'
+#     },
+#     'tab': {'height': 'calc(98vh - 80px)'}
+# }
 
 styles_2 = {
     "content": {
         'width': '100%',
+        'z-index': 1000
     },
     "right_menu": {
         'width': '25%',
+        'height': '60px',
         'position': 'absolute',
         'top': '0',
         'right': '0'
@@ -259,9 +262,23 @@ styles_2 = {
         'right': '0'
     },
     "left_content": {
-        "width": '85%',
+        "width": '75%',
+        'height': '100%',
         'position': 'absolute',
         'top': '0',
+        'left': '0',
+        'z-index': 1000
+    },
+    'cytoscape': {
+        'position': 'absolute',
+        'width': '100%',
+        'height': '100%',
+        'z-index': 999,
+        'backgroundColor': '#D2B48C'
+    },
+    'mouse_over': {
+        'z-index': 1001,
+        'top': '60',
         'left': '0'
     }
 
@@ -274,16 +291,16 @@ app = dash.Dash(__name__)
 
 app.layout = html.Div(className='content', style=styles_2['content'], children=[
 
-    html.Div(className='left_content', children=[
+    html.Div(className='left_content', style=styles_2['left_content'], children=[
         cyto.Cytoscape(
             id='cytoscape-prototypes',
             layout={'name': 'preset'},
-            style=styles['cytoscape'],
+            style=styles_2['cytoscape'],
             elements=elements,
             stylesheet=default_stylesheet,
             responsive=True
         ),
-        html.P(id='cytoscape-mouseoverEdgeData-output'),
+        html.P(style=styles_2['mouse_over'], id='cytoscape-mouseoverEdgeData-output'),
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         dcc.Tabs(id='tabs', children=[
