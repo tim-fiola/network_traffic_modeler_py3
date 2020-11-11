@@ -245,6 +245,7 @@ demand_destinations_list.sort()
 styles_2 = {
     "content": {
         'width': '100%',
+        'height': '100%',
         'z-index': 1000
     },
     "right_menu": {
@@ -276,12 +277,6 @@ styles_2 = {
         'z-index': 999,
         'backgroundColor': '#D2B48C'
     },
-    'mouse_over': {
-        'z-index': 1001,
-        'top': '60',
-        'left': '0'
-    }
-
 
 }
 
@@ -289,9 +284,9 @@ styles_2 = {
 
 app = dash.Dash(__name__)
 
-app.layout = html.Div(className='content', style=styles_2['content'], children=[
-
-    html.Div(className='left_content', style=styles_2['left_content'], children=[
+app.layout = html.Div(className='content', children=[
+    html.P(id='cytoscape-mouseoverEdgeData-output'),
+    html.Div(className='left_content', children=[
         cyto.Cytoscape(
             id='cytoscape-prototypes',
             layout={'name': 'preset'},
@@ -300,7 +295,6 @@ app.layout = html.Div(className='content', style=styles_2['content'], children=[
             stylesheet=default_stylesheet,
             responsive=True
         ),
-        html.P(style=styles_2['mouse_over'], id='cytoscape-mouseoverEdgeData-output'),
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         dcc.Tabs(id='tabs', children=[
