@@ -207,6 +207,18 @@ util_display_options = []
 for util_range, color in util_ranges.items():
     util_display_options.append({'label': util_range, 'value': color})
 
+# Fill in demand source and destination options
+demand_sources = set()
+demand_destinations= set()
+for entry in model.parallel_demand_groups().keys():
+    source, dest = entry.split('-')
+    demand_sources.add(source)
+    demand_destinations.add(dest)
+demand_sources_list = list(demand_sources)
+demand_destinations_list = list(demand_destinations)
+demand_sources_list.sort()
+demand_destinations_list.sort()
+
 
 styles = {
     'container': {
@@ -282,15 +294,14 @@ app.layout = html.Div(className='content', style=styles_2['content'], children=[
                     multi=True,
                 )
             ]),
-
             dcc.Tab(label='Demand Paths', children=[
                 dcc.Dropdown(
-                    id='demand-source-callback', options=[{'label': node.name, 'value': node.name}
-                                                          for node in model.node_objects]
+                    id='demand-source-callback', options=[{'label': source, 'value': source}
+                                                          for source in demand_sources_list]
                 ),
                 dcc.Dropdown(
-                    id='demand-destination-callback', options=[{'label': node.name, 'value': node.name}
-                                                               for node in model.node_objects]
+                    id='demand-destination-callback', options=[{'label': dest, 'value': dest}
+                                                               for dest in demand_destinations_list]
                 ),
             ])
        ]),
