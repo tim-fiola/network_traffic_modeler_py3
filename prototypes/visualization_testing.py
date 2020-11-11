@@ -285,7 +285,6 @@ styles_2 = {
 app = dash.Dash(__name__)
 
 app.layout = html.Div(className='content', children=[
-    html.P(id='cytoscape-mouseoverEdgeData-output'),
     html.Div(className='left_content', children=[
         cyto.Cytoscape(
             id='cytoscape-prototypes',
@@ -297,6 +296,7 @@ app.layout = html.Div(className='content', children=[
         ),
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
+        html.P(id='cytoscape-mouseoverEdgeData-output'),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
