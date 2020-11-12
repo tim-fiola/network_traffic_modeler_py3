@@ -6,6 +6,7 @@ import dash_cytoscape as cyto
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
+import json
 
 from pyNTM import RSVP_LSP
 
@@ -38,10 +39,10 @@ def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
     return json_node
 
 
-def make_json_edge(source_id, target_id, label, utilization, util_ranges):
+def make_json_edge(source_id, edge_name, target_id, label, utilization, util_ranges):
     """
     {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
-              'utilization': 'failed'}}
+              'utilization': 'failed', 'edge-name': edge_name}}
 
     """
 
@@ -65,7 +66,7 @@ def make_json_edge(source_id, target_id, label, utilization, util_ranges):
 
     json_edge = {
                     'data': {'source': source_id, 'target': target_id, "group": group,
-                             'label': label, 'utilization': utilization}
+                             'label': label, 'utilization': utilization, 'edge-name': edge_name}
                  }
 
     return json_edge
@@ -82,7 +83,7 @@ util_ranges = {'0-24': 'royalblue',
 # Make the Parallel_Link_Model
 model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
 model.update_simulation()
-
+int_a_b = model.get_interface_object('A-to-B', 'A')
 
 
 def create_elements(model, group_midpoints=True):
@@ -101,6 +102,8 @@ def create_elements(model, group_midpoints=True):
     for ckt in model.circuit_objects:
         int_a = ckt.interface_a
         int_b = ckt.interface_b
+        int_a_name = int_a.name
+        int_b_name = int_b.name
         node_a = int_a.node_object
         node_b = int_b.node_object
         node_a_y = node_a.lat
@@ -133,8 +136,8 @@ def create_elements(model, group_midpoints=True):
         #           'utilization': 'failed'}}
 
         # Make edges with midpoints
-        edges.append(make_json_edge(node_a.name, midpoint_label, ckt_id, int_a.utilization, util_ranges))
-        edges.append(make_json_edge(node_b.name, midpoint_label, ckt_id, int_b.utilization, util_ranges))
+        edges.append(make_json_edge(node_a.name, int_a_name, midpoint_label, ckt_id, int_a.utilization, util_ranges))
+        edges.append(make_json_edge(node_b.name, int_b_name, midpoint_label, ckt_id, int_b.utilization, util_ranges))
     elements = nodes + edges
 
     return elements
@@ -314,10 +317,27 @@ app.layout = html.Div(className='content', children=[
                     id='demand-destination-callback', options=[{'label': dest, 'value': dest}
                                                                for dest in demand_destinations_list]
                 ),
-            ])
+            ]),
+            dcc.Tab(label='Demands on interface', children=[html.P(id='interface-demand-callback')]),
        ]),
     ])
 ])
+
+
+# Display demands on an interface
+@app.callback(Output('interface-demand-callback', 'children'),
+              Input('cytoscape-prototypes', 'tapEdgeData'))
+def display_edge_demands(data):
+    if data:
+        """{'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
+                  'utilization': 'failed', 'edge-name': edge_name}}"""
+
+        # Get interface that corresponds to the edge
+        interface = model.get_interface_object(data['edge-name'], data['source'])
+        demands = interface.demands(model)
+        dmds_reprs = [demand.__repr__() for demand in demands]
+
+        return json.dumps(dmds_reprs)
 
 
 # Display info about edge user hovers over
@@ -371,7 +391,7 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
                         for interface in hop:
                             interfaces_to_highlight.add(interface)
 
-        for interface in interfaces_to_highlight:  # TODO - color nodes on path pink as well
+        for interface in interfaces_to_highlight:
 
             # Add the edge selectors
             new_entry = {
