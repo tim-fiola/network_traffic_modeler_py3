@@ -222,29 +222,6 @@ demand_destinations_list = list(demand_destinations)
 demand_sources_list.sort()
 demand_destinations_list.sort()
 
-
-# styles = {
-#     'container': {
-#         'position': 'fixed',
-#         'display': 'flex',
-#         'flex-direction': 'column',
-#         'height': '95vh',
-#         'width': '100%',
-#     },
-#     'cy-container': {
-#         'flex': '1',
-#         'position': 'relative'
-#     },
-#     'cytoscape': {
-#         'position': 'absolute',
-#         'width': '100%',
-#         'height': '100%',
-#         'z-index': 999,
-#         'backgroundColor': '#D2B48C'
-#     },
-#     'tab': {'height': 'calc(98vh - 80px)'}
-# }
-
 styles_2 = {
     "content": {
         'width': '100%',
@@ -287,6 +264,8 @@ styles_2 = {
 
 app = dash.Dash(__name__)
 
+# TODO - change demands on interface tab to Interface info tab: then have demands, capacity, source, dest, util, int name, etc on that tab
+
 app.layout = html.Div(className='content', children=[
     html.Div(className='left_content', children=[
         cyto.Cytoscape(
@@ -318,27 +297,33 @@ app.layout = html.Div(className='content', children=[
                                                                for dest in demand_destinations_list]
                 ),
             ]),
-            dcc.Tab(label='Demands on interface', children=[html.P(id='interface-demand-callback')]),
+            dcc.Tab(label='Interface Info', children=[
+                dcc.RadioItems(
+                    id='interface-demand-callback',
+                ),
+            ]),
        ]),
     ])
 ])
 
 
 # Display demands on an interface
-@app.callback(Output('interface-demand-callback', 'children'),
-              Input('cytoscape-prototypes', 'tapEdgeData'))
+@app.callback(Output('interface-demand-callback', "options"),
+              Input('cytoscape-prototypes', 'selectedEdgeData'))
 def display_edge_demands(data):
     if data:
-        """{'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
-                  'utilization': 'failed', 'edge-name': edge_name}}"""
-
         # Get interface that corresponds to the edge
-        interface = model.get_interface_object(data['edge-name'], data['source'])
+        print(data)
+        demands_on_interface = []
+        interface = model.get_interface_object(data[-1]['edge-name'], data[-1]['source'])
         demands = interface.demands(model)
-        dmds_reprs = [demand.__repr__() for demand in demands]
-
-        return json.dumps(dmds_reprs)
-
+        # dmds_reprs = [demand.__repr__() for demand in demands]
+        # return dmds_reprs
+        for demand in demands:
+            demands_on_interface.append({"label": demand.__repr__(), "value": demand.__repr__()})
+        return demands_on_interface
+    else:
+        return [{"label": 'select an interface', "value": 'select an interface'}]
 
 # Display info about edge user hovers over
 @app.callback(Output('cytoscape-mouseoverEdgeData-output', 'children'),
@@ -449,91 +434,5 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
 
     return default_stylesheet + new_style
 
-
-
-
-# THIS DOES NOT WORK; CREATES ADDITIONAL EDGES THAT ARE SEPARATE FROM THE EXISTING EDGES
-# @app.callback(Output('cytoscape-prototypes', 'elements'),
-#               [Input('demand-source-callback', 'value'), Input('demand-destination-callback', 'value')])
-# def highlight_demand_paths(source, destination):
-#     # Find edges that match the Interfaces in each path in dmd_path_modified
-#     interfaces_to_highlight = set()
-#
-#     if source is not None and destination is not None:
-#         # Find the demands that match the source and destination
-#         dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
-#
-#         # Find the demand paths for each demand
-#         for dmd in dmds:
-#             dmd_path = dmd.path[:]
-#             for path in dmd_path:
-#                 for hop in dmd_path:
-#                     if isinstance(hop, RSVP_LSP):
-#                         for lsp_hop in hop.path['interfaces']:
-#                             interfaces_to_highlight.add(lsp_hop)
-#                         dmd_path.remove(hop)
-#                     else:
-#                         for interface in hop:
-#                             interfaces_to_highlight.add(interface)
-#
-#     pprint('interfaces_to_highlight:')
-#     pprint(interfaces_to_highlight)
-#     print()
-#     print()
-#
-#     # Create new edges
-#     elements_to_highlight = []
-#     label = 'demand_path_{}-to-{}'.format(source, destination)
-#     for entry in interfaces_to_highlight:
-#         interface_source = entry.node_object.name
-#         interface_destination = entry.remote_node_object.name
-#
-#         midpoint_nodes = [node for node in midpoints if
-#                          node['data']['group']=='midpoint' and
-#                          interface_source in node['data']['neighbors'] and
-#                          interface_destination in node['data']['neighbors']]
-#
-#         print('midpoint_nodes =')
-#         pprint(midpoint_nodes)
-#
-#         midpoint_node = midpoint_nodes[0]
-#
-#         print('midpoint_node = {}'.format(midpoint_node))  # Todo - debug
-#
-#         target = midpoint_node['data']['label']
-#
-#         new_edge_1 = {
-#             'data': {
-#                 'source': "{}".format(interface_source),
-#                 'target': "{}".format(target),
-#                 'label': label,
-#                 'group': "path-info",
-#                 "curve-style": "bezier",
-#                 'width': '6',
-#                 'line-style': 'dashed',
-#                 'target-arrow-color': "pink",
-#                 'target-arrow-shape': 'triangle',
-#             }
-#         }
-#
-#         new_edge_2 = {
-#             'data': {
-#                 'source': "{}".format(entry.remote_node_object.name),
-#                 'target': "{}".format(target),
-#                 'label': label,
-#                 'group': "path-info",
-#                 "curve-style": "bezier",
-#                 'width': '6',
-#                 'line-style': 'dashed',
-#                 'target-arrow-color': "pink",
-#                 'target-arrow-shape': 'triangle',
-#             }
-#         }
-#
-#
-#         elements_to_highlight.append(new_edge_1)
-#         elements_to_highlight.append(new_edge_2)
-#
-#     return elements + elements_to_highlight
 
 app.run_server(debug=True)
