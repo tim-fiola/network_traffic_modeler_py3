@@ -300,6 +300,7 @@ app.layout = html.Div(className='content', children=[
             dcc.Tab(label='Interface Info', children=[
                 dcc.RadioItems(
                     id='interface-demand-callback',
+                    labelStyle={'display': 'inline-block'}
                 ),
             ]),
        ]),
