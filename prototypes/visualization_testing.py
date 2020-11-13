@@ -39,10 +39,10 @@ def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
     return json_node
 
 
-def make_json_edge(source_id, edge_name, target_id, label, utilization, util_ranges):
+def make_json_edge(source_id, target_id, edge_name, capacity, label, utilization, util_ranges):
     """
     {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
-              'utilization': 'failed', 'edge-name': edge_name}}
+              'utilization': 'failed', 'interface-name': edge_name}}
 
     """
 
@@ -66,7 +66,8 @@ def make_json_edge(source_id, edge_name, target_id, label, utilization, util_ran
 
     json_edge = {
                     'data': {'source': source_id, 'target': target_id, "group": group,
-                             'label': label, 'utilization': utilization, 'edge-name': edge_name}
+                             'label': label, 'utilization': utilization, 'interface-name': edge_name,
+                             'capacity': capacity}
                  }
 
     return json_edge
@@ -110,6 +111,7 @@ def create_elements(model, group_midpoints=True):
         node_a_x = node_a.lon
         node_b_y = node_b.lat
         node_b_x = node_b.lon
+        capacity = int_a.capacity
 
         try:
             ckt_id = int_a.circuit_id
@@ -136,8 +138,8 @@ def create_elements(model, group_midpoints=True):
         #           'utilization': 'failed'}}
 
         # Make edges with midpoints
-        edges.append(make_json_edge(node_a.name, int_a_name, midpoint_label, ckt_id, int_a.utilization, util_ranges))
-        edges.append(make_json_edge(node_b.name, int_b_name, midpoint_label, ckt_id, int_b.utilization, util_ranges))
+        edges.append(make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id, int_a.utilization, util_ranges))
+        edges.append(make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id, int_b.utilization, util_ranges))
     elements = nodes + edges
 
     return elements
@@ -316,7 +318,7 @@ def display_edge_demands(data):
         # Get interface that corresponds to the edge
         print(data)
         demands_on_interface = []
-        interface = model.get_interface_object(data[-1]['edge-name'], data[-1]['source'])
+        interface = model.get_interface_object(data[-1]['interface-name'], data[-1]['source'])
         demands = interface.demands(model)
         # dmds_reprs = [demand.__repr__() for demand in demands]
         # return dmds_reprs
@@ -331,8 +333,9 @@ def display_edge_demands(data):
               [Input('cytoscape-prototypes', 'mouseoverEdgeData')])
 def display_tap_edge_data(data):
     if data:
-        msg = "Source: {}, Dest: {}, ckt_id {}, utilization {}%".format(data['source'], data['target'],
-                                                                        data['label'], data['utilization'])
+        msg = "Source: {}, Dest: {}, ckt_id: {}, capacity: {}, utilization: {}%".format(data['source'], data['target'],
+                                                                                        data['label'], data['capacity'],
+                                                                                        data['utilization'])
         return msg
 
 
