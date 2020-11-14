@@ -270,6 +270,8 @@ app = dash.Dash(__name__)
 
 # TODO - change demands on interface tab to Interface info tab: then have demands, capacity, source, dest, util, int name, etc on that tab
 
+default_demand_source = ''
+
 app.layout = html.Div(className='content', children=[
     html.Div(className='left_content', children=[
         cyto.Cytoscape(
@@ -294,15 +296,14 @@ app.layout = html.Div(className='content', children=[
             dcc.Tab(label='Demand Paths', children=[
                 dcc.Dropdown(
                     id='demand-source-callback', options=[{'label': source, 'value': source}
-                                                          for source in demand_sources_list]
+                                                          for source in demand_sources_list],
                 ),
                 dcc.Dropdown(
                     id='demand-destination-callback', options=[{'label': dest, 'value': dest}
-                                                               for dest in demand_destinations_list]
+                                                               for dest in demand_destinations_list],
                 ),
             ]),
             dcc.Tab(label='Interface Info', children=[
-
                 dcc.RadioItems(
                     id='interface-demand-callback',
                     labelStyle={'display': 'inline-block'}
@@ -312,6 +313,31 @@ app.layout = html.Div(className='content', children=[
     ])
 ])
 
+# TODO - Change Demands source/dest to that matching selected demand from Demands tab
+
+@app.callback(
+    Output(component_id='demand-source-callback', component_property='value'),
+    [Input(component_id='interface-demand-callback', component_property='value')]
+)
+def update_default_demand_source(demand):
+    if demand:
+        # 'demand' will be a string repr, example:
+        #  "Demand(source = C, dest = E, traffic = 20, name = 'dmd_c_e_1')"
+        #  parse it to get source
+        source = demand.split()[2][:-1]
+        return source
+
+@app.callback(
+    Output(component_id='demand-destination-callback', component_property='value'),
+    [Input(component_id='interface-demand-callback', component_property='value')]
+)
+def update_default_demand_dest(demand):
+    if demand:
+        # 'demand' will be a string repr, example:
+        #  "Demand(source = C, dest = E, traffic = 20, name = 'dmd_c_e_1')"
+        #  parse it to get dest
+        dest = demand.split()[5][:-1]
+        return dest
 
 # def make_tooltip(placement):
 #     output = dbc.Tooltip(
@@ -324,7 +350,7 @@ app.layout = html.Div(className='content', children=[
 # tooltips = html.Div(make_tooltip('left'))
 
 
-# Change Demands source/dest to that matching selected demand from Demands tab
+
 
 
 # Display demands on an interface
@@ -345,7 +371,7 @@ def display_edge_demands(data):
     else:
         return [{"label": 'select an interface', "value": 'select an interface'}]
 
-# Display info about edge user hovers over
+# Display info about edge user clicks on
 @app.callback(Output('cytoscape-tapEdgeData-output', 'children'),
               [Input('cytoscape-prototypes', 'tapEdgeData')])
 def display_tap_edge_data(data):
