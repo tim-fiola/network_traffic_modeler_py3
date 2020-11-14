@@ -8,6 +8,8 @@ from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import json
 
+import dash_bootstrap_components as dbc
+
 from pyNTM import RSVP_LSP
 
 from pprint import pprint
@@ -159,7 +161,7 @@ default_stylesheet = [
             'label': "data(label)",
             'line-color': "data(group)",
             "font-size": "9px",
-            "opacity": 0.4
+            "opacity": 0.4,
         }
     },
     {
@@ -280,7 +282,7 @@ app.layout = html.Div(className='content', children=[
         ),
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
-        html.P(id='cytoscape-mouseoverEdgeData-output'),
+        html.P(id='cytoscape-tapEdgeData-output'),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
@@ -300,6 +302,7 @@ app.layout = html.Div(className='content', children=[
                 ),
             ]),
             dcc.Tab(label='Interface Info', children=[
+
                 dcc.RadioItems(
                     id='interface-demand-callback',
                     labelStyle={'display': 'inline-block'}
@@ -308,6 +311,20 @@ app.layout = html.Div(className='content', children=[
        ]),
     ])
 ])
+
+
+# def make_tooltip(placement):
+#     output = dbc.Tooltip(
+#             "This is a tooltip on {}".format(placement),
+#             target="interface-hover-tooltip",
+#             placement=placement
+#     )
+#     return output
+#
+# tooltips = html.Div(make_tooltip('left'))
+
+
+# Change Demands source/dest to that matching selected demand from Demands tab
 
 
 # Display demands on an interface
@@ -329,13 +346,13 @@ def display_edge_demands(data):
         return [{"label": 'select an interface', "value": 'select an interface'}]
 
 # Display info about edge user hovers over
-@app.callback(Output('cytoscape-mouseoverEdgeData-output', 'children'),
-              [Input('cytoscape-prototypes', 'mouseoverEdgeData')])
+@app.callback(Output('cytoscape-tapEdgeData-output', 'children'),
+              [Input('cytoscape-prototypes', 'tapEdgeData')])
 def display_tap_edge_data(data):
     if data:
-        msg = "Source: {}, Dest: {}, ckt_id: {}, capacity: {}, utilization: {}%".format(data['source'], data['target'],
-                                                                                        data['label'], data['capacity'],
-                                                                                        data['utilization'])
+        msg = "Selected Interface: Source: {}, Dest: {}, ckt_id: {}, capacity: {}, " \
+              "utilization: {}%".format(data['source'], data['target'], data['label'],
+                                        data['capacity'], data['utilization'])
         return msg
 
 
@@ -437,6 +454,3 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
             new_style.append(new_entry_4)
 
     return default_stylesheet + new_style
-
-
-app.run_server(debug=True)
