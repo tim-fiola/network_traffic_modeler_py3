@@ -268,7 +268,7 @@ styles_2 = {
 
 app = dash.Dash(__name__)
 
-# TODO - change demands on interface tab to Interface info tab: then have demands, capacity, source, dest, util, int name, etc on that tab
+# TODO - display demand path interfaces on Demand Paths tab, make each interface selectable
 
 default_demand_source = ''
 
@@ -349,17 +349,12 @@ def update_default_demand_dest(demand):
 #
 # tooltips = html.Div(make_tooltip('left'))
 
-
-
-
-
 # Display demands on an interface
 @app.callback(Output('interface-demand-callback', "options"),
               Input('cytoscape-prototypes', 'selectedEdgeData'))
 def display_edge_demands(data):
     if data:
         # Get interface that corresponds to the edge
-        print(data)
         demands_on_interface = []
         interface = model.get_interface_object(data[-1]['interface-name'], data[-1]['source'])
         demands = interface.demands(model)
@@ -369,7 +364,7 @@ def display_edge_demands(data):
             demands_on_interface.append({"label": demand.__repr__(), "value": demand.__repr__()})
         return demands_on_interface
     else:
-        return [{"label": 'select an interface', "value": 'select an interface'}]
+        return [{"label": '', "value": ''}]
 
 # Display info about edge user clicks on
 @app.callback(Output('cytoscape-tapEdgeData-output', 'children'),

@@ -43,14 +43,16 @@ X	Y	X-to-Y	10	100	39
 
 NODES_TABLE
 name	lon	lat
-A	25	0
+A	70	190
 B	31	-177
 C	60	-63
-D	62	37
+D	200	89
 E	-60	124
 F	2	35
-G	30	90
+G	200	-90
 H	52	124
+Y	200	-90
+X	200	72
 
 DEMANDS_TABLE
 source	dest	traffic	name
