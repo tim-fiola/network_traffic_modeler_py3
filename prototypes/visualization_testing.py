@@ -454,3 +454,6 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
             new_style.append(new_entry_4)
 
     return default_stylesheet + new_style
+
+
+app.run_server(debug=True)
