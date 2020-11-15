@@ -302,6 +302,10 @@ app.layout = html.Div(className='content', children=[
                     id='demand-destination-callback', options=[{'label': dest, 'value': dest}
                                                                for dest in demand_destinations_list],
                 ),
+                dcc.RadioItems(
+                    id='demand-path-interfaces',
+                    labelStyle={'display': 'inline-block'}
+                )
             ]),
             dcc.Tab(label='Interface Info', children=[
                 dcc.RadioItems(
@@ -313,7 +317,31 @@ app.layout = html.Div(className='content', children=[
     ])
 ])
 
-# TODO - Change Demands source/dest to that matching selected demand from Demands tab
+@app.callback(
+    Output(component_id='demand-path-interfaces', component_property='options'),
+    [Input(component_id='interface-demand-callback', component_property='value')]
+)
+def display_demand_path_interfaces(demand):
+    if demand:
+
+        info = demand.split()
+        src = info[2][:-1]
+        dest = info[5][:-1]
+        name = info[11].split("'")[1]
+
+        dmd_object = model.get_demand_object(src, dest, name)
+
+        dmd_int_set = find_demand_interfaces([dmd_object])
+
+        # dmd_int_dict = {{'label': dmd.__repr__(), 'value': dmd.__repr__()} for dmd in dmd_int_set}
+
+        dmd_ints = []
+        for dmd in dmd_int_set:
+            dmd_ints.append({'label': dmd.__repr__(), 'value': dmd.__repr__()})
+
+        return dmd_ints
+    else:
+        return [{"label": '', "value": ''}]
 
 @app.callback(
     Output(component_id='demand-source-callback', component_property='value'),
@@ -404,19 +432,8 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
         except KeyError:
             return default_stylesheet + new_style
 
-        # Find the demand paths for each demand
-        interfaces_to_highlight = set()
-        for dmd in dmds:
-            dmd_path = dmd.path[:]
-            for path in dmd_path:
-                for hop in dmd_path:
-                    if isinstance(hop, RSVP_LSP):
-                        for lsp_hop in hop.path['interfaces']:
-                            interfaces_to_highlight.add(lsp_hop)
-                        dmd_path.remove(hop)
-                    else:
-                        for interface in hop:
-                            interfaces_to_highlight.add(interface)
+        # Find the interfaces on the demand paths for each demand
+        interfaces_to_highlight = find_demand_interfaces(dmds)
 
         for interface in interfaces_to_highlight:
 
@@ -475,6 +492,30 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
             new_style.append(new_entry_4)
 
     return default_stylesheet + new_style
+
+
+def find_demand_interfaces(dmds):
+    """
+    Finds interfaces for each demand in dmds.  If there
+    are RSVP LSPs in path, the interfaces for that LSP path
+    are added to the set of output interfaces
+
+    :param dmds: iterable of demand objects
+    :return: set of interfaces that any given demand in dmds transits
+    """
+    interfaces_to_highlight = set()
+    for dmd in dmds:
+        dmd_path = dmd.path[:]
+        for path in dmd_path:
+            for hop in dmd_path:
+                if isinstance(hop, RSVP_LSP):
+                    for lsp_hop in hop.path['interfaces']:
+                        interfaces_to_highlight.add(lsp_hop)
+                    dmd_path.remove(hop)
+                else:
+                    for interface in hop:
+                        interfaces_to_highlight.add(interface)
+    return interfaces_to_highlight
 
 
 app.run_server(debug=True)
