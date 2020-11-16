@@ -4,7 +4,7 @@ sys.path.append('../')
 import dash
 import dash_cytoscape as cyto
 import dash_html_components as html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import json
 
@@ -375,10 +375,15 @@ def update_default_demand_dest(demand):
 #
 # tooltips = html.Div(make_tooltip('left'))
 
+
+
 # Display demands on an interface
+# TODO - need to make sure Interface Info tab updates when selected_interface updates
 @app.callback(Output('interface-demand-callback', "options"),
-              Input('cytoscape-prototypes', 'selectedEdgeData'))
-def display_edge_demands(data):
+              [Input('cytoscape-prototypes', 'selectedEdgeData'),
+               Input('demand-path-interfaces', 'value')])
+def display_edge_demands(data, dmd_path_int):
+    # TODO - do comparison to compare data and dmd_path_interface to selected_interface
     if data:
         # Get interface that corresponds to the edge
         demands_on_interface = []
@@ -393,16 +398,12 @@ def display_edge_demands(data):
         return [{"label": '', "value": ''}]
 
 
-# Display info about edge user clicks on
+# Display info about edge user clicks on or selects in Demand Paths Interface list
 @app.callback(Output('cytoscape-tapEdgeData-output', 'children'),
               [Input('cytoscape-prototypes', 'tapEdgeData'),
-               Input('demand-path-interfaces', 'value')],
-              [State('cytoscape-tapEdgeData-output', 'children'),
-               State('demand-path-interfaces', 'value')])
-def display_tap_edge_data(data, demand_path_int, data_state, demand_path_int_state):
+               Input('demand-path-interfaces', 'value')])
+def display_tap_edge_data(data, demand_path_int):
 
-    print("data is: {}".format(data))
-    print("dmd_path_int is: {}".format(demand_path_int))
     global selected_interface
     # Parse selected interface to find interface source and name
     if selected_interface != 'no int selected':
@@ -469,9 +470,8 @@ def display_tap_edge_data(data, demand_path_int, data_state, demand_path_int_sta
                                                 data['capacity'], data['utilization'])
 
             else:
-                print("Unaccounted for scenario in selected interface selection")  # TODO - fix this scenario
-
-            print("selected_interface is {}".format(selected_interface))
+                msg = "Unaccounted for scenario in selected interface selection"
+                print(msg)
 
     else:
         if data:
@@ -503,7 +503,6 @@ def display_tap_edge_data(data, demand_path_int, data_state, demand_path_int_sta
             msg = 'no int selected'
 
     selected_interface = msg
-    print(selected_interface)
     return msg
 
 
