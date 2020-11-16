@@ -319,27 +319,23 @@ app.layout = html.Div(className='content', children=[
 
 @app.callback(
     Output(component_id='demand-path-interfaces', component_property='options'),
-    [Input(component_id='interface-demand-callback', component_property='value')]
+    [Input(component_id='demand-source-callback', component_property='value'),
+     Input(component_id='demand-destination-callback', component_property='value')]
 )
-def display_demand_path_interfaces(demand):
-    if demand:
+def display_demand_path_interfaces(source, destination):
+    if source and destination:
+        try:
+            key = '{}-{}'.format(source, destination)
+            demands = model.parallel_demand_groups()[key]
 
-        info = demand.split()
-        src = info[2][:-1]
-        dest = info[5][:-1]
-        name = info[11].split("'")[1]
+            dmd_int_set = find_demand_interfaces(demands)
 
-        dmd_object = model.get_demand_object(src, dest, name)
-
-        dmd_int_set = find_demand_interfaces([dmd_object])
-
-        # dmd_int_dict = {{'label': dmd.__repr__(), 'value': dmd.__repr__()} for dmd in dmd_int_set}
-
-        dmd_ints = []
-        for dmd in dmd_int_set:
-            dmd_ints.append({'label': dmd.__repr__(), 'value': dmd.__repr__()})
-
-        return dmd_ints
+            dmd_ints = []
+            for dmd in dmd_int_set:
+                dmd_ints.append({'label': dmd.__repr__(), 'value': dmd.__repr__()})
+            return dmd_ints
+        except KeyError:
+            return [{"label": '', "value": ''}]
     else:
         return [{"label": '', "value": ''}]
 
