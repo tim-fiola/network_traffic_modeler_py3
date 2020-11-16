@@ -226,6 +226,9 @@ demand_destinations_list = list(demand_destinations)
 demand_sources_list.sort()
 demand_destinations_list.sort()
 
+map_selected_interface = None
+demand_path_selected_interface = None
+
 styles_2 = {
     "content": {
         'width': '100%',
@@ -285,6 +288,7 @@ app.layout = html.Div(className='content', children=[
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         html.P(id='cytoscape-tapEdgeData-output'),
+        html.P(id='demand-path-interface-output'),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
@@ -398,8 +402,33 @@ def display_tap_edge_data(data):
         msg = "Selected Interface: Source: {}, Dest: {}, ckt_id: {}, capacity: {}, " \
               "utilization: {}%".format(data['source'], data['target'], data['label'],
                                         data['capacity'], data['utilization'])
-        return msg
+    else:
+        msg = 'no interface selected'
 
+    return msg
+
+# Display info about demand interface user selects on Demand Paths tab
+@app.callback(Output('demand-path-interface-output', 'children'),
+              [Input('demand-path-interfaces', 'value')])
+def display_demand_interface_data(selected_interface=None):
+
+    if selected_interface:
+        # demand_path_selected_interface will be a string; parse it to
+        # get info
+        int_data = selected_interface.split()
+        source = int_data[11].split("'")[1]
+        dest = int_data[14].split("'")[1]
+        ckt_id = int_data[17].split("'")[1]
+        capacity = int_data[8].split(",")[0]
+        int_name = int_data[2].split("'")[1]
+        util = model.get_interface_object(int_name, source).utilization
+
+        msg = "Selected Interface: Source: {}, Dest: {}, ckt_id: {}, capacity: {}, " \
+              "utilization: {}%".format(source, dest, ckt_id, capacity, util)
+    else:
+        msg = 'no interface selected'
+
+    return msg
 
 # Need to select interfaces that have utilization ranges selected in values from dropdown
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
