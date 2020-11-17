@@ -384,14 +384,31 @@ def update_default_demand_dest(demand):
                Input('demand-path-interfaces', 'value')])
 def display_edge_demands(data, dmd_path_int):
     # TODO - do comparison to compare data and dmd_path_interface to selected_interface
-    if data:
-        # Get interface that corresponds to the edge
+    global selected_interface
+    print(selected_interface != 'no int selected')
+
+    if selected_interface != 'no int selected':
+        print("selected_interface is . . . :{}".format(selected_interface))
+        print("data is from 392: {}".format(data))
+        # msg = compare_to_selected_interface(data, dmd_path_int, selected_interface)
+        msg = selected_interface
+        print("msg is :::{}:::".format(msg))
+
+        # If user clicks on empty space, it clears selected interface
+        if msg == 'no int selected':
+            return [{"label": '', "value": ''}]
+
+        # Parse msg to get source and dest for interface
+        int_src = msg.split()[3].split(',')[0]  # split(',') to remove the comma if it exists
+        int_name = msg.split()[7][:-1]  # split(',') to remove the comma to remove comma if it exists
+        print("int_src, int_name = {}, {}".format(int_src, int_name))
+
+        interface = model.get_interface_object(int_name, int_src)
+        dmds = interface.demands(model)  # This will be a list of demands
+
+        # Need to put demands in format for return
         demands_on_interface = []
-        interface = model.get_interface_object(data[-1]['interface-name'], data[-1]['source'])
-        demands = interface.demands(model)
-        # dmds_reprs = [demand.__repr__() for demand in demands]
-        # return dmds_reprs
-        for demand in demands:
+        for demand in dmds:
             demands_on_interface.append({"label": demand.__repr__(), "value": demand.__repr__()})
         return demands_on_interface
     else:
@@ -407,71 +424,12 @@ def display_tap_edge_data(data, demand_path_int):
     global selected_interface
     # Parse selected interface to find interface source and name
     if selected_interface != 'no int selected':
-        selected_int_split = selected_interface.split(",")
-        selected_int_src = selected_int_split[0].split(":")[-1].strip()
-        selected_int_name = selected_int_split[2].split(":")[1].strip()
-
-        # Parse data to find interface source and name
-        if data and demand_path_int:
-            print('data = {}'.format(data))
-            print("demand_path_int = {}".format(demand_path_int))
-            # data_split = data.split(",")
-            # data_int_src = data_split[0].split(":")[-1].strip()
-            # data_int_name = data_split[2].split(":")[1].strip()
-            data_int_src = data['source']
-            data_int_name = data['interface-name']
-
-            demand_path_int_data = demand_path_int.split()
-            dmd_path_int_source = demand_path_int_data[11].split("'")[1]
-            dmd_path_int_name = demand_path_int_data[2].split("'")[1]
-
-            # Compare data and demand_path_int to selected_interface to see which changed
-            data_is_same = data_int_src == selected_int_src and data_int_name == selected_int_name
-            dmd_path_int_is_same = dmd_path_int_source == selected_int_src and dmd_path_int_name == selected_int_name
-
-            print("data is same = {}".format(data_is_same))
-            print("dmd_path_int_is_same = {}".format(dmd_path_int_is_same))
-
-            # If the data is not the same, it changed, update the msg
-            if not(data_is_same):
-                source = data_int_src
-
-                # Normalize destination to destination node, not the midpoint node
-                dest_split = data['target'].split('-')[1:]
-                dest = [entry for entry in dest_split if entry != source][0]
-
-                msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
-                      "utilization: {}%".format(source, dest, data_int_name, data['label'],
-                                                data['capacity'], data['utilization'])
-
-            # If demand_path_interface is not the same, update the msg
-            elif not(dmd_path_int_is_same):
-                int_data = demand_path_int_data
-                source = dmd_path_int_source
-                dest = int_data[14].split("'")[1]
-                ckt_id = int_data[17].split("'")[1]
-                capacity = int_data[8].split(",")[0]
-                int_name = dmd_path_int_name
-                util = model.get_interface_object(int_name, source).utilization
-
-                msg = "Selected Interface: Source: {}, Dest: {}, ckt_id: {}, capacity: {}, " \
-                      "utilization: {}%".format(source, dest, ckt_id, capacity, util)
-
-            # If data and demand_path_interface refer to the same interface, update the msg
-            elif data_int_src == dmd_path_int_source and data_int_name == dmd_path_int_name:
-
-                source = data_int_src
-                # Normalize destination to destination node, not the midpoint node
-                dest_split = data['target'].split('-')[1:]
-                dest = [entry for entry in dest_split if entry != source][0]
-
-                msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
-                      "utilization: {}%".format(source, dest, data_int_name, data['label'],
-                                                data['capacity'], data['utilization'])
-
-            else:
-                msg = "Unaccounted for scenario in selected interface selection"
-                print(msg)
+        print("data is from 419: {}".format(data))
+        # TODO - Interface Info tab demands are not auto-updating when I click on a new interface on the map, and
+        #  Selected Interface is not updating when I click on a new interface on Demand Paths tab
+        # msg = compare_to_selected_interface(data, demand_path_int, selected_interface)
+        msg = selected_interface
+        print("msg = {}".format(msg))
 
     else:
         if data:
@@ -496,8 +454,8 @@ def display_tap_edge_data(data, demand_path_int):
             int_name = int_data[2].split("'")[1]
             util = model.get_interface_object(int_name, source).utilization
 
-            msg = "Selected Interface: Source: {}, Dest: {}, ckt_id: {}, capacity: {}, " \
-                  "utilization: {}%".format(source, dest, ckt_id, capacity, util)
+            msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
+                  "utilization: {}%".format(source, dest, int_name, ckt_id, capacity, util)
 
         else:
             msg = 'no int selected'
@@ -506,6 +464,107 @@ def display_tap_edge_data(data, demand_path_int):
     return msg
 
 
+def compare_to_selected_interface(data, demand_path_int, selected_interface):
+    selected_int_split = selected_interface.split(",")
+    selected_int_src = selected_int_split[0].split(":")[-1].strip()
+    selected_int_name = selected_int_split[2].split(":")[1].strip()
+    # Parse data to find interface source and name
+    print("data = {}".format(data))
+    print("data is {}".format(type(data)))
+
+    if isinstance(data, list):
+        if len(data) == 0:
+            return 'no int selected'
+        data = data[0]
+
+    if data:
+        # Parse data for interface source and interface name
+        print("data at 465 is: {}".format(data))
+        try:
+            data_int_src = data['source']
+            data_int_name = data['interface-name']
+        except TypeError:
+            print("TypeError called")
+            import pdb
+            pdb.set_trace()
+
+        # Normalize destination to destination node, not the midpoint node
+        dest_split = data['target'].split('-')[1:]
+        dest = [entry for entry in dest_split if entry != data_int_src][0]
+
+    if demand_path_int:
+        # Parse demand_path_int for interface source and interface name
+        demand_path_int_data = demand_path_int.split()
+        dmd_path_int_source = demand_path_int_data[11].split("'")[1]
+        dmd_path_int_name = demand_path_int_data[2].split("'")[1]
+
+    if data and demand_path_int:
+        # Compare data and demand_path_int to selected_interface to see which changed
+        data_is_same = data_int_src == selected_int_src and data_int_name == selected_int_name
+        dmd_path_int_is_same = dmd_path_int_source == selected_int_src and dmd_path_int_name == selected_int_name
+
+        print("data is same = {}".format(data_is_same))
+        print("dmd_path_int_is_same = {}".format(dmd_path_int_is_same))
+
+        # If the data is not the same, it changed, update the msg
+        if not (data_is_same):
+            msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
+                  "utilization: {}%".format(data_int_src, dest, data_int_name, data['label'],
+                                            data['capacity'], data['utilization'])
+
+        # If demand_path_interface is not the same, update the msg
+        elif not (dmd_path_int_is_same):
+            int_data = demand_path_int_data
+            source = dmd_path_int_source
+            dest = int_data[14].split("'")[1]
+            ckt_id = int_data[17].split("'")[1]
+            capacity = int_data[8].split(",")[0]
+            int_name = dmd_path_int_name
+            util = model.get_interface_object(int_name, source).utilization
+
+            msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
+                  "utilization: {}%".format(source, dest, int_name, ckt_id, capacity, util)
+
+        # If data and demand_path_interface refer to the same interface, update the msg
+        elif data_int_src == dmd_path_int_source and data_int_name == dmd_path_int_name:
+
+            source = data_int_src
+            # Normalize destination to destination node, not the midpoint node
+            dest_split = data['target'].split('-')[1:]
+            dest = [entry for entry in dest_split if entry != source][0]
+
+            msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
+                  "utilization: {}%".format(source, dest, data_int_name, data['label'],
+                                            data['capacity'], data['utilization'])
+
+        else:
+            msg = "Unaccounted for scenario in selected interface selection"
+            print(msg)
+
+    else:
+        if data:
+            msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
+                  "utilization: {}%".format(data_int_src, dest, data_int_name, data['label'],
+                                            data['capacity'], data['utilization'])
+        elif demand_path_int:
+            int_data = demand_path_int_data
+            source = dmd_path_int_source
+            dest = int_data[14].split("'")[1]
+            ckt_id = int_data[17].split("'")[1]
+            capacity = int_data[8].split(",")[0]
+            int_name = dmd_path_int_name
+            util = model.get_interface_object(int_name, source).utilization
+
+            msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
+                  "utilization: {}%".format(source, dest, int_name, ckt_id, capacity, util)
+
+        elif not(data) and not(demand_path_int):
+            msg = 'no int selected'
+        else:
+            msg = "Unaccounted for scenario in data or demand_path_int present"
+
+    print("returned msg is {}".format(msg))
+    return msg
 
 
 # Display info about demand interface user selects on Demand Paths tab
