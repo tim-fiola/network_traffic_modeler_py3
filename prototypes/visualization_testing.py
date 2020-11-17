@@ -319,27 +319,8 @@ app.layout = html.Div(className='content', children=[
     ])
 ])
 
-@app.callback(
-    Output(component_id='demand-path-interfaces', component_property='options'),
-    [Input(component_id='demand-source-callback', component_property='value'),
-     Input(component_id='demand-destination-callback', component_property='value')]
-)
-def display_demand_path_interfaces(source, destination):
-    if source and destination:
-        try:
-            key = '{}-{}'.format(source, destination)
-            demands = model.parallel_demand_groups()[key]
 
-            dmd_int_set = find_demand_interfaces(demands)
 
-            dmd_ints = []
-            for dmd in dmd_int_set:
-                dmd_ints.append({'label': dmd.__repr__(), 'value': dmd.__repr__()})
-            return dmd_ints
-        except KeyError:
-            return [{"label": '', "value": ''}]
-    else:
-        return [{"label": '', "value": ''}]
 
 @app.callback(
     Output(component_id='demand-source-callback', component_property='value'),
@@ -377,13 +358,61 @@ def update_default_demand_dest(demand):
 
 
 
+
+
+
+
+
+
+
+
+
+# Display info about demand interface user selects on Demand Paths tab
+# @app.callback([Output('demand-path-interface-output', 'children'),
+#               Output('cytoscape-tapEdgeData-output', 'children')],
+#               [Input('demand-path-interfaces', 'value')])
+# def display_demand_interface_data(demand_selected_interface=None):
+#
+#     if demand_selected_interface:
+#         # demand_path_selected_interface will be a string; parse it to
+#         # get info
+#         int_data = demand_selected_interface.split()
+#         source = int_data[11].split("'")[1]
+#         dest = int_data[14].split("'")[1]
+#         ckt_id = int_data[17].split("'")[1]
+#         capacity = int_data[8].split(",")[0]
+#         int_name = int_data[2].split("'")[1]
+#         util = model.get_interface_object(int_name, source).utilization
+#
+#         msg = "Selected Interface: Source: {}, Dest: {}, ckt_id: {}, capacity: {}, " \
+#               "utilization: {}%".format(source, dest, ckt_id, capacity, util)
+#     else:
+#         msg = 'no interface selected'
+#
+#     return msg, ''
+
+
+
+
+
+
+# ######## DEFS TO UPDATE SELECTED INTERFACE ######## #
 # Display demands on an interface
-# TODO - need to make sure Interface Info tab updates when selected_interface updates
 @app.callback(Output('interface-demand-callback', "options"),
               [Input('cytoscape-prototypes', 'selectedEdgeData'),
                Input('demand-path-interfaces', 'value')])
 def display_edge_demands(data, dmd_path_int):
-    # TODO - do comparison to compare data and dmd_path_interface to selected_interface
+    """
+    Compares data and dmd_path_int values to global selected_interface to see which
+    has changed.  Finds the associated interface for data or dmd_path_int and then finds
+    the demands egressing that interface.
+
+    :param data:
+    :param dmd_path_int:
+
+    :return: list of values, where each value has format {"label": demand.__repr__(), "value": demand.__repr__()},
+    reflecting the repr for the associated demand
+    """
     global selected_interface
     print(selected_interface != 'no int selected')
 
@@ -420,11 +449,18 @@ def display_edge_demands(data, dmd_path_int):
               [Input('cytoscape-prototypes', 'tapEdgeData'),
                Input('demand-path-interfaces', 'value')])
 def display_tap_edge_data(data, demand_path_int):
+    """
+    # TODO - what is this def doing?!
+
+    :param data:
+    :param demand_path_int:
+    :return:
+    """
 
     global selected_interface
     # Parse selected interface to find interface source and name
     if selected_interface != 'no int selected':
-        print("data is from 419: {}".format(data))
+        print("data from 456 is: {}".format(data))
         # TODO - Interface Info tab demands are not auto-updating when I click on a new interface on the map, and
         #  Selected Interface is not updating when I click on a new interface on Demand Paths tab
         # msg = compare_to_selected_interface(data, demand_path_int, selected_interface)
@@ -463,8 +499,157 @@ def display_tap_edge_data(data, demand_path_int):
     selected_interface = msg
     return msg
 
+# ######## DEFS TO UPDATE TABS ######## #
+@app.callback(
+    Output(component_id='demand-path-interfaces', component_property='options'),
+    [Input(component_id='demand-source-callback', component_property='value'),
+     Input(component_id='demand-destination-callback', component_property='value')]
+)
+def display_demand_path_interfaces(source, destination):
+    """
+    Determines key based on source and destination.  Queries model for demands with matching
+    source and destination.
+
+    :param source: demand source node name
+    :param destination: demand destination node name
+    :return: list of values for demands, each value being {'label': dmd.__repr__(), 'value': dmd.__repr__()}
+    for the Demand object
+    """
+    if source and destination:
+        try:
+            key = '{}-{}'.format(source, destination)
+            demands = model.parallel_demand_groups()[key]
+
+            dmd_int_set = find_demand_interfaces(demands)
+
+            dmd_ints = []
+            for dmd in dmd_int_set:
+                dmd_ints.append({'label': dmd.__repr__(), 'value': dmd.__repr__()})
+            return dmd_ints
+        except KeyError:
+            return [{"label": '', "value": ''}]
+    else:
+        return [{"label": '', "value": ''}]
+
+
+
+
+
+
+
+# ######## OTHER DEFS ######## #
+# Need to select interfaces that have utilization ranges selected in values from dropdown
+@app.callback(Output('cytoscape-prototypes', 'stylesheet'),
+              [Input('utilization-dropdown-callback', 'value'),
+               Input('demand-source-callback', 'value'),
+               Input('demand-destination-callback', 'value')])
+def update_stylesheet(edges_to_highlight, source=None, destination=None):
+    """
+    Updates stylesheet with style for edges_to_highlight that will change line type
+    for the edge to dashed and add pink arrows and circles to the demand edges and
+    also turn the nodes for the associated edges pink
+
+    :param edges_to_highlight: list of edge elements to highlight
+    :param source: demand source node name
+    :param destination: demand destination node name
+    :return: updated stylesheet with new elements that will reflect update colors for the
+    edges_to_highlight
+    """
+    new_style = []
+
+    # Utilization color for edges
+    for color in edges_to_highlight:
+        new_entry = {
+            "selector": "edge[group=\"{}\"]".format(color),
+            "style": {
+                "opacity": 1.0
+            }
+        }
+
+        new_style.append(new_entry)
+
+    # Demand source and destination path visualization
+    if source is not None and destination is not None:
+        # Find the demands that match the source and destination
+        try:
+            dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
+        except KeyError:
+            return default_stylesheet + new_style
+
+        # Find the interfaces on the demand paths for each demand
+        interfaces_to_highlight = find_demand_interfaces(dmds)
+
+        for interface in interfaces_to_highlight:
+            # Add the edge selectors
+            new_entry = {
+                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                       interface.node_object.name),
+                "style": {
+                    "width": '4',
+                    'line-style': 'dashed',
+                    'target-arrow-color': "pink",
+                    'target-arrow-shape': 'triangle',
+                    'mid-target-arrow-color': 'pink',
+                    'mid-target-arrow-shape': 'triangle',
+                    'source-arrow-color': "pink",
+                    'source-arrow-shape': 'circle',
+                }
+            }
+
+            new_style.append(new_entry)
+
+            new_entry_2 = {
+                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                       interface.remote_node_object.name),
+                "style": {
+                    "width": '4',
+                    'line-style': 'dashed',
+                    'source-arrow-color': "pink",
+                    'source-arrow-shape': 'triangle',
+                    'mid-source-arrow-color': 'pink',
+                    'mid-source-arrow-shape': 'triangle',
+                    'target-arrow-color': "pink",
+                    'target-arrow-shape': 'circle',
+                }
+            }
+
+            new_style.append(new_entry_2)
+
+            # Add the node selectors
+            new_entry_3 = {
+                "selector": "node[id=\"{}\"]".format(interface.node_object.name),
+                "style": {
+                    'background-color': 'pink'
+                }
+            }
+
+            new_style.append(new_entry_3)
+
+            new_entry_4 = {
+                "selector": "node[id=\"{}\"]".format(interface.remote_node_object.name),
+                "style": {
+                    'background-color': 'pink'
+                }
+            }
+
+            new_style.append(new_entry_4)
+
+    return default_stylesheet + new_style
 
 def compare_to_selected_interface(data, demand_path_int, selected_interface):
+    """
+    Compares data, demand_path_int, global selected_interface.
+
+    Uses info in selected_interface to determine if data or demand_path_int has changed
+
+    Returns a msg that will be used by calling function to update selected_interface
+
+
+    :param data:
+    :param demand_path_int:
+    :param selected_interface:
+    :return:
+    """
     selected_int_split = selected_interface.split(",")
     selected_int_src = selected_int_split[0].split(":")[-1].strip()
     selected_int_name = selected_int_split[2].split(":")[1].strip()
@@ -567,119 +752,6 @@ def compare_to_selected_interface(data, demand_path_int, selected_interface):
     return msg
 
 
-# Display info about demand interface user selects on Demand Paths tab
-# @app.callback([Output('demand-path-interface-output', 'children'),
-#               Output('cytoscape-tapEdgeData-output', 'children')],
-#               [Input('demand-path-interfaces', 'value')])
-# def display_demand_interface_data(demand_selected_interface=None):
-#
-#     if demand_selected_interface:
-#         # demand_path_selected_interface will be a string; parse it to
-#         # get info
-#         int_data = demand_selected_interface.split()
-#         source = int_data[11].split("'")[1]
-#         dest = int_data[14].split("'")[1]
-#         ckt_id = int_data[17].split("'")[1]
-#         capacity = int_data[8].split(",")[0]
-#         int_name = int_data[2].split("'")[1]
-#         util = model.get_interface_object(int_name, source).utilization
-#
-#         msg = "Selected Interface: Source: {}, Dest: {}, ckt_id: {}, capacity: {}, " \
-#               "utilization: {}%".format(source, dest, ckt_id, capacity, util)
-#     else:
-#         msg = 'no interface selected'
-#
-#     return msg, ''
-
-# Need to select interfaces that have utilization ranges selected in values from dropdown
-@app.callback(Output('cytoscape-prototypes', 'stylesheet'),
-              [Input('utilization-dropdown-callback', 'value'),
-               Input('demand-source-callback', 'value'),
-               Input('demand-destination-callback', 'value')])
-def update_stylesheet(edges_to_highlight, source=None, destination=None):
-    new_style = []
-
-    # Utilization color for edges
-    for color in edges_to_highlight:
-        new_entry = {
-            "selector": "edge[group=\"{}\"]".format(color),
-            "style": {
-                "opacity": 1.0
-            }
-        }
-
-        new_style.append(new_entry)
-
-    # Demand source and destination path visualization
-    if source is not None and destination is not None:
-        # Find the demands that match the source and destination
-        try:
-            dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
-        except KeyError:
-            return default_stylesheet + new_style
-
-        # Find the interfaces on the demand paths for each demand
-        interfaces_to_highlight = find_demand_interfaces(dmds)
-
-        for interface in interfaces_to_highlight:
-
-            # Add the edge selectors
-            new_entry = {
-                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                       interface.node_object.name),
-                "style": {
-                    "width": '4',
-                    'line-style': 'dashed',
-                    'target-arrow-color': "pink",
-                    'target-arrow-shape': 'triangle',
-                    'mid-target-arrow-color': 'pink',
-                    'mid-target-arrow-shape': 'triangle',
-                    'source-arrow-color': "pink",
-                    'source-arrow-shape': 'circle',
-                }
-            }
-
-            new_style.append(new_entry)
-
-            new_entry_2 = {
-                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                       interface.remote_node_object.name),
-                "style": {
-                    "width": '4',
-                    'line-style': 'dashed',
-                    'source-arrow-color': "pink",
-                    'source-arrow-shape': 'triangle',
-                    'mid-source-arrow-color': 'pink',
-                    'mid-source-arrow-shape': 'triangle',
-                    'target-arrow-color': "pink",
-                    'target-arrow-shape': 'circle',
-                }
-            }
-
-            new_style.append(new_entry_2)
-
-            # Add the node selectors
-            new_entry_3 = {
-                "selector": "node[id=\"{}\"]".format(interface.node_object.name),
-                "style": {
-                    'background-color': 'pink'
-                }
-            }
-
-            new_style.append(new_entry_3)
-
-            new_entry_4 = {
-                "selector": "node[id=\"{}\"]".format(interface.remote_node_object.name),
-                "style": {
-                    'background-color': 'pink'
-                }
-            }
-
-            new_style.append(new_entry_4)
-
-    return default_stylesheet + new_style
-
-
 def find_demand_interfaces(dmds):
     """
     Finds interfaces for each demand in dmds.  If there
@@ -702,6 +774,5 @@ def find_demand_interfaces(dmds):
                     for interface in hop:
                         interfaces_to_highlight.add(interface)
     return interfaces_to_highlight
-
 
 app.run_server(debug=True)
