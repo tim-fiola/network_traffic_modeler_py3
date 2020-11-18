@@ -470,6 +470,7 @@ def displaySelectedEdgeData(data):
     :return: json string of a dict containing metadata about the selected edge
     """
     global selected_interface
+
     if data:
         data = data[0]
         end_target = [item for item in data['target'].split('-')[1:] if item != data['source']][0]
@@ -485,7 +486,7 @@ def displaySelectedEdgeData(data):
               [Input('interface-demand-callback', 'value')])
 def display_selected_demand_data(demand):
     global selected_demand
-    if demand:
+    if demand != no_selected_demand_text:
         demand = json.loads(demand)
         # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
         demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
@@ -494,7 +495,7 @@ def display_selected_demand_data(demand):
         selected_demand = no_selected_demand_text
     return selected_demand
 
-# def that finds demands on the selected interface
+# def that finds and displays demands on the selected interface
 @app.callback(Output('interface-demand-callback', 'options'),
               [Input('selected-interface-output', 'children')])
 def demands_on_interface(interface_info):
@@ -522,6 +523,31 @@ def demands_on_interface(interface_info):
             demands_on_interface.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
         return demands_on_interface
 
+    else:
+        return [{"label": '', "value": ''}]
+
+
+# def that finds and displays interfaces on selected_demand's path
+@app.callback(Output('demand-path-interfaces', 'options'),
+              [Input('selected-demand-output', 'children')])
+def demand_interfaces(demand):
+    if demand != no_selected_demand_text:
+        demand = json.loads(demand)
+        dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
+        dmd_ints = find_demand_interfaces([dmd])
+        interfaces_list = []
+        for interface in dmd_ints:
+            source_node_name = interface.node_object.name
+            dest_node_name = interface.remote_node_object.name
+            name = interface.name
+            circuit_id = interface.circuit_id
+            cost = interface.cost
+            int_dict = {'source': source_node_name, 'interface-name': name,
+                        'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
+            int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
+            interfaces_list.append(int_info)
+
+        return interfaces_list
     else:
         return [{"label": '', "value": ''}]
 
