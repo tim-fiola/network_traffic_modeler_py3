@@ -285,7 +285,8 @@ app.layout = html.Div(className='content', children=[
         ),
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
-        html.P(id='cytoscape-tapEdgeData-output'),
+        html.P(id='selected-interface-output'),
+        html.P(id='selected-demand-output'),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
@@ -319,11 +320,11 @@ app.layout = html.Div(className='content', children=[
 ])
 
 
-# TODO - requirements
-#  - Space to display selected_interface value
-#  - Space to display selected_demand value
-#  - Space to display source node
-#  - Space to display destination node
+# TODO - Phase 1 goals
+#  - Select an interface by either clicking on the map or selecting one from the Demand Paths list
+#       - set selected_interface to the last value (either click or list selection)
+#  - DONE - Space to display selected_interface value
+#  - DONE - Space to display selected_demand value
 #  - Tabs
 #       - Utilization Visualization dropdown
 #       - Demand Paths
@@ -337,6 +338,15 @@ app.layout = html.Div(className='content', children=[
 #       - display no_selected_demand_text in box that displays selected_demand
 #       - clear demand options on Interface Info tab
 #       - clear displayed interfaces on Demand Paths tab
-#
+#  =========================================================
+#   Phase 2 goals:
+#   - be able to select a Node
+#   - display the selected Node
+#   - have menu with checkboxes that allow user to select one or more:
+#       - see demands that eminate from the node
+#       - see demands that terminate on the node
+#       - see demands that transit the node
+#       - display the selected demands in a list
+#       - display the selected demand paths on the map
 
 
