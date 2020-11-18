@@ -473,7 +473,9 @@ def displaySelectedEdgeData(data):
         int_info = {'source': data['source'], 'interface-name': data['interface-name'], 'dest': end_target, 'circuit_id':data['circuit_id'],
                     'utilization %': data['utilization']}
         selected_interface = json.dumps(int_info)
-        return selected_interface
+    else:
+        selected_interface = no_selected_interface_text
+    return selected_interface
 
 # def that finds demands on the selected interface
 @app.callback(Output('interface-demand-callback', 'options'),
@@ -486,7 +488,7 @@ def demands_on_interface(interface_info):
     :return: Demands on the interface
     """
 
-    if interface_info:
+    if interface_info != no_selected_interface_text:
         int_dict = json.loads(interface_info)
         interface = model.get_interface_object(int_dict['interface-name'], int_dict['source'])
         demands = interface.demands(model)
@@ -496,6 +498,8 @@ def demands_on_interface(interface_info):
             demands_on_interface.append({"label": demand.__repr__(), "value": demand.__repr__()})
         return demands_on_interface
 
+    else:
+        return [{"label": '', "value": ''}]
 
 
 # #### Utility Functions #### #
