@@ -9,6 +9,8 @@ import dash_core_components as dcc
 
 from pyNTM import RSVP_LSP
 
+import json
+
 from pprint import pprint
 
 from pyNTM import FlexModel
@@ -38,7 +40,7 @@ def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
     return json_node
 
 
-def make_json_edge(source_id, target_id, edge_name, capacity, label, utilization, util_ranges):
+def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges):
     """
     {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
               'utilization': 'failed', 'interface-name': edge_name}}
@@ -65,7 +67,7 @@ def make_json_edge(source_id, target_id, edge_name, capacity, label, utilization
 
     json_edge = {
                     'data': {'source': source_id, 'target': target_id, "group": group,
-                             'label': label, 'utilization': utilization, 'interface-name': edge_name,
+                             'circuit_id': circuit_id, 'utilization': utilization, 'interface-name': edge_name,
                              'capacity': capacity}
                  }
 
@@ -285,6 +287,7 @@ app.layout = html.Div(className='content', children=[
         ),
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
+        html.P("Selected Interface:"),
         html.P(id='selected-interface-output'),
         html.P(id='selected-demand-output'),
         dcc.Tabs(id='tabs', children=[
@@ -320,6 +323,110 @@ app.layout = html.Div(className='content', children=[
 ])
 
 
+# Need to select interfaces that have utilization ranges selected in values from dropdown
+@app.callback(Output('cytoscape-prototypes', 'stylesheet'),
+              [Input(component_id='cytoscape-prototypes', component_property='tapEdgeData'),
+               Input('utilization-dropdown-callback', 'value'),
+               Input('demand-source-callback', 'value'),
+               Input('demand-destination-callback', 'value')])
+def update_stylesheet(data, edges_to_highlight, source=None, destination=None):
+    """
+    Updates stylesheet with style for edges_to_highlight that will change line type
+    for the edge to dashed and add pink arrows and circles to the demand edges and
+    also turn the nodes for the associated edges pink
+
+    :param edges_to_highlight: list of edge elements to highlight
+    :param source: demand source node name
+    :param destination: demand destination node name
+    :return: updated stylesheet with new elements that will reflect update colors for the
+    edges_to_highlight
+    """
+
+    new_style = []
+
+    # Utilization color for edges
+    for color in edges_to_highlight:
+        new_entry = {
+            "selector": "edge[group=\"{}\"]".format(color),
+            "style": {
+                "opacity": 1.0
+            }
+        }
+
+        new_style.append(new_entry)
+
+    # If empty space is selected, remove demand path formatting
+    if not(data):
+        return default_stylesheet + new_style
+
+    # Demand source and destination path visualization
+    if source is not None and destination is not None:
+        # Find the demands that match the source and destination
+        try:
+            dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
+        except KeyError:
+            return default_stylesheet + new_style
+
+        # Find the interfaces on the demand paths for each demand
+        interfaces_to_highlight = find_demand_interfaces(dmds)
+
+        for interface in interfaces_to_highlight:
+            # Add the edge selectors
+            new_entry = {
+                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                       interface.node_object.name),
+                "style": {
+                    "width": '4',
+                    'line-style': 'dashed',
+                    'target-arrow-color': "pink",
+                    'target-arrow-shape': 'triangle',
+                    'mid-target-arrow-color': 'pink',
+                    'mid-target-arrow-shape': 'triangle',
+                    'source-arrow-color': "pink",
+                    'source-arrow-shape': 'circle',
+                }
+            }
+
+            new_style.append(new_entry)
+
+            new_entry_2 = {
+                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                       interface.remote_node_object.name),
+                "style": {
+                    "width": '4',
+                    'line-style': 'dashed',
+                    'source-arrow-color': "pink",
+                    'source-arrow-shape': 'triangle',
+                    'mid-source-arrow-color': 'pink',
+                    'mid-source-arrow-shape': 'triangle',
+                    'target-arrow-color': "pink",
+                    'target-arrow-shape': 'circle',
+                }
+            }
+
+            new_style.append(new_entry_2)
+
+            # Add the node selectors
+            new_entry_3 = {
+                "selector": "node[id=\"{}\"]".format(interface.node_object.name),
+                "style": {
+                    'background-color': 'pink'
+                }
+            }
+
+            new_style.append(new_entry_3)
+
+            new_entry_4 = {
+                "selector": "node[id=\"{}\"]".format(interface.remote_node_object.name),
+                "style": {
+                    'background-color': 'pink'
+                }
+            }
+
+            new_style.append(new_entry_4)
+
+    return default_stylesheet + new_style
+
 # TODO - Phase 1 goals
 #  - Select an interface by either clicking on the map or selecting one from the Demand Paths list
 #       - set selected_interface to the last value (either click or list selection)
@@ -348,5 +455,73 @@ app.layout = html.Div(className='content', children=[
 #       - see demands that transit the node
 #       - display the selected demands in a list
 #       - display the selected demand paths on the map
+
+# def that displays info about the selected edge
+@app.callback(Output('selected-interface-output', 'children'),
+              [Input('cytoscape-prototypes', 'selectedEdgeData')])
+def displaySelectedEdgeData(data):
+    """
+
+
+    :param data: list consisting of a single dict containing info about the edge/interface
+    :return: json string of a dict containing metadata about the selected edge
+    """
+    global selected_interface
+    if data:
+        data = data[0]
+        end_target = [item for item in data['target'].split('-')[1:] if item != data['source']][0]
+        int_info = {'source': data['source'], 'interface-name': data['interface-name'], 'dest': end_target, 'circuit_id':data['circuit_id'],
+                    'utilization %': data['utilization']}
+        selected_interface = json.dumps(int_info)
+        return selected_interface
+
+# def that finds demands on the selected interface
+@app.callback(Output('interface-demand-callback', 'options'),
+              [Input('selected-interface-output', 'children')])
+def demands_on_interface(interface_info):
+    """
+
+
+    :param interface_info: serialized dict info about the interface
+    :return: Demands on the interface
+    """
+
+    if interface_info:
+        int_dict = json.loads(interface_info)
+        interface = model.get_interface_object(int_dict['interface-name'], int_dict['source'])
+        demands = interface.demands(model)
+
+        demands_on_interface = []
+        for demand in demands:
+            demands_on_interface.append({"label": demand.__repr__(), "value": demand.__repr__()})
+        return demands_on_interface
+
+
+
+# #### Utility Functions #### #
+def find_demand_interfaces(dmds):
+    """
+    Finds interfaces for each demand in dmds.  If there
+    are RSVP LSPs in path, the interfaces for that LSP path
+    are added to the set of output interfaces
+
+    :param dmds: iterable of demand objects
+    :return: set of interfaces that any given demand in dmds transits
+    """
+    interfaces_to_highlight = set()
+    for dmd in dmds:
+        dmd_path = dmd.path[:]
+        for path in dmd_path:
+            for hop in dmd_path:
+                if isinstance(hop, RSVP_LSP):
+                    for lsp_hop in hop.path['interfaces']:
+                        interfaces_to_highlight.add(lsp_hop)
+                    dmd_path.remove(hop)
+                else:
+                    for interface in hop:
+                        interfaces_to_highlight.add(interface)
+    return interfaces_to_highlight
+
+app.run_server(debug=True)
 
 
