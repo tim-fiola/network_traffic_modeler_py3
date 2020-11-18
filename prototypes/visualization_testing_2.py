@@ -492,10 +492,17 @@ def demands_on_interface(interface_info):
         int_dict = json.loads(interface_info)
         interface = model.get_interface_object(int_dict['interface-name'], int_dict['source'])
         demands = interface.demands(model)
+        if len(demands) == 0:
+            return [{'label': 'no demands on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
         demands_on_interface = []
         for demand in demands:
-            demands_on_interface.append({"label": demand.__repr__(), "value": demand.__repr__()})
+            # Return the demand's value as a dict with demand info (dmd_info)
+            src = demand.source_node_object.name
+            dest = demand.dest_node_object.name
+            name = demand.name
+            dmd_info = {'source': src, 'dest': dest, 'name': name}
+            demands_on_interface.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
         return demands_on_interface
 
     else:
