@@ -289,6 +289,7 @@ app.layout = html.Div(className='content', children=[
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         html.P("Selected Interface:"),
         html.P(id='selected-interface-output'),
+        html.P("Selected Demand"),
         html.P(id='selected-demand-output'),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
@@ -298,7 +299,7 @@ app.layout = html.Div(className='content', children=[
                     multi=True,
                 )
             ]),
-            dcc.Tab(label='Demand Paths', children=[
+            dcc.Tab(label='Demand Interfaces', children=[
                 dcc.Dropdown(
                     id='demand-source-callback', options=[{'label': source, 'value': source}
                                                           for source in demand_sources_list],
@@ -325,11 +326,10 @@ app.layout = html.Div(className='content', children=[
 
 # Need to select interfaces that have utilization ranges selected in values from dropdown
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
-              [Input(component_id='cytoscape-prototypes', component_property='tapEdgeData'),
+              [Input(component_id='cytoscape-prototypes', component_property='selectedEdgeData'),
                Input('utilization-dropdown-callback', 'value'),
-               Input('demand-source-callback', 'value'),
-               Input('demand-destination-callback', 'value')])
-def update_stylesheet(data, edges_to_highlight, source=None, destination=None):
+               Input('interface-demand-callback', 'value')])
+def update_stylesheet(data, edges_to_highlight, selected_demand):
     """
     Updates stylesheet with style for edges_to_highlight that will change line type
     for the edge to dashed and add pink arrows and circles to the demand edges and
@@ -360,7 +360,10 @@ def update_stylesheet(data, edges_to_highlight, source=None, destination=None):
         return default_stylesheet + new_style
 
     # Demand source and destination path visualization
-    if source is not None and destination is not None:
+    if selected_demand is not None:
+        demand_dict = json.loads(selected_demand)
+        source = demand_dict['source']
+        destination = demand_dict['dest']
         # Find the demands that match the source and destination
         try:
             dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
@@ -373,7 +376,7 @@ def update_stylesheet(data, edges_to_highlight, source=None, destination=None):
         for interface in interfaces_to_highlight:
             # Add the edge selectors
             new_entry = {
-                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                        interface.node_object.name),
                 "style": {
                     "width": '4',
@@ -390,7 +393,7 @@ def update_stylesheet(data, edges_to_highlight, source=None, destination=None):
             new_style.append(new_entry)
 
             new_entry_2 = {
-                "selector": "edge[label=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                        interface.remote_node_object.name),
                 "style": {
                     "width": '4',
@@ -476,6 +479,20 @@ def displaySelectedEdgeData(data):
     else:
         selected_interface = no_selected_interface_text
     return selected_interface
+
+# def that displays info about the selected demand
+@app.callback(Output('selected-demand-output', 'children'),
+              [Input('interface-demand-callback', 'value')])
+def display_selected_demand_data(demand):
+    global selected_demand
+    if demand:
+        demand = json.loads(demand)
+        # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
+        demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
+        selected_demand = json.dumps(demand_info)
+    else:
+        selected_demand = no_selected_demand_text
+    return selected_demand
 
 # def that finds demands on the selected interface
 @app.callback(Output('interface-demand-callback', 'options'),
