@@ -388,6 +388,11 @@ def display_tap_edge_data(data, demand_path_int):
     """
 
     global selected_interface
+    if not(data):
+        msg = 'no int selected'
+        selected_interface = msg
+        return msg
+
     # Parse selected interface to find interface source and name
     if selected_interface != 'no int selected':
         print("data from 395 is: {}".format(data))
@@ -406,6 +411,9 @@ def display_tap_edge_data(data, demand_path_int):
             msg = "Selected Interface: Source: {}, Dest: {}, name: {}, ckt_id: {}, capacity: {}, " \
                   "utilization: {}%".format(source, dest, data['interface-name'], data['label'],
                                             data['capacity'], data['utilization'])
+
+        elif not(data):
+            msg = 'no int selected'
 
         elif demand_path_int:
             # demand_selected_interface will be a string; parse it to
@@ -430,10 +438,11 @@ def display_tap_edge_data(data, demand_path_int):
 # ######## DEFS TO UPDATE TABS ######## #
 @app.callback(
     Output(component_id='demand-path-interfaces', component_property='options'),
-    [Input(component_id='demand-source-callback', component_property='value'),
+    [Input(component_id='cytoscape-prototypes', component_property='tapEdgeData'),
+     Input(component_id='demand-source-callback', component_property='value'),
      Input(component_id='demand-destination-callback', component_property='value')]
 )
-def display_demand_path_interfaces(source, destination):
+def display_demand_path_interfaces(data, source, destination):
     """
     Determines key based on source and destination.  Queries model for demands with matching
     source and destination.
@@ -443,6 +452,15 @@ def display_demand_path_interfaces(source, destination):
     :return: list of values for demands, each value being {'label': dmd.__repr__(), 'value': dmd.__repr__()}
     for the Demand object
     """
+
+    # Zero out the displayed path interfaces if empty space is selected on the map
+    print("data from 449 = {}".format(data))
+    if not(data):
+        print("======= NO DATA ====================== a777safasdfa")
+        source = None
+        destination = None
+        # return [{"label": '', "value": ''}]
+
     if source and destination:
         try:
             key = '{}-{}'.format(source, destination)
@@ -463,9 +481,18 @@ def display_demand_path_interfaces(source, destination):
 
 @app.callback(
     Output(component_id='demand-source-callback', component_property='value'),
-    [Input(component_id='interface-demand-callback', component_property='value')]
+    [Input(component_id='cytoscape-prototypes', component_property='tapEdgeData'),
+    Input(component_id='interface-demand-callback', component_property='value')]
 )
-def update_default_demand_source(demand):
+def update_default_demand_source(data, demand):
+
+    global selected_interface
+
+    if not(data):
+        msg = 'no int selected'
+        selected_interface = msg
+        return ''
+
     if demand:
         # 'demand' will be a string repr, example:
         #  "Demand(source = C, dest = E, traffic = 20, name = 'dmd_c_e_1')"
@@ -475,9 +502,18 @@ def update_default_demand_source(demand):
 
 @app.callback(
     Output(component_id='demand-destination-callback', component_property='value'),
-    [Input(component_id='interface-demand-callback', component_property='value')]
+    [Input(component_id='cytoscape-prototypes', component_property='tapEdgeData'),
+    Input(component_id='interface-demand-callback', component_property='value')]
 )
-def update_default_demand_dest(demand):
+def update_default_demand_dest(data, demand):
+
+    global selected_interface
+
+    if not(data):
+        msg = 'no int selected'
+        selected_interface = msg
+        return ''
+
     if demand:
         # 'demand' will be a string repr, example:
         #  "Demand(source = C, dest = E, traffic = 20, name = 'dmd_c_e_1')"
@@ -488,10 +524,11 @@ def update_default_demand_dest(demand):
 
 # Need to select interfaces that have utilization ranges selected in values from dropdown
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
-              [Input('utilization-dropdown-callback', 'value'),
+              [Input(component_id='cytoscape-prototypes', component_property='tapEdgeData'),
+               Input('utilization-dropdown-callback', 'value'),
                Input('demand-source-callback', 'value'),
                Input('demand-destination-callback', 'value')])
-def update_stylesheet(edges_to_highlight, source=None, destination=None):
+def update_stylesheet(data, edges_to_highlight, source=None, destination=None):
     """
     Updates stylesheet with style for edges_to_highlight that will change line type
     for the edge to dashed and add pink arrows and circles to the demand edges and
@@ -503,6 +540,7 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
     :return: updated stylesheet with new elements that will reflect update colors for the
     edges_to_highlight
     """
+
     new_style = []
 
     # Utilization color for edges
@@ -515,6 +553,10 @@ def update_stylesheet(edges_to_highlight, source=None, destination=None):
         }
 
         new_style.append(new_entry)
+
+    # If empty space is selected, remove demand path formatting
+    if not(data):
+        return default_stylesheet + new_style
 
     # Demand source and destination path visualization
     if source is not None and destination is not None:
