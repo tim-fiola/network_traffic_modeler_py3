@@ -436,18 +436,18 @@ def update_stylesheet(data, edges_to_highlight, selected_demand):
 #  - DONE - Space to display selected_interface value
 #  - DONE - Space to display selected_demand value
 #  - Tabs
-#       - Utilization Visualization dropdown
-#       - Demand Paths
+#       - DONE - Utilization Visualization dropdown
+#       - DONE - Demand Paths
 #           - displays interfaces associated with selected_demand
-#       - Interface Info
+#       - DONE - Interface Info
 #           - displays Demands on selected_interface
 #  - if empty space is clicked:
-#       - set selected_demand back to no_selected_demand_text
-#       - set selected_source back to no_selected_source_text
-#       - display no_selected_interface_text in box that displays selected_interface
-#       - display no_selected_demand_text in box that displays selected_demand
-#       - clear demand options on Interface Info tab
-#       - clear displayed interfaces on Demand Paths tab
+#       - DONE = set selected_demand back to no_selected_demand_text
+#       - DONE - set selected_interface back to no_selected_interface_text
+#       - DONE - display no_selected_interface_text in box that displays selected_interface
+#       - DONE - display no_selected_demand_text in box that displays selected_demand
+#       - DONE - clear demand options on Interface Info tab
+#       - DONE - clear displayed interfaces on Demand Paths tab
 #  =========================================================
 #   Phase 2 goals:
 #   - be able to select a Node
@@ -459,7 +459,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand):
 #       - display the selected demands in a list
 #       - display the selected demand paths on the map
 
-# def that displays info about the selected edge
+# def that displays info about the selected edge and updates selected_interface
 @app.callback(Output('selected-interface-output', 'children'),
               [Input('cytoscape-prototypes', 'selectedEdgeData')])
 def displaySelectedEdgeData(data):
@@ -481,11 +481,20 @@ def displaySelectedEdgeData(data):
         selected_interface = no_selected_interface_text
     return selected_interface
 
-# def that displays info about the selected demand
+
+# def that displays info about the selected demand and updates selected_demand
 @app.callback(Output('selected-demand-output', 'children'),
-              [Input('interface-demand-callback', 'value')])
-def display_selected_demand_data(demand):
+              [Input('interface-demand-callback', 'value'),
+               Input('selected-interface-output', 'children')])
+def display_selected_demand_data(demand, selected_int):
+
+    global selected_interface
     global selected_demand
+
+    if selected_int == no_selected_interface_text:
+        selected_demand = no_selected_demand_text
+        return selected_demand
+
     if demand != no_selected_demand_text:
         demand = json.loads(demand)
         # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
