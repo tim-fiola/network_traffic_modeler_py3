@@ -328,8 +328,9 @@ app.layout = html.Div(className='content', children=[
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
               [Input(component_id='cytoscape-prototypes', component_property='selectedEdgeData'),
                Input('utilization-dropdown-callback', 'value'),
-               Input('interface-demand-callback', 'value')])
-def update_stylesheet(data, edges_to_highlight, selected_demand):
+               Input('interface-demand-callback', 'value'),
+               Input('selected-interface-output', 'children')])
+def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interface):
     """
     Updates stylesheet with style for edges_to_highlight that will change line type
     for the edge to dashed and add pink arrows and circles to the demand edges and
@@ -428,10 +429,25 @@ def update_stylesheet(data, edges_to_highlight, selected_demand):
 
             new_style.append(new_entry_4)
 
+
+    if selected_interface != no_selected_interface_text:
+        selected_interface = json.loads(selected_interface)
+        # TODO - just add new edge wider to give an outline?
+        new_entry_5 = {
+            "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface['source'],
+                                                                        selected_interface['circuit_id']),
+            "style": {
+                'line-style': 'dotted',
+                'width': '6.5',
+            }
+        }
+
+        new_style.append(new_entry_5)
+
     return default_stylesheet + new_style
 
 # TODO - Phase 1 goals
-#  - highlight selected interface on map somehow
+#  - DONE - highlight selected interface on map somehow
 #  - Select an interface by either clicking on the map or selecting one from the Demand Paths list
 #       - set selected_interface to the last value (either click or list selection)
 #  - DONE - Space to display selected_interface value
