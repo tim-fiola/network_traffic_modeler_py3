@@ -448,6 +448,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
 
 # TODO - Phase 1 goals
 #  - DONE - highlight selected interface on map somehow
+#  - Make demand path highlight arrows appear under everything else
 #  - Select an interface by either clicking on the map or selecting one from the Demand Paths list
 #       - set selected_interface to the last value (either click or list selection)
 #  - DONE - Space to display selected_interface value
