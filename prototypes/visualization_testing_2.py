@@ -157,7 +157,7 @@ default_stylesheet = [
             "mid-target-arrow-color": "blue",
             "mid-target-arrow-shape": "vee",
             "curve-style": "bezier",
-            'label': "data(label)",
+            'label': "data(circuit_id)",
             'line-color': "data(group)",
             "font-size": "9px",
             "opacity": 0.4,
@@ -168,7 +168,7 @@ default_stylesheet = [
         "style": {
             "line-color": "#808080",
             "curve-style": "bezier",
-            'label': "data(label)",
+            'label': "data(circuit_id)",
             'line-style': 'dashed'
         }
     },
