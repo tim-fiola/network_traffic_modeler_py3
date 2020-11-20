@@ -519,13 +519,20 @@ def display_selected_demand_data(demand, selected_int):
             selected_demand = no_selected_demand_text
             return selected_demand
 
-        if demand != no_selected_demand_text and demand != 'no demands on interface':
-            # Convert text to json
-            demand = json.loads(demand)
+        # Convert text to json
+        demand = json.loads(demand)
+
+        if demand != [{'source': '', 'dest': '', 'name': ''}]:
+
+            print("line 526 - demand = {}".format(demand))
 
             # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
-            demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
-            selected_demand = json.dumps(demand_info)
+            try:
+                demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
+                selected_demand = json.dumps(demand_info)
+            except TypeError:
+                import pdb
+                pdb.set_trace()
         else:
             selected_demand = no_selected_demand_text
         return selected_demand
