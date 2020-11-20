@@ -355,8 +355,8 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
         new_style.append(new_entry)
 
     # If empty space is selected, remove demand path formatting
-    if not(data):
-        return default_stylesheet + new_style
+    # if not(data):
+    #     return default_stylesheet + new_style
 
     # Demand source and destination path visualization
     if selected_demand_info is not None and \
@@ -379,7 +379,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
             # Add the edge selectors
             new_entry = {
                 "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                       interface.node_object.name),
+                                                                            interface.node_object.name),
                 "style": {
                     "width": '4',
                     'line-style': 'dashed',
@@ -506,18 +506,13 @@ def displaySelectedEdgeData(data):
 
 # def that displays info about the selected demand and updates selected_demand
 @app.callback(Output('selected-demand-output', 'children'),
-              [Input('interface-demand-callback', 'value'),
-               Input('selected-interface-output', 'children')])
-def display_selected_demand_data(demand, selected_int):
+              [Input('interface-demand-callback', 'value')])
+def display_selected_demand_data(demand):
 
-    global selected_interface
     global selected_demand
     print("demand line 512 = {}".format(demand))
     if demand:
         print("demand line 514 = {}".format(demand))
-        # if selected_int == no_selected_interface_text:
-        #     selected_demand = no_selected_demand_text
-        #     return selected_demand
 
         # Convert text to json
         demand = json.loads(demand)
@@ -527,12 +522,10 @@ def display_selected_demand_data(demand, selected_int):
             print("line 526 - demand = {}".format(demand))
 
             # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
-            try:
-                demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
-                selected_demand = json.dumps(demand_info)
-            except TypeError:
-                import pdb
-                pdb.set_trace()
+
+            demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
+            selected_demand = json.dumps(demand_info)
+            return selected_demand
         else:
             selected_demand = no_selected_demand_text
         return selected_demand
