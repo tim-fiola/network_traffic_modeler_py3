@@ -515,9 +515,9 @@ def display_selected_demand_data(demand, selected_int):
     print("demand line 512 = {}".format(demand))
     if demand:
         print("demand line 514 = {}".format(demand))
-        if selected_int == no_selected_interface_text:
-            selected_demand = no_selected_demand_text
-            return selected_demand
+        # if selected_int == no_selected_interface_text:
+        #     selected_demand = no_selected_demand_text
+        #     return selected_demand
 
         # Convert text to json
         demand = json.loads(demand)
