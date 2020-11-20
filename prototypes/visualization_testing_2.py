@@ -328,7 +328,7 @@ app.layout = html.Div(className='content', children=[
                Input('utilization-dropdown-callback', 'value'),
                Input('interface-demand-callback', 'value'),
                Input('selected-interface-output', 'children')])
-def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interface):
+def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info):
     """
     Updates stylesheet with style for edges_to_highlight that will change line type
     for the edge to dashed and add pink arrows and circles to the demand edges and
@@ -359,9 +359,11 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
         return default_stylesheet + new_style
 
     # Demand source and destination path visualization
-    if selected_demand is not None and selected_demand != '[{"source": "", "dest": "", "name": ""}]':
-        print("selected_demand = {}".format(selected_demand))
-        demand_dict = json.loads(selected_demand)
+    if selected_demand_info is not None and \
+            json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}] and\
+            selected_demand_info != '':
+        print("selected_demand_info line 365 = {}".format(selected_demand_info))
+        demand_dict = json.loads(selected_demand_info)
         source = demand_dict['source']
         destination = demand_dict['dest']
         # Find the demands that match the source and destination
@@ -430,13 +432,13 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
             new_style.append(new_entry_4)
 
     # Selected edge differentiation
-    if selected_interface != no_selected_interface_text:
-        selected_interface = json.loads(selected_interface)
+    if selected_interface_info != no_selected_interface_text:
+        selected_interface_info = json.loads(selected_interface_info)
         # TODO - just add new edge wider to give an outline?
         # TODO - test the
         new_entry_5 = {
-            "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface['source'],
-                                                                        selected_interface['circuit_id']),
+            "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface_info['source'],
+                                                                        selected_interface_info['circuit_id']),
             "style": {
                 'line-style': 'dotted',
                 'width': '6.5',
@@ -444,7 +446,9 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
         }
 
         new_style.append(new_entry_5)
-
+    else:
+        global selected_demand
+        selected_demand = no_selected_demand_text
     return default_stylesheet + new_style
 
 # TODO - Phase 1 goals
@@ -506,11 +510,11 @@ def displaySelectedEdgeData(data):
                Input('selected-interface-output', 'children')])
 def display_selected_demand_data(demand, selected_int):
 
-    print("demand = {}".format(demand))
+    global selected_interface
+    global selected_demand
+    print("demand line 512 = {}".format(demand))
     if demand:
-        global selected_interface
-        global selected_demand
-
+        print("demand line 514 = {}".format(demand))
         if selected_int == no_selected_interface_text:
             selected_demand = no_selected_demand_text
             return selected_demand
@@ -526,7 +530,8 @@ def display_selected_demand_data(demand, selected_int):
             selected_demand = no_selected_demand_text
         return selected_demand
     else:
-        return no_selected_demand_text
+        selected_demand = no_selected_demand_text
+        return json.dumps({'label': no_selected_demand_text, 'value': ''})
 
 # def that finds and displays demands on the selected interface
 @app.callback(Output('interface-demand-callback', 'options'),
@@ -557,6 +562,7 @@ def demands_on_interface(interface_info):
         return demands_on_interface
 
     else:
+        
         return [{"label": '', "value": ''}]
 
 
@@ -564,8 +570,9 @@ def demands_on_interface(interface_info):
 @app.callback(Output('demand-path-interfaces', 'options'),
               [Input('selected-demand-output', 'children')])
 def demand_interfaces(demand):
+    global selected_demand
     if demand:
-        if demand != no_selected_demand_text:
+        if no_selected_demand_text not in demand:
             demand = json.loads(demand)
             dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
             dmd_ints = find_demand_interfaces([dmd])
@@ -583,10 +590,11 @@ def demand_interfaces(demand):
 
             return interfaces_list
         else:
-            return [{"label": '', "value": ''}]
+            selected_demand = no_selected_demand_text
+            return [{'label': selected_demand, 'value': selected_demand}]
     else:
-        return [{"label": '', "value": ''}]
-
+        selected_demand = no_selected_demand_text
+        return [{'label': selected_demand, 'value': selected_demand}]
 
 # #### Utility Functions #### #
 def find_demand_interfaces(dmds):
