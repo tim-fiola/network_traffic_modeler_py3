@@ -237,14 +237,14 @@ styles_2 = {
     "content": {
         'width': '100%',
         'height': '100%',
-        'z-index': 1000
     },
     "right_menu": {
         'width': '25%',
         'height': '60px',
         'position': 'absolute',
         'top': '0',
-        'right': '0'
+        'right': '0',
+        'zIndex': 100
     },
     "top_content": {
         'height': '100px',
@@ -259,13 +259,11 @@ styles_2 = {
         'position': 'absolute',
         'top': '0',
         'left': '0',
-        'z-index': 1000
     },
     'cytoscape': {
         'position': 'absolute',
         'width': '100%',
         'height': '100%',
-        'z-index': 999,
         'backgroundColor': '#D2B48C'
     },
 
@@ -289,7 +287,7 @@ app.layout = html.Div(className='content', children=[
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         html.P("Selected Interface:"),
         html.P(id='selected-interface-output'),
-        html.P("Selected Demand"),
+        html.P("Selected Demand:"),
         html.P(id='selected-demand-output'),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
@@ -361,7 +359,8 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
         return default_stylesheet + new_style
 
     # Demand source and destination path visualization
-    if selected_demand is not None:
+    if selected_demand is not None and selected_demand != '[{"source": "", "dest": "", "name": ""}]':
+        print("selected_demand = {}".format(selected_demand))
         demand_dict = json.loads(selected_demand)
         source = demand_dict['source']
         destination = demand_dict['dest']
@@ -395,7 +394,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
 
             new_entry_2 = {
                 "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                       interface.remote_node_object.name),
+                                                                            interface.remote_node_object.name),
                 "style": {
                     "width": '4',
                     'line-style': 'dashed',
@@ -405,6 +404,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
                     'mid-source-arrow-shape': 'triangle',
                     'target-arrow-color': "pink",
                     'target-arrow-shape': 'circle',
+                    'zIndex': -10
                 }
             }
 
@@ -429,10 +429,11 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
 
             new_style.append(new_entry_4)
 
-
+    # Selected edge differentiation
     if selected_interface != no_selected_interface_text:
         selected_interface = json.loads(selected_interface)
         # TODO - just add new edge wider to give an outline?
+        # TODO - test the
         new_entry_5 = {
             "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface['source'],
                                                                         selected_interface['circuit_id']),
@@ -448,7 +449,6 @@ def update_stylesheet(data, edges_to_highlight, selected_demand, selected_interf
 
 # TODO - Phase 1 goals
 #  - DONE - highlight selected interface on map somehow
-#  - Make demand path highlight arrows appear under everything else
 #  - Select an interface by either clicking on the map or selecting one from the Demand Paths list
 #       - set selected_interface to the last value (either click or list selection)
 #  - DONE - Space to display selected_interface value
@@ -506,21 +506,27 @@ def displaySelectedEdgeData(data):
                Input('selected-interface-output', 'children')])
 def display_selected_demand_data(demand, selected_int):
 
-    global selected_interface
-    global selected_demand
+    print("demand = {}".format(demand))
+    if demand:
+        global selected_interface
+        global selected_demand
 
-    if selected_int == no_selected_interface_text:
-        selected_demand = no_selected_demand_text
+        if selected_int == no_selected_interface_text:
+            selected_demand = no_selected_demand_text
+            return selected_demand
+
+        if demand != no_selected_demand_text and demand != 'no demands on interface':
+            # Convert text to json
+            demand = json.loads(demand)
+
+            # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
+            demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
+            selected_demand = json.dumps(demand_info)
+        else:
+            selected_demand = no_selected_demand_text
         return selected_demand
-
-    if demand != no_selected_demand_text:
-        demand = json.loads(demand)
-        # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
-        demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
-        selected_demand = json.dumps(demand_info)
     else:
-        selected_demand = no_selected_demand_text
-    return selected_demand
+        return no_selected_demand_text
 
 # def that finds and displays demands on the selected interface
 @app.callback(Output('interface-demand-callback', 'options'),
@@ -558,23 +564,26 @@ def demands_on_interface(interface_info):
 @app.callback(Output('demand-path-interfaces', 'options'),
               [Input('selected-demand-output', 'children')])
 def demand_interfaces(demand):
-    if demand != no_selected_demand_text:
-        demand = json.loads(demand)
-        dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
-        dmd_ints = find_demand_interfaces([dmd])
-        interfaces_list = []
-        for interface in dmd_ints:
-            source_node_name = interface.node_object.name
-            dest_node_name = interface.remote_node_object.name
-            name = interface.name
-            circuit_id = interface.circuit_id
-            cost = interface.cost
-            int_dict = {'source': source_node_name, 'interface-name': name,
-                        'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
-            int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
-            interfaces_list.append(int_info)
+    if demand:
+        if demand != no_selected_demand_text:
+            demand = json.loads(demand)
+            dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
+            dmd_ints = find_demand_interfaces([dmd])
+            interfaces_list = []
+            for interface in dmd_ints:
+                source_node_name = interface.node_object.name
+                dest_node_name = interface.remote_node_object.name
+                name = interface.name
+                circuit_id = interface.circuit_id
+                cost = interface.cost
+                int_dict = {'source': source_node_name, 'interface-name': name,
+                            'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
+                int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
+                interfaces_list.append(int_info)
 
-        return interfaces_list
+            return interfaces_list
+        else:
+            return [{"label": '', "value": ''}]
     else:
         return [{"label": '', "value": ''}]
 
