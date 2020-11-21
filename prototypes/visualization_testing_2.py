@@ -13,6 +13,7 @@ import json
 
 from pprint import pprint
 
+
 from pyNTM import FlexModel
 
 def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
