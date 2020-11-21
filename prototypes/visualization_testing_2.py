@@ -239,12 +239,13 @@ styles_2 = {
         'height': '100%',
     },
     "right_menu": {
-        'width': '25%',
+        'width': '24%',
         'height': '60px',
         'position': 'absolute',
         'top': '0',
         'right': '0',
-        'zIndex': 100
+        'zIndex': 100,
+        'fontFamily': 'arial'
     },
     "top_content": {
         'height': '100px',
@@ -262,10 +263,16 @@ styles_2 = {
     },
     'cytoscape': {
         'position': 'absolute',
-        'width': '100%',
+        'width': '75%',
         'height': '100%',
         'backgroundColor': '#D2B48C'
     },
+    'json-output': {
+        'overflow-y': 'scroll',
+        'height': 'calc(50% - 25px)',
+        'border': 'thin lightgrey solid'
+    },
+    'tab': {'height': 'calc(98vh - 115px)'}
 
 }
 
@@ -286,9 +293,9 @@ app.layout = html.Div(className='content', children=[
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         html.P("Selected Interface:"),
-        html.P(id='selected-interface-output'),
+        html.Pre(id='selected-interface-output'),
         html.P("Selected Demand:"),
-        html.P(id='selected-demand-output'),
+        html.Pre(id='selected-demand-output'),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
@@ -298,24 +305,30 @@ app.layout = html.Div(className='content', children=[
                 )
             ]),
             dcc.Tab(label='Demand Interfaces', children=[
-                dcc.Dropdown(
-                    id='demand-source-callback', options=[{'label': source, 'value': source}
-                                                          for source in demand_sources_list],
-                ),
-                dcc.Dropdown(
-                    id='demand-destination-callback', options=[{'label': dest, 'value': dest}
-                                                               for dest in demand_destinations_list],
-                ),
-                dcc.RadioItems(
-                    id='demand-path-interfaces',
-                    labelStyle={'display': 'inline-block'}
-                )
+                html.Div(style=styles_2['tab'], children=[
+                    dcc.Dropdown(
+                        id='demand-source-callback', options=[{'label': source, 'value': source}
+                                                              for source in demand_sources_list],
+                    ),
+                    dcc.Dropdown(
+                        id='demand-destination-callback', options=[{'label': dest, 'value': dest}
+                                                                   for dest in demand_destinations_list],
+                    ),
+                    dcc.RadioItems(
+                        id='demand-path-interfaces',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    )
+                ]),
             ]),
             dcc.Tab(label='Interface Info', children=[
-                dcc.RadioItems(
-                    id='interface-demand-callback',
-                    labelStyle={'display': 'inline-block'}
-                ),
+                html.Div(style=styles_2['tab'], children=[
+                    dcc.RadioItems(
+                        id='interface-demand-callback',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    ),
+                ]),
             ]),
        ]),
     ])
