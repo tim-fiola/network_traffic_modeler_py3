@@ -306,6 +306,15 @@ app.layout = html.Div(className='content', children=[
             ]),
             dcc.Tab(label='Demand Interfaces', children=[
                 html.Div(style=styles_2['tab'], children=[
+                    dcc.RadioItems(
+                        id='demand-path-interfaces',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    )
+                ]),
+            ]),
+            dcc.Tab(label='Find Demands', children=[
+                html.Div(style=styles_2['tab'], children=[
                     dcc.Dropdown(
                         id='demand-source-callback', options=[{'label': source, 'value': source}
                                                               for source in demand_sources_list],
@@ -314,11 +323,6 @@ app.layout = html.Div(className='content', children=[
                         id='demand-destination-callback', options=[{'label': dest, 'value': dest}
                                                                    for dest in demand_destinations_list],
                     ),
-                    dcc.RadioItems(
-                        id='demand-path-interfaces',
-                        labelStyle={'display': 'inline-block'},
-                        style=styles_2['json-output']
-                    )
                 ]),
             ]),
             dcc.Tab(label='Interface Info', children=[
