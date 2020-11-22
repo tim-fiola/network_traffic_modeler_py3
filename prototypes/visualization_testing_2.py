@@ -40,7 +40,7 @@ def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
     return json_node
 
 
-def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges):
+def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges, cost):
     """
     {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
               'utilization': 'failed', 'interface-name': edge_name}}
@@ -68,7 +68,7 @@ def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utiliz
     json_edge = {
                     'data': {'source': source_id, 'target': target_id, "group": group,
                              'circuit_id': circuit_id, 'utilization': utilization, 'interface-name': edge_name,
-                             'capacity': capacity}
+                             'capacity': capacity, 'cost': cost}
                  }
 
     return json_edge
@@ -139,11 +139,13 @@ def create_elements(model, group_midpoints=True):
         #           'utilization': 'failed'}}
 
         # Make edges with midpoints
-        edges.append(make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id, int_a.utilization, util_ranges))
-        edges.append(make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id, int_b.utilization, util_ranges))
-    elements = nodes + edges
+        edges.append(make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
+                                    int_a.utilization, util_ranges, int_a.cost))
+        edges.append(make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id,
+                                    int_b.utilization, util_ranges, int_b.cost))
+    updated_elements = nodes + edges
 
-    return elements
+    return updated_elements
 
 
 elements = create_elements(model)
@@ -449,24 +451,24 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
             new_style.append(new_entry_4)
 
     # Selected edge differentiation
-    if selected_interface_info != no_selected_interface_text:
-        selected_interface_info = json.loads(selected_interface_info)
-        # TODO - just add new edge wider to give an outline?
-        # TODO - test the
-        new_entry_5 = {
-            "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface_info['source'],
-                                                                        selected_interface_info['circuit_id']),
-            "style": {
-                'line-style': 'dotted',
-                'width': '6.5',
+    if selected_interface_info:
+        if no_selected_interface_text not in selected_interface_info:
+            selected_interface_info = json.loads(selected_interface_info)
+            # TODO - just add new edge wider to give an outline?
+            new_entry_5 = {
+                "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface_info['source'],
+                                                                            selected_interface_info['circuit_id']),
+                "style": {
+                    'line-style': 'dotted',
+                    'width': '6.5',
+                }
             }
-        }
 
-        new_style.append(new_entry_5)
-    else:
-        global selected_demand
-        selected_demand = no_selected_demand_text
-    return default_stylesheet + new_style
+            new_style.append(new_entry_5)
+        else:
+            global selected_demand
+            selected_demand = no_selected_demand_text
+        return default_stylesheet + new_style
 
 # TODO - Phase 1 goals
 #  - DONE - highlight selected interface on map somehow
@@ -500,8 +502,9 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 
 # def that displays info about the selected edge and updates selected_interface
 @app.callback(Output('selected-interface-output', 'children'),
-              [Input('cytoscape-prototypes', 'selectedEdgeData')])
-def displaySelectedEdgeData(data):
+              [Input('cytoscape-prototypes', 'selectedEdgeData'),
+               Input('demand-path-interfaces', 'value')])
+def displaySelectedEdgeData(data, demand_interface):
     """
 
 
@@ -510,15 +513,51 @@ def displaySelectedEdgeData(data):
     """
     global selected_interface
 
-    if data:
-        data = data[0]
-        end_target = [item for item in data['target'].split('-')[1:] if item != data['source']][0]
-        int_info = {'source': data['source'], 'interface-name': data['interface-name'], 'dest': end_target, 'circuit_id':data['circuit_id'],
-                    'utilization %': data['utilization']}
-        selected_interface = json.dumps(int_info)
+    ctx = dash.callback_context
+
+    print("="*15)
+    print('ctx.triggered = {}'.format(ctx.triggered))
+    print()
+    print('ctx.inputs = {}'.format(ctx.inputs))
+    print("-" * 15)
+    print()
+    print()
+    print()
+
+    if ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData':
+        try:
+            int_data = ctx.triggered[0]['value'][0]
+        except Exception as e:
+            import pdb
+            pdb.set_trace()
+        end_target = [item for item in int_data['target'].split('-')[1:] if item != int_data['source']][0]
+        int_info = {'source': int_data['source'], 'interface-name': int_data['interface-name'],
+                    'dest': end_target, 'circuit_id': int_data['circuit_id'],
+                    'utilization %': int_data['utilization'], 'cost': int_data['cost']}
+    elif ctx.triggered[0]['prop_id'] == 'demand-path-interfaces.value':
+        int_data = json.loads(ctx.triggered[0]['value'])
+
+        int_info = {'source': int_data['source'], 'interface-name': int_data['interface-name'],
+                    'dest': int_data['dest'], 'circuit_id': int_data['circuit_id'],
+                    'cost': int_data['cost']}
     else:
-        selected_interface = no_selected_interface_text
+        int_info = no_selected_interface_text
+
+    selected_interface = json.dumps(int_info)
+
+    # if data:
+    #     data = data[0]
+    #     end_target = [item for item in data['target'].split('-')[1:] if item != data['source']][0]
+    #     int_info = {'source': data['source'], 'interface-name': data['interface-name'], 'dest': end_target, 'circuit_id':data['circuit_id'],
+    #                 'utilization %': data['utilization']}
+    #     selected_interface = json.dumps(int_info)
+    # else:
+    #     selected_interface = no_selected_interface_text
     return selected_interface
+
+
+
+
 
 
 # def that displays info about the selected demand and updates selected_demand
@@ -561,7 +600,7 @@ def demands_on_interface(interface_info):
     :return: Demands on the interface
     """
 
-    if interface_info != no_selected_interface_text:
+    if interface_info and no_selected_interface_text not in interface_info:
         int_dict = json.loads(interface_info)
         interface = model.get_interface_object(int_dict['interface-name'], int_dict['source'])
         demands = interface.demands(model)
