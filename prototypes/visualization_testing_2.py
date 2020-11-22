@@ -376,12 +376,12 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
     # If empty space is selected, remove demand path formatting
     # if not(data):
     #     return default_stylesheet + new_style
+    print("selected_demand_info line 379 = {}".format(selected_demand_info))
 
     # Demand source and destination path visualization
     if selected_demand_info is not None and \
-            json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}] and\
-            selected_demand_info != '':
-        print("selected_demand_info line 365 = {}".format(selected_demand_info))
+            selected_demand_info != '' and \
+            json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}]:
         demand_dict = json.loads(selected_demand_info)
         source = demand_dict['source']
         destination = demand_dict['dest']
@@ -528,37 +528,35 @@ def displaySelectedEdgeData(data, demand_interface):
         try:
             int_data = ctx.triggered[0]['value'][0]
         except Exception as e:
-            import pdb
-            pdb.set_trace()
+            print("Exception {}".format(e))
+            print("ctx.triggered = ")
+            pprint(ctx.triggered)
+            print('+='*20)
         end_target = [item for item in int_data['target'].split('-')[1:] if item != int_data['source']][0]
         int_info = {'source': int_data['source'], 'interface-name': int_data['interface-name'],
                     'dest': end_target, 'circuit_id': int_data['circuit_id'],
                     'utilization %': int_data['utilization'], 'cost': int_data['cost']}
+        # Convert dict to string for return
+        selected_interface = json.dumps(int_info)
     elif ctx.triggered[0]['prop_id'] == 'demand-path-interfaces.value':
-        int_data = json.loads(ctx.triggered[0]['value'])
-
-        int_info = {'source': int_data['source'], 'interface-name': int_data['interface-name'],
-                    'dest': int_data['dest'], 'circuit_id': int_data['circuit_id'],
-                    'cost': int_data['cost']}
+        print(type(ctx.triggered[0]))
+        print("ctx.triggered[0] = {}".format(ctx.triggered[0]))
+        if ctx.triggered[0]['value'] == no_selected_demand_text:
+            int_info = no_selected_interface_text
+            selected_interface = int_info
+        else:
+            int_data = json.loads(ctx.triggered[0]['value'])
+            if no_selected_demand_text not in int_data:
+                util = model.get_interface_object(int_data['interface-name'], int_data['source']).utilization()
+                int_info = {'source': int_data['source'], 'interface-name': int_data['interface-name'],
+                            'dest': int_data['dest'], 'circuit_id': int_data['circuit_id'],
+                            'utilization %': util, 'cost': int_data['cost']}
+                # Convert dict to string for return
+                selected_interface = json.dumps(int_info)
     else:
-        int_info = no_selected_interface_text
+        selected_interface = no_selected_interface_text
 
-    selected_interface = json.dumps(int_info)
-
-    # if data:
-    #     data = data[0]
-    #     end_target = [item for item in data['target'].split('-')[1:] if item != data['source']][0]
-    #     int_info = {'source': data['source'], 'interface-name': data['interface-name'], 'dest': end_target, 'circuit_id':data['circuit_id'],
-    #                 'utilization %': data['utilization']}
-    #     selected_interface = json.dumps(int_info)
-    # else:
-    #     selected_interface = no_selected_interface_text
     return selected_interface
-
-
-
-
-
 
 # def that displays info about the selected demand and updates selected_demand
 @app.callback(Output('selected-demand-output', 'children'),
@@ -619,7 +617,7 @@ def demands_on_interface(interface_info):
 
     else:
         
-        return [{"label": '', "value": ''}]
+        return [{"label": no_selected_interface_text, "value": ''}]
 
 
 # def that finds and displays interfaces on selected_demand's path
