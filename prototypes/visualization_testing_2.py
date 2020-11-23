@@ -470,7 +470,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 # TODO - Phase 1 goals
 #  - DONE - highlight selected interface on map somehow
 #  - DONE - Select an interface by either clicking on the map or selecting one from the Demand Paths list
-#       - set selected_interface to the last value (either click or list selection)
+#       - DONE - set selected_interface to the last value (either click or list selection)
 #  - DONE - Space to display selected_interface value
 #  - DONE - Space to display selected_demand value
 #  - Tabs
@@ -496,6 +496,9 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #       - see demands that transit the node
 #       - display the selected demands in a list
 #       - display the selected demand paths on the map
+#  - 'find demands' tab
+#  - 'demand path' tab
+#       - shows demand's full path (including LSPs) - does not show LSP Interfaces
 
 # def that displays info about the selected edge and updates selected_interface
 @app.callback(Output('selected-interface-output', 'children'),
