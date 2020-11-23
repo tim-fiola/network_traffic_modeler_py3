@@ -270,8 +270,9 @@ styles_2 = {
     },
     'json-output': {
         'overflow-y': 'scroll',
-        'fontFamily': 'courier',
-        'border': 'thin lightgrey solid'
+        'fontFamily': 'menlo',
+        'border': 'thin lightgrey solid',
+        'line-height': '1.5'
     },
     'tab': {'height': 'calc(98vh - 115px)'}
 
@@ -481,13 +482,14 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #           - displays interfaces associated with selected_demand
 #       - DONE - Interface Info
 #           - displays Demands on selected_interface
-#  - if empty space is clicked:
+#  - DONE if empty space is clicked:
 #       - DONE = set selected_demand back to no_selected_demand_text
 #       - DONE - set selected_interface back to no_selected_interface_text
 #       - DONE - display no_selected_interface_text in box that displays selected_interface
 #       - DONE - display no_selected_demand_text in box that displays selected_demand
 #       - DONE - clear demand options on Interface Info tab
 #       - DONE - clear displayed interfaces on Demand Paths tab
+#  - adaptive source/dest dropdowns on Find Demands tab
 #  =========================================================
 #   Phase 2 goals:
 #   - be able to select a Node
