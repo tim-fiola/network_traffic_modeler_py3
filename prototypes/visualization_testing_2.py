@@ -524,14 +524,12 @@ def displaySelectedEdgeData(data, demand_interface):
     print()
     print()
 
-    if ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData':
-        try:
-            int_data = ctx.triggered[0]['value'][0]
-        except Exception as e:
-            print("Exception {}".format(e))
-            print("ctx.triggered = ")
-            pprint(ctx.triggered)
-            print('+='*20)
+    if ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData' and \
+            len(ctx.triggered[0]['value']) > 0:
+        # If trigger is 'cytoscape-prototypes.selectedEdgeData' and
+        # the selected edge is not null
+        int_data = ctx.triggered[0]['value'][0]
+
         end_target = [item for item in int_data['target'].split('-')[1:] if item != int_data['source']][0]
         int_info = {'source': int_data['source'], 'interface-name': int_data['interface-name'],
                     'dest': end_target, 'circuit_id': int_data['circuit_id'],
@@ -547,7 +545,7 @@ def displaySelectedEdgeData(data, demand_interface):
         else:
             int_data = json.loads(ctx.triggered[0]['value'])
             if no_selected_demand_text not in int_data:
-                util = model.get_interface_object(int_data['interface-name'], int_data['source']).utilization()
+                util = model.get_interface_object(int_data['interface-name'], int_data['source']).utilization
                 int_info = {'source': int_data['source'], 'interface-name': int_data['interface-name'],
                             'dest': int_data['dest'], 'circuit_id': int_data['circuit_id'],
                             'utilization %': util, 'cost': int_data['cost']}
