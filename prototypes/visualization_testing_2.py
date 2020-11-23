@@ -230,10 +230,9 @@ demand_destinations_list.sort()
 
 # Baseline selected interface to 'no int selected'
 no_selected_interface_text = 'no int selected'
-selected_interface = no_selected_interface_text
 
 no_selected_demand_text = 'no demand selected'
-selected_demand = no_selected_demand_text
+
 
 styles_2 = {
     "content": {
@@ -466,8 +465,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 
             new_style.append(new_entry_5)
         else:
-            global selected_demand
-            selected_demand = no_selected_demand_text
+             selected_demand = no_selected_demand_text
         return default_stylesheet + new_style
 
 # TODO - Phase 1 goals
@@ -511,7 +509,7 @@ def displaySelectedEdgeData(data, demand_interface):
     :param data: list consisting of a single dict containing info about the edge/interface
     :return: json string of a dict containing metadata about the selected edge
     """
-    global selected_interface
+
 
     ctx = dash.callback_context
 
@@ -561,7 +559,6 @@ def displaySelectedEdgeData(data, demand_interface):
               [Input('interface-demand-callback', 'value')])
 def display_selected_demand_data(demand):
 
-    global selected_demand
     print("demand line 512 = {}".format(demand))
     if demand:
         print("demand line 514 = {}".format(demand))
@@ -622,7 +619,7 @@ def demands_on_interface(interface_info):
 @app.callback(Output('demand-path-interfaces', 'options'),
               [Input('selected-demand-output', 'children')])
 def demand_interfaces(demand):
-    global selected_demand
+
     if demand:
         if no_selected_demand_text not in demand:
             demand = json.loads(demand)
