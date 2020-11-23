@@ -537,8 +537,7 @@ def displaySelectedEdgeData(data, demand_interface):
         print(type(ctx.triggered[0]))
         print("ctx.triggered[0] = {}".format(ctx.triggered[0]))
         if ctx.triggered[0]['value'] == no_selected_demand_text:
-            int_info = no_selected_interface_text
-            selected_interface = int_info
+            selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
         else:
             int_data = json.loads(ctx.triggered[0]['value'])
             if no_selected_demand_text not in int_data:
@@ -548,8 +547,9 @@ def displaySelectedEdgeData(data, demand_interface):
                             'utilization %': util, 'cost': int_data['cost']}
                 # Convert dict to string for return
                 selected_interface = json.dumps(int_info)
+                print("selected_interface line 550 = {}".format(selected_interface))
     else:
-        selected_interface = no_selected_interface_text
+        selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
 
     return selected_interface
 
@@ -575,8 +575,7 @@ def display_selected_demand_data(demand):
             selected_demand = json.dumps(demand_info)
             return selected_demand
         else:
-            selected_demand = no_selected_demand_text
-        return selected_demand
+            return json.dumps({'label': no_selected_demand_text, 'value': ''})
     else:
         return json.dumps({'label': no_selected_demand_text, 'value': ''})
 
