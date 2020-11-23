@@ -469,7 +469,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 
 # TODO - Phase 1 goals
 #  - DONE - highlight selected interface on map somehow
-#  - Select an interface by either clicking on the map or selecting one from the Demand Paths list
+#  - DONE - Select an interface by either clicking on the map or selecting one from the Demand Paths list
 #       - set selected_interface to the last value (either click or list selection)
 #  - DONE - Space to display selected_interface value
 #  - DONE - Space to display selected_demand value
@@ -578,7 +578,6 @@ def display_selected_demand_data(demand):
             selected_demand = no_selected_demand_text
         return selected_demand
     else:
-        selected_demand = no_selected_demand_text
         return json.dumps({'label': no_selected_demand_text, 'value': ''})
 
 # def that finds and displays demands on the selected interface
