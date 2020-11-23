@@ -241,12 +241,12 @@ styles_2 = {
     },
     "right_menu": {
         'width': '24%',
-        'height': '60px',
+        'height': '99%',
         'position': 'absolute',
         'top': '0',
         'right': '0',
         'zIndex': 100,
-        'fontFamily': 'arial'
+        'fontFamily': 'arial',
     },
     "top_content": {
         'height': '100px',
@@ -270,7 +270,7 @@ styles_2 = {
     },
     'json-output': {
         'overflow-y': 'scroll',
-        'height': 'calc(50% - 25px)',
+        'fontFamily': 'courier',
         'border': 'thin lightgrey solid'
     },
     'tab': {'height': 'calc(98vh - 115px)'}
@@ -280,6 +280,8 @@ styles_2 = {
 # Check here for layout example: https://stackoverflow.com/questions/56175268/how-to-properly-add-style-to-my-dash-app
 
 app = dash.Dash(__name__)
+
+
 
 app.layout = html.Div(className='content', children=[
     html.Div(className='left_content', children=[
@@ -294,9 +296,9 @@ app.layout = html.Div(className='content', children=[
     ]),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         html.P("Selected Interface:"),
-        html.Pre(id='selected-interface-output'),
+        html.P(id='selected-interface-output', style=styles_2['json-output']),
         html.P("Selected Demand:"),
-        html.Pre(id='selected-demand-output'),
+        html.P(id='selected-demand-output', style=styles_2['json-output']),
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
