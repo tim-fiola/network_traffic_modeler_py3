@@ -464,8 +464,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
             }
 
             new_style.append(new_entry_5)
-        else:
-             selected_demand = no_selected_demand_text
+
         return default_stylesheet + new_style
 
 # TODO - Phase 1 goals
