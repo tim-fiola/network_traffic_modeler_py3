@@ -282,8 +282,6 @@ styles_2 = {
 
 app = dash.Dash(__name__)
 
-
-
 app.layout = html.Div(className='content', children=[
     html.Div(className='left_content', children=[
         cyto.Cytoscape(
@@ -319,13 +317,18 @@ app.layout = html.Div(className='content', children=[
             ]),
             dcc.Tab(label='Find Demands', children=[
                 html.Div(style=styles_2['tab'], children=[
+                    html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
+                           " selection menu"),
                     dcc.Dropdown(
-                        id='demand-source-callback', options=[{'label': source, 'value': source}
-                                                              for source in demand_sources_list],
+                        id='demand-source-callback', placeholder='Select a source node',
                     ),
                     dcc.Dropdown(
-                        id='demand-destination-callback', options=[{'label': dest, 'value': dest}
-                                                                   for dest in demand_destinations_list],
+                        id='demand-destination-callback', placeholder='Select a dest node',
+                    ),
+                    dcc.RadioItems(
+                        id='find-demands-callback',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
                     ),
                 ]),
             ]),
@@ -504,6 +507,81 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #  - 'demand path' tab
 #       - shows demand's full path (including LSPs) - does not show LSP Interfaces
 
+
+# Adaptive source/dest dropdowns; will alter what they show based on what
+# the other shows, so they will only show existing source/dest possibilities
+@app.callback([Output('demand-source-callback', 'options'),
+               Output('demand-destination-callback', 'options'),
+               Output('find-demands-callback', 'options')],
+              [Input('demand-source-callback', 'value'),
+               Input('demand-destination-callback', 'value'),])
+def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}]):
+    ctx = dash.callback_context
+
+    # TODO - need to add 'clear' to options; use buttons
+    print("="*15)
+    print('ctx.triggered = {}'.format(ctx.triggered))
+    print()
+    print('ctx.inputs = {}'.format(ctx.inputs))
+    print("-" * 15)
+    print()
+    print()
+    print()
+
+    ctx_src_inputs = ctx.inputs['demand-source-callback.value']
+    ctx_dest_inputs = ctx.inputs['demand-destination-callback.value']
+
+    # Initialize the demands
+    # demands = [{'label': None, 'value': None}]
+
+    if ctx_src_inputs is None and ctx_dest_inputs is None:
+        # No source or destination specified
+        dest_options = [{'label': dest, 'value': dest} for dest in demand_destinations_list]
+        src_options = [{'label': source, 'value': source} for source in demand_sources_list]
+
+    elif ctx_src_inputs != None and ctx_dest_inputs != None:
+        # Both source and destination specified
+        src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
+        dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
+
+        key = "{}-{}".format(ctx_src_inputs, ctx_dest_inputs)
+        demand_list = model.parallel_demand_groups()[key]
+
+        demands = [{'label': demand.__repr__(), 'value': demand.__repr__()} for demand in demand_list]
+
+    elif ctx_src_inputs == None and ctx_dest_inputs != None:
+        # No source but specified destination
+        src_list = get_sources(ctx_dest_inputs, model=model, type='demand')
+        src_list.sort()
+        src_options = [{'label': src, 'value': src} for src in src_list]
+
+        dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
+    elif ctx_src_inputs != None and ctx_dest_inputs == None:
+        # Source specified but no destination
+        src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
+
+        dest_list = get_destinations(ctx_src_inputs, model=model, type='demand')
+        dest_list.sort()
+        dest_options = [{'label': dest, 'value': dest} for dest in dest_list]
+    else:
+        msg = "Debug output: unaccounted for scenario in display_demand_dropdowns"
+        raise Exception(msg)
+
+    print('src_options = {}'.format(src_options))
+    print('dest_options = {}'.format(dest_options))
+    print('demands = {}'.format(demands))
+    print()
+    print()
+
+
+
+
+    return src_options, dest_options, demands
+
+
+
+
+
 # def that displays info about the selected edge and updates selected_interface
 @app.callback(Output('selected-interface-output', 'children'),
               [Input('cytoscape-prototypes', 'selectedEdgeData'),
@@ -516,17 +594,7 @@ def displaySelectedEdgeData(data, demand_interface):
     :return: json string of a dict containing metadata about the selected edge
     """
 
-
     ctx = dash.callback_context
-
-    print("="*15)
-    print('ctx.triggered = {}'.format(ctx.triggered))
-    print()
-    print('ctx.inputs = {}'.format(ctx.inputs))
-    print("-" * 15)
-    print()
-    print()
-    print()
 
     if ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData' and \
             len(ctx.triggered[0]['value']) > 0:
@@ -672,6 +740,59 @@ def find_demand_interfaces(dmds):
                     for interface in hop:
                         interfaces_to_highlight.add(interface)
     return interfaces_to_highlight
+
+def get_sources(destination, model, type):
+    """
+    Returns a list of sources in the model that have
+    LSPs or Demands that terminate on the specified destination node.
+
+    :param destination: destination for LSPs or demands
+    :param model: pyNTM Model object
+    :param type: Either 'demand' or 'lsp'
+
+    :return: List of sources in the model that have LSPs or demands that are sourced from
+    the sources and terminate on the specified destination.
+    """
+
+    if type not in ['demand', 'lsp']:
+        msg = "'type' value must be 'demand'|'lsp'"
+        raise Exception(msg)
+
+    if type == 'demand':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+    elif type == 'lsp':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+    sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
+
+    return sources
+
+def get_destinations(source, model, type):
+    """
+    Returns a list of destinations in the model that have
+    LSPs or Demands that originate on the specified source.
+
+    :param source: origin for LSPs or demands
+    :param model: pyNTM Model object
+    :param type: Either 'demand' or 'lsp'
+
+    :return: List of destinations in the model that have LSPs or demands that terminate on
+    the destinations and originate on the specified origin node.
+    """
+
+    if type not in ['demand', 'lsp']:
+        msg = "'type' value must be 'demand'|'lsp'"
+        raise Exception(msg)
+
+    if type == 'demand':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+    elif type == 'lsp':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+    destinations = [pair[1] for pair in source_dest_pairs if pair[0] == source]
+
+    return destinations
+
 
 app.run_server(debug=True)
 
