@@ -350,7 +350,7 @@ app.layout = html.Div(className='content', children=[
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
               [Input(component_id='cytoscape-prototypes', component_property='selectedEdgeData'),
                Input('utilization-dropdown-callback', 'value'),
-               Input('interface-demand-callback', 'value'),
+               Input('selected-demand-output', 'children'),
                Input('selected-interface-output', 'children')])
 def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info):
     """
