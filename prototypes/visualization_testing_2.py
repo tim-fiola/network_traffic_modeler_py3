@@ -547,7 +547,18 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
         key = "{}-{}".format(ctx_src_inputs, ctx_dest_inputs)
         demand_list = model.parallel_demand_groups()[key]
 
-        demands = [{'label': demand.__repr__(), 'value': demand.__repr__()} for demand in demand_list]
+        demands = []
+        #####
+        for demand in demand_list:
+            # Return the demand's value as a dict with demand info (dmd_info)
+            src = demand.source_node_object.name
+            dest = demand.dest_node_object.name
+            name = demand.name
+            dmd_info = {'source': src, 'dest': dest, 'name': name}
+            demands.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
+
+
+        ######
 
     elif ctx_src_inputs == None and ctx_dest_inputs != None:
         # No source but specified destination
@@ -589,7 +600,6 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
 def displaySelectedEdgeData(data, demand_interface):
     """
 
-
     :param data: list consisting of a single dict containing info about the edge/interface
     :return: json string of a dict containing metadata about the selected edge
     """
@@ -630,8 +640,15 @@ def displaySelectedEdgeData(data, demand_interface):
 
 # def that displays info about the selected demand and updates selected_demand
 @app.callback(Output('selected-demand-output', 'children'),
-              [Input('interface-demand-callback', 'value')])
-def display_selected_demand_data(demand):
+              [Input('interface-demand-callback', 'value'),
+               Input('find-demands-callback', 'value')])
+def display_selected_demand_data(int_demand, src_dest_demand):
+
+    ctx = dash.callback_context
+
+    print('ctx.triggered = {}'.format(ctx.triggered))
+
+    demand = ctx.triggered[0]['value']
 
     print("demand line 512 = {}".format(demand))
     if demand:
@@ -652,6 +669,7 @@ def display_selected_demand_data(demand):
         else:
             return json.dumps({'label': no_selected_demand_text, 'value': ''})
     else:
+        # TODO - do a PreventUpdate here: https://dash.plotly.com/advanced-callbacks
         return json.dumps({'label': no_selected_demand_text, 'value': ''})
 
 # def that finds and displays demands on the selected interface
