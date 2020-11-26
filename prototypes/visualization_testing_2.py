@@ -382,11 +382,13 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
     # if not(data):
     #     return default_stylesheet + new_style
     print("selected_demand_info line 379 = {}".format(selected_demand_info))
+    print()
 
     # Demand source and destination path visualization
     if selected_demand_info is not None and \
             selected_demand_info != '' and \
-            json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}]:
+            json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}] and \
+            json.loads(selected_demand_info) != {"label": "no demand selected", "value": ""}:
         demand_dict = json.loads(selected_demand_info)
         source = demand_dict['source']
         destination = demand_dict['dest']
@@ -492,7 +494,8 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #       - DONE - display no_selected_demand_text in box that displays selected_demand
 #       - DONE - clear demand options on Interface Info tab
 #       - DONE - clear displayed interfaces on Demand Paths tab
-#  - adaptive source/dest dropdowns on Find Demands tab
+#  - DONE - adaptive source/dest dropdowns on Find Demands tab
+#  - button to clear selected_demand info
 #  =========================================================
 #   Phase 2 goals:
 #   - be able to select a Node
@@ -503,9 +506,12 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #       - see demands that transit the node
 #       - display the selected demands in a list
 #       - display the selected demand paths on the map
-#  - 'find demands' tab
+#  - DONE - 'find demands' tab
 #  - 'demand path' tab
 #       - shows demand's full path (including LSPs) - does not show LSP Interfaces
+# - Find LSPs tab
+# - LSP interfaces tab
+# - selected_lsp section
 
 
 # Adaptive source/dest dropdowns; will alter what they show based on what
