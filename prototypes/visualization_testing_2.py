@@ -495,6 +495,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #       - DONE - clear demand options on Interface Info tab
 #       - DONE - clear displayed interfaces on Demand Paths tab
 #  - DONE - adaptive source/dest dropdowns on Find Demands tab
+#  - DONE - 'find demands' tab
 #  - button to clear selected_demand info
 #  =========================================================
 #   Phase 2 goals:
@@ -506,12 +507,11 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #       - see demands that transit the node
 #       - display the selected demands in a list
 #       - display the selected demand paths on the map
-#  - DONE - 'find demands' tab
 #  - 'demand path' tab
 #       - shows demand's full path (including LSPs) - does not show LSP Interfaces
-# - Find LSPs tab
-# - LSP interfaces tab
-# - selected_lsp section
+#  - Find LSPs tab
+#  - LSP interfaces tab
+#  - selected_lsp section
 
 
 # Adaptive source/dest dropdowns; will alter what they show based on what
