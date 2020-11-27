@@ -496,18 +496,10 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #       - DONE - clear displayed interfaces on Demand Paths tab
 #  - DONE - adaptive source/dest dropdowns on Find Demands tab
 #  - DONE - 'find demands' tab
-#  - button to clear selected_demand info
-#  - display demands sourced from or destined to nodes on Find Demands tab (does not require both to be selected to display demands)
+#  - button to clear selected_demand/selected_interface info
+#  - DONE - display demands sourced from or destined to nodes on Find Demands tab (does not require both to be selected to display demands)
 #  =========================================================
 #   Phase 2 goals:
-#   - be able to select a Node
-#   - display the selected Node
-#   - have menu with checkboxes that allow user to select one or more:
-#       - see demands that eminate from the node
-#       - see demands that terminate on the node
-#       - see demands that transit the node
-#       - display the selected demands in a list
-#       - display the selected demand paths on the map
 #  - 'demand path' tab
 #       - shows demand's full path (including LSPs) - does not show LSP Interfaces
 #  - Find LSPs tab
@@ -535,11 +527,9 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
     print()
     print()
 
+    # Get source and destination info from the dropdowns
     ctx_src_inputs = ctx.inputs['demand-source-callback.value']
     ctx_dest_inputs = ctx.inputs['demand-destination-callback.value']
-
-    # Initialize the demands
-    # demands = [{'label': None, 'value': None}]
 
     if ctx_src_inputs is None and ctx_dest_inputs is None:
         # No source or destination specified
@@ -554,18 +544,8 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
         key = "{}-{}".format(ctx_src_inputs, ctx_dest_inputs)
         demand_list = model.parallel_demand_groups()[key]
 
-        demands = []
-        #####
-        for demand in demand_list:
-            # Return the demand's value as a dict with demand info (dmd_info)
-            src = demand.source_node_object.name
-            dest = demand.dest_node_object.name
-            name = demand.name
-            dmd_info = {'source': src, 'dest': dest, 'name': name}
-            demands.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
-
-
-        ######
+        # Format demands for display
+        demands = format_dmds_for_display(demand_list)
 
     elif ctx_src_inputs == None and ctx_dest_inputs != None:
         # No source but specified destination
@@ -574,6 +554,18 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
         src_options = [{'label': src, 'value': src} for src in src_list]
 
         dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
+
+        # Get the demands with specified destination
+        dmd_keys = model.parallel_demand_groups().keys()
+        src_keys = [src_key for src_key in dmd_keys if src_key.split('-')[1] == ctx_dest_inputs]
+        demand_list = []
+
+        for src_key in src_keys:
+            demand_list += model.parallel_demand_groups()[src_key]
+
+        # Format demands for display
+        demands = format_dmds_for_display(demand_list)
+
     elif ctx_src_inputs != None and ctx_dest_inputs == None:
         # Source specified but no destination
         src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
@@ -581,6 +573,18 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
         dest_list = get_destinations(ctx_src_inputs, model=model, type='demand')
         dest_list.sort()
         dest_options = [{'label': dest, 'value': dest} for dest in dest_list]
+
+        # Get the demands with specified source
+        dmd_keys = model.parallel_demand_groups().keys()
+        dest_keys = [dest_key for dest_key in dmd_keys if dest_key.split('-')[0] == ctx_src_inputs]
+        demand_list = []
+
+        for dest_key in dest_keys:
+            demand_list += model.parallel_demand_groups()[dest_key]
+
+        # Format demands for display
+        demands = format_dmds_for_display(demand_list)
+
     else:
         msg = "Debug output: unaccounted for scenario in display_demand_dropdowns"
         raise Exception(msg)
@@ -591,13 +595,40 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
     print()
     print()
 
-
-
-
     return src_options, dest_options, demands
 
 
+def format_dmds_for_display(demand_list):
+    """
+    Takes a list of demand objects and returns a list of demand info that can
+    be displayed in visualization menus.
 
+    :param demand_list: list of Demand objects
+    :return: List of info about each demand.  Each list entry is a dict with 'label' and
+    'value' keys
+
+    Example Input::
+        [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
+        Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
+
+    Example Output::
+        [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
+        'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
+        {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
+        'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
+
+    """
+
+    # Initialize demand list
+    demands = []
+    for demand in demand_list:
+        # Return the demand's value as a dict with demand info (dmd_info)
+        src = demand.source_node_object.name
+        dest = demand.dest_node_object.name
+        name = demand.name
+        dmd_info = {'source': src, 'dest': dest, 'name': name}
+        demands.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
+    return demands
 
 
 # def that displays info about the selected edge and updates selected_interface
