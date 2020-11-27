@@ -497,6 +497,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #  - DONE - adaptive source/dest dropdowns on Find Demands tab
 #  - DONE - 'find demands' tab
 #  - button to clear selected_demand info
+#  - display demands sourced from or destined to nodes on Find Demands tab (does not require both to be selected to display demands)
 #  =========================================================
 #   Phase 2 goals:
 #   - be able to select a Node
