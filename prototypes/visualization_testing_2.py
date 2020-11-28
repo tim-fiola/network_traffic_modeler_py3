@@ -8,6 +8,7 @@ from dash.dependencies import Input, Output
 import dash_core_components as dcc
 
 from pyNTM import RSVP_LSP
+from pyNTM import Demand
 
 import json
 
@@ -228,10 +229,22 @@ demand_destinations_list = list(demand_destinations)
 demand_sources_list.sort()
 demand_destinations_list.sort()
 
-# Baseline selected interface to 'no int selected'
-no_selected_interface_text = 'no int selected'
+# Fill in LSP source and destination options
+lsp_sources = set()
+lsp_destinations= set()
+for entry in model.parallel_lsp_groups().keys():
+    source, dest = entry.split('-')
+    lsp_sources.add(source)
+    lsp_destinations.add(dest)
+lsp_sources_list = list(demand_sources)
+lsp_destinations_list = list(demand_destinations)
+lsp_sources_list.sort()
+lsp_destinations_list.sort()
 
+# Baseline selected values
+no_selected_interface_text = 'no int selected'
 no_selected_demand_text = 'no demand selected'
+no_selected_lsp_text = 'no lsp selected'
 
 
 styles_2 = {
@@ -240,7 +253,7 @@ styles_2 = {
         'height': '100%',
     },
     "right_menu": {
-        'width': '24%',
+        'width': '30%',
         'height': '99%',
         'position': 'absolute',
         'top': '0',
@@ -256,7 +269,7 @@ styles_2 = {
         'right': '0'
     },
     "left_content": {
-        "width": '75%',
+        "width": '69%',
         'height': '100%',
         'position': 'absolute',
         'top': '0',
@@ -264,7 +277,7 @@ styles_2 = {
     },
     'cytoscape': {
         'position': 'absolute',
-        'width': '75%',
+        'width': '69%',
         'height': '100%',
         'backgroundColor': '#D2B48C'
     },
@@ -298,7 +311,7 @@ app.layout = html.Div(className='content', children=[
         html.P(id='selected-interface-output', style=styles_2['json-output']),
         html.P("Selected Demand:"),
         html.P(id='selected-demand-output', style=styles_2['json-output']),
-        dcc.Tabs(id='tabs', children=[
+        dcc.Tabs(id='tabs', vertical=True, children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
                     id='utilization-dropdown-callback', options=util_display_options,
@@ -341,6 +354,23 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
+            dcc.Tab(label='Find LSPs', children=[
+                html.Div(style=styles_2['tab'], children=[
+                    html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
+                           " selection menu"),
+                    dcc.Dropdown(
+                        id='lsp-source-callback', placeholder='Select a source node',
+                    ),
+                    dcc.Dropdown(
+                        id='lsp-destination-callback', placeholder='Select a dest node',
+                    ),
+                    dcc.RadioItems(
+                        id='find-lsps-callback',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    ),
+                ]),
+            ])
        ]),
     ])
 ])
@@ -506,8 +536,98 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #  - LSP interfaces tab
 #  - selected_lsp section
 
+# Adaptive source/dest dropdowns for LSPs; will alter what they show based on what
+# the other shows, so they will only show existing source/dest possibilities
+@app.callback([Output('lsp-source-callback', 'options'),
+               Output('lsp-destination-callback', 'options'),
+               Output('find-lsps-callback', 'options')],
+              [Input('lsp-source-callback', 'value'),
+               Input('lsp-destination-callback', 'value'),])
+def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
+    ctx = dash.callback_context
 
-# Adaptive source/dest dropdowns; will alter what they show based on what
+    # TODO - need to add 'clear' to options; use buttons
+    print("="*15)
+    print('ctx.triggered = {}'.format(ctx.triggered))
+    print()
+    print('ctx.inputs = {}'.format(ctx.inputs))
+    print("-" * 15)
+    print()
+    print()
+    print()
+
+    # Get source and destination info from the dropdowns
+    ctx_src_inputs = ctx.inputs['lsp-source-callback.value']
+    ctx_dest_inputs = ctx.inputs['lsp-destination-callback.value']
+
+    if ctx_src_inputs is None and ctx_dest_inputs is None:
+        # No source or destination specified
+        dest_options = [{'label': dest, 'value': dest} for dest in lsp_destinations_list]
+        src_options = [{'label': source, 'value': source} for source in lsp_sources_list]
+
+    elif ctx_src_inputs != None and ctx_dest_inputs != None:
+        # Both source and destination specified
+        src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
+        dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
+
+        key = "{}-{}".format(ctx_src_inputs, ctx_dest_inputs)
+        lsp_list = model.parallel_lsp_groups()[key]
+
+        # Format lsps for display
+        lsps = format_objects_for_display(lsp_list)
+
+    elif ctx_src_inputs == None and ctx_dest_inputs != None:
+        # No source but specified destination
+        src_list = get_sources(ctx_dest_inputs, model=model, type='lsp')
+        src_list.sort()
+        src_options = [{'label': src, 'value': src} for src in src_list]
+
+        dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
+
+        # Get the lsps with specified destination
+        lsp_keys = model.parallel_lsp_groups().keys()
+        src_keys = [src_key for src_key in lsp_keys if src_key.split('-')[1] == ctx_dest_inputs]
+        lsp_list = []
+
+        for src_key in src_keys:
+            lsp_list += model.parallel_lsp_groups()[src_key]
+
+        # Format lsps for display
+        lsps = format_objects_for_display(lsp_list)
+
+    elif ctx_src_inputs != None and ctx_dest_inputs == None:
+        # Source specified but no destination
+        src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
+
+        dest_list = get_destinations(ctx_src_inputs, model=model, type='lsp')
+        dest_list.sort()
+        dest_options = [{'label': dest, 'value': dest} for dest in dest_list]
+
+        # Get the lsps with specified source
+        lsp_keys = model.parallel_lsp_groups().keys()
+        dest_keys = [dest_key for dest_key in lsp_keys if dest_key.split('-')[0] == ctx_src_inputs]
+        lsp_list = []
+
+        for dest_key in dest_keys:
+            lsp_list += model.parallel_lsp_groups()[dest_key]
+
+        # Format lsps for display
+        lsps = format_objects_for_display(lsp_list)
+
+    else:
+        msg = "Debug output: unaccounted for scenario in display_lsp_dropdowns"
+        raise Exception(msg)
+
+    print('src_options = {}'.format(src_options))
+    print('dest_options = {}'.format(dest_options))
+    print('lsps = {}'.format(lsps))
+    print()
+    print()
+
+    return src_options, dest_options, lsps
+
+
+# Adaptive source/dest dropdowns for demands; will alter what they show based on what
 # the other shows, so they will only show existing source/dest possibilities
 @app.callback([Output('demand-source-callback', 'options'),
                Output('demand-destination-callback', 'options'),
@@ -629,6 +749,47 @@ def format_dmds_for_display(demand_list):
         dmd_info = {'source': src, 'dest': dest, 'name': name}
         demands.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
     return demands
+
+def format_objects_for_display(object_list):
+    """
+    Takes a list of LSP or demand objects and returns a list of info that can
+    be displayed in visualization menus.
+
+    :param object_list: list of Demand objects
+    :return: List of info about each demand.  Each list entry is a dict with 'label' and
+    'value' keys
+
+    Example Input::
+        [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
+        Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
+
+    Example Output::
+        [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
+        'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
+        {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
+        'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
+
+    """
+
+    if isinstance(object_list[0], RSVP_LSP):
+        object_type = 'lsp'
+    elif isinstance(object_list[0], Demand):
+        object_type = 'demand'
+
+    # Initialize object list
+    objects = []
+    for object in object_list:
+        # Return the demand's value as a dict with demand info (dmd_info)
+        src = object.source_node_object.name
+        dest = object.dest_node_object.name
+        # TODO - perhaps add 'name' as LSP attribute (return lsp_name)?
+        if object_type == 'demand':
+            name = object.name
+        elif object_type == 'lsp':
+            name = object.lsp_name
+        object_info = {'source': src, 'dest': dest, 'name': name}
+        objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
+    return objects
 
 
 # def that displays info about the selected edge and updates selected_interface
