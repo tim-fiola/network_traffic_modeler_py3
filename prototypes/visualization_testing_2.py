@@ -328,6 +328,15 @@ app.layout = html.Div(className='content', children=[
                     )
                 ]),
             ]),
+            dcc.Tab(label='Demand LSPs', children=[
+                html.Div(style=styles_2['tab'], children=[
+                    dcc.RadioItems(
+                        id='demand-path-lsps',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    )
+                ]),
+            ]),
             dcc.Tab(label='Find Demands', children=[
                 html.Div(style=styles_2['tab'], children=[
                     html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
@@ -665,7 +674,7 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
         demand_list = model.parallel_demand_groups()[key]
 
         # Format demands for display
-        demands = format_dmds_for_display(demand_list)
+        demands = format_objects_for_display(demand_list)
 
     elif ctx_src_inputs == None and ctx_dest_inputs != None:
         # No source but specified destination
@@ -684,7 +693,7 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
             demand_list += model.parallel_demand_groups()[src_key]
 
         # Format demands for display
-        demands = format_dmds_for_display(demand_list)
+        demands = format_objects_for_display(demand_list)
 
     elif ctx_src_inputs != None and ctx_dest_inputs == None:
         # Source specified but no destination
@@ -703,7 +712,7 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
             demand_list += model.parallel_demand_groups()[dest_key]
 
         # Format demands for display
-        demands = format_dmds_for_display(demand_list)
+        demands = format_objects_for_display(demand_list)
 
     else:
         msg = "Debug output: unaccounted for scenario in display_demand_dropdowns"
@@ -900,7 +909,6 @@ def demands_on_interface(interface_info):
         return demands_on_interface
 
     else:
-        
         return [{"label": no_selected_interface_text, "value": ''}]
 
 
@@ -927,6 +935,27 @@ def demand_interfaces(demand):
                 interfaces_list.append(int_info)
 
             return interfaces_list
+        else:
+            selected_demand = no_selected_demand_text
+            return [{'label': selected_demand, 'value': selected_demand}]
+    else:
+        selected_demand = no_selected_demand_text
+        return [{'label': selected_demand, 'value': selected_demand}]
+
+@app.callback(Output('demand-path-lsps', 'options'),
+              [Input('selected-demand-output', 'children')])
+def demand_lsps(demand):
+
+    if demand:
+        if no_selected_demand_text not in demand:
+            demand = json.loads(demand)
+            dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
+            dmd_path = dmd.path
+            import pdb
+            pdb.set_trace()
+            # Find if any LSPs in paths
+
+            return dmd_path
         else:
             selected_demand = no_selected_demand_text
             return [{'label': selected_demand, 'value': selected_demand}]
