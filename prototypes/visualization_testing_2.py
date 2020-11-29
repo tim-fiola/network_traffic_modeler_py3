@@ -311,6 +311,8 @@ app.layout = html.Div(className='content', children=[
         html.P(id='selected-interface-output', style=styles_2['json-output']),
         html.P("Selected Demand:"),
         html.P(id='selected-demand-output', style=styles_2['json-output']),
+        html.P("Selected RSVP LSP:"),
+        html.P(id='selected-lsp-output', style=styles_2['json-output']),
         dcc.Tabs(id='tabs', vertical=True, children=[
             dcc.Tab(label='Utilization Visualization Dropdown', children=[
                 dcc.Dropdown(
@@ -438,7 +440,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
             return default_stylesheet + new_style
 
         # Find the interfaces on the demand paths for each demand
-        interfaces_to_highlight = find_demand_interfaces(dmds)
+        interfaces_to_highlight = find_demand_interfaces_and_lsps(dmds)[0]
 
         for interface in interfaces_to_highlight:
             # Add the edge selectors
@@ -779,7 +781,8 @@ def format_objects_for_display(object_list):
         'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
 
     """
-
+    # TODO - use this for all displays
+    # TODO - do this if for each item in list?? is it necessary?
     if isinstance(object_list[0], RSVP_LSP):
         object_type = 'lsp'
     elif isinstance(object_list[0], Demand):
@@ -801,11 +804,34 @@ def format_objects_for_display(object_list):
     return objects
 
 
+# def that displays info about selected LSP
+@app.callback(Output('selected-lsp-output', 'children'),
+              [Input('demand-path-lsps', 'value'),
+               Input('find-lsps-callback', 'value')])
+def display_selected_lsp(path_lsps, find_lsps):
+    """
+
+    :param path_lsps:
+    :param find_lsps:
+    :return:
+    """
+    ctx = dash.callback_context
+    print('ctx.triggered line 819 = {}'.format(ctx.triggered))
+
+    if ctx.triggered[0]['value'] is None:
+        selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
+    else:
+        selected_lsp = ctx.triggered[0]['value']
+
+    return selected_lsp
+
+
+
 # def that displays info about the selected edge and updates selected_interface
 @app.callback(Output('selected-interface-output', 'children'),
               [Input('cytoscape-prototypes', 'selectedEdgeData'),
                Input('demand-path-interfaces', 'value')])
-def displaySelectedEdgeData(data, demand_interface):
+def display_selected_edge(data, demand_interface):
     """
 
     :param data: list consisting of a single dict containing info about the edge/interface
@@ -913,7 +939,8 @@ def demands_on_interface(interface_info):
 
 
 # def that finds and displays interfaces on selected_demand's path
-@app.callback(Output('demand-path-interfaces', 'options'),
+@app.callback([Output('demand-path-interfaces', 'options'),
+               Output('demand-path-lsps', 'options')],
               [Input('selected-demand-output', 'children')])
 def demand_interfaces(demand):
 
@@ -921,7 +948,7 @@ def demand_interfaces(demand):
         if no_selected_demand_text not in demand:
             demand = json.loads(demand)
             dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
-            dmd_ints = find_demand_interfaces([dmd])
+            dmd_ints, dmd_lsps = find_demand_interfaces_and_lsps([dmd])
             interfaces_list = []
             for interface in dmd_ints:
                 source_node_name = interface.node_object.name
@@ -934,37 +961,56 @@ def demand_interfaces(demand):
                 int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
                 interfaces_list.append(int_info)
 
-            return interfaces_list
+            lsp_list = []
+            for lsp in dmd_lsps:
+                lsp_source_node_name = lsp.source_node_object.name
+                lsp_dest_node_name = lsp.dest_node_object.name
+                lsp_name = lsp.lsp_name
+                lsp_dict = {'source': lsp_source_node_name, 'dest': lsp_dest_node_name, 'name': lsp_name}
+                lsp_info = {'label': lsp.__repr__(), 'value': json.dumps(lsp_dict)}
+                lsp_list.append(lsp_info)
+
+            return interfaces_list, lsp_list
         else:
             selected_demand = no_selected_demand_text
-            return [{'label': selected_demand, 'value': selected_demand}]
+            return ([{'label': selected_demand, 'value': selected_demand}],
+                    [{'label': selected_demand, 'value': selected_demand}])
     else:
         selected_demand = no_selected_demand_text
-        return [{'label': selected_demand, 'value': selected_demand}]
+        return ([{'label': selected_demand, 'value': selected_demand}],
+                [{'label': selected_demand, 'value': selected_demand}])
 
-@app.callback(Output('demand-path-lsps', 'options'),
-              [Input('selected-demand-output', 'children')])
-def demand_lsps(demand):
-
-    if demand:
-        if no_selected_demand_text not in demand:
-            demand = json.loads(demand)
-            dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
-            dmd_path = dmd.path
-            import pdb
-            pdb.set_trace()
-            # Find if any LSPs in paths
-
-            return dmd_path
-        else:
-            selected_demand = no_selected_demand_text
-            return [{'label': selected_demand, 'value': selected_demand}]
-    else:
-        selected_demand = no_selected_demand_text
-        return [{'label': selected_demand, 'value': selected_demand}]
+# @app.callback(Output('demand-path-lsps', 'options'),
+#               [Input('selected-demand-output', 'children')])
+# def demand_lsps(demand):
+#
+#     if demand:
+#         if no_selected_demand_text not in demand:
+#             demand = json.loads(demand)
+#             dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
+#             dmd_path = dmd.path
+#             import pdb
+#             pdb.set_trace()
+#             # Find if any LSPs in paths
+# @app.callback(Output('demand-path-lsps', 'options'),
+#               [Input('selected-demand-output', 'children')])
+# def demand_lsps(demand):
+#
+#     if demand:
+#         if no_selected_demand_text not in demand:
+#             demand = json.loads(demand)
+#             dmd =
+#
+#             return dmd_path
+#         else:
+#             selected_demand = no_selected_demand_text
+#             return [{'label': selected_demand, 'value': selected_demand}]
+#     else:
+#         selected_demand = no_selected_demand_text
+#         return [{'label': selected_demand, 'value': selected_demand}]
 
 # #### Utility Functions #### #
-def find_demand_interfaces(dmds):
+def find_demand_interfaces_and_lsps(dmds):
     """
     Finds interfaces for each demand in dmds.  If there
     are RSVP LSPs in path, the interfaces for that LSP path
@@ -974,18 +1020,20 @@ def find_demand_interfaces(dmds):
     :return: set of interfaces that any given demand in dmds transits
     """
     interfaces_to_highlight = set()
+    lsps = set()
     for dmd in dmds:
         dmd_path = dmd.path[:]
         for path in dmd_path:
             for hop in dmd_path:
                 if isinstance(hop, RSVP_LSP):
+                    lsps.add(hop)
                     for lsp_hop in hop.path['interfaces']:
                         interfaces_to_highlight.add(lsp_hop)
                     dmd_path.remove(hop)
                 else:
                     for interface in hop:
                         interfaces_to_highlight.add(interface)
-    return interfaces_to_highlight
+    return interfaces_to_highlight, lsps
 
 def get_sources(destination, model, type):
     """
