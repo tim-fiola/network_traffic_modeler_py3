@@ -236,8 +236,8 @@ for entry in model.parallel_lsp_groups().keys():
     source, dest = entry.split('-')
     lsp_sources.add(source)
     lsp_destinations.add(dest)
-lsp_sources_list = list(demand_sources)
-lsp_destinations_list = list(demand_destinations)
+lsp_sources_list = list(lsp_sources)
+lsp_destinations_list = list(lsp_destinations)
 lsp_sources_list.sort()
 lsp_destinations_list.sort()
 
@@ -392,8 +392,9 @@ app.layout = html.Div(className='content', children=[
               [Input(component_id='cytoscape-prototypes', component_property='selectedEdgeData'),
                Input('utilization-dropdown-callback', 'value'),
                Input('selected-demand-output', 'children'),
-               Input('selected-interface-output', 'children')])
-def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info):
+               Input('selected-interface-output', 'children'),
+               Input('selected-lsp-output', 'children')])
+def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info, selected_lsp_info):
     """
     Updates stylesheet with style for edges_to_highlight that will change line type
     for the edge to dashed and add pink arrows and circles to the demand edges and
@@ -498,7 +499,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 
             new_style.append(new_entry_4)
 
-    # Selected edge differentiation
+    # Selected edge differentiation on weathermap
     if selected_interface_info:
         if no_selected_interface_text not in selected_interface_info:
             selected_interface_info = json.loads(selected_interface_info)
@@ -514,8 +515,34 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 
             new_style.append(new_entry_5)
 
-        return default_stylesheet + new_style
+    if selected_lsp_info:
+        if no_selected_lsp_text not in selected_lsp_info:
+            selected_lsp_info = json.loads(selected_lsp_info)
+            ckt_ids, node_names = get_lsp_interface_data(selected_lsp_info)
 
+            for ckt_id in ckt_ids:
+                new_entry_6 = {
+                    "selector": "edge[circuit_id=\"{}\"]".format(ckt_id),
+                    "style": {
+                        'line-style': 'dotted'
+                    }
+                }
+
+                new_style.append(new_entry_6)
+
+            # Nodes in LSP path have a thick brick red border
+            for node in node_names:
+                new_entry_7 = {
+                    "selector": "node[id=\"{}\"]".format(node),
+                    "style": {
+                        "border-color": "#B40404",
+                        "border-width": "thick"
+                    }
+                }
+
+                new_style.append(new_entry_7)
+
+    return default_stylesheet + new_style
 # TODO - Phase 1 goals
 #  - DONE - highlight selected interface on map somehow
 #  - DONE - Select an interface by either clicking on the map or selecting one from the Demand Paths list
@@ -559,9 +586,9 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
 
     # TODO - need to add 'clear' to options; use buttons
     print("="*15)
-    print('ctx.triggered = {}'.format(ctx.triggered))
+    print('line 589 ctx.triggered = {}'.format(ctx.triggered))
     print()
-    print('ctx.inputs = {}'.format(ctx.inputs))
+    print('line 591 ctx.inputs = {}'.format(ctx.inputs))
     print("-" * 15)
     print()
     print()
@@ -589,8 +616,9 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
 
     elif ctx_src_inputs == None and ctx_dest_inputs != None:
         # No source but specified destination
-        src_list = get_sources(ctx_dest_inputs, model=model, type='lsp')
+        src_list = get_sources(ctx_dest_inputs, model=model, object_type='lsp')
         src_list.sort()
+
         src_options = [{'label': src, 'value': src} for src in src_list]
 
         dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
@@ -609,8 +637,8 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
     elif ctx_src_inputs != None and ctx_dest_inputs == None:
         # Source specified but no destination
         src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
-
-        dest_list = get_destinations(ctx_src_inputs, model=model, type='lsp')
+        print("line 639 ctx_src_inputs = {}".format(ctx_src_inputs))
+        dest_list = get_destinations(ctx_src_inputs, model=model, object_type='lsp')
         dest_list.sort()
         dest_options = [{'label': dest, 'value': dest} for dest in dest_list]
 
@@ -623,6 +651,7 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
             lsp_list += model.parallel_lsp_groups()[dest_key]
 
         # Format lsps for display
+        print("line 652 lsp_list = {}".format(lsp_list))
         lsps = format_objects_for_display(lsp_list)
 
     else:
@@ -680,7 +709,7 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
 
     elif ctx_src_inputs == None and ctx_dest_inputs != None:
         # No source but specified destination
-        src_list = get_sources(ctx_dest_inputs, model=model, type='demand')
+        src_list = get_sources(ctx_dest_inputs, model=model, object_type='demand')
         src_list.sort()
         src_options = [{'label': src, 'value': src} for src in src_list]
 
@@ -701,7 +730,7 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
         # Source specified but no destination
         src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
 
-        dest_list = get_destinations(ctx_src_inputs, model=model, type='demand')
+        dest_list = get_destinations(ctx_src_inputs, model=model, object_type='demand')
         dest_list.sort()
         dest_options = [{'label': dest, 'value': dest} for dest in dest_list]
 
@@ -980,34 +1009,6 @@ def demand_interfaces(demand):
         return ([{'label': selected_demand, 'value': selected_demand}],
                 [{'label': selected_demand, 'value': selected_demand}])
 
-# @app.callback(Output('demand-path-lsps', 'options'),
-#               [Input('selected-demand-output', 'children')])
-# def demand_lsps(demand):
-#
-#     if demand:
-#         if no_selected_demand_text not in demand:
-#             demand = json.loads(demand)
-#             dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
-#             dmd_path = dmd.path
-#             import pdb
-#             pdb.set_trace()
-#             # Find if any LSPs in paths
-# @app.callback(Output('demand-path-lsps', 'options'),
-#               [Input('selected-demand-output', 'children')])
-# def demand_lsps(demand):
-#
-#     if demand:
-#         if no_selected_demand_text not in demand:
-#             demand = json.loads(demand)
-#             dmd =
-#
-#             return dmd_path
-#         else:
-#             selected_demand = no_selected_demand_text
-#             return [{'label': selected_demand, 'value': selected_demand}]
-#     else:
-#         selected_demand = no_selected_demand_text
-#         return [{'label': selected_demand, 'value': selected_demand}]
 
 # #### Utility Functions #### #
 def find_demand_interfaces_and_lsps(dmds):
@@ -1035,33 +1036,33 @@ def find_demand_interfaces_and_lsps(dmds):
                         interfaces_to_highlight.add(interface)
     return interfaces_to_highlight, lsps
 
-def get_sources(destination, model, type):
+def get_sources(destination, model, object_type):
     """
     Returns a list of sources in the model that have
     LSPs or Demands that terminate on the specified destination node.
 
     :param destination: destination for LSPs or demands
     :param model: pyNTM Model object
-    :param type: Either 'demand' or 'lsp'
+    :param object_type: Either 'demand' or 'lsp'
 
     :return: List of sources in the model that have LSPs or demands that are sourced from
     the sources and terminate on the specified destination.
     """
 
-    if type not in ['demand', 'lsp']:
-        msg = "'type' value must be 'demand'|'lsp'"
+    if object_type not in ['demand', 'lsp']:
+        msg = "'object_type' value must be 'demand'|'lsp'"
         raise Exception(msg)
 
-    if type == 'demand':
+    if object_type == 'demand':
         source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-    elif type == 'lsp':
+    elif object_type == 'lsp':
         source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
 
     sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
 
     return sources
 
-def get_destinations(source, model, type):
+def get_destinations(src, model, object_type):
     """
     Returns a list of destinations in the model that have
     LSPs or Demands that originate on the specified source.
@@ -1074,18 +1075,38 @@ def get_destinations(source, model, type):
     the destinations and originate on the specified origin node.
     """
 
-    if type not in ['demand', 'lsp']:
-        msg = "'type' value must be 'demand'|'lsp'"
+    if object_type not in ['demand', 'lsp']:
+        msg = "'object_type' value must be 'demand'|'lsp'"
         raise Exception(msg)
 
-    if type == 'demand':
+    if object_type == 'demand':
         source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-    elif type == 'lsp':
+    elif object_type == 'lsp':
         source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
 
-    destinations = [pair[1] for pair in source_dest_pairs if pair[0] == source]
+    destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
+
+    print("line 1088 destinations = {}".format(destinations))
 
     return destinations
+
+def get_lsp_interface_data(lsp_data):
+    """
+    Gets circuit_id and node info for each lsp in lsp_data
+
+    :param lsp_data:
+    :return: tuple of [list of circuit ids], set(node names)
+    """
+
+    lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
+    lsp_interfaces = lsp.path['interfaces']
+    ckt_ids = [interface.circuit_id for interface in lsp_interfaces]
+    nodes = set()
+    for interface in lsp_interfaces:
+        nodes.add(interface.node_object.name)
+        nodes.add(interface.remote_node_object.name)
+    return ckt_ids, nodes
+
 
 
 app.run_server(debug=True)
