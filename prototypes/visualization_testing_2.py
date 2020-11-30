@@ -356,7 +356,7 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='Interface Info', children=[
+            dcc.Tab(label='Interface Demands', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.RadioItems(
                         id='interface-demand-callback',
