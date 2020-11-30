@@ -321,7 +321,7 @@ app.layout = html.Div(className='content', children=[
                     multi=True,
                 )
             ]),
-            dcc.Tab(label='Demand Interfaces', children=[
+            dcc.Tab(label='Demand to Interfaces', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.RadioItems(
                         id='demand-path-interfaces',
@@ -330,7 +330,7 @@ app.layout = html.Div(className='content', children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Demand LSPs', children=[
+            dcc.Tab(label='Demand to LSPs', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.RadioItems(
                         id='demand-path-lsps',
@@ -356,7 +356,7 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='Interface Demands', children=[
+            dcc.Tab(label='Interface to Demands', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.RadioItems(
                         id='interface-demand-callback',
@@ -382,7 +382,7 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='LSP Demands', children=[
+            dcc.Tab(label='LSP to Demands', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.RadioItems(
                         id='lsp-demand-callback',
@@ -390,7 +390,16 @@ app.layout = html.Div(className='content', children=[
                         style=styles_2['json-output']
                     ),
                 ]),
-            ])
+            ]),
+            dcc.Tab(label='LSP to Interfaces', children=[
+                html.Div(style=styles_2['tab'], children=[
+                    dcc.RadioItems(
+                        id='lsp-interface-callback',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    ),
+                ]),
+            ]),
        ]),
     ])
 ])
