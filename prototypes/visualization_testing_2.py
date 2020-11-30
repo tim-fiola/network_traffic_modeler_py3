@@ -381,6 +381,15 @@ app.layout = html.Div(className='content', children=[
                         style=styles_2['json-output']
                     ),
                 ]),
+            ]),
+            dcc.Tab(label='LSP Demands', children=[
+                html.Div(style=styles_2['tab'], children=[
+                    dcc.RadioItems(
+                        id='lsp-demand-callback',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    ),
+                ]),
             ])
        ]),
     ])
@@ -518,29 +527,47 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
     if selected_lsp_info:
         if no_selected_lsp_text not in selected_lsp_info:
             selected_lsp_info = json.loads(selected_lsp_info)
-            ckt_ids, node_names = get_lsp_interface_data(selected_lsp_info)
+            lsp_interfaces, node_names = get_lsp_interface_data(selected_lsp_info)
 
-            for ckt_id in ckt_ids:
+            for interface in lsp_interfaces :
                 new_entry_6 = {
-                    "selector": "edge[circuit_id=\"{}\"]".format(ckt_id),
+                    "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                                interface.node_object.name),
                     "style": {
-                        'line-style': 'dotted'
+                        'line-style': 'dashed',
+                        'target-arrow-shape': 'chevron',
+                        'arrow-scale': '2',
+                        'target-arrow-color': "#B40404"
                     }
                 }
 
                 new_style.append(new_entry_6)
 
-            # Nodes in LSP path have a thick brick red border
-            for node in node_names:
+
                 new_entry_7 = {
-                    "selector": "node[id=\"{}\"]".format(node),
+                    "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                                interface.remote_node_object.name),
                     "style": {
-                        "border-color": "#B40404",
-                        "border-width": "thick"
+                        'line-style': 'dashed',
+                        'source-arrow-shape': 'chevron',
+                        'arrow-scale': '2',
+                        'source-arrow-color': "#B40404"
                     }
                 }
 
                 new_style.append(new_entry_7)
+
+            # Nodes in LSP path have a thick brick red border
+            for node in node_names:
+                new_entry_8 = {
+                    "selector": "node[id=\"{}\"]".format(node),
+                    "style": {
+                        "border-color": "#B40404",
+                        "border-width": "4px"
+                    }
+                }
+
+                new_style.append(new_entry_8)
 
     return default_stylesheet + new_style
 # TODO - Phase 1 goals
@@ -1100,12 +1127,11 @@ def get_lsp_interface_data(lsp_data):
 
     lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
     lsp_interfaces = lsp.path['interfaces']
-    ckt_ids = [interface.circuit_id for interface in lsp_interfaces]
     nodes = set()
     for interface in lsp_interfaces:
         nodes.add(interface.node_object.name)
         nodes.add(interface.remote_node_object.name)
-    return ckt_ids, nodes
+    return lsp_interfaces, nodes
 
 
 
