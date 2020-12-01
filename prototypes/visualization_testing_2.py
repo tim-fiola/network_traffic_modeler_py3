@@ -7,6 +7,8 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 
+from dash.exceptions import PreventUpdate
+
 from pyNTM import RSVP_LSP
 from pyNTM import Demand
 
@@ -321,6 +323,23 @@ app.layout = html.Div(className='content', children=[
                     multi=True,
                 )
             ]),
+            dcc.Tab(label='Find Demands', children=[
+                html.Div(style=styles_2['tab'], children=[
+                    html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
+                           " selection menu"),
+                    dcc.Dropdown(
+                        id='demand-source-callback', placeholder='Select a source node',
+                    ),
+                    dcc.Dropdown(
+                        id='demand-destination-callback', placeholder='Select a dest node',
+                    ),
+                    dcc.RadioItems(
+                        id='find-demands-callback',
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output']
+                    ),
+                ]),
+            ]),
             dcc.Tab(label='Demand to Interfaces', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.RadioItems(
@@ -339,21 +358,16 @@ app.layout = html.Div(className='content', children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Find Demands', children=[
+            dcc.Tab(label='Find Interfaces on Node', children=[
                 html.Div(style=styles_2['tab'], children=[
-                    html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
-                           " selection menu"),
                     dcc.Dropdown(
-                        id='demand-source-callback', placeholder='Select a source node',
-                    ),
-                    dcc.Dropdown(
-                        id='demand-destination-callback', placeholder='Select a dest node',
+                        id='find-node', placeholder="Select a node by name"
                     ),
                     dcc.RadioItems(
-                        id='find-demands-callback',
+                        id='interfaces-on-node',
                         labelStyle={'display': 'inline-block'},
                         style=styles_2['json-output']
-                    ),
+                    )
                 ]),
             ]),
             dcc.Tab(label='Interface to Demands', children=[
@@ -364,6 +378,15 @@ app.layout = html.Div(className='content', children=[
                         style=styles_2['json-output']
                     ),
                 ]),
+            ]),
+            dcc.Tab(label="Interface to LSPs", children=[
+                html.Div(style=styles_2['tab'], children=[
+                    dcc.RadioItems(
+                        id="interface-lsp-callback",
+                        labelStyle={'display': 'inline-block'},
+                        style=styles_2['json-output'],
+                    )
+                ])
             ]),
             dcc.Tab(label='Find LSPs', children=[
                 html.Div(style=styles_2['tab'], children=[
@@ -703,6 +726,32 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
     return src_options, dest_options, lsps
 
 
+# Callback to find LSPs that carry the selected_demand
+# @app.callback(Output('demand-path-lsps', 'options'),
+#               [Input('selected-demand-output', 'children')])
+# def display_lsps_for_demand(selected_demand):
+#     """
+#     Finds LSPs that may carry selected_demand
+#     :param selected_demand:
+#     :return:
+#     """
+#
+#     # Get demand object
+#     dmd = model.get_demand_object(selected_demand['source'], selected_demand['dest'], selected_demand['name'])
+#
+#     all_path_lsps = set()
+#
+#     for path in dmd.path:
+#         lsps_on_path = [item for item in path if isinstance(item, RSVP_LSP)]
+#         all_path_lsps.add(lsps_on_path)
+#
+#     if not all_path_lsps:
+#         raise PreventUpdate
+#     else:
+#         lsps = format_objects_for_display(list(all_path_lsps))
+#         return lsps
+
+
 # Adaptive source/dest dropdowns for demands; will alter what they show based on what
 # the other shows, so they will only show existing source/dest possibilities
 @app.callback([Output('demand-source-callback', 'options'),
@@ -1026,14 +1075,11 @@ def demand_interfaces(demand):
                 int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
                 interfaces_list.append(int_info)
 
-            lsp_list = []
-            for lsp in dmd_lsps:
-                lsp_source_node_name = lsp.source_node_object.name
-                lsp_dest_node_name = lsp.dest_node_object.name
-                lsp_name = lsp.lsp_name
-                lsp_dict = {'source': lsp_source_node_name, 'dest': lsp_dest_node_name, 'name': lsp_name}
-                lsp_info = {'label': lsp.__repr__(), 'value': json.dumps(lsp_dict)}
-                lsp_list.append(lsp_info)
+            if not dmd_lsps:
+                lsp_list = [{'label': 'Demand does not take LSPs', 'value': ''}]
+            else:
+                lsp_list = format_objects_for_display(list(dmd_lsps))
+
 
             return interfaces_list, lsp_list
         else:
