@@ -361,7 +361,8 @@ app.layout = html.Div(className='content', children=[
             dcc.Tab(label='Find Interfaces on Node', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.Dropdown(
-                        id='find-node', placeholder="Select a node by name"
+                        id='find-node', placeholder="Select a node by name",
+                        options=[{'label': node.name, 'value': node.name} for node in model.node_objects]
                     ),
                     dcc.RadioItems(
                         id='interfaces-on-node',
@@ -426,6 +427,23 @@ app.layout = html.Div(className='content', children=[
        ]),
     ])
 ])
+
+# Def to list Node name dropdown
+@app.callback(Output('interfaces-on-node', 'options'),
+              [Input('find-node', 'value')])
+def interfaces_on_node(node):
+
+    if(node):
+        node = model.get_node_object(node)
+        interfaces_on_node = node.interfaces(model)
+
+        import pdb
+        pdb.set_trace()
+
+
+
+
+
 
 
 # Need to select interfaces that have utilization ranges selected in values from dropdown
@@ -644,14 +662,6 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
     ctx = dash.callback_context
 
     # TODO - need to add 'clear' to options; use buttons
-    print("="*15)
-    print('line 589 ctx.triggered = {}'.format(ctx.triggered))
-    print()
-    print('line 591 ctx.inputs = {}'.format(ctx.inputs))
-    print("-" * 15)
-    print()
-    print()
-    print()
 
     # Get source and destination info from the dropdowns
     ctx_src_inputs = ctx.inputs['lsp-source-callback.value']
