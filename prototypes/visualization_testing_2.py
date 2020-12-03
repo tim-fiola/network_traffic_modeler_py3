@@ -437,14 +437,12 @@ def interfaces_on_node(node):
         node = model.get_node_object(node)
         interfaces_on_node = node.interfaces(model)
 
-        import pdb
-        pdb.set_trace()
+        interface_info_to_display = format_interfaces_for_display(interfaces_on_node)
 
+        return interface_info_to_display
 
-
-
-
-
+    else:
+        raise PreventUpdate
 
 # Need to select interfaces that have utilization ranges selected in values from dropdown
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
@@ -954,8 +952,9 @@ def display_selected_lsp(path_lsps, find_lsps):
 # def that displays info about the selected edge and updates selected_interface
 @app.callback(Output('selected-interface-output', 'children'),
               [Input('cytoscape-prototypes', 'selectedEdgeData'),
-               Input('demand-path-interfaces', 'value')])
-def display_selected_edge(data, demand_interface):
+               Input('demand-path-interfaces', 'value'),
+               Input('interfaces-on-node', 'value')])
+def display_selected_edge(data, demand_interface, node_interface):
     """
 
     :param data: list consisting of a single dict containing info about the edge/interface
@@ -976,7 +975,7 @@ def display_selected_edge(data, demand_interface):
                     'utilization %': int_data['utilization'], 'cost': int_data['cost']}
         # Convert dict to string for return
         selected_interface = json.dumps(int_info)
-    elif ctx.triggered[0]['prop_id'] == 'demand-path-interfaces.value':
+    elif ctx.triggered[0]['prop_id'] != '.':
         print(type(ctx.triggered[0]))
         print("ctx.triggered[0] = {}".format(ctx.triggered[0]))
         if ctx.triggered[0]['value'] == no_selected_demand_text:
@@ -1073,17 +1072,7 @@ def demand_interfaces(demand):
             demand = json.loads(demand)
             dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
             dmd_ints, dmd_lsps = find_demand_interfaces_and_lsps([dmd])
-            interfaces_list = []
-            for interface in dmd_ints:
-                source_node_name = interface.node_object.name
-                dest_node_name = interface.remote_node_object.name
-                name = interface.name
-                circuit_id = interface.circuit_id
-                cost = interface.cost
-                int_dict = {'source': source_node_name, 'interface-name': name,
-                            'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
-                int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
-                interfaces_list.append(int_info)
+            interfaces_list = format_interfaces_for_display(dmd_ints)
 
             if not dmd_lsps:
                 lsp_list = [{'label': 'Demand does not take LSPs', 'value': ''}]
@@ -1100,6 +1089,27 @@ def demand_interfaces(demand):
         selected_demand = no_selected_demand_text
         return ([{'label': selected_demand, 'value': selected_demand}],
                 [{'label': selected_demand, 'value': selected_demand}])
+
+
+def format_interfaces_for_display(interface_list):
+    """
+    Reformats information about Interface objects for display
+
+    :param interface_list: list of Interface objects
+    :return: list of dict entries with interface information
+    """
+    interfaces_list = []
+    for interface in interface_list:
+        source_node_name = interface.node_object.name
+        dest_node_name = interface.remote_node_object.name
+        name = interface.name
+        circuit_id = interface.circuit_id
+        cost = interface.cost
+        int_dict = {'source': source_node_name, 'interface-name': name,
+                    'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
+        int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
+        interfaces_list.append(int_info)
+    return interfaces_list
 
 
 # #### Utility Functions #### #
