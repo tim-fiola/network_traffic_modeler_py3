@@ -451,6 +451,7 @@ def interfaces_on_node(node):
     else:
         raise PreventUpdate
 
+
 # Need to select interfaces that have utilization ranges selected in values from dropdown
 @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
               [Input(component_id='cytoscape-prototypes', component_property='selectedEdgeData'),
@@ -936,8 +937,9 @@ def format_objects_for_display(object_list):
 # def that displays info about selected LSP
 @app.callback(Output('selected-lsp-output', 'children'),
               [Input('demand-path-lsps', 'value'),
-               Input('find-lsps-callback', 'value')])
-def display_selected_lsp(path_lsps, find_lsps):
+               Input('find-lsps-callback', 'value'),
+               Input('interface-lsp-callback', 'value')])
+def display_selected_lsp(path_lsps, find_lsps, interface_lsps):
     """
 
     :param path_lsps:
@@ -947,7 +949,9 @@ def display_selected_lsp(path_lsps, find_lsps):
     ctx = dash.callback_context
     print('ctx.triggered line 819 = {}'.format(ctx.triggered))
 
-    if ctx.triggered[0]['value'] is None:
+    if ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
+        selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
+    elif ctx.triggered[0]['value'] in ['no demand selected', 'no int selected']:
         selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
     else:
         selected_lsp = ctx.triggered[0]['value']
@@ -1036,6 +1040,38 @@ def display_selected_demand_data(int_demand, src_dest_demand):
         # TODO - do a PreventUpdate here: https://dash.plotly.com/advanced-callbacks
         return json.dumps({'label': no_selected_demand_text, 'value': ''})
 
+# Def that finds and displays LSPs on the selected_interface
+@app.callback(Output('interface-lsp-callback', 'options'),
+              [Input('selected-interface-output', 'children')])
+def lsps_on_interface(interface_info):
+    """
+
+    :param interface_info: serialized dict info about the interface
+    :return: LSPs on the interface
+    """
+
+    if interface_info and no_selected_interface_text not in interface_info:
+        int_dict = json.loads(interface_info)
+        interface = model.get_interface_object(int_dict['interface-name'], int_dict['source'])
+        lsps = interface.lsps(model)
+        if len(lsps) == 0:
+            return [{'label': 'no lsps on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
+
+        lsps_on_interface = format_objects_for_display(lsps)
+        # for lsp in lsps:
+        #     # Return the demand's value as a dict with demand info (dmd_info)
+        #     src = lsp.source_node_object.name
+        #     dest = lsp.dest_node_object.name
+        #     name = lsp.lsp_name
+        #     lsp_info = {'source': src, 'dest': dest, 'name': name}
+        #     lsps_on_interface.append({"label": lsp.__repr__(), "value": json.dumps(lsp_info)})
+        return lsps_on_interface
+
+    else:
+        return [{"label": no_selected_interface_text, "value": ''}]
+
+
+
 # def that finds and displays demands on the selected interface
 @app.callback(Output('interface-demand-callback', 'options'),
               [Input('selected-interface-output', 'children')])
@@ -1054,16 +1090,8 @@ def demands_on_interface(interface_info):
         if len(demands) == 0:
             return [{'label': 'no demands on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
-        demands_on_interface = []
-        for demand in demands:
-            # Return the demand's value as a dict with demand info (dmd_info)
-            src = demand.source_node_object.name
-            dest = demand.dest_node_object.name
-            name = demand.name
-            dmd_info = {'source': src, 'dest': dest, 'name': name}
-            demands_on_interface.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
+        demands_on_interface = format_objects_for_display(demands)
         return demands_on_interface
-
     else:
         return [{"label": no_selected_interface_text, "value": ''}]
 
