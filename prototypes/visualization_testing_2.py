@@ -248,6 +248,10 @@ no_selected_interface_text = 'no int selected'
 no_selected_demand_text = 'no demand selected'
 no_selected_lsp_text = 'no lsp selected'
 
+# Node list
+node_names = [node.name for node in model.node_objects]
+node_names.sort()
+node_list = [{'label': name, 'value': name} for name in node_names]
 
 styles_2 = {
     "content": {
@@ -362,7 +366,7 @@ app.layout = html.Div(className='content', children=[
                 html.Div(style=styles_2['tab'], children=[
                     dcc.Dropdown(
                         id='find-node', placeholder="Select a node by name",
-                        options=[{'label': node.name, 'value': node.name} for node in model.node_objects]
+                        options=node_list
                     ),
                     dcc.RadioItems(
                         id='interfaces-on-node',
@@ -851,37 +855,37 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
     return src_options, dest_options, demands
 
 
-def format_dmds_for_display(demand_list):
-    """
-    Takes a list of demand objects and returns a list of demand info that can
-    be displayed in visualization menus.
-
-    :param demand_list: list of Demand objects
-    :return: List of info about each demand.  Each list entry is a dict with 'label' and
-    'value' keys
-
-    Example Input::
-        [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
-        Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
-
-    Example Output::
-        [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
-        'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
-        {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
-        'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
-
-    """
-
-    # Initialize demand list
-    demands = []
-    for demand in demand_list:
-        # Return the demand's value as a dict with demand info (dmd_info)
-        src = demand.source_node_object.name
-        dest = demand.dest_node_object.name
-        name = demand.name
-        dmd_info = {'source': src, 'dest': dest, 'name': name}
-        demands.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
-    return demands
+# def format_dmds_for_display(demand_list):  # TODO - delete this
+#     """
+#     Takes a list of demand objects and returns a list of demand info that can
+#     be displayed in visualization menus.
+#
+#     :param demand_list: list of Demand objects
+#     :return: List of info about each demand.  Each list entry is a dict with 'label' and
+#     'value' keys
+#
+#     Example Input::
+#         [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
+#         Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
+#
+#     Example Output::
+#         [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
+#         'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
+#         {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
+#         'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
+#
+#     """
+#
+#     # Initialize demand list
+#     demands = []
+#     for demand in demand_list:
+#         # Return the demand's value as a dict with demand info (dmd_info)
+#         src = demand.source_node_object.name
+#         dest = demand.dest_node_object.name
+#         name = demand.name
+#         dmd_info = {'source': src, 'dest': dest, 'name': name}
+#         demands.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
+#     return demands
 
 def format_objects_for_display(object_list):
     """
