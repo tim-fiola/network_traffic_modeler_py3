@@ -293,9 +293,12 @@ styles_2 = {
         'border': 'thin lightgrey solid',
         'line-height': '1.5'
     },
-    'tab': {'height': 'calc(98vh - 115px)'}
+    'tab': {'height': 'calc(98vh - 115px)',
+            'width': '95%'}
 
 }
+
+# TODO - keep the tab width and height the same no matter which tab is selected
 
 # Check here for layout example: https://stackoverflow.com/questions/56175268/how-to-properly-add-style-to-my-dash-app
 
