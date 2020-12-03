@@ -973,6 +973,8 @@ def display_selected_edge(data, demand_interface, node_interface):
 
     ctx = dash.callback_context
 
+    print("line 976 ctx.triggered[0] = {}".format(ctx.triggered[0]))
+
     if ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData' and \
             len(ctx.triggered[0]['value']) > 0:
         # If trigger is 'cytoscape-prototypes.selectedEdgeData' and
@@ -986,8 +988,7 @@ def display_selected_edge(data, demand_interface, node_interface):
         # Convert dict to string for return
         selected_interface = json.dumps(int_info)
     elif ctx.triggered[0]['prop_id'] != '.':
-        print(type(ctx.triggered[0]))
-        print("ctx.triggered[0] = {}".format(ctx.triggered[0]))
+        # No interface has been selected
         if ctx.triggered[0]['value'] == no_selected_demand_text:
             selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
         else:
@@ -999,8 +1000,8 @@ def display_selected_edge(data, demand_interface, node_interface):
                             'utilization %': util, 'cost': int_data['cost']}
                 # Convert dict to string for return
                 selected_interface = json.dumps(int_info)
-                print("selected_interface line 550 = {}".format(selected_interface))
     else:
+        # No int selected
         selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
 
     return selected_interface
