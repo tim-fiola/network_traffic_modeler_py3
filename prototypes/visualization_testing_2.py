@@ -947,18 +947,17 @@ def display_selected_lsp(path_lsps, find_lsps, interface_lsps):
     :return:
     """
     ctx = dash.callback_context
-    print('ctx.triggered line 819 = {}'.format(ctx.triggered))
 
     if ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
         selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
-    elif ctx.triggered[0]['value'] in ['no demand selected', 'no int selected']:
+    elif ctx.triggered[0]['value'] in [no_selected_demand_text, no_selected_interface_text]:
         selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
+    elif ctx.triggered[0]['value'] == json.dumps([{"source": "", "dest": "", "name": ""}]):
+        raise PreventUpdate
     else:
         selected_lsp = ctx.triggered[0]['value']
 
     return selected_lsp
-
-
 
 # def that displays info about the selected edge and updates selected_interface
 @app.callback(Output('selected-interface-output', 'children'),
