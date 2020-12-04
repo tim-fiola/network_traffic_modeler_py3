@@ -964,10 +964,8 @@ def display_selected_edge(data, demand_interface, node_interface):
         if ctx.triggered[0]['value'] == no_selected_demand_text:
             selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
         elif ctx.triggered[0]['value'] == []:
-            print('update prevented')
             raise PreventUpdate
         else:
-            print("line 997 ctx.triggered[0] = {}".format(ctx.triggered[0]))
             int_data = json.loads(ctx.triggered[0]['value'])
             if no_selected_demand_text not in int_data:
                 util = model.get_interface_object(int_data['interface-name'], int_data['source']).utilization
