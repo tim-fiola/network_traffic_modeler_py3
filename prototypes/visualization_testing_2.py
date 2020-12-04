@@ -485,12 +485,6 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 
         new_style.append(new_entry)
 
-    # If empty space is selected, remove demand path formatting
-    # if not(data):
-    #     return default_stylesheet + new_style
-    print("selected_demand_info line 379 = {}".format(selected_demand_info))
-    print()
-
     # Demand source and destination path visualization
     if selected_demand_info is not None and \
             selected_demand_info != '' and \
@@ -712,7 +706,6 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
     elif ctx_src_inputs != None and ctx_dest_inputs == None:
         # Source specified but no destination
         src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
-        print("line 639 ctx_src_inputs = {}".format(ctx_src_inputs))
         dest_list = get_destinations(ctx_src_inputs, model=model, object_type='lsp')
         dest_list.sort()
         dest_options = [{'label': dest, 'value': dest} for dest in dest_list]
@@ -726,18 +719,11 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
             lsp_list += model.parallel_lsp_groups()[dest_key]
 
         # Format lsps for display
-        print("line 652 lsp_list = {}".format(lsp_list))
         lsps = format_objects_for_display(lsp_list)
 
     else:
         msg = "Debug output: unaccounted for scenario in display_lsp_dropdowns"
         raise Exception(msg)
-
-    print('src_options = {}'.format(src_options))
-    print('dest_options = {}'.format(dest_options))
-    print('lsps = {}'.format(lsps))
-    print()
-    print()
 
     return src_options, dest_options, lsps
 
@@ -779,14 +765,6 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
     ctx = dash.callback_context
 
     # TODO - need to add 'clear' to options; use buttons
-    print("="*15)
-    print('ctx.triggered = {}'.format(ctx.triggered))
-    print()
-    print('ctx.inputs = {}'.format(ctx.inputs))
-    print("-" * 15)
-    print()
-    print()
-    print()
 
     # Get source and destination info from the dropdowns
     ctx_src_inputs = ctx.inputs['demand-source-callback.value']
@@ -849,12 +827,6 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
     else:
         msg = "Debug output: unaccounted for scenario in display_demand_dropdowns"
         raise Exception(msg)
-
-    print('src_options = {}'.format(src_options))
-    print('dest_options = {}'.format(dest_options))
-    print('demands = {}'.format(demands))
-    print()
-    print()
 
     return src_options, dest_options, demands
 
@@ -973,7 +945,7 @@ def display_selected_edge(data, demand_interface, node_interface):
 
     ctx = dash.callback_context
 
-    print("line 976 ctx.triggered[0] = {}".format(ctx.triggered[0]))
+    print("line 948 ctx.triggered[0] = {}".format(ctx.triggered[0]))
 
     if ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData' and \
             len(ctx.triggered[0]['value']) > 0:
@@ -991,7 +963,11 @@ def display_selected_edge(data, demand_interface, node_interface):
         # No interface has been selected
         if ctx.triggered[0]['value'] == no_selected_demand_text:
             selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
+        elif ctx.triggered[0]['value'] == []:
+            print('update prevented')
+            raise PreventUpdate
         else:
+            print("line 997 ctx.triggered[0] = {}".format(ctx.triggered[0]))
             int_data = json.loads(ctx.triggered[0]['value'])
             if no_selected_demand_text not in int_data:
                 util = model.get_interface_object(int_data['interface-name'], int_data['source']).utilization
@@ -1014,31 +990,16 @@ def display_selected_demand_data(int_demand, src_dest_demand):
 
     ctx = dash.callback_context
 
-    print('ctx.triggered = {}'.format(ctx.triggered))
-
-    demand = ctx.triggered[0]['value']
-
-    print("demand line 512 = {}".format(demand))
-    if demand:
-        print("demand line 514 = {}".format(demand))
-
-        # Convert text to json
-        demand = json.loads(demand)
-
-        if demand != [{'source': '', 'dest': '', 'name': ''}]:
-
-            print("line 526 - demand = {}".format(demand))
-
-            # Have to do this, otherwise json.dumps comes out with escapes (\) before all the double quotes
-
-            demand_info = {'source': demand['source'], 'dest': demand['dest'], 'name': demand['name']}
-            selected_demand = json.dumps(demand_info)
-            return selected_demand
-        else:
-            return json.dumps({'label': no_selected_demand_text, 'value': ''})
+    if ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
+        selected_demand = json.dumps({'label': no_selected_demand_text, 'value': ''})
+    elif ctx.triggered[0]['value'] in [no_selected_lsp_text, no_selected_interface_text]:
+        selected_demand = json.dumps({'label': no_selected_demand_text, 'value': ''})
+    elif ctx.triggered[0]['value'] == json.dumps([{"source": "", "dest": "", "name": ""}]):
+        raise PreventUpdate
     else:
-        # TODO - do a PreventUpdate here: https://dash.plotly.com/advanced-callbacks
-        return json.dumps({'label': no_selected_demand_text, 'value': ''})
+        selected_demand = ctx.triggered[0]['value']
+
+    return selected_demand
 
 # Def that finds and displays LSPs on the selected_interface
 @app.callback(Output('interface-lsp-callback', 'options'),
@@ -1058,13 +1019,6 @@ def lsps_on_interface(interface_info):
             return [{'label': 'no lsps on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
         lsps_on_interface = format_objects_for_display(lsps)
-        # for lsp in lsps:
-        #     # Return the demand's value as a dict with demand info (dmd_info)
-        #     src = lsp.source_node_object.name
-        #     dest = lsp.dest_node_object.name
-        #     name = lsp.lsp_name
-        #     lsp_info = {'source': src, 'dest': dest, 'name': name}
-        #     lsps_on_interface.append({"label": lsp.__repr__(), "value": json.dumps(lsp_info)})
         return lsps_on_interface
 
     else:
@@ -1222,8 +1176,6 @@ def get_destinations(src, model, object_type):
         source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
 
     destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
-
-    print("line 1088 destinations = {}".format(destinations))
 
     return destinations
 
