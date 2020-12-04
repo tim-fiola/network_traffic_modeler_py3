@@ -876,8 +876,9 @@ def display_selected_lsp(path_lsps, find_lsps, interface_lsps):
 @app.callback(Output('selected-interface-output', 'children'),
               [Input('cytoscape-prototypes', 'selectedEdgeData'),
                Input('demand-path-interfaces', 'value'),
-               Input('interfaces-on-node', 'value')])
-def display_selected_edge(data, demand_interface, node_interface):
+               Input('interfaces-on-node', 'value'),
+               Input('lsp-interface-callback', 'value')])
+def display_selected_edge(data, demand_interface, node_interface, lsp_interface):
     """
 
     :param data: list consisting of a single dict containing info about the edge/interface
@@ -1012,7 +1013,8 @@ def demands_on_lsp(lsp_info):
         return [{"label": no_selected_lsp_text, "value": ''}]
 
 
-# def that finds and displays interfaces on selected_demand's path
+# def that finds and displays interfaces and LSPson selected_demand's path;
+# this def updates both the 'Demand to Interfaces' and 'Demand to LSPs' tabs
 @app.callback([Output('demand-path-interfaces', 'options'),
                Output('demand-path-lsps', 'options')],
               [Input('selected-demand-output', 'children')])
@@ -1041,6 +1043,24 @@ def demand_interfaces(demand):
         return ([{'label': selected_demand, 'value': selected_demand}],
                 [{'label': selected_demand, 'value': selected_demand}])
 
+
+# def that finds and displays interfaces on selected_lsp's path
+@app.callback(Output('lsp-interface-callback', 'options'),
+              [Input('selected-lsp-output', 'children')])
+def lsp_interfaces(lsp):
+    if lsp:
+        if no_selected_lsp_text not in lsp:
+            lsp = json.loads(lsp)
+            lsp = model.get_rsvp_lsp(lsp['source'], lsp['dest'], lsp['name'])
+            lsp_interfaces = lsp.path['interfaces']
+
+            interfaces_list = format_interfaces_for_display(lsp_interfaces)
+
+            return interfaces_list
+        else:
+            return ([{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}])
+    else:
+        return ([{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}])
 
 def format_interfaces_for_display(interface_list):
     """
