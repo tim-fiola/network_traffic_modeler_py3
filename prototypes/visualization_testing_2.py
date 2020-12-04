@@ -727,33 +727,6 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
 
     return src_options, dest_options, lsps
 
-
-# Callback to find LSPs that carry the selected_demand
-# @app.callback(Output('demand-path-lsps', 'options'),
-#               [Input('selected-demand-output', 'children')])
-# def display_lsps_for_demand(selected_demand):
-#     """
-#     Finds LSPs that may carry selected_demand
-#     :param selected_demand:
-#     :return:
-#     """
-#
-#     # Get demand object
-#     dmd = model.get_demand_object(selected_demand['source'], selected_demand['dest'], selected_demand['name'])
-#
-#     all_path_lsps = set()
-#
-#     for path in dmd.path:
-#         lsps_on_path = [item for item in path if isinstance(item, RSVP_LSP)]
-#         all_path_lsps.add(lsps_on_path)
-#
-#     if not all_path_lsps:
-#         raise PreventUpdate
-#     else:
-#         lsps = format_objects_for_display(list(all_path_lsps))
-#         return lsps
-
-
 # Adaptive source/dest dropdowns for demands; will alter what they show based on what
 # the other shows, so they will only show existing source/dest possibilities
 @app.callback([Output('demand-source-callback', 'options'),
@@ -830,38 +803,6 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
 
     return src_options, dest_options, demands
 
-
-# def format_dmds_for_display(demand_list):  # TODO - delete this
-#     """
-#     Takes a list of demand objects and returns a list of demand info that can
-#     be displayed in visualization menus.
-#
-#     :param demand_list: list of Demand objects
-#     :return: List of info about each demand.  Each list entry is a dict with 'label' and
-#     'value' keys
-#
-#     Example Input::
-#         [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
-#         Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
-#
-#     Example Output::
-#         [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
-#         'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
-#         {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
-#         'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
-#
-#     """
-#
-#     # Initialize demand list
-#     demands = []
-#     for demand in demand_list:
-#         # Return the demand's value as a dict with demand info (dmd_info)
-#         src = demand.source_node_object.name
-#         dest = demand.dest_node_object.name
-#         name = demand.name
-#         dmd_info = {'source': src, 'dest': dest, 'name': name}
-#         demands.append({"label": demand.__repr__(), "value": json.dumps(dmd_info)})
-#     return demands
 
 def format_objects_for_display(object_list):
     """
@@ -983,8 +924,9 @@ def display_selected_edge(data, demand_interface, node_interface):
 # def that displays info about the selected demand and updates selected_demand
 @app.callback(Output('selected-demand-output', 'children'),
               [Input('interface-demand-callback', 'value'),
-               Input('find-demands-callback', 'value')])
-def display_selected_demand_data(int_demand, src_dest_demand):
+               Input('find-demands-callback', 'value'),
+               Input('lsp-demand-callback', 'value')])
+def display_selected_demand_data(int_demand, src_dest_demand, dmd_on_lsp):
 
     ctx = dash.callback_context
 
@@ -1022,8 +964,6 @@ def lsps_on_interface(interface_info):
     else:
         return [{"label": no_selected_interface_text, "value": ''}]
 
-
-
 # def that finds and displays demands on the selected interface
 @app.callback(Output('interface-demand-callback', 'options'),
               [Input('selected-interface-output', 'children')])
@@ -1046,6 +986,30 @@ def demands_on_interface(interface_info):
         return demands_on_interface
     else:
         return [{"label": no_selected_interface_text, "value": ''}]
+
+
+# def that finds and displays demands on the selected interface
+@app.callback(Output('lsp-demand-callback', 'options'),
+              [Input('selected-lsp-output', 'children')])
+def demands_on_lsp(lsp_info):
+    """
+
+
+    :param interface_info: serialized dict info about the interface
+    :return: Demands on the interface
+    """
+
+    if lsp_info and no_selected_lsp_text not in lsp_info:
+        lsp_dict = json.loads(lsp_info)
+        lsp = model.get_rsvp_lsp(lsp_dict['source'], lsp_dict['dest'], lsp_dict['name'])
+        demands = lsp.demands_on_lsp(model)
+        if len(demands) == 0:
+            return [{'label': 'no demands on lsp', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
+
+        demands_on_lsp = format_objects_for_display(demands)
+        return demands_on_lsp
+    else:
+        return [{"label": no_selected_lsp_text, "value": ''}]
 
 
 # def that finds and displays interfaces on selected_demand's path
