@@ -293,9 +293,8 @@ styles_2 = {
         'border': 'thin lightgrey solid',
         'line-height': '1.5'
     },
-    'tab': {'height': 'calc(98vh - 115px)',
-            'width': '95%'}
-
+    'tab': {'height': '75px',
+            'width': '200px'},
 }
 
 # TODO - keep the tab width and height the same no matter which tab is selected
@@ -323,15 +322,15 @@ app.layout = html.Div(className='content', children=[
         html.P("Selected RSVP LSP:"),
         html.P(id='selected-lsp-output', style=styles_2['json-output']),
         dcc.Tabs(id='tabs', vertical=True, children=[
-            dcc.Tab(label='Utilization Visualization Dropdown', children=[
+            dcc.Tab(label='Utilization Visualization', style=styles_2['tab'], children=[
                 dcc.Dropdown(
                     id='utilization-dropdown-callback', options=util_display_options,
                     value=[entry['value'] for entry in util_display_options],
                     multi=True,
                 )
             ]),
-            dcc.Tab(label='Find Demands', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='Find Demands', style=styles_2['tab'], children=[
+                html.Div(children=[
                     html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                            " selection menu"),
                     dcc.Dropdown(
@@ -347,8 +346,8 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='Demand to Interfaces', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='Demand to Interfaces', style=styles_2['tab'], children=[
+                html.Div(children=[
                     dcc.RadioItems(
                         id='demand-path-interfaces',
                         labelStyle={'display': 'inline-block'},
@@ -356,8 +355,8 @@ app.layout = html.Div(className='content', children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Demand to LSPs', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='Demand to LSPs', style=styles_2['tab'], children=[
+                html.Div(children=[
                     dcc.RadioItems(
                         id='demand-path-lsps',
                         labelStyle={'display': 'inline-block'},
@@ -365,8 +364,8 @@ app.layout = html.Div(className='content', children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Find Interfaces on Node', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='Find Interfaces on Node', style=styles_2['tab'], children=[
+                html.Div(children=[
                     dcc.Dropdown(
                         id='find-node', placeholder="Select a node by name",
                         options=node_list
@@ -378,8 +377,8 @@ app.layout = html.Div(className='content', children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Interface to Demands', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='Interface to Demands', style=styles_2['tab'], children=[
+                html.Div(children=[
                     dcc.RadioItems(
                         id='interface-demand-callback',
                         labelStyle={'display': 'inline-block'},
@@ -387,8 +386,8 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label="Interface to LSPs", children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label="Interface to LSPs", style=styles_2['tab'], children=[
+                html.Div(children=[
                     dcc.RadioItems(
                         id="interface-lsp-callback",
                         labelStyle={'display': 'inline-block'},
@@ -396,8 +395,8 @@ app.layout = html.Div(className='content', children=[
                     )
                 ])
             ]),
-            dcc.Tab(label='Find LSPs', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='Find LSPs', style=styles_2['tab'], children=[
+                html.Div(children=[
                     html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                            " selection menu"),
                     dcc.Dropdown(
@@ -413,8 +412,8 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='LSP to Demands', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='LSP to Demands', style=styles_2['tab'], children=[
+                html.Div(children=[
                     dcc.RadioItems(
                         id='lsp-demand-callback',
                         labelStyle={'display': 'inline-block'},
@@ -422,8 +421,8 @@ app.layout = html.Div(className='content', children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='LSP to Interfaces', children=[
-                html.Div(style=styles_2['tab'], children=[
+            dcc.Tab(label='LSP to Interfaces', style=styles_2['tab'], children=[
+                html.Div(children=[
                     dcc.RadioItems(
                         id='lsp-interface-callback',
                         labelStyle={'display': 'inline-block'},
