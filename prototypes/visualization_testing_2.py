@@ -514,7 +514,8 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                     'mid-target-arrow-color': 'pink',
                     'mid-target-arrow-shape': 'triangle',
                     'source-arrow-color': "pink",
-                    'source-arrow-shape': 'circle',
+                    'source-arrow-shape': 'square',
+                    'zIndex': 1000,
                 }
             }
 
@@ -531,8 +532,8 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                     'mid-source-arrow-color': 'pink',
                     'mid-source-arrow-shape': 'triangle',
                     'target-arrow-color': "pink",
-                    'target-arrow-shape': 'circle',
-                    'zIndex': -10
+                    'target-arrow-shape': 'square',
+                    'zIndex': 1000,
                 }
             }
 
@@ -585,7 +586,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                     "style": {
                         'line-style': 'dashed',
                         'target-arrow-shape': 'chevron',
-                        'arrow-scale': '2',
+                        'arrow-scale': '1.3',
                         'target-arrow-color': "#B40404"
                     }
                 }
@@ -599,7 +600,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                     "style": {
                         'line-style': 'dashed',
                         'source-arrow-shape': 'chevron',
-                        'arrow-scale': '2',
+                        'arrow-scale': '1.3',
                         'source-arrow-color': "#B40404"
                     }
                 }
