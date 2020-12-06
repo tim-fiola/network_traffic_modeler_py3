@@ -254,12 +254,14 @@ node_names.sort()
 node_list = [{'label': name, 'value': name} for name in node_names]
 
 styles_2 = {
-    "content": {
-        'width': '100%',
-        'height': '100%',
+    'all-content': {
+        'width': 'auto',
+        'height': 'auto'
     },
     "right_menu": {
-        'width': '30%',
+        'width': '25vw',
+        'min-width': '400px',
+        'max-width': '800px',
         'height': '99%',
         'position': 'absolute',
         'top': '0',
@@ -267,23 +269,9 @@ styles_2 = {
         'zIndex': 100,
         'fontFamily': 'arial',
     },
-    "top_content": {
-        'height': '100px',
-        'width': '100%',
-        'position': 'relative',
-        'top': '0',
-        'right': '0'
-    },
-    "left_content": {
-        "width": '69%',
-        'height': '100%',
-        'position': 'absolute',
-        'top': '0',
-        'left': '0',
-    },
     'cytoscape': {
         'position': 'absolute',
-        'width': '69%',
+        'width': '74vw',
         'height': '100%',
         'backgroundColor': '#D2B48C'
     },
@@ -293,8 +281,16 @@ styles_2 = {
         'border': 'thin lightgrey solid',
         'line-height': '1.5'
     },
+    'tabs': {},
     'tab': {'height': '75px',
-            'width': '200px'},
+            'width': '200px',
+            'max-width': '200px',
+            'selected-style': {'width': '200px'}},
+    'tab-content': {
+        'max-width': '400px',
+        'min-width': '300px',
+        'height': '100%'
+    },
 }
 
 # TODO - keep the tab width and height the same no matter which tab is selected
@@ -303,17 +299,15 @@ styles_2 = {
 
 app = dash.Dash(__name__)
 
-app.layout = html.Div(className='content', children=[
-    html.Div(className='left_content', children=[
-        cyto.Cytoscape(
-            id='cytoscape-prototypes',
-            layout={'name': 'preset'},
-            style=styles_2['cytoscape'],
-            elements=elements,
-            stylesheet=default_stylesheet,
-            responsive=True
-        ),
-    ]),
+app.layout = html.Div(style=styles_2['all-content'], children=[
+    cyto.Cytoscape(
+        id='cytoscape-prototypes',
+        layout={'name': 'preset'},
+        style=styles_2['cytoscape'],
+        elements=elements,
+        stylesheet=default_stylesheet,
+        responsive=True
+    ),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
         html.P("Selected Interface:"),
         html.P(id='selected-interface-output', style=styles_2['json-output']),
@@ -321,16 +315,17 @@ app.layout = html.Div(className='content', children=[
         html.P(id='selected-demand-output', style=styles_2['json-output']),
         html.P("Selected RSVP LSP:"),
         html.P(id='selected-lsp-output', style=styles_2['json-output']),
-        dcc.Tabs(id='tabs', vertical=True, children=[
+        dcc.Tabs(id='tabs', vertical=True, style=styles_2['tabs'], children=[
             dcc.Tab(label='Utilization Visualization', style=styles_2['tab'], children=[
                 dcc.Dropdown(
+                    style=styles_2['tab-content'],
                     id='utilization-dropdown-callback', options=util_display_options,
                     value=[entry['value'] for entry in util_display_options],
                     multi=True,
                 )
             ]),
             dcc.Tab(label='Find Demands', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                            " selection menu"),
                     dcc.Dropdown(
@@ -347,7 +342,7 @@ app.layout = html.Div(className='content', children=[
                 ]),
             ]),
             dcc.Tab(label='Demand to Interfaces', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='demand-path-interfaces',
                         labelStyle={'display': 'inline-block'},
@@ -356,7 +351,7 @@ app.layout = html.Div(className='content', children=[
                 ]),
             ]),
             dcc.Tab(label='Demand to LSPs', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='demand-path-lsps',
                         labelStyle={'display': 'inline-block'},
@@ -365,7 +360,7 @@ app.layout = html.Div(className='content', children=[
                 ]),
             ]),
             dcc.Tab(label='Find Interfaces on Node', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     dcc.Dropdown(
                         id='find-node', placeholder="Select a node by name",
                         options=node_list
@@ -378,7 +373,7 @@ app.layout = html.Div(className='content', children=[
                 ]),
             ]),
             dcc.Tab(label='Interface to Demands', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='interface-demand-callback',
                         labelStyle={'display': 'inline-block'},
@@ -387,7 +382,7 @@ app.layout = html.Div(className='content', children=[
                 ]),
             ]),
             dcc.Tab(label="Interface to LSPs", style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id="interface-lsp-callback",
                         labelStyle={'display': 'inline-block'},
@@ -396,7 +391,7 @@ app.layout = html.Div(className='content', children=[
                 ])
             ]),
             dcc.Tab(label='Find LSPs', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                            " selection menu"),
                     dcc.Dropdown(
@@ -413,7 +408,7 @@ app.layout = html.Div(className='content', children=[
                 ]),
             ]),
             dcc.Tab(label='LSP to Demands', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='lsp-demand-callback',
                         labelStyle={'display': 'inline-block'},
@@ -422,7 +417,7 @@ app.layout = html.Div(className='content', children=[
                 ]),
             ]),
             dcc.Tab(label='LSP to Interfaces', style=styles_2['tab'], children=[
-                html.Div(children=[
+                html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='lsp-interface-callback',
                         labelStyle={'display': 'inline-block'},
@@ -461,7 +456,7 @@ def interfaces_on_node(node):
 def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info, selected_lsp_info):
     """
     Updates stylesheet with style for edges_to_highlight that will change line type
-    for the edge to dashed and add pink arrows and circles to the demand edges and
+    for the edge to dashed and add pink arrows and squares to the demand edges and
     also turn the nodes for the associated edges pink
 
     :param edges_to_highlight: list of edge elements to highlight
