@@ -285,7 +285,7 @@ styles_2 = {
     'tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'selected-style': {'width': '200px'}},
+    },
     'tab-content': {
         'max-width': '400px',
         'min-width': '300px',
@@ -294,19 +294,16 @@ styles_2 = {
     'interface-tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'selected-style': {'width': '200px'},
             'background-color': '#ADD8E6'
     },
     'demand-tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'selected-style': {'width': '200px'},
             'background-color': 'pink'
     },
     'lsp-tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'selected-style': {'width': '200px'},
             'background-color': "#B40404"
     },
 }
@@ -587,6 +584,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 
             new_style.append(new_entry_5)
 
+    # LSP path visualization
     if selected_lsp_info:
         if no_selected_lsp_text not in selected_lsp_info:
             selected_lsp_info = json.loads(selected_lsp_info)
@@ -600,7 +598,8 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                         'line-style': 'dashed',
                         'target-arrow-shape': 'chevron',
                         'arrow-scale': '1.3',
-                        'target-arrow-color': "#B40404"
+                        'target-arrow-color': "#B40404",
+                        'z-axis': 2000
                     }
                 }
 
@@ -614,7 +613,8 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                         'line-style': 'dashed',
                         'source-arrow-shape': 'chevron',
                         'arrow-scale': '1.3',
-                        'source-arrow-color': "#B40404"
+                        'source-arrow-color': "#B40404",
+                        'z-axis': 2000
                     }
                 }
 
