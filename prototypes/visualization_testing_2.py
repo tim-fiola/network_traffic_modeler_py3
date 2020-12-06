@@ -291,6 +291,24 @@ styles_2 = {
         'min-width': '300px',
         'height': '100%'
     },
+    'interface-tab': {'height': '75px',
+            'width': '200px',
+            'max-width': '200px',
+            'selected-style': {'width': '200px'},
+            'background-color': '#ADD8E6'
+    },
+    'demand-tab': {'height': '75px',
+            'width': '200px',
+            'max-width': '200px',
+            'selected-style': {'width': '200px'},
+            'background-color': 'pink'
+    },
+    'lsp-tab': {'height': '75px',
+            'width': '200px',
+            'max-width': '200px',
+            'selected-style': {'width': '200px'},
+            'background-color': "#B40404"
+    },
 }
 
 # TODO - keep the tab width and height the same no matter which tab is selected
@@ -324,7 +342,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     multi=True,
                 )
             ]),
-            dcc.Tab(label='Find Demands', style=styles_2['tab'], children=[
+            dcc.Tab(label='Find Demands', style=styles_2['demand-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                            " selection menu"),
@@ -341,7 +359,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='Demand to Interfaces', style=styles_2['tab'], children=[
+            dcc.Tab(label='Demand to Interfaces', style=styles_2['demand-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='demand-path-interfaces',
@@ -350,7 +368,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Demand to LSPs', style=styles_2['tab'], children=[
+            dcc.Tab(label='Demand to LSPs', style=styles_2['demand-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='demand-path-lsps',
@@ -359,7 +377,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Find Interfaces on Node', style=styles_2['tab'], children=[
+            dcc.Tab(label='Find Interfaces on Node', style=styles_2['interface-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     dcc.Dropdown(
                         id='find-node', placeholder="Select a node by name",
@@ -372,7 +390,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     )
                 ]),
             ]),
-            dcc.Tab(label='Interface to Demands', style=styles_2['tab'], children=[
+            dcc.Tab(label='Interface to Demands', style=styles_2['interface-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='interface-demand-callback',
@@ -381,7 +399,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label="Interface to LSPs", style=styles_2['tab'], children=[
+            dcc.Tab(label="Interface to LSPs", style=styles_2['interface-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id="interface-lsp-callback",
@@ -390,7 +408,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     )
                 ])
             ]),
-            dcc.Tab(label='Find LSPs', style=styles_2['tab'], children=[
+            dcc.Tab(label='Find LSPs', style=styles_2['lsp-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                            " selection menu"),
@@ -407,7 +425,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='LSP to Demands', style=styles_2['tab'], children=[
+            dcc.Tab(label='LSP to Demands', style=styles_2['lsp-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='lsp-demand-callback',
@@ -416,7 +434,7 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
                     ),
                 ]),
             ]),
-            dcc.Tab(label='LSP to Interfaces', style=styles_2['tab'], children=[
+            dcc.Tab(label='LSP to Interfaces', style=styles_2['lsp-tab'], children=[
                 html.Div(style=styles_2['tab-content'], children=[
                     dcc.RadioItems(
                         id='lsp-interface-callback',
