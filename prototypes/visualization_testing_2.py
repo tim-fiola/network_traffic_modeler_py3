@@ -255,7 +255,7 @@ node_list = [{'label': name, 'value': name} for name in node_names]
 
 
 demand_color = '#DB7093'
-lsp_color = '#188BC2'
+lsp_color = '#610B21'
 interface_color = '#ADD8E6'
 
 
@@ -311,7 +311,8 @@ styles_2 = {
     'lsp-tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'background-color': lsp_color
+            'background-color': lsp_color,
+            'color': 'white'
     },
 }
 
