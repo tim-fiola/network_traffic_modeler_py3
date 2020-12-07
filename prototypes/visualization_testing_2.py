@@ -299,20 +299,20 @@ styles_2 = {
         'height': '100%'
     },
     'interface-tab': {'height': '75px',
-            'width': '200px',
-            'max-width': '200px',
-            'background-color': interface_color
+                      'width': '200px',
+                      'max-width': '200px',
+                      'background-color': interface_color
     },
     'demand-tab': {'height': '75px',
-            'width': '200px',
-            'max-width': '200px',
-            'background-color': demand_color
+                   'width': '200px',
+                   'max-width': '200px',
+                   'background-color': demand_color
     },
     'lsp-tab': {'height': '75px',
-            'width': '200px',
-            'max-width': '200px',
-            'background-color': lsp_color,
-            'color': 'white'
+                'width': '200px',
+                'max-width': '200px',
+                'background-color': lsp_color,
+                'color': 'white'
     },
 }
 
@@ -332,11 +332,14 @@ app.layout = html.Div(style=styles_2['all-content'], children=[
         responsive=True
     ),
     html.Div(className='right_menu', style=styles_2['right_menu'], children=[
-        html.P("Selected Interface:"),
+        html.P(children=["Selected Interface:  ",
+                         html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0),]),
         html.P(id='selected-interface-output', style=styles_2['json-output']),
-        html.P("Selected Demand:"),
+        html.P(children=["Selected Demand:  ",
+                         html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0),]),
         html.P(id='selected-demand-output', style=styles_2['json-output']),
-        html.P("Selected RSVP LSP:"),
+        html.P(children=["Selected RSVP LSP:  ",
+                         html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0),]),
         html.P(id='selected-lsp-output', style=styles_2['json-output']),
         dcc.Tabs(id='tabs', vertical=True, style=styles_2['tabs'], children=[
             dcc.Tab(label='Utilization Visualization', style=styles_2['tab'], children=[
