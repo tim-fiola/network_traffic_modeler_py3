@@ -253,6 +253,12 @@ node_names = [node.name for node in model.node_objects]
 node_names.sort()
 node_list = [{'label': name, 'value': name} for name in node_names]
 
+
+demand_color = '#DB7093'
+lsp_color = '#D26868'
+interface_color = '#ADD8E6'
+
+
 styles_2 = {
     'all-content': {
         'width': 'auto',
@@ -285,6 +291,7 @@ styles_2 = {
     'tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
+            'background-color': '#B695C0'
     },
     'tab-content': {
         'max-width': '400px',
@@ -294,17 +301,17 @@ styles_2 = {
     'interface-tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'background-color': '#ADD8E6'
+            'background-color': interface_color
     },
     'demand-tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'background-color': 'pink'
+            'background-color': demand_color
     },
     'lsp-tab': {'height': '75px',
             'width': '200px',
             'max-width': '200px',
-            'background-color': "#B40404"
+            'background-color': lsp_color
     },
 }
 
@@ -511,6 +518,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
         # Find the interfaces on the demand paths for each demand
         interfaces_to_highlight = find_demand_interfaces_and_lsps(dmds)[0]
 
+        # Differentiate demand interfaces
         for interface in interfaces_to_highlight:
             # Add the edge selectors
             new_entry = {
@@ -519,11 +527,11 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                 "style": {
                     "width": '4',
                     'line-style': 'dashed',
-                    'target-arrow-color': "pink",
+                    'target-arrow-color': demand_color,
                     'target-arrow-shape': 'triangle',
-                    'mid-target-arrow-color': 'pink',
+                    'mid-target-arrow-color': demand_color,
                     'mid-target-arrow-shape': 'triangle',
-                    'source-arrow-color': "pink",
+                    'source-arrow-color': demand_color,
                     'source-arrow-shape': 'square',
                     'zIndex': 1000,
                 }
@@ -537,11 +545,11 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                 "style": {
                     "width": '4',
                     'line-style': 'dashed',
-                    'source-arrow-color': "pink",
+                    'source-arrow-color': demand_color,
                     'source-arrow-shape': 'triangle',
-                    'mid-source-arrow-color': 'pink',
+                    'mid-source-arrow-color': demand_color,
                     'mid-source-arrow-shape': 'triangle',
-                    'target-arrow-color': "pink",
+                    'target-arrow-color': demand_color,
                     'target-arrow-shape': 'square',
                     'zIndex': 1000,
                 }
@@ -553,7 +561,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
             new_entry_3 = {
                 "selector": "node[id=\"{}\"]".format(interface.node_object.name),
                 "style": {
-                    'background-color': 'pink'
+                    'background-color': demand_color
                 }
             }
 
@@ -562,7 +570,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
             new_entry_4 = {
                 "selector": "node[id=\"{}\"]".format(interface.remote_node_object.name),
                 "style": {
-                    'background-color': 'pink'
+                    'background-color': demand_color
                 }
             }
 
@@ -598,7 +606,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                         'line-style': 'dashed',
                         'target-arrow-shape': 'chevron',
                         'arrow-scale': '1.3',
-                        'target-arrow-color': "#B40404",
+                        'target-arrow-color': lsp_color,
                         'z-axis': 2000
                     }
                 }
@@ -613,7 +621,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                         'line-style': 'dashed',
                         'source-arrow-shape': 'chevron',
                         'arrow-scale': '1.3',
-                        'source-arrow-color': "#B40404",
+                        'source-arrow-color': lsp_color,
                         'z-axis': 2000
                     }
                 }
@@ -625,7 +633,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                 new_entry_8 = {
                     "selector": "node[id=\"{}\"]".format(node),
                     "style": {
-                        "border-color": "#B40404",
+                        "border-color": lsp_color,
                         "border-width": "4px"
                     }
                 }
