@@ -316,10 +316,6 @@ styles_2 = {
     },
 }
 
-# TODO - keep the tab width and height the same no matter which tab is selected
-
-# Check here for layout example: https://stackoverflow.com/questions/56175268/how-to-properly-add-style-to-my-dash-app
-
 app = dash.Dash(__name__)
 
 app.layout = html.Div(style=styles_2['all-content'], children=[
@@ -584,7 +580,6 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
     if selected_interface_info:
         if no_selected_interface_text not in selected_interface_info:
             selected_interface_info = json.loads(selected_interface_info)
-            # TODO - just add new edge wider to give an outline?
             new_entry_5 = {
                 "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface_info['source'],
                                                                             selected_interface_info['circuit_id']),
@@ -645,7 +640,7 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                 new_style.append(new_entry_8)
 
     return default_stylesheet + new_style
-# TODO - Phase 1 goals
+# Phase 1 goals
 #  - DONE - highlight selected interface on map somehow
 #  - DONE - Select an interface by either clicking on the map or selecting one from the Demand Paths list
 #       - DONE - set selected_interface to the last value (either click or list selection)
@@ -666,15 +661,16 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
 #       - DONE - clear displayed interfaces on Demand Paths tab
 #  - DONE - adaptive source/dest dropdowns on Find Demands tab
 #  - DONE - 'find demands' tab
-#  - button to clear selected_demand/selected_interface info
-#  - DONE - display demands sourced from or destined to nodes on Find Demands tab (does not require both to be selected to display demands)
+#  - DONE - button to clear selected_demand/selected_interface info
+#  - DONE - display demands sourced from or destined to nodes on Find Demands tab
+#  (does not require both to be selected to display demands)
 #  =========================================================
 #   Phase 2 goals:
-#  - 'demand path' tab
+#  - DONE - 'demand path' tab
 #       - shows demand's full path (including LSPs) - does not show LSP Interfaces
-#  - Find LSPs tab
-#  - LSP interfaces tab
-#  - selected_lsp section
+#  - DONE - Find LSPs tab
+#  - DONE - LSP interfaces tab
+#  - DONE - selected_lsp section
 
 # Adaptive source/dest dropdowns for LSPs; will alter what they show based on what
 # the other shows, so they will only show existing source/dest possibilities
@@ -685,8 +681,6 @@ def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_i
                Input('lsp-destination-callback', 'value'),])
 def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
     ctx = dash.callback_context
-
-    # TODO - need to add 'clear' to options; use buttons
 
     # Get source and destination info from the dropdowns
     ctx_src_inputs = ctx.inputs['lsp-source-callback.value']
@@ -760,9 +754,8 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
               [Input('demand-source-callback', 'value'),
                Input('demand-destination-callback', 'value'),])
 def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}]):
-    ctx = dash.callback_context
 
-    # TODO - need to add 'clear' to options; use buttons
+    ctx = dash.callback_context
 
     # Get source and destination info from the dropdowns
     ctx_src_inputs = ctx.inputs['demand-source-callback.value']
@@ -849,8 +842,7 @@ def format_objects_for_display(object_list):
         'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
 
     """
-    # TODO - use this for all displays
-    # TODO - do this if for each item in list?? is it necessary?
+
     if isinstance(object_list[0], RSVP_LSP):
         object_type = 'lsp'
     elif isinstance(object_list[0], Demand):
@@ -862,7 +854,6 @@ def format_objects_for_display(object_list):
         # Return the demand's value as a dict with demand info (dmd_info)
         src = object.source_node_object.name
         dest = object.dest_node_object.name
-        # TODO - perhaps add 'name' as LSP attribute (return lsp_name)?
         if object_type == 'demand':
             name = object.name
         elif object_type == 'lsp':
@@ -876,8 +867,9 @@ def format_objects_for_display(object_list):
 @app.callback(Output('selected-lsp-output', 'children'),
               [Input('demand-path-lsps', 'value'),
                Input('find-lsps-callback', 'value'),
-               Input('interface-lsp-callback', 'value')])
-def display_selected_lsp(path_lsps, find_lsps, interface_lsps):
+               Input('interface-lsp-callback', 'value'),
+               Input('clear-lsp-button', 'n_clicks')])
+def display_selected_lsp(path_lsps, find_lsps, interface_lsps, clear_lsp_button):
     """
 
     :param path_lsps:
@@ -886,7 +878,9 @@ def display_selected_lsp(path_lsps, find_lsps, interface_lsps):
     """
     ctx = dash.callback_context
 
-    if ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
+    if ctx.triggered[0]['prop_id'] == 'clear-lsp-button.n_clicks':
+        selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
+    elif ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
         selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
     elif ctx.triggered[0]['value'] in [no_selected_demand_text, no_selected_interface_text]:
         selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
@@ -902,8 +896,9 @@ def display_selected_lsp(path_lsps, find_lsps, interface_lsps):
               [Input('cytoscape-prototypes', 'selectedEdgeData'),
                Input('demand-path-interfaces', 'value'),
                Input('interfaces-on-node', 'value'),
-               Input('lsp-interface-callback', 'value')])
-def display_selected_edge(data, demand_interface, node_interface, lsp_interface):
+               Input('lsp-interface-callback', 'value'),
+               Input('clear-int-button', 'n_clicks')])
+def display_selected_edge(data, demand_interface, node_interface, lsp_interface, clear_int_button):
     """
 
     :param data: list consisting of a single dict containing info about the edge/interface
@@ -914,7 +909,10 @@ def display_selected_edge(data, demand_interface, node_interface, lsp_interface)
 
     print("line 948 ctx.triggered[0] = {}".format(ctx.triggered[0]))
 
-    if ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData' and \
+    if ctx.triggered[0]['prop_id'] == 'clear-int-button.n_clicks':
+        # Clear interface selection button clicked
+        selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
+    elif ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData' and \
             len(ctx.triggered[0]['value']) > 0:
         # If trigger is 'cytoscape-prototypes.selectedEdgeData' and
         # the selected edge is not null
@@ -951,12 +949,15 @@ def display_selected_edge(data, demand_interface, node_interface, lsp_interface)
 @app.callback(Output('selected-demand-output', 'children'),
               [Input('interface-demand-callback', 'value'),
                Input('find-demands-callback', 'value'),
-               Input('lsp-demand-callback', 'value')])
-def display_selected_demand_data(int_demand, src_dest_demand, dmd_on_lsp):
+               Input('lsp-demand-callback', 'value'),
+               Input('clear-dmd-button', 'n_clicks')])
+def display_selected_demand_data(int_demand, src_dest_demand, dmd_on_lsp, clear_int_button):
 
     ctx = dash.callback_context
 
-    if ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
+    if ctx.triggered[0]['prop_id'] == 'clear-dmd-button.n_clicks':
+        selected_demand = json.dumps({'label': no_selected_demand_text, 'value': ''})
+    elif ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
         selected_demand = json.dumps({'label': no_selected_demand_text, 'value': ''})
     elif ctx.triggered[0]['value'] in [no_selected_lsp_text, no_selected_interface_text]:
         selected_demand = json.dumps({'label': no_selected_demand_text, 'value': ''})
