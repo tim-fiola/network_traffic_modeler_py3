@@ -255,7 +255,7 @@ node_list = [{'label': name, 'value': name} for name in node_names]
 
 
 demand_color = '#DB7093'
-lsp_color = '#D26868'
+lsp_color = '#188BC2'
 interface_color = '#ADD8E6'
 
 
