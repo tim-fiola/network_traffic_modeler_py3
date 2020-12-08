@@ -86,9 +86,9 @@ util_ranges = {'0-24': 'royalblue',
                'failed': 'grey'}
 
 # Make the Parallel_Link_Model
-model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
+# model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
+model = FlexModel.load_model_file('igp_shortcuts_model.csv')
 model.update_simulation()
-int_a_b = model.get_interface_object('A-to-B', 'A')
 
 
 def create_elements(model, group_midpoints=True):
