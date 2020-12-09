@@ -747,8 +747,8 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
         msg = "Debug output: unaccounted for scenario in display_lsp_dropdowns"
         raise Exception(msg)
 
-    if len(lsps) > 0:
-        null_choice = {'label': no_selected_lsp_text, 'value': ''}
+    null_choice = {'label': no_selected_lsp_text, 'value': ''}
+    if len(lsps) > 0 and null_choice not in lsps:
         lsps.insert(0, null_choice)  # Should give user option to clear selected item
     return src_options, dest_options, lsps
 
