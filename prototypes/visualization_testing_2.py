@@ -466,8 +466,11 @@ def interfaces_on_node(node):
 
         interface_info_to_display = format_interfaces_for_display(interfaces_on_node)
 
+        # Add a choice at the beginning of the list to null out selection
+        null_choice = {'label': no_selected_interface_text, 'value': ''}
+        if len(interface_info_to_display) > 0 and null_choice not in interface_info_to_display:
+            interface_info_to_display.insert(0, null_choice)  # Should give user option to clear selected item
         return interface_info_to_display
-
     else:
         raise PreventUpdate
 
@@ -747,9 +750,11 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
         msg = "Debug output: unaccounted for scenario in display_lsp_dropdowns"
         raise Exception(msg)
 
+    # Add a choice at the beginning of the list to null out selection
     null_choice = {'label': no_selected_lsp_text, 'value': ''}
     if len(lsps) > 0 and null_choice not in lsps:
         lsps.insert(0, null_choice)  # Should give user option to clear selected item
+
     return src_options, dest_options, lsps
 
 # Adaptive source/dest dropdowns for demands; will alter what they show based on what
@@ -824,6 +829,11 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
     else:
         msg = "Debug output: unaccounted for scenario in display_demand_dropdowns"
         raise Exception(msg)
+
+    # Add a choice at the beginning of the list to null out selection
+    null_choice = {'label': no_selected_demand_text, 'value': ''}
+    if len(demands) > 0 and null_choice not in demands:
+        demands.insert(0, null_choice)  # Should give user option to clear selected item
 
     return src_options, dest_options, demands
 
@@ -917,7 +927,7 @@ def display_selected_edge(data, demand_interface, node_interface, lsp_interface,
 
     print("line 948 ctx.triggered[0] = {}".format(ctx.triggered[0]))
 
-    if ctx.triggered[0]['prop_id'] == 'clear-int-button.n_clicks':
+    if ctx.triggered[0]['prop_id'] == 'clear-int-button.n_clicks' or ctx.triggered[0]['value'] == '':
         # Clear interface selection button clicked
         selected_interface = json.dumps({'label': no_selected_interface_text, 'value': ''})
     elif ctx.triggered[0]['prop_id'] == 'cytoscape-prototypes.selectedEdgeData' and \
