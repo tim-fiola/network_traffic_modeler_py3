@@ -117,4 +117,4 @@ class TestDemand(unittest.TestCase):
 
         model.update_simulation()
 
-        self.assertEqual(str(dmd_a_b.path), "[RSVP_LSP(source = nodeA, dest = nodeB, lsp_name = 'lsp_a_b')]")
+        self.assertEqual(str(dmd_a_b.path), "[[RSVP_LSP(source = nodeA, dest = nodeB, lsp_name = 'lsp_a_b')]]")
