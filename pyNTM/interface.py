@@ -243,17 +243,24 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
             for dmd_path in demand.path:
                 # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
                 # look at the LSP path and get demands on the LSP and add them to dmd_set
+                # from .rsvp import RSVP_LSP
+                # if isinstance(dmd_path, RSVP_LSP):
+                #     if self in dmd_path.path['interfaces']:
+                #         dmd_set.add(demand)
+                #
+                # # If path is not an LSP, then it's a list of Interface or LSP
+                # # objects; look for self in dmd_path
+                #
+                # elif self in dmd_path:
+                #     # num_paths += 1
+                #     dmd_set.add(demand)
                 from .rsvp import RSVP_LSP
-                if isinstance(dmd_path, RSVP_LSP):
-                    if self in dmd_path.path['interfaces']:
+                for object in dmd_path:
+                    if isinstance(object, RSVP_LSP):
+                        if self in object.path['interfaces']:
+                            dmd_set.add(demand)
+                    elif self in dmd_path:
                         dmd_set.add(demand)
-
-                # If path is not an LSP, then it's a list of Interface
-                # objects; look for self in dmd_path
-
-                elif self in dmd_path:
-                    # num_paths += 1
-                    dmd_set.add(demand)
 
         dmd_list = list(dmd_set)
 

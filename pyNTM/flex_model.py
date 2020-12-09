@@ -278,7 +278,7 @@ class FlexModel(_MasterModel):
                 min_lsp_metric = min([lsp.effective_metric(self) for lsp in lsp_list])
                 for lsp in lsp_list:
                     if lsp.effective_metric(self) == min_lsp_metric:
-                        demand.path.append(lsp)
+                        demand.path.append([lsp])
 
             if demand.path == []:
                 src = demand.source_node_object.name

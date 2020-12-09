@@ -81,9 +81,10 @@ class _MasterModel(object):
 
         # Find unrouted LSPs
         for dmd in iter(self.demand_objects):
-            for object in dmd.path:
-                if isinstance(object, RSVP_LSP):
-                    dmds_riding_lsps.add(dmd)
+            for path in dmd.path:
+                for object in path:
+                    if isinstance(object, RSVP_LSP):
+                        dmds_riding_lsps.add(dmd)
         unrouted_lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.path == 'Unrouted']
 
         # Update the quantities in simulation_data

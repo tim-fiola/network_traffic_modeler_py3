@@ -111,10 +111,14 @@ def create_elements(model, group_midpoints=True):
         int_b_name = int_b.name
         node_a = int_a.node_object
         node_b = int_b.node_object
-        node_a_y = node_a.lat
-        node_a_x = node_a.lon
-        node_b_y = node_b.lat
-        node_b_x = node_b.lon
+
+        # lat, lon * spacing_factor for spacing on map
+        spacing_factor = 3
+        node_a_y = node_a.lat*spacing_factor
+        node_a_x = node_a.lon*spacing_factor
+        node_b_y = node_b.lat*spacing_factor
+        node_b_x = node_b.lon*spacing_factor
+
         capacity = int_a.capacity
 
         try:
@@ -134,8 +138,8 @@ def create_elements(model, group_midpoints=True):
                                   midpoint=True, neighbors=[node_a.name, node_b.name])
         nodes.append(new_node)
         # Create each end node
-        nodes.append(make_json_node(node_a.lon, node_a.lat, node_a.name, node_a.name))
-        nodes.append(make_json_node(node_b.lon, node_b.lat, node_b.name, node_b.name))
+        nodes.append(make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
+        nodes.append(make_json_node(node_b_x, node_b_y, node_b.name, node_b.name))
 
         # Create the edges
         # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
@@ -1057,8 +1061,6 @@ def demand_interfaces(demand):
                 lsp_list = [{'label': 'Demand does not take LSPs', 'value': ''}]
             else:
                 lsp_list = format_objects_for_display(list(dmd_lsps))
-
-
             return interfaces_list, lsp_list
         else:
             selected_demand = no_selected_demand_text
@@ -1124,16 +1126,17 @@ def find_demand_interfaces_and_lsps(dmds):
     for dmd in dmds:
         dmd_path = dmd.path[:]
         for path in dmd_path:
-            for hop in dmd_path:
+            print("line 1129 path is {}".format(path))
+            print()
+            for hop in path:
                 if isinstance(hop, RSVP_LSP):
                     lsps.add(hop)
                     for lsp_hop in hop.path['interfaces']:
                         interfaces_to_highlight.add(lsp_hop)
-                    dmd_path.remove(hop)
                 else:
-                    for interface in hop:
-                        interfaces_to_highlight.add(interface)
+                    interfaces_to_highlight.add(hop)
     return interfaces_to_highlight, lsps
+
 
 def get_sources(destination, model, object_type):
     """

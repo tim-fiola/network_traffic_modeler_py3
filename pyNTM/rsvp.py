@@ -234,9 +234,11 @@ class RSVP_LSP(object):
         from .flex_model import FlexModel
         demand_set = set()
         for demand in iter(model.demand_objects):
-            if self in demand.path:
-                demand_set.add(demand)
+            for dmd_path in demand.path:
+                if self in dmd_path:
+                    demand_set.add(demand)
             if isinstance(model, FlexModel):
+                # TODO - can remove this given changes to dmd_path above?  Try when tests pass
                 # Look for the demands from IGP shortcuts
                 for dmd_path in demand.path:
                     if isinstance(dmd_path, list) and self in dmd_path:

@@ -31,7 +31,7 @@ class Demand(object):
                 self.traffic,
                 self.name)
 
-    def _add_demand_path(self, model):
+    def _add_demand_path(self, model):  # TODO - is this used anywhere?!
         """
         Adds path(s) the the demand for the given model the demand routes through.
 
@@ -42,13 +42,14 @@ class Demand(object):
         # Find if there is an LSP with source/dest same as demand source/dest
         demand_path = []
 
-        # Find all LSPs that can carry the demand:
+        # Find all LSPs that can carry the demand source to dest:
         for lsp in (lsp for lsp in model.rsvp_lsp_objects):
             if (lsp.source_node_object == self.source_node_object and
                     lsp.dest_node_object == self.dest_node_object and
                     'Unrouted' not in lsp.path):
-
-                demand_path.append(lsp)
+                import pdb
+                pdb.set_trace()
+                demand_path.append([lsp])
 
         # If demand can't be carried by LSP, do shortest path routing
         if demand_path == []:
