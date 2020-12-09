@@ -743,11 +743,13 @@ def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
 
         # Format lsps for display
         lsps = format_objects_for_display(lsp_list)
-
     else:
         msg = "Debug output: unaccounted for scenario in display_lsp_dropdowns"
         raise Exception(msg)
 
+    if len(lsps) > 0:
+        null_choice = {'label': no_selected_lsp_text, 'value': ''}
+        lsps.insert(0, null_choice)  # Should give user option to clear selected item
     return src_options, dest_options, lsps
 
 # Adaptive source/dest dropdowns for demands; will alter what they show based on what
@@ -881,6 +883,8 @@ def display_selected_lsp(path_lsps, find_lsps, interface_lsps, clear_lsp_button)
     :return:
     """
     ctx = dash.callback_context
+
+    print("line 886 ctx.triggered = {}".format(ctx.triggered))
 
     if ctx.triggered[0]['prop_id'] == 'clear-lsp-button.n_clicks':
         selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
@@ -1126,8 +1130,6 @@ def find_demand_interfaces_and_lsps(dmds):
     for dmd in dmds:
         dmd_path = dmd.path[:]
         for path in dmd_path:
-            print("line 1129 path is {}".format(path))
-            print()
             for hop in path:
                 if isinstance(hop, RSVP_LSP):
                     lsps.add(hop)
