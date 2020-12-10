@@ -1004,6 +1004,12 @@ def lsps_on_interface(interface_info):
             return [{'label': 'no lsps on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
         lsps_on_interface = format_objects_for_display(lsps)
+
+        # Add a choice at the beginning of the list to null out selection
+        null_choice = {'label': no_selected_lsp_text, 'value': ''}
+        if len(lsps_on_interface) > 0 and null_choice not in lsps_on_interface:
+            lsps_on_interface.insert(0, null_choice)  # Should give user option to clear selected item
+
         return lsps_on_interface
 
     else:
@@ -1028,6 +1034,12 @@ def demands_on_interface(interface_info):
             return [{'label': 'no demands on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
         demands_on_interface = format_objects_for_display(demands)
+
+        # Add a choice at the beginning of the list to null out selection
+        null_choice = {'label': no_selected_demand_text, 'value': ''}
+        if len(demands_on_interface) > 0 and null_choice not in demands_on_interface:
+            demands_on_interface.insert(0, null_choice)  # Should give user option to clear selected item
+
         return demands_on_interface
     else:
         return [{"label": no_selected_interface_text, "value": ''}]
@@ -1052,12 +1064,18 @@ def demands_on_lsp(lsp_info):
             return [{'label': 'no demands on lsp', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
         demands_on_lsp = format_objects_for_display(demands)
+
+        # Add a choice at the beginning of the list to null out selection
+        null_choice = {'label': no_selected_demand_text, 'value': ''}
+        if len(demands_on_lsp) > 0 and null_choice not in demands_on_lsp:
+            demands_on_lsp.insert(0, null_choice)  # Should give user option to clear selected item
+
         return demands_on_lsp
     else:
         return [{"label": no_selected_lsp_text, "value": ''}]
 
 
-# def that finds and displays interfaces and LSPson selected_demand's path;
+# def that finds and displays interfaces and LSPs on selected_demand's path;
 # this def updates both the 'Demand to Interfaces' and 'Demand to LSPs' tabs
 @app.callback([Output('demand-path-interfaces', 'options'),
                Output('demand-path-lsps', 'options')],
@@ -1069,13 +1087,25 @@ def demand_interfaces(demand):
             demand = json.loads(demand)
             dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
             dmd_ints, dmd_lsps = find_demand_interfaces_and_lsps([dmd])
+
             interfaces_list = format_interfaces_for_display(dmd_ints)
+
+            # Add a choice at the beginning of the list to null out selection for interfaces
+            null_choice = {'label': no_selected_interface_text, 'value': ''}
+            if len(interfaces_list) > 0 and null_choice not in interfaces_list:
+                interfaces_list.insert(0, null_choice)  # Should give user option to clear selected item
 
             if not dmd_lsps:
                 lsp_list = [{'label': 'Demand does not take LSPs', 'value': ''}]
             else:
                 lsp_list = format_objects_for_display(list(dmd_lsps))
+
+                # Add a choice at the beginning of the list to null out selection for lsps
+                null_choice = {'label': no_selected_lsp_text, 'value': ''}
+                if len(lsp_list) > 0 and null_choice not in lsp_list:
+                    lsp_list.insert(0, null_choice)  # Should give user option to clear selected item
             return interfaces_list, lsp_list
+
         else:
             selected_demand = no_selected_demand_text
             return ([{'label': selected_demand, 'value': selected_demand}],
@@ -1098,11 +1128,16 @@ def lsp_interfaces(lsp):
 
             interfaces_list = format_interfaces_for_display(lsp_interfaces)
 
+            # Add a choice at the beginning of the list to null out selection
+            null_choice = {'label': no_selected_interface_text, 'value': ''}
+            if len(interfaces_list) > 0 and null_choice not in interfaces_list:
+                interfaces_list.insert(0, null_choice)  # Should give user option to clear selected item
+
             return interfaces_list
         else:
-            return ([{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}])
+            return [{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}]
     else:
-        return ([{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}])
+        return [{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}]
 
 def format_interfaces_for_display(interface_list):
     """
