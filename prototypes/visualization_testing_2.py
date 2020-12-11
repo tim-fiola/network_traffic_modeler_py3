@@ -894,8 +894,6 @@ def display_selected_lsp(path_lsps, find_lsps, interface_lsps, clear_lsp_button)
     """
     ctx = dash.callback_context
 
-    print("line 886 ctx.triggered = {}".format(ctx.triggered))
-
     if ctx.triggered[0]['prop_id'] == 'clear-lsp-button.n_clicks':
         selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
     elif ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
@@ -924,8 +922,6 @@ def display_selected_edge(data, demand_interface, node_interface, lsp_interface,
     """
 
     ctx = dash.callback_context
-
-    print("line 948 ctx.triggered[0] = {}".format(ctx.triggered[0]))
 
     if ctx.triggered[0]['prop_id'] == 'clear-int-button.n_clicks' or ctx.triggered[0]['value'] == '':
         # Clear interface selection button clicked
