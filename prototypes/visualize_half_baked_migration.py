@@ -7,8 +7,8 @@ import json
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 
-from .rsvp import RSVP_LSP
-from .demand import Demand
+from pyNTM.rsvp import RSVP_LSP
+from pyNTM.demand import Demand
 
 # ## Data Functions ## #
 def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
