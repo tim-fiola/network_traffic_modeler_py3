@@ -838,45 +838,20 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
     return src_options, dest_options, demands
 
 
-def format_objects_for_display(object_list):
-    """
-    Takes a list of LSP or demand objects and returns a list of info that can
-    be displayed in visualization menus.
 
-    :param object_list: list of Demand objects
-    :return: List of info about each demand.  Each list entry is a dict with 'label' and
-    'value' keys
 
-    Example Input::
-        [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
-        Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
 
-    Example Output::
-        [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
-        'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
-        {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
-        'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
 
-    """
 
-    if isinstance(object_list[0], RSVP_LSP):
-        object_type = 'lsp'
-    elif isinstance(object_list[0], Demand):
-        object_type = 'demand'
 
-    # Initialize object list
-    objects = []
-    for object in object_list:
-        # Return the demand's value as a dict with demand info (dmd_info)
-        src = object.source_node_object.name
-        dest = object.dest_node_object.name
-        if object_type == 'demand':
-            name = object.name
-        elif object_type == 'lsp':
-            name = object.lsp_name
-        object_info = {'source': src, 'dest': dest, 'name': name}
-        objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
-    return objects
+
+
+
+
+
+
+
+
 
 
 # def that displays info about selected LSP
@@ -1134,6 +1109,52 @@ def lsp_interfaces(lsp):
             return [{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}]
     else:
         return [{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}]
+
+
+
+
+
+
+
+def format_objects_for_display(object_list):
+    """
+    Takes a list of LSP or demand objects and returns a list of info that can
+    be displayed in visualization menus.
+
+    :param object_list: list of Demand objects
+    :return: List of info about each demand.  Each list entry is a dict with 'label' and
+    'value' keys
+
+    Example Input::
+        [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
+        Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
+
+    Example Output::
+        [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
+        'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
+        {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
+        'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
+
+    """
+
+    if isinstance(object_list[0], RSVP_LSP):
+        object_type = 'lsp'
+    elif isinstance(object_list[0], Demand):
+        object_type = 'demand'
+
+    # Initialize object list
+    objects = []
+    for object in object_list:
+        # Return the demand's value as a dict with demand info (dmd_info)
+        src = object.source_node_object.name
+        dest = object.dest_node_object.name
+        if object_type == 'demand':
+            name = object.name
+        elif object_type == 'lsp':
+            name = object.lsp_name
+        object_info = {'source': src, 'dest': dest, 'name': name}
+        objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
+    return objects
 
 def format_interfaces_for_display(interface_list):
     """
