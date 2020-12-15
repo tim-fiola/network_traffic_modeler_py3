@@ -15,6 +15,7 @@ import json
 class Weathermap(object):
 
     def __init__(self, model):
+        self.elements = []
         self.demand_sources = []
         self.demand_destinations = []
         self.lsp_sources = []
@@ -156,7 +157,8 @@ class Weathermap(object):
                 layout={'name': 'preset'},
                 style=self.styles['cytoscape'],
                 elements=self.elements,
-                stylesheet=self.default_stylesheet,
+                stylesheet=self.
+                    stylesheet,
                 responsive=True
             ),
             html.Div(className='right_menu', style=self.styles['right_menu'], children=[
@@ -284,7 +286,7 @@ class Weathermap(object):
         ])
 
     app = dash.Dash(__name__)
-    app.run_server(debug=True)
+
 
     @property
     def util_display_options(self):
@@ -323,14 +325,28 @@ class Weathermap(object):
         node_names.sort()
         self.node_list = [{'label': name, 'value': name} for name in node_names]
 
-    def visualization(self):
+
+    def create_visualization(self):
+
+        # Make the json elements from objects in the model
+        self.elements = self.create_elements(self.model)
+
         # Find demand source and destinations
+        self.demand_sources_and_destinations()
 
         # Find LSP source and destinations
+        self.lsp_sources_and_destinations()
 
         # Make node list
+        self.make_node_list()
 
-        pass
+        app = dash.Dash(__name__)
+        app.layout = self.app_layout
+
+
+        # Run server
+        app.run_server(debug=True)
+
 
     # ## Callback defs ## #
     # Def to list Node name dropdown
@@ -1092,3 +1108,123 @@ class Weathermap(object):
             nodes.add(interface.node_object.name)
             nodes.add(interface.remote_node_object.name)
         return lsp_interfaces, nodes
+
+    def create_elements(self, model, group_midpoints=True):
+        """
+
+        :param model: pyNTM Model object
+        :param group_midpoints: True|False.  Group all circuit midpoints that have common nodes.  This
+        is helpful if you have multiple circuits between common nodes.  It will collapse the midpoint
+        nodes for all the circuits into a common midpoint node.
+
+        :return: element data (nodes, edges) for graphing in dash_cytoscape
+        """
+
+        edges = []
+        nodes = []
+        for ckt in self.model.circuit_objects:
+            int_a = ckt.interface_a
+            int_b = ckt.interface_b
+            int_a_name = int_a.name
+            int_b_name = int_b.name
+            node_a = int_a.node_object
+            node_b = int_b.node_object
+
+            # lat, lon * spacing_factor for spacing on map
+            spacing_factor = 3
+            node_a_y = node_a.lat*spacing_factor
+            node_a_x = node_a.lon*spacing_factor
+            node_b_y = node_b.lat*spacing_factor
+            node_b_x = node_b.lon*spacing_factor
+
+            capacity = int_a.capacity
+
+            try:
+                ckt_id = int_a.circuit_id
+            except (AttributeError, ValueError):
+                ckt_id = "circuit_{}-{}".format(node_a.name, node_b.name)
+
+            midpoint_x = sum([node_a_x, node_b_x]) / 2
+            midpoint_y = sum([node_a_y, node_b_y]) / 2
+
+            # Create the midpoint node between the endpoints
+            if group_midpoints:
+                midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
+            else:
+                midpoint_label = 'midpoint-{}'.format(ckt_id)
+            new_node = self.make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
+                                           midpoint=True, neighbors=[node_a.name, node_b.name])
+            nodes.append(new_node)
+            # Create each end node
+            nodes.append(self.make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
+            nodes.append(self.make_json_node(node_b_x, node_b_y, node_b.name, node_b.name))
+
+            # Create the edges
+            # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
+            #           'utilization': 'failed'}}
+
+            # Make edges with midpoints
+            edges.append(self.make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
+                                        int_a.utilization, self.util_ranges, int_a.cost))
+            edges.append(self.make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id,
+                                        int_b.utilization, self.util_ranges, int_b.cost))
+        updated_elements = nodes + edges
+
+        return updated_elements
+
+    def make_json_node(self, x, y, id, label, midpoint=False, neighbors=[]):
+        """
+
+        :param x: x-coordinate (or longitude) of node
+        :param y: y-coordinate (or latitude) of node
+        :param id: node identifier within code
+        :param label: Node's displayed label on on layout
+        :param midpoint: Is this a midpoint node?  True|False
+        :param neighbors: directly connected nodes
+
+        :return:
+        """
+
+        json_node = {}
+        json_node['position'] = {'x': x, 'y': y}
+        json_node['data'] = {'id': id, 'label': label, 'group': ''}
+
+        if midpoint:
+            json_node['data']['group'] = 'midpoint'
+            if neighbors:
+                json_node['data']['neighbors'] = neighbors
+
+        return json_node
+
+    def make_json_edge(model, source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges, cost):
+        """
+        {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
+                  'utilization': 'failed', 'interface-name': edge_name}}
+
+        """
+
+        group = None
+
+        if utilization == 'Int is down':
+            group = 'failed'
+        elif utilization >= 100:
+            group = util_ranges['100+']
+        else:
+            for range in util_ranges.keys():
+                try:
+                    lower = int(range.split('-')[0])
+                    upper = int(range.split('-')[1])
+
+                    if utilization >= lower and utilization <= upper:
+                        group = util_ranges[range]
+                        break
+                except (ValueError, IndexError):
+                    pass
+
+        json_edge = {
+            'data': {'source': source_id, 'target': target_id, "group": group,
+                     'circuit_id': circuit_id, 'utilization': utilization, 'interface-name': edge_name,
+                     'capacity': capacity, 'cost': cost}
+        }
+
+        return json_edge
