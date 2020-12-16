@@ -354,8 +354,6 @@ class Weathermap(object):
         @app.callback(Output('interfaces-on-node', 'options'),
                       [Input('find-node', 'value')])
         def interfaces_on_node(node):
-            import pdb
-            pdb.set_trace()
 
             if (node):
                 node = self.model.get_node_object(node)

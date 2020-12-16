@@ -1,185 +1,101 @@
+import sys
+sys.path.append('../')
+
 import dash
-import dash_core_components as dcc
 import dash_cytoscape as cyto
 import dash_html_components as html
-import json
-
 from dash.dependencies import Input, Output
+import dash_core_components as dcc
+
 from dash.exceptions import PreventUpdate
 
-from pyNTM.rsvp import RSVP_LSP
-from pyNTM.demand import Demand
+from pyNTM import RSVP_LSP
+from pyNTM import Demand
+
+import json
 
 
-def make_visualization(model_to_visualize):
+def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
+    """
 
-    model = model_to_visualize
+    :param x: x-coordinate (or longitude) of node
+    :param y: y-coordinate (or latitude) of node
+    :param id: node identifier within code
+    :param label: Node's displayed label on on layout
+    :param midpoint: Is this a midpoint node?  True|False
+    :param neighbors: directly connected nodes
 
+    :return:
+    """
 
-    # Utilization ranges and corresponding edge colors
-    util_ranges = {'0-24': 'royalblue',
-                   '25-49': 'green',
-                   '50-74': 'yellow',
-                   '75-89': 'orangered',
-                   '90-99': 'darkred',
-                   '100+': 'darkviolet',
-                   'failed': 'grey'}
+    json_node = {}
+    json_node['position'] = {'x': x, 'y': y}
+    json_node['data'] = {'id': id, 'label': label, 'group': ''}
 
+    if midpoint:
+        json_node['data']['group'] = 'midpoint'
+        if neighbors:
+            json_node['data']['neighbors'] = neighbors
 
-
-
-    # Node list
-    node_names = [node.name for node in model.node_objects]
-    node_names.sort()
-    node_list = [{'label': name, 'value': name} for name in node_names]
-
-    # list of utilization ranges to display
-    util_display_options = []
-    for util_range, color in util_ranges.items():
-        util_display_options.append({'label': util_range, 'value': color})
-
-    # Fill in demand source and destination options
-    demand_sources = set()
-    demand_destinations= set()
-    for entry in model.parallel_demand_groups().keys():
-        source, dest = entry.split('-')
-        demand_sources.add(source)
-        demand_destinations.add(dest)
-    demand_sources_list = list(demand_sources)
-    demand_destinations_list = list(demand_destinations)
-    demand_sources_list.sort()
-    demand_destinations_list.sort()
-
-    # Fill in LSP source and destination options
-    lsp_sources = set()
-    lsp_destinations= set()
-    for entry in model.parallel_lsp_groups().keys():
-        source, dest = entry.split('-')
-        lsp_sources.add(source)
-        lsp_destinations.add(dest)
-    lsp_sources_list = list(lsp_sources)
-    lsp_destinations_list = list(lsp_destinations)
-    lsp_sources_list.sort()
-    lsp_destinations_list.sort()
-
-    # Baseline selected values
-    no_selected_interface_text = 'no int selected'
-    no_selected_demand_text = 'no demand selected'
-    no_selected_lsp_text = 'no lsp selected'
-
-    demand_color = '#DB7093'
-    lsp_color = '#610B21'
-    interface_color = '#ADD8E6'
+    return json_node
 
 
-    # ## JSON ELEMENT FUNCTIONS ## #
-    def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
+def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges, cost):
+    """
+    {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
+              'utilization': 'failed', 'interface-name': edge_name}}
+
+    """
+
+    group = None
+
+    if utilization == 'Int is down':
+        group = 'failed'
+    elif utilization >= 100:
+        group = util_ranges['100+']
+    else:
+        for range in util_ranges.keys():
+            try:
+                lower = int(range.split('-')[0])
+                upper = int(range.split('-')[1])
+
+                if utilization >= lower and utilization <= upper:
+                    group = util_ranges[range]
+                    break
+            except (ValueError, IndexError):
+                pass
+
+    json_edge = {
+                    'data': {'source': source_id, 'target': target_id, "group": group,
+                             'circuit_id': circuit_id, 'utilization': utilization, 'interface-name': edge_name,
+                             'capacity': capacity, 'cost': cost}
+                 }
+
+    return json_edge
+
+
+util_ranges = {'0-24': 'royalblue',
+               '25-49': 'green',
+               '50-74': 'yellow',
+               '75-89': 'orangered',
+               '90-99': 'darkred',
+               '100+': 'darkviolet',
+               'failed': 'grey'}
+
+
+def make_visualization(model, font_size='9px'):
+    # Make the Parallel_Link_Model
+    # model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
+
+    def create_elements(model, group_midpoints=True):
         """
-        Creates json info for node element that stores info about a pyNTM Node object
-
-        :param x: x-coordinate (or longitude) of node
-        :param y: y-coordinate (or latitude) of node
-        :param id: node identifier within code
-        :param label: Node's displayed label on on layout
-        :param midpoint: Is this a midpoint node?  True|False
-        :param neighbors: directly connected nodes
-
-        :return: json element for graphing a node; if midpoint=True, data includes
-        adding the 'midpoint' group and 'neighbors' list.
-
-        Example return of midpoint json element:
-            {'data': {'group': 'midpoint', 'id': 'midpoint-A-G',
-                   'label': 'midpoint-A-G', 'neighbors': ['A', 'G']},
-
-        Example of return of Node object json element:
-            {'data': {'group': '', 'id': 'A', 'label': 'A'},
-            'position': {'x': 0, 'y': 0}},
-
-
-        """
-
-        json_node = {}
-        json_node['position'] = {'x': x, 'y': y}
-        json_node['data'] = {'id': id, 'label': label, 'group': ''}
-
-        if midpoint:
-            json_node['data']['group'] = 'midpoint'
-            if neighbors:
-                json_node['data']['neighbors'] = neighbors
-
-        return json_node
-
-
-    def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges, cost):
-        """
-        Creates json info for an edge on the graph, which corresponds to a pyNTM Interface object.
-        The edge will source from the graph node (representing a pyNTM Node object) and
-        terminate on a midpoint node.
-
-        :param source_id: name of the source node on the graph
-        :param target_id: name of the midpoint node on the graph
-        :param edge_name: name of the edge (pyNTM Interface.name)
-        :param capacity: capacity of the modeled corresponding Interface object
-        :param circuit_id: represented Interface's circuit_id
-        :param utilization: represented Interface's utilization
-        :param util_ranges: utilization range data (for edge color)
-        :param cost: represented Interface's cost
-
-        :return: json data for the edge that represents the pyNTM Interface object
-
-        Example return:
-             {'data': {'capacity': 100,
-                       'circuit_id': '7',
-                       'cost': 25,
-                       'group': 'royalblue',
-                       'interface-name': 'G-F',
-                       'source': 'G',
-                       'target': 'midpoint-F-G',
-                       'utilization': 5.0}}
-
-        """
-
-        group = None
-
-        if utilization == 'Int is down':
-            group = 'failed'
-        elif utilization >= 100:
-            group = util_ranges['100+']
-        else:
-            for range in util_ranges.keys():
-                try:
-                    lower = int(range.split('-')[0])
-                    upper = int(range.split('-')[1])
-
-                    if utilization >= lower and utilization <= upper:
-                        group = util_ranges[range]
-                        break
-                except (ValueError, IndexError):
-                    pass
-
-        json_edge = {'data': {'source': source_id, 'target': target_id, "group": group,
-                              'circuit_id': circuit_id, 'utilization': utilization, 'interface-name': edge_name,
-                              'capacity': capacity, 'cost': cost}
-                     }
-
-        return json_edge
-
-
-    def create_elements(model, util_ranges, group_midpoints=True):
-        """
-        Creates json elements from Interfaces, Circuits, and Nodes in the Model
 
         :param model: pyNTM Model object
-
         :param group_midpoints: True|False.  Group all circuit midpoints that have common nodes.  This
         is helpful if you have multiple circuits between common nodes.  It will collapse the midpoint
-        nodes for all the circuits into a common midpoint node, but display each edge (Interface)
-        individually.
+        nodes for all the circuits into a common midpoint node.
 
-        :return: element data (nodes, edges) in json format for graphing in dash_cytoscape
-
-
-
+        :return: element data (nodes, edges) for graphing in dash_cytoscape
         """
 
         edges = []
@@ -233,169 +149,9 @@ def make_visualization(model_to_visualize):
         updated_elements = nodes + edges
 
         return updated_elements
-    # ## END JSON ELEMENT FUNCTIONS ## #
 
-    # ## Utility functions ## #
-    def format_objects_for_display(object_list):
-        """
-        Takes a list of LSP or demand objects and returns a list of info that can
-        be displayed in visualization menus.
+    elements = create_elements(model)
 
-        :param object_list: list of Demand objects
-        :return: List of info about each demand.  Each list entry is a dict with 'label' and
-        'value' keys
-
-        Example Input::
-            [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
-            Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
-
-        Example Output::
-            [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
-            'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
-            {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
-            'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
-
-        """
-
-        if isinstance(object_list[0], RSVP_LSP):
-            object_type = 'lsp'
-        elif isinstance(object_list[0], Demand):
-            object_type = 'demand'
-
-        # Initialize object list
-        objects = []
-        for object in object_list:
-            # Return the demand's value as a dict with demand info (dmd_info)
-            src = object.source_node_object.name
-            dest = object.dest_node_object.name
-            if object_type == 'demand':
-                name = object.name
-            elif object_type == 'lsp':
-                name = object.lsp_name
-            object_info = {'source': src, 'dest': dest, 'name': name}
-            objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
-        return objects
-
-
-    def format_interfaces_for_display(interface_list):
-        """
-        Reformats information about Interface objects for display
-
-        :param interface_list: list of Interface objects
-        :return: list of dict entries with interface information
-        """
-        interfaces_list = []
-        for interface in interface_list:
-            source_node_name = interface.node_object.name
-            dest_node_name = interface.remote_node_object.name
-            name = interface.name
-            circuit_id = interface.circuit_id
-            cost = interface.cost
-            int_dict = {'source': source_node_name, 'interface-name': name,
-                        'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
-            int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
-            interfaces_list.append(int_info)
-        return interfaces_list
-
-
-    def find_demand_interfaces_and_lsps(dmds):
-        """
-        Finds interfaces for each demand in dmds.  If there
-        are RSVP LSPs in path, the interfaces for that LSP path
-        are added to the set of output interfaces
-
-        :param dmds: iterable of demand objects
-        :return: set of interfaces that any given demand in dmds transits
-        """
-        interfaces_to_highlight = set()
-        lsps = set()
-        for dmd in dmds:
-            dmd_path = dmd.path[:]
-            for path in dmd_path:
-                for hop in path:
-                    if isinstance(hop, RSVP_LSP):
-                        lsps.add(hop)
-                        for lsp_hop in hop.path['interfaces']:
-                            interfaces_to_highlight.add(lsp_hop)
-                    else:
-                        interfaces_to_highlight.add(hop)
-        return interfaces_to_highlight, lsps
-
-
-    def get_sources(destination, model, object_type):
-        """
-        Returns a list of sources in the model that have
-        LSPs or Demands that terminate on the specified destination node.
-
-        :param destination: destination for LSPs or demands
-        :param model: pyNTM Model object
-        :param object_type: Either 'demand' or 'lsp'
-
-        :return: List of sources in the model that have LSPs or demands that are sourced from
-        the sources and terminate on the specified destination.
-        """
-
-        if object_type not in ['demand', 'lsp']:
-            msg = "'object_type' value must be 'demand'|'lsp'"
-            raise Exception(msg)
-
-        if object_type == 'demand':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-        elif object_type == 'lsp':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
-
-        sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
-
-        return sources
-
-    def get_destinations(src, model, object_type):
-        """
-        Returns a list of destinations in the model that have
-        LSPs or Demands that originate on the specified source.
-
-        :param source: origin for LSPs or demands
-        :param model: pyNTM Model object
-        :param type: Either 'demand' or 'lsp'
-
-        :return: List of destinations in the model that have LSPs or demands that terminate on
-        the destinations and originate on the specified origin node.
-        """
-
-        if object_type not in ['demand', 'lsp']:
-            msg = "'object_type' value must be 'demand'|'lsp'"
-            raise Exception(msg)
-
-        if object_type == 'demand':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-        elif object_type == 'lsp':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
-
-        destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
-
-        return destinations
-
-    def get_lsp_interface_data(lsp_data):
-        """
-        Gets circuit_id and node info for each lsp in lsp_data
-
-        :param lsp_data:
-        :return: tuple of [list of circuit ids], set(node names)
-        """
-
-        lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
-        lsp_interfaces = lsp.path['interfaces']
-        nodes = set()
-        for interface in lsp_interfaces:
-            nodes.add(interface.node_object.name)
-            nodes.add(interface.remote_node_object.name)
-        return lsp_interfaces, nodes
-
-    # ## END DATA FUNCTIONS ## #
-
-    # ## THIS MAKES THE VISUALIZATION ## #
-    app = dash.Dash(__name__)
-
-    # ## Stylesheet for weathermap graph elements ## #
     default_stylesheet = [
         {
             "selector": 'edge',
@@ -405,7 +161,7 @@ def make_visualization(model_to_visualize):
                 "curve-style": "bezier",
                 'label': "data(circuit_id)",
                 'line-color': "data(group)",
-                "font-size": "9px",
+                "font-size": font_size,
                 "opacity": 0.4,
             }
         },
@@ -423,7 +179,7 @@ def make_visualization(model_to_visualize):
             "style": {
                 "label": "data(label)",
                 'background-color': 'lightgrey',
-                "font-size": "9px",
+                "font-size": font_size,
                 "text-halign": 'center',
                 'text-valign': 'center',
                 'text-wrap': 'wrap',
@@ -454,13 +210,50 @@ def make_visualization(model_to_visualize):
         },
     ]
 
+    # list of utilization ranges to display
+    util_display_options = []
+    for util_range, color in util_ranges.items():
+        util_display_options.append({'label': util_range, 'value': color})
+
+    # Fill in demand source and destination options
+    demand_sources = set()
+    demand_destinations= set()
+    for entry in model.parallel_demand_groups().keys():
+        source, dest = entry.split('-')
+        demand_sources.add(source)
+        demand_destinations.add(dest)
+    demand_sources_list = list(demand_sources)
+    demand_destinations_list = list(demand_destinations)
+    demand_sources_list.sort()
+    demand_destinations_list.sort()
+
+    # Fill in LSP source and destination options
+    lsp_sources = set()
+    lsp_destinations= set()
+    for entry in model.parallel_lsp_groups().keys():
+        source, dest = entry.split('-')
+        lsp_sources.add(source)
+        lsp_destinations.add(dest)
+    lsp_sources_list = list(lsp_sources)
+    lsp_destinations_list = list(lsp_destinations)
+    lsp_sources_list.sort()
+    lsp_destinations_list.sort()
+
+    # Baseline selected values
+    no_selected_interface_text = 'no int selected'
+    no_selected_demand_text = 'no demand selected'
+    no_selected_lsp_text = 'no lsp selected'
+
     # Node list
     node_names = [node.name for node in model.node_objects]
     node_names.sort()
     node_list = [{'label': name, 'value': name} for name in node_names]
 
-    # ## App layout style ## #
-    styles_2 = {
+    demand_color = '#DB7093'
+    lsp_color = '#610B21'
+    interface_color = '#ADD8E6'
+
+    styles = {
         'all-content': {
             'width': 'auto',
             'height': 'auto'
@@ -517,41 +310,38 @@ def make_visualization(model_to_visualize):
         },
     }
 
+    app = dash.Dash(__name__)
 
-    # Create elements
-    elements = create_elements(model_to_visualize, util_ranges)
-
-    # ## app layout ## #
-    app_layout = html.Div(style=styles_2['all-content'], children=[
+    app.layout = html.Div(style=styles['all-content'], children=[
         cyto.Cytoscape(
             id='cytoscape-prototypes',
             layout={'name': 'preset'},
-            style=styles_2['cytoscape'],
+            style=styles['cytoscape'],
             elements=elements,
             stylesheet=default_stylesheet,
             responsive=True
         ),
-        html.Div(className='right_menu', style=styles_2['right_menu'], children=[
+        html.Div(className='right_menu', style=styles['right_menu'], children=[
             html.P(children=["Selected Interface:  ",
                              html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0),]),
-            html.P(id='selected-interface-output', style=styles_2['json-output']),
+            html.P(id='selected-interface-output', style=styles['json-output']),
             html.P(children=["Selected Demand:  ",
                              html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0),]),
-            html.P(id='selected-demand-output', style=styles_2['json-output']),
+            html.P(id='selected-demand-output', style=styles['json-output']),
             html.P(children=["Selected RSVP LSP:  ",
                              html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0),]),
-            html.P(id='selected-lsp-output', style=styles_2['json-output']),
-            dcc.Tabs(id='tabs', vertical=True, style=styles_2['tabs'], children=[
-                dcc.Tab(label='Utilization Visualization', style=styles_2['tab'], children=[
+            html.P(id='selected-lsp-output', style=styles['json-output']),
+            dcc.Tabs(id='tabs', vertical=True, style=styles['tabs'], children=[
+                dcc.Tab(label='Utilization Visualization', style=styles['tab'], children=[
                     dcc.Dropdown(
-                        style=styles_2['tab-content'],
+                        style=styles['tab-content'],
                         id='utilization-dropdown-callback', options=util_display_options,
                         value=[entry['value'] for entry in util_display_options],
                         multi=True,
                     )
                 ]),
-                dcc.Tab(label='Find Demands', style=styles_2['demand-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='Find Demands', style=styles['demand-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                                " selection menu"),
                         dcc.Dropdown(
@@ -563,30 +353,30 @@ def make_visualization(model_to_visualize):
                         dcc.RadioItems(
                             id='find-demands-callback',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         ),
                     ]),
                 ]),
-                dcc.Tab(label='Demand to Interfaces', style=styles_2['demand-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='Demand to Interfaces', style=styles['demand-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         dcc.RadioItems(
                             id='demand-path-interfaces',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         )
                     ]),
                 ]),
-                dcc.Tab(label='Demand to LSPs', style=styles_2['demand-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='Demand to LSPs', style=styles['demand-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         dcc.RadioItems(
                             id='demand-path-lsps',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         )
                     ]),
                 ]),
-                dcc.Tab(label='Find Interfaces on Node', style=styles_2['interface-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='Find Interfaces on Node', style=styles['interface-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         dcc.Dropdown(
                             id='find-node', placeholder="Select a node by name",
                             options=node_list
@@ -594,30 +384,30 @@ def make_visualization(model_to_visualize):
                         dcc.RadioItems(
                             id='interfaces-on-node',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         )
                     ]),
                 ]),
-                dcc.Tab(label='Interface to Demands', style=styles_2['interface-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='Interface to Demands', style=styles['interface-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         dcc.RadioItems(
                             id='interface-demand-callback',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         ),
                     ]),
                 ]),
-                dcc.Tab(label="Interface to LSPs", style=styles_2['interface-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label="Interface to LSPs", style=styles['interface-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         dcc.RadioItems(
                             id="interface-lsp-callback",
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output'],
+                            style=styles['json-output'],
                         )
                     ])
                 ]),
-                dcc.Tab(label='Find LSPs', style=styles_2['lsp-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='Find LSPs', style=styles['lsp-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
                                " selection menu"),
                         dcc.Dropdown(
@@ -629,25 +419,25 @@ def make_visualization(model_to_visualize):
                         dcc.RadioItems(
                             id='find-lsps-callback',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         ),
                     ]),
                 ]),
-                dcc.Tab(label='LSP to Demands', style=styles_2['lsp-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='LSP to Demands', style=styles['lsp-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         dcc.RadioItems(
                             id='lsp-demand-callback',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         ),
                     ]),
                 ]),
-                dcc.Tab(label='LSP to Interfaces', style=styles_2['lsp-tab'], children=[
-                    html.Div(style=styles_2['tab-content'], children=[
+                dcc.Tab(label='LSP to Interfaces', style=styles['lsp-tab'], children=[
+                    html.Div(style=styles['tab-content'], children=[
                         dcc.RadioItems(
                             id='lsp-interface-callback',
                             labelStyle={'display': 'inline-block'},
-                            style=styles_2['json-output']
+                            style=styles['json-output']
                         ),
                     ]),
                 ]),
@@ -655,7 +445,6 @@ def make_visualization(model_to_visualize):
         ])
     ])
 
-    # ## Callbacks to dynamically update weathermap based on user input ## #
     # Def to list Node name dropdown
     @app.callback(Output('interfaces-on-node', 'options'),
                   [Input('find-node', 'value')])
@@ -674,6 +463,179 @@ def make_visualization(model_to_visualize):
             return interface_info_to_display
         else:
             raise PreventUpdate
+
+    # Need to select interfaces that have utilization ranges selected in values from dropdown
+    @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
+                  [Input(component_id='cytoscape-prototypes', component_property='selectedEdgeData'),
+                   Input('utilization-dropdown-callback', 'value'),
+                   Input('selected-demand-output', 'children'),
+                   Input('selected-interface-output', 'children'),
+                   Input('selected-lsp-output', 'children')])
+    def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info, selected_lsp_info):
+        """
+        Updates stylesheet with style for edges_to_highlight that will change line type
+        for the edge to dashed and add pink arrows and squares to the demand edges and
+        also turn the nodes for the associated edges pink
+
+        :param edges_to_highlight: list of edge elements to highlight
+        :param source: demand source node name
+        :param destination: demand destination node name
+        :return: updated stylesheet with new elements that will reflect update colors for the
+        edges_to_highlight
+        """
+
+        new_style = []
+
+        # Utilization color for edges
+        for color in edges_to_highlight:
+            new_entry = {
+                "selector": "edge[group=\"{}\"]".format(color),
+                "style": {
+                    "opacity": 1.0
+                }
+            }
+
+            new_style.append(new_entry)
+
+        # Demand source and destination path visualization
+        if selected_demand_info is not None and \
+                selected_demand_info != '' and \
+                json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}] and \
+                json.loads(selected_demand_info) != {"label": "no demand selected", "value": ""}:
+            demand_dict = json.loads(selected_demand_info)
+            source = demand_dict['source']
+            destination = demand_dict['dest']
+            # Find the demands that match the source and destination
+            try:
+                dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
+            except KeyError:
+                return default_stylesheet + new_style
+
+            # Find the interfaces on the demand paths for each demand
+            interfaces_to_highlight = find_demand_interfaces_and_lsps(dmds)[0]
+
+            # Differentiate demand interfaces
+            for interface in interfaces_to_highlight:
+                # Add the edge selectors
+                new_entry = {
+                    "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                                interface.node_object.name),
+                    "style": {
+                        "width": '4',
+                        'line-style': 'dashed',
+                        'target-arrow-color': demand_color,
+                        'target-arrow-shape': 'triangle',
+                        'mid-target-arrow-color': demand_color,
+                        'mid-target-arrow-shape': 'triangle',
+                        'source-arrow-color': demand_color,
+                        'source-arrow-shape': 'square',
+                        'zIndex': 1000,
+                    }
+                }
+
+                new_style.append(new_entry)
+
+                new_entry_2 = {
+                    "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                                interface.remote_node_object.name),
+                    "style": {
+                        "width": '4',
+                        'line-style': 'dashed',
+                        'source-arrow-color': demand_color,
+                        'source-arrow-shape': 'triangle',
+                        'mid-source-arrow-color': demand_color,
+                        'mid-source-arrow-shape': 'triangle',
+                        'target-arrow-color': demand_color,
+                        'target-arrow-shape': 'square',
+                        'zIndex': 1000,
+                    }
+                }
+
+                new_style.append(new_entry_2)
+
+                # Add the node selectors
+                new_entry_3 = {
+                    "selector": "node[id=\"{}\"]".format(interface.node_object.name),
+                    "style": {
+                        'background-color': demand_color
+                    }
+                }
+
+                new_style.append(new_entry_3)
+
+                new_entry_4 = {
+                    "selector": "node[id=\"{}\"]".format(interface.remote_node_object.name),
+                    "style": {
+                        'background-color': demand_color
+                    }
+                }
+
+                new_style.append(new_entry_4)
+
+        # Selected edge differentiation on weathermap
+        if selected_interface_info:
+            if no_selected_interface_text not in selected_interface_info:
+                selected_interface_info = json.loads(selected_interface_info)
+                new_entry_5 = {
+                    "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface_info['source'],
+                                                                                selected_interface_info['circuit_id']),
+                    "style": {
+                        'line-style': 'dotted',
+                        'width': '6.5',
+                    }
+                }
+
+                new_style.append(new_entry_5)
+
+        # LSP path visualization
+        if selected_lsp_info:
+            if no_selected_lsp_text not in selected_lsp_info:
+                selected_lsp_info = json.loads(selected_lsp_info)
+                lsp_interfaces, node_names = get_lsp_interface_data(selected_lsp_info)
+
+                for interface in lsp_interfaces :
+                    new_entry_6 = {
+                        "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                                    interface.node_object.name),
+                        "style": {
+                            'line-style': 'dashed',
+                            'target-arrow-shape': 'chevron',
+                            'arrow-scale': '1.3',
+                            'target-arrow-color': lsp_color,
+                            'z-axis': 2000
+                        }
+                    }
+
+                    new_style.append(new_entry_6)
+
+
+                    new_entry_7 = {
+                        "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
+                                                                                    interface.remote_node_object.name),
+                        "style": {
+                            'line-style': 'dashed',
+                            'source-arrow-shape': 'chevron',
+                            'arrow-scale': '1.3',
+                            'source-arrow-color': lsp_color,
+                            'z-axis': 2000
+                        }
+                    }
+
+                    new_style.append(new_entry_7)
+
+                # Nodes in LSP path have a thick brick red border
+                for node in node_names:
+                    new_entry_8 = {
+                        "selector": "node[id=\"{}\"]".format(node),
+                        "style": {
+                            "border-color": lsp_color,
+                            "border-width": "4px"
+                        }
+                    }
+
+                    new_style.append(new_entry_8)
+
+        return default_stylesheet + new_style
 
 
     # Adaptive source/dest dropdowns for LSPs; will alter what they show based on what
@@ -995,7 +957,6 @@ def make_visualization(model_to_visualize):
         else:
             return [{"label": no_selected_interface_text, "value": ''}]
 
-
     # def that finds and displays demands on the selected interface
     @app.callback(Output('lsp-demand-callback', 'options'),
                   [Input('selected-lsp-output', 'children')])
@@ -1024,7 +985,6 @@ def make_visualization(model_to_visualize):
             return demands_on_lsp
         else:
             return [{"label": no_selected_lsp_text, "value": ''}]
-
 
     # def that finds and displays interfaces and LSPs on selected_demand's path;
     # this def updates both the 'Demand to Interfaces' and 'Demand to LSPs' tabs
@@ -1066,7 +1026,6 @@ def make_visualization(model_to_visualize):
             return ([{'label': selected_demand, 'value': selected_demand}],
                     [{'label': selected_demand, 'value': selected_demand}])
 
-
     # def that finds and displays interfaces on selected_lsp's path
     @app.callback(Output('lsp-interface-callback', 'options'),
                   [Input('selected-lsp-output', 'children')])
@@ -1090,195 +1049,162 @@ def make_visualization(model_to_visualize):
         else:
             return [{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}]
 
-
-    # Need to select interfaces that have utilization ranges selected in values from dropdown
-    @app.callback(Output('cytoscape-prototypes', 'stylesheet'),
-                  [Input(component_id='cytoscape-prototypes', component_property='selectedEdgeData'),
-                   Input('utilization-dropdown-callback', 'value'),
-                   Input('selected-demand-output', 'children'),
-                   Input('selected-interface-output', 'children'),
-                   Input('selected-lsp-output', 'children')])
-    def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info, selected_lsp_info):
+    def format_objects_for_display(object_list):
         """
-        Updates stylesheet with style for edges_to_highlight that will change line type
-        for the edge to dashed and add pink arrows and squares to the demand edges and
-        also turn the nodes for the associated edges pink
+        Takes a list of LSP or demand objects and returns a list of info that can
+        be displayed in visualization menus.
 
-        :param edges_to_highlight: list of edge elements to highlight
-        :param source: demand source node name
-        :param destination: demand destination node name
-        :return: updated stylesheet with new elements that will reflect update colors for the
-        edges_to_highlight
+        :param object_list: list of Demand objects
+        :return: List of info about each demand.  Each list entry is a dict with 'label' and
+        'value' keys
+
+        Example Input::
+            [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
+            Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
+
+        Example Output::
+            [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
+            'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
+            {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
+            'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
+
         """
 
-        new_style = []
+        if isinstance(object_list[0], RSVP_LSP):
+            object_type = 'lsp'
+        elif isinstance(object_list[0], Demand):
+            object_type = 'demand'
 
-        # Utilization color for edges
-        for color in edges_to_highlight:
-            new_entry = {
-                "selector": "edge[group=\"{}\"]".format(color),
-                "style": {
-                    "opacity": 1.0
-                }
-            }
+        # Initialize object list
+        objects = []
+        for object in object_list:
+            # Return the demand's value as a dict with demand info (dmd_info)
+            src = object.source_node_object.name
+            dest = object.dest_node_object.name
+            if object_type == 'demand':
+                name = object.name
+            elif object_type == 'lsp':
+                name = object.lsp_name
+            object_info = {'source': src, 'dest': dest, 'name': name}
+            objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
+        return objects
 
-            new_style.append(new_entry)
+    def format_interfaces_for_display(interface_list):
+        """
+        Reformats information about Interface objects for display
 
-        # Demand source and destination path visualization
-        if selected_demand_info is not None and \
-                selected_demand_info != '' and \
-                json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}] and \
-                json.loads(selected_demand_info) != {"label": "no demand selected", "value": ""}:
-            demand_dict = json.loads(selected_demand_info)
-            source = demand_dict['source']
-            destination = demand_dict['dest']
-            # Find the demands that match the source and destination
-            try:
-                dmds = model.parallel_demand_groups()['{}-{}'.format(source, destination)]
-            except KeyError:
-                return default_stylesheet + new_style
-
-            # Find the interfaces on the demand paths for each demand
-            interfaces_to_highlight = find_demand_interfaces_and_lsps(dmds)[0]
-
-            # Differentiate demand interfaces
-            for interface in interfaces_to_highlight:
-                # Add the edge selectors
-                new_entry = {
-                    "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                                interface.node_object.name),
-                    "style": {
-                        "width": '4',
-                        'line-style': 'dashed',
-                        'target-arrow-color': demand_color,
-                        'target-arrow-shape': 'triangle',
-                        'mid-target-arrow-color': demand_color,
-                        'mid-target-arrow-shape': 'triangle',
-                        'source-arrow-color': demand_color,
-                        'source-arrow-shape': 'square',
-                        'zIndex': 1000,
-                    }
-                }
-
-                new_style.append(new_entry)
-
-                new_entry_2 = {
-                    "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                                interface.remote_node_object.name),
-                    "style": {
-                        "width": '4',
-                        'line-style': 'dashed',
-                        'source-arrow-color': demand_color,
-                        'source-arrow-shape': 'triangle',
-                        'mid-source-arrow-color': demand_color,
-                        'mid-source-arrow-shape': 'triangle',
-                        'target-arrow-color': demand_color,
-                        'target-arrow-shape': 'square',
-                        'zIndex': 1000,
-                    }
-                }
-
-                new_style.append(new_entry_2)
-
-                # Add the node selectors
-                new_entry_3 = {
-                    "selector": "node[id=\"{}\"]".format(interface.node_object.name),
-                    "style": {
-                        'background-color': demand_color
-                    }
-                }
-
-                new_style.append(new_entry_3)
-
-                new_entry_4 = {
-                    "selector": "node[id=\"{}\"]".format(interface.remote_node_object.name),
-                    "style": {
-                        'background-color': demand_color
-                    }
-                }
-
-                new_style.append(new_entry_4)
-
-        # Selected edge differentiation on weathermap
-        if selected_interface_info:
-            if no_selected_interface_text not in selected_interface_info:
-                selected_interface_info = json.loads(selected_interface_info)
-                new_entry_5 = {
-                    "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface_info['source'],
-                                                                                selected_interface_info['circuit_id']),
-                    "style": {
-                        'line-style': 'dotted',
-                        'width': '6.5',
-                    }
-                }
-
-                new_style.append(new_entry_5)
-
-        # LSP path visualization
-        if selected_lsp_info:
-            if no_selected_lsp_text not in selected_lsp_info:
-                selected_lsp_info = json.loads(selected_lsp_info)
-                lsp_interfaces, node_names = get_lsp_interface_data(selected_lsp_info)
-
-                for interface in lsp_interfaces :
-                    new_entry_6 = {
-                        "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                                    interface.node_object.name),
-                        "style": {
-                            'line-style': 'dashed',
-                            'target-arrow-shape': 'chevron',
-                            'arrow-scale': '1.3',
-                            'target-arrow-color': lsp_color,
-                            'z-axis': 2000
-                        }
-                    }
-
-                    new_style.append(new_entry_6)
+        :param interface_list: list of Interface objects
+        :return: list of dict entries with interface information
+        """
+        interfaces_list = []
+        for interface in interface_list:
+            source_node_name = interface.node_object.name
+            dest_node_name = interface.remote_node_object.name
+            name = interface.name
+            circuit_id = interface.circuit_id
+            cost = interface.cost
+            int_dict = {'source': source_node_name, 'interface-name': name,
+                        'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
+            int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
+            interfaces_list.append(int_info)
+        return interfaces_list
 
 
-                    new_entry_7 = {
-                        "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                                    interface.remote_node_object.name),
-                        "style": {
-                            'line-style': 'dashed',
-                            'source-arrow-shape': 'chevron',
-                            'arrow-scale': '1.3',
-                            'source-arrow-color': lsp_color,
-                            'z-axis': 2000
-                        }
-                    }
+    # #### Utility Functions #### #
+    def find_demand_interfaces_and_lsps(dmds):
+        """
+        Finds interfaces for each demand in dmds.  If there
+        are RSVP LSPs in path, the interfaces for that LSP path
+        are added to the set of output interfaces
 
-                    new_style.append(new_entry_7)
+        :param dmds: iterable of demand objects
+        :return: set of interfaces that any given demand in dmds transits
+        """
+        interfaces_to_highlight = set()
+        lsps = set()
+        for dmd in dmds:
+            dmd_path = dmd.path[:]
+            for path in dmd_path:
+                for hop in path:
+                    if isinstance(hop, RSVP_LSP):
+                        lsps.add(hop)
+                        for lsp_hop in hop.path['interfaces']:
+                            interfaces_to_highlight.add(lsp_hop)
+                    else:
+                        interfaces_to_highlight.add(hop)
+        return interfaces_to_highlight, lsps
 
-                # Nodes in LSP path have a thick brick red border
-                for node in node_names:
-                    new_entry_8 = {
-                        "selector": "node[id=\"{}\"]".format(node),
-                        "style": {
-                            "border-color": lsp_color,
-                            "border-width": "4px"
-                        }
-                    }
 
-                    new_style.append(new_entry_8)
+    def get_sources(destination, model, object_type):
+        """
+        Returns a list of sources in the model that have
+        LSPs or Demands that terminate on the specified destination node.
 
-        return default_stylesheet + new_style
+        :param destination: destination for LSPs or demands
+        :param model: pyNTM Model object
+        :param object_type: Either 'demand' or 'lsp'
 
-    app = dash.Dash(__name__)
+        :return: List of sources in the model that have LSPs or demands that are sourced from
+        the sources and terminate on the specified destination.
+        """
 
-    app.layout = app_layout
+        if object_type not in ['demand', 'lsp']:
+            msg = "'object_type' value must be 'demand'|'lsp'"
+            raise Exception(msg)
+
+        if object_type == 'demand':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+        elif object_type == 'lsp':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+        sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
+
+        return sources
+
+    def get_destinations(src, model, object_type):
+        """
+        Returns a list of destinations in the model that have
+        LSPs or Demands that originate on the specified source.
+
+        :param source: origin for LSPs or demands
+        :param model: pyNTM Model object
+        :param type: Either 'demand' or 'lsp'
+
+        :return: List of destinations in the model that have LSPs or demands that terminate on
+        the destinations and originate on the specified origin node.
+        """
+
+        if object_type not in ['demand', 'lsp']:
+            msg = "'object_type' value must be 'demand'|'lsp'"
+            raise Exception(msg)
+
+        if object_type == 'demand':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+        elif object_type == 'lsp':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+        destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
+
+        return destinations
+
+    def get_lsp_interface_data(lsp_data):
+        """
+        Gets circuit_id and node info for each lsp in lsp_data
+
+        :param lsp_data:
+        :return: tuple of [list of circuit ids], set(node names)
+        """
+
+        lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
+        lsp_interfaces = lsp.path['interfaces']
+        nodes = set()
+        for interface in lsp_interfaces:
+            nodes.add(interface.node_object.name)
+            nodes.add(interface.remote_node_object.name)
+        return lsp_interfaces, nodes
+
+
 
     app.run_server(debug=True)
-
-
-
-
-
-
-
-
-
-
-
 
 
