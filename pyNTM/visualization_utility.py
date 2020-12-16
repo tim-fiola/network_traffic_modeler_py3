@@ -28,9 +28,10 @@ def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
     :return:
     """
 
-    json_node = {}
-    json_node['position'] = {'x': x, 'y': y}
-    json_node['data'] = {'id': id, 'label': label, 'group': ''}
+    json_node = {
+        'position': {'x': x, 'y': y},
+        'data': {'id': id, 'label': label, 'group': ''},
+    }
 
     if midpoint:
         json_node['data']['group'] = 'midpoint'
@@ -65,13 +66,18 @@ def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utiliz
             except (ValueError, IndexError):
                 pass
 
-    json_edge = {
-                    'data': {'source': source_id, 'target': target_id, "group": group,
-                             'circuit_id': circuit_id, 'utilization': utilization, 'interface-name': edge_name,
-                             'capacity': capacity, 'cost': cost}
-                 }
-
-    return json_edge
+    return {
+        'data': {
+            'source': source_id,
+            'target': target_id,
+            "group": group,
+            'circuit_id': circuit_id,
+            'utilization': utilization,
+            'interface-name': edge_name,
+            'capacity': capacity,
+            'cost': cost,
+        }
+    }
 
 
 # Default utility ranges; used as default value for
