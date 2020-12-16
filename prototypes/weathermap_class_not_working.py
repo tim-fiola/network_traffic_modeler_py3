@@ -340,12 +340,12 @@ class Weathermap(object):
         # Make node list
         self.make_node_list()
 
-        app = dash.Dash(__name__)
-        app.layout = self.app_layout
+        self.app = dash.Dash(__name__)
+        self.app.layout = self.app_layout
 
 
         # Run server
-        app.run_server(debug=True)
+        self.app.run_server(debug=True)
 
 
     # ## Callback defs ## #
@@ -557,8 +557,8 @@ class Weathermap(object):
 
         if ctx_src_inputs is None and ctx_dest_inputs is None:
             # No source or destination specified
-            dest_options = [{'label': dest, 'value': dest} for dest in self.lsp_destinations_list]
-            src_options = [{'label': source, 'value': source} for source in self.lsp_sources_list]
+            dest_options = [{'label': dest, 'value': dest} for dest in self.lsp_destinations]
+            src_options = [{'label': source, 'value': source} for source in self.lsp_sources]
 
         elif ctx_src_inputs != None and ctx_dest_inputs != None:
             # Both source and destination specified
@@ -636,8 +636,8 @@ class Weathermap(object):
 
         if ctx_src_inputs is None and ctx_dest_inputs is None:
             # No source or destination specified
-            dest_options = [{'label': dest, 'value': dest} for dest in self.demand_destinations_list]
-            src_options = [{'label': source, 'value': source} for source in self.demand_sources_list]
+            dest_options = [{'label': dest, 'value': dest} for dest in self.demand_destinations]
+            src_options = [{'label': source, 'value': source} for source in self.demand_sources]
 
         elif ctx_src_inputs != None and ctx_dest_inputs != None:
             # Both source and destination specified

@@ -2,13 +2,16 @@ import sys
 sys.path.append('../')
 
 from pyNTM import FlexModel
-from pyNTM.weathermap import Weathermap
-
-
+from visualization_testing_3 import make_visualization
+from pyNTM import visualization_utility as vu
+#
+#
+#
 model = FlexModel.load_model_file('igp_shortcuts_model.csv')
 model.update_simulation()
 
-wm = Weathermap(model)
+# vis = vu.make_visualization(model)
+make_visualization(model)
 
-wm.create_visualization()
+
 
