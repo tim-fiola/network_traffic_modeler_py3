@@ -486,13 +486,13 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
         ),
         html.Div(className='right_menu', style=styles['right_menu'], children=[
             html.P(children=["Selected Interface:  ",
-                             html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0),]),
+                             html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0), ]),
             html.P(id='selected-interface-output', style=styles['json-output']),
             html.P(children=["Selected Demand:  ",
-                             html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0),]),
+                             html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0), ]),
             html.P(id='selected-demand-output', style=styles['json-output']),
             html.P(children=["Selected RSVP LSP:  ",
-                             html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0),]),
+                             html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0), ]),
             html.P(id='selected-lsp-output', style=styles['json-output']),
             dcc.Tabs(id='tabs', vertical=True, style=styles['tabs'], children=[
                 dcc.Tab(label='Utilization Visualization', style=styles['tab'], children=[
@@ -614,7 +614,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                   [Input('find-node', 'value')])
     def interfaces_on_node(node):
 
-        if(node):
+        if node:
             node = model.get_node_object(node)
             interfaces_on_node = node.interfaces(model)
 
@@ -757,7 +757,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                 selected_lsp_info = json.loads(selected_lsp_info)
                 lsp_interfaces, node_names = get_lsp_interface_data(selected_lsp_info)
 
-                for interface in lsp_interfaces :
+                for interface in lsp_interfaces:
                     new_entry_6 = {
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                                     interface.node_object.name),
@@ -771,7 +771,6 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                     }
 
                     new_style.append(new_entry_6)
-
 
                     new_entry_7 = {
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
@@ -1078,7 +1077,8 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             interface = model.get_interface_object(int_dict['interface-name'], int_dict['source'])
             lsps = interface.lsps(model)
             if len(lsps) == 0:
-                return [{'label': 'no lsps on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
+                return [{'label': 'no lsps on interface',
+                         'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
             lsps_on_interface = format_objects_for_display(lsps)
 
@@ -1108,7 +1108,8 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             interface = model.get_interface_object(int_dict['interface-name'], int_dict['source'])
             demands = interface.demands(model)
             if len(demands) == 0:
-                return [{'label': 'no demands on interface', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
+                return [{'label': 'no demands on interface',
+                         'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
             demands_on_interface = format_objects_for_display(demands)
 
