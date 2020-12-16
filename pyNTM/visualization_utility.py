@@ -74,6 +74,8 @@ def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utiliz
     return json_edge
 
 
+# Default utility ranges; used as default value for
+# util_ranges in make_visualization def
 util_ranges = {'0-24': 'royalblue',
                '25-49': 'green',
                '50-74': 'yellow',
@@ -83,9 +85,167 @@ util_ranges = {'0-24': 'royalblue',
                'failed': 'grey'}
 
 
-def make_visualization(model, font_size='9px'):
-    # Make the Parallel_Link_Model
-    # model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
+def make_visualization(model, font_size='9px', util_ranges=util_ranges):
+    """
+
+    :param model:
+    :param font_size:
+    :param util_ranges:
+    :return:
+    """
+
+    # #### Utility Functions #### #
+    def format_objects_for_display(object_list):
+        """
+        Takes a list of LSP or demand objects and returns a list of info that can
+        be displayed in visualization menus.
+
+        :param object_list: list of Demand objects
+        :return: List of info about each demand.  Each list entry is a dict with 'label' and
+        'value' keys
+
+        Example Input::
+            [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
+            Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
+
+        Example Output::
+            [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
+            'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
+            {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
+            'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
+
+        """
+
+        if isinstance(object_list[0], RSVP_LSP):
+            object_type = 'lsp'
+        elif isinstance(object_list[0], Demand):
+            object_type = 'demand'
+
+        # Initialize object list
+        objects = []
+        for object in object_list:
+            # Return the demand's value as a dict with demand info (dmd_info)
+            src = object.source_node_object.name
+            dest = object.dest_node_object.name
+            if object_type == 'demand':
+                name = object.name
+            elif object_type == 'lsp':
+                name = object.lsp_name
+            object_info = {'source': src, 'dest': dest, 'name': name}
+            objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
+        return objects
+
+    def format_interfaces_for_display(interface_list):
+        """
+        Reformats information about Interface objects for display
+
+        :param interface_list: list of Interface objects
+        :return: list of dict entries with interface information
+        """
+        interfaces_list = []
+        for interface in interface_list:
+            source_node_name = interface.node_object.name
+            dest_node_name = interface.remote_node_object.name
+            name = interface.name
+            circuit_id = interface.circuit_id
+            cost = interface.cost
+            int_dict = {'source': source_node_name, 'interface-name': name,
+                        'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
+            int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
+            interfaces_list.append(int_info)
+        return interfaces_list
+
+    def find_demand_interfaces_and_lsps(dmds):
+        """
+        Finds interfaces for each demand in dmds.  If there
+        are RSVP LSPs in path, the interfaces for that LSP path
+        are added to the set of output interfaces
+
+        :param dmds: iterable of demand objects
+        :return: set of interfaces that any given demand in dmds transits
+        """
+        interfaces_to_highlight = set()
+        lsps = set()
+        for dmd in dmds:
+            dmd_path = dmd.path[:]
+            for path in dmd_path:
+                for hop in path:
+                    if isinstance(hop, RSVP_LSP):
+                        lsps.add(hop)
+                        for lsp_hop in hop.path['interfaces']:
+                            interfaces_to_highlight.add(lsp_hop)
+                    else:
+                        interfaces_to_highlight.add(hop)
+        return interfaces_to_highlight, lsps
+
+
+    def get_sources(destination, model, object_type):
+        """
+        Returns a list of sources in the model that have
+        LSPs or Demands that terminate on the specified destination node.
+
+        :param destination: destination for LSPs or demands
+        :param model: pyNTM Model object
+        :param object_type: Either 'demand' or 'lsp'
+
+        :return: List of sources in the model that have LSPs or demands that are sourced from
+        the sources and terminate on the specified destination.
+        """
+
+        if object_type not in ['demand', 'lsp']:
+            msg = "'object_type' value must be 'demand'|'lsp'"
+            raise Exception(msg)
+
+        if object_type == 'demand':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+        elif object_type == 'lsp':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+        sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
+
+        return sources
+
+    def get_destinations(src, model, object_type):
+        """
+        Returns a list of destinations in the model that have
+        LSPs or Demands that originate on the specified source.
+
+        :param source: origin for LSPs or demands
+        :param model: pyNTM Model object
+        :param type: Either 'demand' or 'lsp'
+
+        :return: List of destinations in the model that have LSPs or demands that terminate on
+        the destinations and originate on the specified origin node.
+        """
+
+        if object_type not in ['demand', 'lsp']:
+            msg = "'object_type' value must be 'demand'|'lsp'"
+            raise Exception(msg)
+
+        if object_type == 'demand':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+        elif object_type == 'lsp':
+            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+        destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
+
+        return destinations
+
+    def get_lsp_interface_data(lsp_data):
+        """
+        Gets circuit_id and node info for each lsp in lsp_data
+
+        :param lsp_data:
+        :return: tuple of [list of circuit ids], set(node names)
+        """
+
+        lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
+        lsp_interfaces = lsp.path['interfaces']
+        nodes = set()
+        for interface in lsp_interfaces:
+            nodes.add(interface.node_object.name)
+            nodes.add(interface.remote_node_object.name)
+        return lsp_interfaces, nodes
 
     def create_elements(model, group_midpoints=True):
         """
@@ -149,6 +309,8 @@ def make_visualization(model, font_size='9px'):
         updated_elements = nodes + edges
 
         return updated_elements
+
+    # ## END OF UTILITY FUNCTIONS ## #
 
     elements = create_elements(model)
 
@@ -217,7 +379,7 @@ def make_visualization(model, font_size='9px'):
 
     # Fill in demand source and destination options
     demand_sources = set()
-    demand_destinations= set()
+    demand_destinations = set()
     for entry in model.parallel_demand_groups().keys():
         source, dest = entry.split('-')
         demand_sources.add(source)
@@ -229,7 +391,7 @@ def make_visualization(model, font_size='9px'):
 
     # Fill in LSP source and destination options
     lsp_sources = set()
-    lsp_destinations= set()
+    lsp_destinations = set()
     for entry in model.parallel_lsp_groups().keys():
         source, dest = entry.split('-')
         lsp_sources.add(source)
@@ -310,6 +472,7 @@ def make_visualization(model, font_size='9px'):
         },
     }
 
+    # Define the app
     app = dash.Dash(__name__)
 
     app.layout = html.Div(style=styles['all-content'], children=[
@@ -445,6 +608,7 @@ def make_visualization(model, font_size='9px'):
         ])
     ])
 
+    # ## CALLBACK DEFS - DYNAMICALLY UPDATE VISUALIZATION BASED ON USER ACTION # ##
     # Def to list Node name dropdown
     @app.callback(Output('interfaces-on-node', 'options'),
                   [Input('find-node', 'value')])
@@ -1049,162 +1213,6 @@ def make_visualization(model, font_size='9px'):
         else:
             return [{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}]
 
-    def format_objects_for_display(object_list):
-        """
-        Takes a list of LSP or demand objects and returns a list of info that can
-        be displayed in visualization menus.
-
-        :param object_list: list of Demand objects
-        :return: List of info about each demand.  Each list entry is a dict with 'label' and
-        'value' keys
-
-        Example Input::
-            [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
-            Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
-
-        Example Output::
-            [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
-            'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
-            {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
-            'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
-
-        """
-
-        if isinstance(object_list[0], RSVP_LSP):
-            object_type = 'lsp'
-        elif isinstance(object_list[0], Demand):
-            object_type = 'demand'
-
-        # Initialize object list
-        objects = []
-        for object in object_list:
-            # Return the demand's value as a dict with demand info (dmd_info)
-            src = object.source_node_object.name
-            dest = object.dest_node_object.name
-            if object_type == 'demand':
-                name = object.name
-            elif object_type == 'lsp':
-                name = object.lsp_name
-            object_info = {'source': src, 'dest': dest, 'name': name}
-            objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
-        return objects
-
-    def format_interfaces_for_display(interface_list):
-        """
-        Reformats information about Interface objects for display
-
-        :param interface_list: list of Interface objects
-        :return: list of dict entries with interface information
-        """
-        interfaces_list = []
-        for interface in interface_list:
-            source_node_name = interface.node_object.name
-            dest_node_name = interface.remote_node_object.name
-            name = interface.name
-            circuit_id = interface.circuit_id
-            cost = interface.cost
-            int_dict = {'source': source_node_name, 'interface-name': name,
-                        'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
-            int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
-            interfaces_list.append(int_info)
-        return interfaces_list
-
-
-    # #### Utility Functions #### #
-    def find_demand_interfaces_and_lsps(dmds):
-        """
-        Finds interfaces for each demand in dmds.  If there
-        are RSVP LSPs in path, the interfaces for that LSP path
-        are added to the set of output interfaces
-
-        :param dmds: iterable of demand objects
-        :return: set of interfaces that any given demand in dmds transits
-        """
-        interfaces_to_highlight = set()
-        lsps = set()
-        for dmd in dmds:
-            dmd_path = dmd.path[:]
-            for path in dmd_path:
-                for hop in path:
-                    if isinstance(hop, RSVP_LSP):
-                        lsps.add(hop)
-                        for lsp_hop in hop.path['interfaces']:
-                            interfaces_to_highlight.add(lsp_hop)
-                    else:
-                        interfaces_to_highlight.add(hop)
-        return interfaces_to_highlight, lsps
-
-
-    def get_sources(destination, model, object_type):
-        """
-        Returns a list of sources in the model that have
-        LSPs or Demands that terminate on the specified destination node.
-
-        :param destination: destination for LSPs or demands
-        :param model: pyNTM Model object
-        :param object_type: Either 'demand' or 'lsp'
-
-        :return: List of sources in the model that have LSPs or demands that are sourced from
-        the sources and terminate on the specified destination.
-        """
-
-        if object_type not in ['demand', 'lsp']:
-            msg = "'object_type' value must be 'demand'|'lsp'"
-            raise Exception(msg)
-
-        if object_type == 'demand':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-        elif object_type == 'lsp':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
-
-        sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
-
-        return sources
-
-    def get_destinations(src, model, object_type):
-        """
-        Returns a list of destinations in the model that have
-        LSPs or Demands that originate on the specified source.
-
-        :param source: origin for LSPs or demands
-        :param model: pyNTM Model object
-        :param type: Either 'demand' or 'lsp'
-
-        :return: List of destinations in the model that have LSPs or demands that terminate on
-        the destinations and originate on the specified origin node.
-        """
-
-        if object_type not in ['demand', 'lsp']:
-            msg = "'object_type' value must be 'demand'|'lsp'"
-            raise Exception(msg)
-
-        if object_type == 'demand':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-        elif object_type == 'lsp':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
-
-        destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
-
-        return destinations
-
-    def get_lsp_interface_data(lsp_data):
-        """
-        Gets circuit_id and node info for each lsp in lsp_data
-
-        :param lsp_data:
-        :return: tuple of [list of circuit ids], set(node names)
-        """
-
-        lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
-        lsp_interfaces = lsp.path['interfaces']
-        nodes = set()
-        for interface in lsp_interfaces:
-            nodes.add(interface.node_object.name)
-            nodes.add(interface.remote_node_object.name)
-        return lsp_interfaces, nodes
-
-
+    # ## END OF CALLBACK DEFS ## #
 
     app.run_server(debug=True)
-
-
