@@ -2,7 +2,7 @@ import sys
 sys.path.append('../')
 
 from pyNTM import FlexModel
-from pyNTM.visualization_utility import make_visualization
+from pyNTM import make_visualization
 
 #
 #

@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../')
-
 import dash
 import dash_cytoscape as cyto
 import dash_html_components as html
@@ -183,7 +180,6 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                     else:
                         interfaces_to_highlight.add(hop)
         return interfaces_to_highlight, lsps
-
 
     def get_sources(destination, model, object_type):
         """
@@ -454,7 +450,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                 'width': '200px',
                 'max-width': '200px',
                 'background-color': '#B695C0'
-        },
+                },
         'tab-content': {
             'max-width': '400px',
             'min-width': '300px',
@@ -464,18 +460,18 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                           'width': '200px',
                           'max-width': '200px',
                           'background-color': interface_color
-        },
+                          },
         'demand-tab': {'height': '75px',
                        'width': '200px',
                        'max-width': '200px',
                        'background-color': demand_color
-        },
+                       },
         'lsp-tab': {'height': '75px',
                     'width': '200px',
                     'max-width': '200px',
                     'background-color': lsp_color,
                     'color': 'white'
-        },
+                    },
     }
 
     # Define the app
@@ -610,7 +606,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                         ),
                     ]),
                 ]),
-           ]),
+            ]),
         ])
     ])
 
@@ -806,14 +802,13 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
 
         return default_stylesheet + new_style
 
-
     # Adaptive source/dest dropdowns for LSPs; will alter what they show based on what
     # the other shows, so they will only show existing source/dest possibilities
     @app.callback([Output('lsp-source-callback', 'options'),
                    Output('lsp-destination-callback', 'options'),
                    Output('find-lsps-callback', 'options')],
                   [Input('lsp-source-callback', 'value'),
-                   Input('lsp-destination-callback', 'value'),])
+                   Input('lsp-destination-callback', 'value'), ])
     def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
         ctx = dash.callback_context
 
@@ -826,7 +821,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             dest_options = [{'label': dest, 'value': dest} for dest in lsp_destinations_list]
             src_options = [{'label': source, 'value': source} for source in lsp_sources_list]
 
-        elif ctx_src_inputs != None and ctx_dest_inputs != None:
+        elif ctx_src_inputs is not None and ctx_dest_inputs is not None:
             # Both source and destination specified
             src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
             dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
@@ -837,7 +832,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             # Format lsps for display
             lsps = format_objects_for_display(lsp_list)
 
-        elif ctx_src_inputs == None and ctx_dest_inputs != None:
+        elif ctx_src_inputs is None and ctx_dest_inputs is not None:
             # No source but specified destination
             src_list = get_sources(ctx_dest_inputs, model=model, object_type='lsp')
             src_list.sort()
@@ -857,7 +852,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             # Format lsps for display
             lsps = format_objects_for_display(lsp_list)
 
-        elif ctx_src_inputs != None and ctx_dest_inputs == None:
+        elif ctx_src_inputs is not None and ctx_dest_inputs is None:
             # Source specified but no destination
             src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
             dest_list = get_destinations(ctx_src_inputs, model=model, object_type='lsp')
@@ -891,7 +886,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
                    Output('demand-destination-callback', 'options'),
                    Output('find-demands-callback', 'options')],
                   [Input('demand-source-callback', 'value'),
-                   Input('demand-destination-callback', 'value'),])
+                   Input('demand-destination-callback', 'value'), ])
     def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}]):
 
         ctx = dash.callback_context
@@ -905,7 +900,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             dest_options = [{'label': dest, 'value': dest} for dest in demand_destinations_list]
             src_options = [{'label': source, 'value': source} for source in demand_sources_list]
 
-        elif ctx_src_inputs != None and ctx_dest_inputs != None:
+        elif ctx_src_inputs is not None and ctx_dest_inputs is not None:
             # Both source and destination specified
             src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
             dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
@@ -916,7 +911,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             # Format demands for display
             demands = format_objects_for_display(demand_list)
 
-        elif ctx_src_inputs == None and ctx_dest_inputs != None:
+        elif ctx_src_inputs is None and ctx_dest_inputs is not None:
             # No source but specified destination
             src_list = get_sources(ctx_dest_inputs, model=model, object_type='demand')
             src_list.sort()
@@ -935,7 +930,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
             # Format demands for display
             demands = format_objects_for_display(demand_list)
 
-        elif ctx_src_inputs != None and ctx_dest_inputs == None:
+        elif ctx_src_inputs is not None and ctx_dest_inputs is None:
             # Source specified but no destination
             src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
 
