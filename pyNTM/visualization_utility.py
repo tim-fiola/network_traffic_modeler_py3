@@ -311,6 +311,144 @@ def create_elements(model, group_midpoints=True):
 
 # ## END OF UTILITY FUNCTIONS ## #
 
+def make_app_layout(style_info, elements, stylesheet, list_of_nodes, utilization_display_info):
+
+    app_layout = html.Div(style=style_info['all-content'], children=[
+        cyto.Cytoscape(
+            id='cytoscape-prototypes',
+            layout={'name': 'preset'},
+            style=style_info['cytoscape'],
+            elements=elements,
+            stylesheet=stylesheet,
+            responsive=True
+        ),
+        html.Div(className='right_menu', style=style_info['right_menu'], children=[
+            html.P(children=["Selected Interface:  ",
+                             html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0), ]),
+            html.P(id='selected-interface-output', style=style_info['json-output']),
+            html.P(children=["Selected Demand:  ",
+                             html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0), ]),
+            html.P(id='selected-demand-output', style=style_info['json-output']),
+            html.P(children=["Selected RSVP LSP:  ",
+                             html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0), ]),
+            html.P(id='selected-lsp-output', style=style_info['json-output']),
+            dcc.Tabs(id='tabs', vertical=True, style=style_info['tabs'], children=[
+                dcc.Tab(label='Utilization Visualization', style=style_info['tab'], children=[
+                    dcc.Dropdown(
+                        style=style_info['tab-content'],
+                        id='utilization-dropdown-callback', options=utilization_display_info,
+                        value=[entry['value'] for entry in utilization_display_info],
+                        multi=True,
+                    )
+                ]),
+                dcc.Tab(label='Find Demands', style=style_info['demand-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
+                               " selection menu"),
+                        dcc.Dropdown(
+                            id='demand-source-callback', placeholder='Select a source node',
+                        ),
+                        dcc.Dropdown(
+                            id='demand-destination-callback', placeholder='Select a dest node',
+                        ),
+                        dcc.RadioItems(
+                            id='find-demands-callback',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        ),
+                    ]),
+                ]),
+                dcc.Tab(label='Demand to Interfaces', style=style_info['demand-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        dcc.RadioItems(
+                            id='demand-path-interfaces',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        )
+                    ]),
+                ]),
+                dcc.Tab(label='Demand to LSPs', style=style_info['demand-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        dcc.RadioItems(
+                            id='demand-path-lsps',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        )
+                    ]),
+                ]),
+                dcc.Tab(label='Find Interfaces on Node', style=style_info['interface-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        dcc.Dropdown(
+                            id='find-node', placeholder="Select a node by name",
+                            options=list_of_nodes
+                        ),
+                        dcc.RadioItems(
+                            id='interfaces-on-node',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        )
+                    ]),
+                ]),
+                dcc.Tab(label='Interface to Demands', style=style_info['interface-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        dcc.RadioItems(
+                            id='interface-demand-callback',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        ),
+                    ]),
+                ]),
+                dcc.Tab(label="Interface to LSPs", style=style_info['interface-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        dcc.RadioItems(
+                            id="interface-lsp-callback",
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output'],
+                        )
+                    ])
+                ]),
+                dcc.Tab(label='Find LSPs', style=style_info['lsp-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
+                               " selection menu"),
+                        dcc.Dropdown(
+                            id='lsp-source-callback', placeholder='Select a source node',
+                        ),
+                        dcc.Dropdown(
+                            id='lsp-destination-callback', placeholder='Select a dest node',
+                        ),
+                        dcc.RadioItems(
+                            id='find-lsps-callback',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        ),
+                    ]),
+                ]),
+                dcc.Tab(label='LSP to Demands', style=style_info['lsp-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        dcc.RadioItems(
+                            id='lsp-demand-callback',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        ),
+                    ]),
+                ]),
+                dcc.Tab(label='LSP to Interfaces', style=style_info['lsp-tab'], children=[
+                    html.Div(style=style_info['tab-content'], children=[
+                        dcc.RadioItems(
+                            id='lsp-interface-callback',
+                            labelStyle={'display': 'inline-block'},
+                            style=style_info['json-output']
+                        ),
+                    ]),
+                ]),
+            ]),
+        ])
+    ])
+
+    return app_layout
+
+
 def make_visualization(model, font_size='9px', util_ranges=util_ranges):
     """
 
@@ -483,138 +621,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
     # Define the app
     app = dash.Dash(__name__)
 
-    app.layout = html.Div(style=styles['all-content'], children=[
-        cyto.Cytoscape(
-            id='cytoscape-prototypes',
-            layout={'name': 'preset'},
-            style=styles['cytoscape'],
-            elements=elements,
-            stylesheet=default_stylesheet,
-            responsive=True
-        ),
-        html.Div(className='right_menu', style=styles['right_menu'], children=[
-            html.P(children=["Selected Interface:  ",
-                             html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0), ]),
-            html.P(id='selected-interface-output', style=styles['json-output']),
-            html.P(children=["Selected Demand:  ",
-                             html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0), ]),
-            html.P(id='selected-demand-output', style=styles['json-output']),
-            html.P(children=["Selected RSVP LSP:  ",
-                             html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0), ]),
-            html.P(id='selected-lsp-output', style=styles['json-output']),
-            dcc.Tabs(id='tabs', vertical=True, style=styles['tabs'], children=[
-                dcc.Tab(label='Utilization Visualization', style=styles['tab'], children=[
-                    dcc.Dropdown(
-                        style=styles['tab-content'],
-                        id='utilization-dropdown-callback', options=util_display_options,
-                        value=[entry['value'] for entry in util_display_options],
-                        multi=True,
-                    )
-                ]),
-                dcc.Tab(label='Find Demands', style=styles['demand-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
-                               " selection menu"),
-                        dcc.Dropdown(
-                            id='demand-source-callback', placeholder='Select a source node',
-                        ),
-                        dcc.Dropdown(
-                            id='demand-destination-callback', placeholder='Select a dest node',
-                        ),
-                        dcc.RadioItems(
-                            id='find-demands-callback',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        ),
-                    ]),
-                ]),
-                dcc.Tab(label='Demand to Interfaces', style=styles['demand-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        dcc.RadioItems(
-                            id='demand-path-interfaces',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        )
-                    ]),
-                ]),
-                dcc.Tab(label='Demand to LSPs', style=styles['demand-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        dcc.RadioItems(
-                            id='demand-path-lsps',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        )
-                    ]),
-                ]),
-                dcc.Tab(label='Find Interfaces on Node', style=styles['interface-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        dcc.Dropdown(
-                            id='find-node', placeholder="Select a node by name",
-                            options=node_list
-                        ),
-                        dcc.RadioItems(
-                            id='interfaces-on-node',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        )
-                    ]),
-                ]),
-                dcc.Tab(label='Interface to Demands', style=styles['interface-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        dcc.RadioItems(
-                            id='interface-demand-callback',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        ),
-                    ]),
-                ]),
-                dcc.Tab(label="Interface to LSPs", style=styles['interface-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        dcc.RadioItems(
-                            id="interface-lsp-callback",
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output'],
-                        )
-                    ])
-                ]),
-                dcc.Tab(label='Find LSPs', style=styles['lsp-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        html.P("Clear the source or destination selection by selecting the 'X' on the right side of the"
-                               " selection menu"),
-                        dcc.Dropdown(
-                            id='lsp-source-callback', placeholder='Select a source node',
-                        ),
-                        dcc.Dropdown(
-                            id='lsp-destination-callback', placeholder='Select a dest node',
-                        ),
-                        dcc.RadioItems(
-                            id='find-lsps-callback',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        ),
-                    ]),
-                ]),
-                dcc.Tab(label='LSP to Demands', style=styles['lsp-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        dcc.RadioItems(
-                            id='lsp-demand-callback',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        ),
-                    ]),
-                ]),
-                dcc.Tab(label='LSP to Interfaces', style=styles['lsp-tab'], children=[
-                    html.Div(style=styles['tab-content'], children=[
-                        dcc.RadioItems(
-                            id='lsp-interface-callback',
-                            labelStyle={'display': 'inline-block'},
-                            style=styles['json-output']
-                        ),
-                    ]),
-                ]),
-            ]),
-        ])
-    ])
+    app.layout = make_app_layout(styles, elements, default_stylesheet, node_list, util_display_options)
 
     # ## CALLBACK DEFS - DYNAMICALLY UPDATE VISUALIZATION BASED ON USER ACTION # ##
     # Def to list Node name dropdown
