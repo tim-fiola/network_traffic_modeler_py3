@@ -1,16 +1,31 @@
-import dash
-import dash_cytoscape as cyto
-import dash_html_components as html
-from dash.dependencies import Input, Output
-import dash_core_components as dcc
+try:
+    import dash
+    import dash_cytoscape as cyto
+    import dash_core_components as dcc
+    import dash_html_components as html
 
-from dash.exceptions import PreventUpdate
+    from dash.dependencies import Input, Output
+    from dash.exceptions import PreventUpdate
+except ModuleNotFoundError as e:
+
+    msg = "Error during import: {}.  dash, dash_cytoscape, dash_core_components, and dash_html_components are" \
+          "required for the visualization_utility to run.  These imports may not be compatible with the pypy3" \
+          "interpreter.\n\n" \
+          "If you Encountered this error using pypy3, try using the python3 interpreter instead." \
+          "\n\nIf you encountered this error using the python3 interpreter, run the following commands in " \
+          "your OS CLI:\n" \
+          "pip3 install dash\n" \
+          "pip3 install dash-cytoscape\n\n" \
+          "These requirements are also specified in requirements_visualization.txt"
+
+    print(msg)
 
 from pyNTM import RSVP_LSP
 from pyNTM import Demand
 
 import json
 
+# TODO - have midpoints turn LSP color on LSP paths
 
 # Default utility ranges; used as default value for
 # util_ranges in make_visualization def
@@ -87,6 +102,7 @@ def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utiliz
             'cost': cost,
         }
     }
+
 
 def format_objects_for_display(object_list):
     """
@@ -312,6 +328,16 @@ def create_elements(model, group_midpoints=True):
 # ## END OF UTILITY FUNCTIONS ## #
 
 def make_app_layout(style_info, elements, stylesheet, list_of_nodes, utilization_display_info):
+    """
+    Creates the layout for the entire visualization
+
+    :param style_info:
+    :param elements:
+    :param stylesheet:
+    :param list_of_nodes:
+    :param utilization_display_info:
+    :return:
+    """
 
     app_layout = html.Div(style=style_info['all-content'], children=[
         cyto.Cytoscape(
@@ -457,6 +483,10 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
     :param util_ranges:
     :return:
     """
+
+    print("\n*** NOTE: The make_visualization function is a beta feature.  It may not have been as \n"
+          "extensively tested as the pyNTM code in general.  The API calls for this may also \n"
+          "change more rapidly than the general pyNTM code base.\n")
 
     elements = create_elements(model)
 
