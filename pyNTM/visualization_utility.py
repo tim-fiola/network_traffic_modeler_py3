@@ -12,6 +12,18 @@ from pyNTM import Demand
 import json
 
 
+# Default utility ranges; used as default value for
+# util_ranges in make_visualization def
+util_ranges = {'0-24': 'royalblue',
+               '25-49': 'green',
+               '50-74': 'yellow',
+               '75-89': 'orangered',
+               '90-99': 'darkred',
+               '100+': 'darkviolet',
+               'failed': 'grey'}
+
+
+# #### Utility Functions #### #
 def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
     """
 
@@ -57,7 +69,7 @@ def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utiliz
                 lower = int(range.split('-')[0])
                 upper = int(range.split('-')[1])
 
-                if utilization >= lower and utilization <= upper:
+                if lower <= utilization <= upper:
                     group = util_ranges[range]
                     break
             except (ValueError, IndexError):
@@ -76,17 +88,228 @@ def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utiliz
         }
     }
 
+def format_objects_for_display(object_list):
+    """
+    Takes a list of LSP or demand objects and returns a list of info that can
+    be displayed in visualization menus.
 
-# Default utility ranges; used as default value for
-# util_ranges in make_visualization def
-util_ranges = {'0-24': 'royalblue',
-               '25-49': 'green',
-               '50-74': 'yellow',
-               '75-89': 'orangered',
-               '90-99': 'darkred',
-               '100+': 'darkviolet',
-               'failed': 'grey'}
+    :param object_list: list of Demand objects
+    :return: List of info about each demand.  Each list entry is a dict with 'label' and
+    'value' keys
 
+    Example Input::
+        [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
+        Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
+
+    Example Output::
+        [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
+        'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
+        {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
+        'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
+
+    """
+
+    if isinstance(object_list[0], RSVP_LSP):
+        object_type = 'lsp'
+    elif isinstance(object_list[0], Demand):
+        object_type = 'demand'
+
+    # Initialize object list
+    objects = []
+    for object in object_list:
+        # Return the demand's value as a dict with demand info (dmd_info)
+        src = object.source_node_object.name
+        dest = object.dest_node_object.name
+        if object_type == 'demand':
+            name = object.name
+        elif object_type == 'lsp':
+            name = object.lsp_name
+        object_info = {'source': src, 'dest': dest, 'name': name}
+        objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
+    return objects
+
+
+def format_interfaces_for_display(interface_list):
+    """
+    Reformats information about Interface objects for display
+
+    :param interface_list: list of Interface objects
+    :return: list of dict entries with interface information
+    """
+    interfaces_list = []
+    for interface in interface_list:
+        source_node_name = interface.node_object.name
+        dest_node_name = interface.remote_node_object.name
+        name = interface.name
+        circuit_id = interface.circuit_id
+        cost = interface.cost
+        int_dict = {'source': source_node_name, 'interface-name': name,
+                    'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
+        int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
+        interfaces_list.append(int_info)
+    return interfaces_list
+
+
+def find_demand_interfaces_and_lsps(dmds):
+    """
+    Finds interfaces for each demand in dmds.  If there
+    are RSVP LSPs in path, the interfaces for that LSP path
+    are added to the set of output interfaces
+
+    :param dmds: iterable of demand objects
+    :return: set of interfaces that any given demand in dmds transits
+    """
+    interfaces_to_highlight = set()
+    lsps = set()
+    for dmd in dmds:
+        dmd_path = dmd.path[:]
+        for path in dmd_path:
+            for hop in path:
+                if isinstance(hop, RSVP_LSP):
+                    lsps.add(hop)
+                    for lsp_hop in hop.path['interfaces']:
+                        interfaces_to_highlight.add(lsp_hop)
+                else:
+                    interfaces_to_highlight.add(hop)
+    return interfaces_to_highlight, lsps
+
+
+def get_sources(destination, model, object_type):
+    """
+    Returns a list of sources in the model that have
+    LSPs or Demands that terminate on the specified destination node.
+
+    :param destination: destination for LSPs or demands
+    :param model: pyNTM Model object
+    :param object_type: Either 'demand' or 'lsp'
+
+    :return: List of sources in the model that have LSPs or demands that are sourced from
+    the sources and terminate on the specified destination.
+    """
+
+    if object_type not in ['demand', 'lsp']:
+        msg = "'object_type' value must be 'demand'|'lsp'"
+        raise Exception(msg)
+
+    if object_type == 'demand':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+    elif object_type == 'lsp':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+    sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
+
+    return sources
+
+
+def get_destinations(src, model, object_type):
+    """
+    Returns a list of destinations in the model that have
+    LSPs or Demands that originate on the specified source.
+
+    :param source: origin for LSPs or demands
+    :param model: pyNTM Model object
+    :param type: Either 'demand' or 'lsp'
+
+    :return: List of destinations in the model that have LSPs or demands that terminate on
+    the destinations and originate on the specified origin node.
+    """
+
+    if object_type not in ['demand', 'lsp']:
+        msg = "'object_type' value must be 'demand'|'lsp'"
+        raise Exception(msg)
+
+    if object_type == 'demand':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
+    elif object_type == 'lsp':
+        source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
+
+    destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
+
+    return destinations
+
+
+def get_lsp_interface_data(model, lsp_data):
+    """
+    Gets circuit_id and node info for each lsp in lsp_data
+
+    :param lsp_data:
+    :return: tuple of [list of circuit ids], set(node names)
+    """
+
+    lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
+    lsp_interfaces = lsp.path['interfaces']
+    nodes = set()
+    for interface in lsp_interfaces:
+        nodes.add(interface.node_object.name)
+        nodes.add(interface.remote_node_object.name)
+    return lsp_interfaces, nodes
+
+
+def create_elements(model, group_midpoints=True):
+    """
+
+    :param model: pyNTM Model object
+    :param group_midpoints: True|False.  Group all circuit midpoints that have common nodes.  This
+    is helpful if you have multiple circuits between common nodes.  It will collapse the midpoint
+    nodes for all the circuits into a common midpoint node.
+
+    :return: element data (nodes, edges) for graphing in dash_cytoscape
+    """
+
+    edges = []
+    nodes = []
+    for ckt in model.circuit_objects:
+        int_a = ckt.interface_a
+        int_b = ckt.interface_b
+        int_a_name = int_a.name
+        int_b_name = int_b.name
+        node_a = int_a.node_object
+        node_b = int_b.node_object
+
+        # lat, lon * spacing_factor for spacing on map
+        spacing_factor = 3
+        node_a_y = node_a.lat * spacing_factor
+        node_a_x = node_a.lon * spacing_factor
+        node_b_y = node_b.lat * spacing_factor
+        node_b_x = node_b.lon * spacing_factor
+
+        capacity = int_a.capacity
+
+        try:
+            ckt_id = int_a.circuit_id
+        except (AttributeError, ValueError):
+            ckt_id = "circuit_{}-{}".format(node_a.name, node_b.name)
+
+        midpoint_x = sum([node_a_x, node_b_x]) / 2
+        midpoint_y = sum([node_a_y, node_b_y]) / 2
+
+        # Create the midpoint node between the endpoints
+        if group_midpoints:
+            midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
+        else:
+            midpoint_label = 'midpoint-{}'.format(ckt_id)
+        new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
+                                  midpoint=True, neighbors=[node_a.name, node_b.name])
+        nodes.append(new_node)
+        # Create each end node
+        nodes.append(make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
+        nodes.append(make_json_node(node_b_x, node_b_y, node_b.name, node_b.name))
+
+        # Create the edges
+        # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
+        #           'utilization': 'failed'}}
+
+        # Make edges with midpoints
+        edges.append(make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
+                                    int_a.utilization, util_ranges, int_a.cost))
+        edges.append(make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id,
+                                    int_b.utilization, util_ranges, int_b.cost))
+    updated_elements = nodes + edges
+
+    return updated_elements
+
+
+# ## END OF UTILITY FUNCTIONS ## #
 
 def make_visualization(model, font_size='9px', util_ranges=util_ranges):
     """
@@ -96,223 +319,6 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
     :param util_ranges:
     :return:
     """
-
-    # #### Utility Functions #### #
-    def format_objects_for_display(object_list):
-        """
-        Takes a list of LSP or demand objects and returns a list of info that can
-        be displayed in visualization menus.
-
-        :param object_list: list of Demand objects
-        :return: List of info about each demand.  Each list entry is a dict with 'label' and
-        'value' keys
-
-        Example Input::
-            [Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1'),
-            Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')]
-
-        Example Output::
-            [{'label': "Demand(source = F, dest = B, traffic = 50, name = 'dmd_f_b_1')",
-            'value': '{"source": "F", "dest": "B", "name": "dmd_f_b_1"}'},
-            {'label': "Demand(source = A, dest = B, traffic = 50, name = 'dmd_a_b_1')",
-            'value': '{"source": "A", "dest": "B", "name": "dmd_a_b_1"}'}]
-
-        """
-
-        if isinstance(object_list[0], RSVP_LSP):
-            object_type = 'lsp'
-        elif isinstance(object_list[0], Demand):
-            object_type = 'demand'
-
-        # Initialize object list
-        objects = []
-        for object in object_list:
-            # Return the demand's value as a dict with demand info (dmd_info)
-            src = object.source_node_object.name
-            dest = object.dest_node_object.name
-            if object_type == 'demand':
-                name = object.name
-            elif object_type == 'lsp':
-                name = object.lsp_name
-            object_info = {'source': src, 'dest': dest, 'name': name}
-            objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
-        return objects
-
-    def format_interfaces_for_display(interface_list):
-        """
-        Reformats information about Interface objects for display
-
-        :param interface_list: list of Interface objects
-        :return: list of dict entries with interface information
-        """
-        interfaces_list = []
-        for interface in interface_list:
-            source_node_name = interface.node_object.name
-            dest_node_name = interface.remote_node_object.name
-            name = interface.name
-            circuit_id = interface.circuit_id
-            cost = interface.cost
-            int_dict = {'source': source_node_name, 'interface-name': name,
-                        'dest': dest_node_name, 'circuit_id': circuit_id, 'cost': cost}
-            int_info = {'label': interface.__repr__(), 'value': json.dumps(int_dict)}
-            interfaces_list.append(int_info)
-        return interfaces_list
-
-    def find_demand_interfaces_and_lsps(dmds):
-        """
-        Finds interfaces for each demand in dmds.  If there
-        are RSVP LSPs in path, the interfaces for that LSP path
-        are added to the set of output interfaces
-
-        :param dmds: iterable of demand objects
-        :return: set of interfaces that any given demand in dmds transits
-        """
-        interfaces_to_highlight = set()
-        lsps = set()
-        for dmd in dmds:
-            dmd_path = dmd.path[:]
-            for path in dmd_path:
-                for hop in path:
-                    if isinstance(hop, RSVP_LSP):
-                        lsps.add(hop)
-                        for lsp_hop in hop.path['interfaces']:
-                            interfaces_to_highlight.add(lsp_hop)
-                    else:
-                        interfaces_to_highlight.add(hop)
-        return interfaces_to_highlight, lsps
-
-    def get_sources(destination, model, object_type):
-        """
-        Returns a list of sources in the model that have
-        LSPs or Demands that terminate on the specified destination node.
-
-        :param destination: destination for LSPs or demands
-        :param model: pyNTM Model object
-        :param object_type: Either 'demand' or 'lsp'
-
-        :return: List of sources in the model that have LSPs or demands that are sourced from
-        the sources and terminate on the specified destination.
-        """
-
-        if object_type not in ['demand', 'lsp']:
-            msg = "'object_type' value must be 'demand'|'lsp'"
-            raise Exception(msg)
-
-        if object_type == 'demand':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-        elif object_type == 'lsp':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
-
-        sources = [pair[0] for pair in source_dest_pairs if pair[1] == destination]
-
-        return sources
-
-    def get_destinations(src, model, object_type):
-        """
-        Returns a list of destinations in the model that have
-        LSPs or Demands that originate on the specified source.
-
-        :param source: origin for LSPs or demands
-        :param model: pyNTM Model object
-        :param type: Either 'demand' or 'lsp'
-
-        :return: List of destinations in the model that have LSPs or demands that terminate on
-        the destinations and originate on the specified origin node.
-        """
-
-        if object_type not in ['demand', 'lsp']:
-            msg = "'object_type' value must be 'demand'|'lsp'"
-            raise Exception(msg)
-
-        if object_type == 'demand':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_demand_groups().keys()]
-        elif object_type == 'lsp':
-            source_dest_pairs = [pair.split('-') for pair in model.parallel_lsp_groups().keys()]
-
-        destinations = [pair[1] for pair in source_dest_pairs if pair[0] == src]
-
-        return destinations
-
-    def get_lsp_interface_data(lsp_data):
-        """
-        Gets circuit_id and node info for each lsp in lsp_data
-
-        :param lsp_data:
-        :return: tuple of [list of circuit ids], set(node names)
-        """
-
-        lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
-        lsp_interfaces = lsp.path['interfaces']
-        nodes = set()
-        for interface in lsp_interfaces:
-            nodes.add(interface.node_object.name)
-            nodes.add(interface.remote_node_object.name)
-        return lsp_interfaces, nodes
-
-    def create_elements(model, group_midpoints=True):
-        """
-
-        :param model: pyNTM Model object
-        :param group_midpoints: True|False.  Group all circuit midpoints that have common nodes.  This
-        is helpful if you have multiple circuits between common nodes.  It will collapse the midpoint
-        nodes for all the circuits into a common midpoint node.
-
-        :return: element data (nodes, edges) for graphing in dash_cytoscape
-        """
-
-        edges = []
-        nodes = []
-        for ckt in model.circuit_objects:
-            int_a = ckt.interface_a
-            int_b = ckt.interface_b
-            int_a_name = int_a.name
-            int_b_name = int_b.name
-            node_a = int_a.node_object
-            node_b = int_b.node_object
-
-            # lat, lon * spacing_factor for spacing on map
-            spacing_factor = 3
-            node_a_y = node_a.lat*spacing_factor
-            node_a_x = node_a.lon*spacing_factor
-            node_b_y = node_b.lat*spacing_factor
-            node_b_x = node_b.lon*spacing_factor
-
-            capacity = int_a.capacity
-
-            try:
-                ckt_id = int_a.circuit_id
-            except (AttributeError, ValueError):
-                ckt_id = "circuit_{}-{}".format(node_a.name, node_b.name)
-
-            midpoint_x = sum([node_a_x, node_b_x]) / 2
-            midpoint_y = sum([node_a_y, node_b_y]) / 2
-
-            # Create the midpoint node between the endpoints
-            if group_midpoints:
-                midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
-            else:
-                midpoint_label = 'midpoint-{}'.format(ckt_id)
-            new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
-                                      midpoint=True, neighbors=[node_a.name, node_b.name])
-            nodes.append(new_node)
-            # Create each end node
-            nodes.append(make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
-            nodes.append(make_json_node(node_b_x, node_b_y, node_b.name, node_b.name))
-
-            # Create the edges
-            # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
-            #           'utilization': 'failed'}}
-
-            # Make edges with midpoints
-            edges.append(make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
-                                        int_a.utilization, util_ranges, int_a.cost))
-            edges.append(make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id,
-                                        int_b.utilization, util_ranges, int_b.cost))
-        updated_elements = nodes + edges
-
-        return updated_elements
-
-    # ## END OF UTILITY FUNCTIONS ## #
 
     elements = create_elements(model)
 
@@ -757,7 +763,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
         if selected_lsp_info:
             if no_selected_lsp_text not in selected_lsp_info:
                 selected_lsp_info = json.loads(selected_lsp_info)
-                lsp_interfaces, node_names = get_lsp_interface_data(selected_lsp_info)
+                lsp_interfaces, node_names = get_lsp_interface_data(model, selected_lsp_info)
 
                 for interface in lsp_interfaces:
                     new_entry_6 = {
