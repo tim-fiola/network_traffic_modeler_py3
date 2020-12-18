@@ -11,7 +11,7 @@ except ModuleNotFoundError as e:
     msg = '''Error during import: {}. dash, dash_cytoscape,
     dash_core_components, and dash_html_components modules are
     required for the visualization_utility to run.
-    
+
     This visualization utility is a beta feature and so all of its
     dependencies are not installed with the rest of the package.
 
