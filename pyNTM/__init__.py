@@ -15,4 +15,4 @@ from .interface import Interface  # noqa: F401
 from .rsvp import RSVP_LSP  # noqa: F401
 from .performance_model import PerformanceModel  # noqa: F401
 from .performance_model import Model  # noqa: F401
-from .visualization_utility import make_visualization  # noqa: F401
+from .beta_visualization_utility import make_visualization_beta  # noqa: F401

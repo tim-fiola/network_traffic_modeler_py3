@@ -11,15 +11,18 @@ except ModuleNotFoundError as e:
     msg = '''Error during import: {}. dash, dash_cytoscape,
     dash_core_components, and dash_html_components modules are
     required for the visualization_utility to run.
+    
+    This visualization utility is a beta feature and so all of its
+    dependencies are not installed with the rest of the package.
 
     If you encountered this error using the python3 interpreter,
     run the following commands in your OS CLI:
-    pip3 install dash
-    pip3 install dash-cytoscape
+        pip3 install dash
+        pip3 install dash-cytoscape
 
     These modules may not be compatible with the pypy3 interpreter.
 
-    If you Encountered this error using pypy3, try using the python3
+    If you encountered this error using pypy3, try using the python3
     interpreter instead.
 
     These requirements are also specified in requirements_visualization.txt
@@ -35,7 +38,7 @@ import json
 # TODO - have midpoints turn LSP color on LSP paths
 
 # Default utility ranges; used as default value for
-# util_ranges in make_visualization def
+# util_ranges in make_visualization_beta def
 util_ranges = {'0-24': 'royalblue',
                '25-49': 'green',
                '50-74': 'yellow',
@@ -482,7 +485,7 @@ def make_app_layout(style_info, elements, stylesheet, list_of_nodes, utilization
     return app_layout
 
 
-def make_visualization(model, font_size='9px', util_ranges=util_ranges):  # noqa C901
+def make_visualization_beta(model, font_size='9px', util_ranges=util_ranges):  # noqa C901
     """
 
     :param model:
@@ -491,7 +494,7 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):  # noqa
     :return:
     """
 
-    print("\n*** NOTE: The make_visualization function is a beta feature.  It may not have been as \n"
+    print("\n*** NOTE: The make_visualization_beta function is a beta feature.  It may not have been as \n"
           "extensively tested as the pyNTM code in general.  The API calls for this may also \n"
           "change more rapidly than the general pyNTM code base.\n")
 
