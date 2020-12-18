@@ -547,7 +547,7 @@ class _MasterModel(object):
             igp_shortcuts_enabled_value = new_node.igp_shortcuts_enabled = node_info[3]
         except IndexError:
             igp_shortcuts_enabled_value = False
-        if new_node.name not in {node.name for node in node_set}:  # Pick up orphan nodes
+        if node_name not in {node.name for node in node_set}:  # Pick up orphan nodes
             node_set.add(new_node)
             new_node.lat = node_lat
             new_node.lon = node_lon
@@ -557,6 +557,7 @@ class _MasterModel(object):
             existing_node.lat = node_lat
             existing_node.lon = node_lon
             existing_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
+
         return node_set
 
     def _does_interface_exist(self, interface_name, node_object_name):

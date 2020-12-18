@@ -1,0 +1,55 @@
+﻿INTERFACES_TABLE
+node_object_name	remote_node_object_name	name	cost	capacity
+A	B	A-to-B	4	100
+A	C	A-to-C	1	200
+A	D	A-to-D	8	150
+B	A	B-to-A	4	100
+B	D	B-to-D	7	200
+B	E	B-to-E	3	200
+D	B	D-to-B	7	200
+D	C	D-to-C	9	150
+D	A	D-to-A	8	150
+D	E	D-to-E	4	100
+D	F	D-to-F	3	100
+C	A	C-to-A	1	200
+C	D	C-to-D	9	150
+E	B	E-to-B	3	200
+E	D	E-to-D	4	100
+F	D	F-to-D	3	100
+F	B	F-to-B	6	100
+B	F	B-to-F	6	100
+G	H	G-to-H	4	150
+H	G	H-to-G	4	150
+G	D	G-to-D	2	50
+D	G	D-to-G	2	50
+H	E	H-to-E	4	100
+E	H	E-to-H	4	100
+E	F	E-to-F	3	100
+F	E	F-to-E	3	100
+H	D	H-to-D	4	100
+D	H	D-to-H	4	100
+
+NODES_TABLE
+name	lon	lat
+A	25	0
+B	31	-177
+C	60	-63
+D	62	37
+E	-60	124
+F	2	35
+G	30	90
+H	52	124
+
+DEMANDS_TABLE
+source	dest	traffic	name
+A	B	50	''
+A	F	22	''
+A	E	24	''
+F	E	80	''
+F	B	50	''
+A	D	120	''
+D	A	10	''
+A	H	20	''
+C	E	20	''
+B	G	30	''
+E	C	20	''

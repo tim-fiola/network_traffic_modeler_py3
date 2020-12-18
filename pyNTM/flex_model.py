@@ -974,12 +974,12 @@ class FlexModel(_MasterModel):
         # Using the paired interfaces (source_node, dest_node) pairs from G,
         # get the corresponding interface objects from the model to create
         # the Circuit object
-        for interface in graph_interfaces:
+        for interface in iter(graph_interfaces):
             # Get each interface from model for each
             try:
                 int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
                                                             circuit_id=interface[2]['circuit_id'])[0]
-            except (TypeError, IndexError):
+            except (TypeError, IndexError):  # TODO - are the exception catches necessary?
                 msg = ("No matching Interface Object found: source node {}, dest node {} "
                        "circuit_id {} ".format(interface[0], interface[1], interface[2]['circuit_id']))
                 raise ModelException(msg)
@@ -1031,6 +1031,7 @@ class FlexModel(_MasterModel):
         :param local_node_name: Name of local node Interface resides on
         :param remote_node_name: Name of Interface's remote Node
         :param circuit_id: circuit_id of Interface (optional)
+
         :return: list of Interface objects with common local node and remote node
         """
 
@@ -1687,9 +1688,8 @@ class FlexModel(_MasterModel):
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
-            # TODO - fix this; check for existence of remote node before adding new_interface; get
-            #  the remote node and use that as the new interface remote node
             node_names = [node.name for node in node_set]
+
             if node_name in node_names:
                 node_object = [node for node in node_set if node.name == node_name][0]
             else:

@@ -501,8 +501,7 @@ class PerformanceModel(_MasterModel):
         # Determine which interfaces pair up into good circuits in G
         paired_interfaces = ((local_node_name, remote_node_name, data) for
                              (local_node_name, remote_node_name, data) in
-                             G.edges(data=True) if G.has_edge(remote_node_name,
-                                                              local_node_name))
+                             G.edges(data=True) if G.has_edge(remote_node_name, local_node_name))
 
         # Set interface object in_ckt = False and baseline the circuit_id
         for interface in iter(self.interface_objects):
@@ -553,8 +552,9 @@ class PerformanceModel(_MasterModel):
         Returns a list of Interface objects with the specified
         local and remote node names.
 
-        :param local_node_name:
-        :param remote_node_name:
+        :param local_node_name: Name of Interface local node
+        :param remote_node_name: Name of Interface remote node
+
         :return: Interface object with specified local node and remote node names
         """
         for interface in iter(self.interface_objects):
@@ -998,8 +998,21 @@ class PerformanceModel(_MasterModel):
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
-            new_interface = Interface(name, int(cost), float(capacity), Node(node_name), Node(remote_node_name),
-                                      None, rsvp_enabled_bool, float(percent_reservable_bandwidth))
+            node_names = [node.name for node in node_set]
+
+            if node_name in node_names:
+                node_object = [node for node in node_set if node.name == node_name][0]
+            else:
+                node_object = Node(node_name)
+
+            if remote_node_name in node_names:
+                remote_node_object = [node for node in node_set if node.name == remote_node_name][0]
+            else:
+                remote_node_object = Node(remote_node_name)
+
+            new_interface = Interface(name, int(cost), int(capacity), node_object,
+                                      remote_node_object, None, rsvp_enabled_bool,
+                                      float(percent_reservable_bandwidth))
 
             if new_interface._key not in {
                 interface._key for interface in interface_set
