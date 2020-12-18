@@ -8,15 +8,22 @@ try:
     from dash.exceptions import PreventUpdate
 except ModuleNotFoundError as e:
 
-    msg = "Error during import: {}.  dash, dash_cytoscape, dash_core_components, and dash_html_components are" \
-          "required for the visualization_utility to run.  These imports may not be compatible with the pypy3" \
-          "interpreter.\n\n" \
-          "If you Encountered this error using pypy3, try using the python3 interpreter instead." \
-          "\n\nIf you encountered this error using the python3 interpreter, run the following commands in " \
-          "your OS CLI:\n" \
-          "pip3 install dash\n" \
-          "pip3 install dash-cytoscape\n\n" \
-          "These requirements are also specified in requirements_visualization.txt"
+    msg = '''Error during import: {}. dash, dash_cytoscape,
+    dash_core_components, and dash_html_components modules are
+    required for the visualization_utility to run.
+
+    If you encountered this error using the python3 interpreter,
+    run the following commands in your OS CLI:
+    pip3 install dash
+    pip3 install dash-cytoscape
+
+    These modules may not be compatible with the pypy3 interpreter.
+
+    If you Encountered this error using pypy3, try using the python3
+    interpreter instead.
+
+    These requirements are also specified in requirements_visualization.txt
+    in the github repo.'''.format(e)
 
     print(msg)
 
@@ -475,7 +482,7 @@ def make_app_layout(style_info, elements, stylesheet, list_of_nodes, utilization
     return app_layout
 
 
-def make_visualization(model, font_size='9px', util_ranges=util_ranges):
+def make_visualization(model, font_size='9px', util_ranges=util_ranges):  # noqa C901
     """
 
     :param model:
@@ -577,16 +584,17 @@ def make_visualization(model, font_size='9px', util_ranges=util_ranges):
     lsp_sources_list.sort()
     lsp_destinations_list.sort()
 
-    # Baseline selected values
-    no_selected_interface_text = 'no int selected'
-    no_selected_demand_text = 'no demand selected'
-    no_selected_lsp_text = 'no lsp selected'
-
     # Node list
     node_names = [node.name for node in model.node_objects]
     node_names.sort()
     node_list = [{'label': name, 'value': name} for name in node_names]
 
+    # Baseline selected object values
+    no_selected_interface_text = 'no int selected'
+    no_selected_demand_text = 'no demand selected'
+    no_selected_lsp_text = 'no lsp selected'
+
+    # Colors for the various selected objects
     demand_color = '#DB7093'
     lsp_color = '#610B21'
     interface_color = '#ADD8E6'
