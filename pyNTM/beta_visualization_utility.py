@@ -35,7 +35,6 @@ from pyNTM import Demand
 
 import json
 
-# TODO - have midpoints turn LSP color on LSP paths
 
 # Default utility ranges; used as default value for
 # util_ranges in make_visualization_beta def
@@ -531,8 +530,8 @@ def make_visualization_beta(model, font_size='9px', util_ranges=util_ranges):  #
                 "text-halign": 'center',
                 'text-valign': 'center',
                 'text-wrap': 'wrap',
-                'width': '20px',
-                'height': '20px',
+                'width': '25px',
+                'height': '25px',
                 'border-width': 1,
                 'border-color': 'dimgrey'
             }
@@ -801,7 +800,7 @@ def make_visualization_beta(model, font_size='9px', util_ranges=util_ranges):  #
                                                                                 selected_interface_info['circuit_id']),
                     "style": {
                         'line-style': 'dotted',
-                        'width': '6.5',
+                        'width': '9',
                     }
                 }
 
@@ -820,7 +819,7 @@ def make_visualization_beta(model, font_size='9px', util_ranges=util_ranges):  #
                         "style": {
                             'line-style': 'dashed',
                             'target-arrow-shape': 'chevron',
-                            'arrow-scale': '1.3',
+                            'arrow-scale': '1.8',
                             'target-arrow-color': lsp_color,
                             'z-axis': 2000
                         }
@@ -834,7 +833,7 @@ def make_visualization_beta(model, font_size='9px', util_ranges=util_ranges):  #
                         "style": {
                             'line-style': 'dashed',
                             'source-arrow-shape': 'chevron',
-                            'arrow-scale': '1.3',
+                            'arrow-scale': '1.8',
                             'source-arrow-color': lsp_color,
                             'z-axis': 2000
                         }
@@ -848,7 +847,9 @@ def make_visualization_beta(model, font_size='9px', util_ranges=util_ranges):  #
                         "selector": "node[id=\"{}\"]".format(node),
                         "style": {
                             "border-color": lsp_color,
-                            "border-width": "4px"
+                            "border-width": "5px",
+                            'width': '40px',
+                            'height': '30px',
                         }
                     }
 
