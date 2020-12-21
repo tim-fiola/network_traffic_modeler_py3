@@ -1,64 +1,194 @@
+try:
+    import dash
+    import dash_cytoscape as cyto
+    import dash_core_components as dcc
+    import dash_html_components as html
+
+    from dash.dependencies import Input, Output
+    from dash.exceptions import PreventUpdate
+except ModuleNotFoundError as e:
+
+    msg = '''Error during import: {}. dash, dash_cytoscape,
+    dash_core_components, and dash_html_components modules are
+    required for the visualization_utility to run.
+
+    This visualization utility is a beta feature and so all of its
+    dependencies are not installed with the rest of the package.
+
+    If you encountered this error using the python3 interpreter,
+    run the following commands in your OS CLI:
+        pip3 install dash
+        pip3 install dash-cytoscape
+
+    These modules may not be compatible with the pypy3 interpreter.
+
+    If you encountered this error using pypy3, try using the python3
+    interpreter instead.
+
+    These requirements are also specified in requirements_visualization.txt
+    in the github repo.'''.format(e)
+
+    print(msg)
+
+from pyNTM import RSVP_LSP
+from pyNTM import Demand
+
+import json
 
 
-
-def make_visualization_beta(model, font_size='9px'):  # noqa C901
+class WeatherMap(model):  # noqa C901
     """
 
-    :param model:
-    :param font_size:
-    :param util_ranges:
-    :return:
+
     """
 
-    try:
-        import dash
-        import dash_cytoscape as cyto
-        import dash_core_components as dcc
-        import dash_html_components as html
+    def __init__(self, model):
+        self.model = model
+        self.elements = []
+        self.demand_sources = []
+        self.demand_destinations = []
+        self.lsp_sources = []
+        self.lsp_destinations = []
+        self.node_list = []
+        self.font_size = '9px'
 
-        from dash.dependencies import Input, Output
-        from dash.exceptions import PreventUpdate
-    except ModuleNotFoundError as e:
+        # Baseline selected object values
+        self.no_selected_interface_text = 'no int selected'
+        self.no_selected_demand_text = 'no demand selected'
+        self.no_selected_lsp_text = 'no lsp selected'
 
-        msg = '''Error during import: {}. dash, dash_cytoscape,
-        dash_core_components, and dash_html_components modules are
-        required for the visualization_utility to run.
+        # Colors for each object type
+        self.demand_color = '#DB7093'
+        self.lsp_color = '#610B21'
+        self.interface_color = '#ADD8E6'
 
-        This visualization utility is a beta feature and so all of its
-        dependencies are not installed with the rest of the package.
+        # Styling of the visualization layout
+        # TODO - tabs entry is just {}; delete it?
+        self.styles = {
+            'all-content': {
+                'width': 'auto',
+                'height': 'auto'
+            },
+            "right_menu": {
+                'width': '25vw',
+                'min-width': '400px',
+                'max-width': '800px',
+                'height': '99%',
+                'position': 'absolute',
+                'top': '0',
+                'right': '0',
+                'zIndex': 100,
+                'fontFamily': 'arial',
+            },
+            'cytoscape': {
+                'position': 'absolute',
+                'width': '74vw',
+                'height': '100%',
+                'backgroundColor': '#D2B48C'
+            },
+            'json-output': {
+                'overflow-y': 'scroll',
+                'fontFamily': 'menlo',
+                'border': 'thin lightgrey solid',
+                'line-height': '1.5'
+            },
+            'tabs': {},
+            'tab': {'height': '75px',
+                    'width': '200px',
+                    'max-width': '200px',
+                    'background-color': '#B695C0'
+                    },
+            'tab-content': {
+                'max-width': '400px',
+                'min-width': '300px',
+                'height': '100%'
+            },
+            'interface-tab': {'height': '75px',
+                              'width': '200px',
+                              'max-width': '200px',
+                              'background-color': self.interface_color
+                              },
+            'demand-tab': {'height': '75px',
+                           'width': '200px',
+                           'max-width': '200px',
+                           'background-color': self.demand_color
+                           },
+            'lsp-tab': {'height': '75px',
+                        'width': '200px',
+                        'max-width': '200px',
+                        'background-color': self.lsp_color,
+                        'color': 'white'
+                        },
+        }
 
-        If you encountered this error using the python3 interpreter,
-        run the following commands in your OS CLI:
-            pip3 install dash
-            pip3 install dash-cytoscape
+        self.util_ranges = {'0-24': 'royalblue',
+                            '25-49': 'green',
+                            '50-74': 'yellow',
+                            '75-89': 'orangered',
+                            '90-99': 'darkred',
+                            '100+': 'darkviolet',
+                            'failed': 'grey'}
 
-        These modules may not be compatible with the pypy3 interpreter.
+        self.default_stylesheet = [
+            {
+                "selector": 'edge',
+                "style": {
+                    "mid-target-arrow-color": "blue",
+                    "mid-target-arrow-shape": "vee",
+                    "curve-style": "bezier",
+                    'label': "data(circuit_id)",
+                    'line-color': "data(group)",
+                    "font-size": self.font_size,
+                    "opacity": 0.4,
+                }
+            },
+            {
+                "selector": "edge[group=\"failed\"]",
+                "style": {
+                    "line-color": "#808080",
+                    "curve-style": "bezier",
+                    'label': "data(circuit_id)",
+                    'line-style': 'dashed'
+                }
+            },
+            {
+                "selector": "node",
+                "style": {
+                    "label": "data(label)",
+                    'background-color': 'lightgrey',
+                    "font-size": self.font_size,
+                    "text-halign": 'center',
+                    'text-valign': 'center',
+                    'text-wrap': 'wrap',
+                    'width': '25px',
+                    'height': '25px',
+                    'border-width': 1,
+                    'border-color': 'dimgrey'
+                }
+            },
+            {
+                "selector": 'node[group=\"failed\"]',
+                "style": {
+                    'text-color': '#FF0000',
+                    'shape': 'rectangle',
+                    'label': "data(label)",
+                    'background-color': 'red'
 
-        If you encountered this error using pypy3, try using the python3
-        interpreter instead.
-
-        These requirements are also specified in requirements_visualization.txt
-        in the github repo.'''.format(e)
-
-        print(msg)
-
-    from pyNTM import RSVP_LSP
-    from pyNTM import Demand
-
-    import json
-
-    # Default utility ranges; used as default value for
-    # util_ranges in make_visualization_beta def
-    util_ranges = {'0-24': 'royalblue',
-                   '25-49': 'green',
-                   '50-74': 'yellow',
-                   '75-89': 'orangered',
-                   '90-99': 'darkred',
-                   '100+': 'darkviolet',
-                   'failed': 'grey'}
+                }
+            },
+            {
+                "selector": 'node[group=\"midpoint\"]',
+                "style": {
+                    'label': "data(label)",
+                    'shape': 'rectangle',
+                    'width': '10px',
+                    'height': '10px'
+                }
+            },
+        ]
 
     # #### Utility Functions #### #
-    def make_json_node(x, y, id, label, midpoint=False, neighbors=[]):
+    def make_json_node(self, x, y, id, label, midpoint=False, neighbors=[]):
         """
 
         :param x: x-coordinate (or longitude) of node
@@ -83,7 +213,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
 
         return json_node
 
-    def make_json_edge(source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges, cost):
+    def make_json_edge(self, source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges, cost):
         """
         {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
                   'utilization': 'failed', 'interface-name': edge_name}}
@@ -121,7 +251,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
             }
         }
 
-    def format_objects_for_display(object_list):
+    def format_objects_for_display(self, object_list):
         """
         Takes a list of LSP or demand objects and returns a list of info that can
         be displayed in visualization menus.
@@ -161,7 +291,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
             objects.append({"label": object.__repr__(), "value": json.dumps(object_info)})
         return objects
 
-    def format_interfaces_for_display(interface_list):
+    def format_interfaces_for_display(self, interface_list):
         """
         Reformats information about Interface objects for display
 
@@ -181,7 +311,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
             interfaces_list.append(int_info)
         return interfaces_list
 
-    def find_demand_interfaces_and_lsps(dmds):
+    def find_demand_interfaces_and_lsps(self, dmds):
         """
         Finds interfaces for each demand in dmds.  If there
         are RSVP LSPs in path, the interfaces for that LSP path
@@ -204,7 +334,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
                         interfaces_to_highlight.add(hop)
         return interfaces_to_highlight, lsps
 
-    def get_sources(destination, model, object_type):
+    def get_sources(self, destination, model, object_type):
         """
         Returns a list of sources in the model that have
         LSPs or Demands that terminate on the specified destination node.
@@ -230,7 +360,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
 
         return sources
 
-    def get_destinations(src, model, object_type):
+    def get_destinations(self, src, model, object_type):
         """
         Returns a list of destinations in the model that have
         LSPs or Demands that originate on the specified source.
@@ -256,7 +386,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
 
         return destinations
 
-    def get_lsp_interface_data(model, lsp_data):
+    def get_lsp_interface_data(self, model, lsp_data):
         """
         Gets circuit_id and node info for each lsp in lsp_data
 
@@ -272,7 +402,7 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
             nodes.add(interface.remote_node_object.name)
         return lsp_interfaces, nodes
 
-    def create_elements(model, group_midpoints=True):
+    def create_elements(self, model, group_midpoints=True):
         """
 
         :param model: pyNTM Model object
@@ -315,39 +445,54 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
                 midpoint_label = 'midpoint-{}-{}'.format(node_a.name, node_b.name)
             else:
                 midpoint_label = 'midpoint-{}'.format(ckt_id)
-            new_node = make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
+            new_node = self.make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
                                       midpoint=True, neighbors=[node_a.name, node_b.name])
             nodes.append(new_node)
             # Create each end node
-            nodes.append(make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
-            nodes.append(make_json_node(node_b_x, node_b_y, node_b.name, node_b.name))
+            nodes.append(self.make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
+            nodes.append(self.make_json_node(node_b_x, node_b_y, node_b.name, node_b.name))
 
             # Create the edges
             # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
             #           'utilization': 'failed'}}
 
             # Make edges with midpoints
-            edges.append(make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
-                                        int_a.utilization, util_ranges, int_a.cost))
-            edges.append(make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id,
-                                        int_b.utilization, util_ranges, int_b.cost))
+            edges.append(self.make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
+                                        int_a.utilization, self.util_ranges, int_a.cost))
+            edges.append(self.make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id,
+                                        int_b.utilization, self.util_ranges, int_b.cost))
         updated_elements = nodes + edges
 
         return updated_elements
 
+    # list of utilization ranges to display
+    def utilization_display_info(self):
+        """
+        Takes self.util_ranges and formats the ranges for display in the app
+
+        :return: List of each utilization range and its corresponding color; each list
+        item will be given in {'label': util_range, 'value': util_range_color}
+        """
+        util_display_options = []
+        for util_range, color in self.util_ranges.items():
+            util_display_options.append({'label': util_range, 'value': color})
+
+        return util_display_options
+
     # ## END OF UTILITY FUNCTIONS ## #
 
-    def make_app_layout(style_info, elements, stylesheet, list_of_nodes, utilization_display_info):
+
+
+    def make_app_layout(self, stylesheet, list_of_nodes):
         """
         Creates the layout for the entire visualization
 
-        :param style_info:
-        :param elements:
         :param stylesheet:
         :param list_of_nodes:
-        :param utilization_display_info:
         :return:
         """
+
+        elements = self.create_elements(self.model)
 
         app_layout = html.Div(style=style_info['all-content'], children=[
             cyto.Cytoscape(
@@ -358,27 +503,27 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
                 stylesheet=stylesheet,
                 responsive=True
             ),
-            html.Div(className='right_menu', style=style_info['right_menu'], children=[
+            html.Div(className='right_menu', style=self.style_info['right_menu'], children=[
                 html.P(children=["Selected Interface:  ",
                                  html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0), ]),
-                html.P(id='selected-interface-output', style=style_info['json-output']),
+                html.P(id='selected-interface-output', style=self.style_info['json-output']),
                 html.P(children=["Selected Demand:  ",
                                  html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0), ]),
-                html.P(id='selected-demand-output', style=style_info['json-output']),
+                html.P(id='selected-demand-output', style=self.style_info['json-output']),
                 html.P(children=["Selected RSVP LSP:  ",
                                  html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0), ]),
-                html.P(id='selected-lsp-output', style=style_info['json-output']),
-                dcc.Tabs(id='tabs', vertical=True, style=style_info['tabs'], children=[
-                    dcc.Tab(label='Utilization Visualization', style=style_info['tab'], children=[
+                html.P(id='selected-lsp-output', style=self.style_info['json-output']),
+                dcc.Tabs(id='tabs', vertical=True, style=self.style_info['tabs'], children=[
+                    dcc.Tab(label='Utilization Visualization', style=self.style_info['tab'], children=[
                         dcc.Dropdown(
-                            style=style_info['tab-content'],
-                            id='utilization-dropdown-callback', options=utilization_display_info,
-                            value=[entry['value'] for entry in utilization_display_info],
+                            style=self.style_info['tab-content'],
+                            id='utilization-dropdown-callback', options=self.utilization_display_info,
+                            value=[entry['value'] for entry in self.utilization_display_info],
                             multi=True,
                         )
                     ]),
-                    dcc.Tab(label='Find Demands', style=style_info['demand-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='Find Demands', style=self.style_info['demand-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             html.P(
                                 "Clear the source or destination selection by selecting the 'X' on the right side of the"
                                 " selection menu"),
@@ -395,26 +540,26 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label='Demand to Interfaces', style=style_info['demand-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='Demand to Interfaces', style=self.style_info['demand-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             dcc.RadioItems(
                                 id='demand-path-interfaces',
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output']
+                                style=self.style_info['json-output']
                             )
                         ]),
                     ]),
-                    dcc.Tab(label='Demand to LSPs', style=style_info['demand-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='Demand to LSPs', style=self.style_info['demand-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             dcc.RadioItems(
                                 id='demand-path-lsps',
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output']
+                                style=self.style_info['json-output']
                             )
                         ]),
                     ]),
-                    dcc.Tab(label='Find Interfaces on Node', style=style_info['interface-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='Find Interfaces on Node', style=self.style_info['interface-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             dcc.Dropdown(
                                 id='find-node', placeholder="Select a node by name",
                                 options=list_of_nodes
@@ -422,30 +567,30 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
                             dcc.RadioItems(
                                 id='interfaces-on-node',
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output']
+                                style=self.style_info['json-output']
                             )
                         ]),
                     ]),
-                    dcc.Tab(label='Interface to Demands', style=style_info['interface-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='Interface to Demands', style=self.style_info['interface-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             dcc.RadioItems(
                                 id='interface-demand-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output']
+                                style=self.style_info['json-output']
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label="Interface to LSPs", style=style_info['interface-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label="Interface to LSPs", style=self.style_info['interface-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             dcc.RadioItems(
                                 id="interface-lsp-callback",
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output'],
+                                style=self.style_info['json-output'],
                             )
                         ])
                     ]),
-                    dcc.Tab(label='Find LSPs', style=style_info['lsp-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='Find LSPs', style=self.style_info['lsp-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             html.P(
                                 "Clear the source or destination selection by selecting the 'X' on the right side of the"
                                 " selection menu"),
@@ -458,25 +603,25 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
                             dcc.RadioItems(
                                 id='find-lsps-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output']
+                                style=self.style_info['json-output']
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label='LSP to Demands', style=style_info['lsp-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='LSP to Demands', style=self.style_info['lsp-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             dcc.RadioItems(
                                 id='lsp-demand-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output']
+                                style=self.style_info['json-output']
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label='LSP to Interfaces', style=style_info['lsp-tab'], children=[
-                        html.Div(style=style_info['tab-content'], children=[
+                    dcc.Tab(label='LSP to Interfaces', style=self.style_info['lsp-tab'], children=[
+                        html.Div(style=self.style_info['tab-content'], children=[
                             dcc.RadioItems(
                                 id='lsp-interface-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=style_info['json-output']
+                                style=self.style_info['json-output']
                             ),
                         ]),
                     ]),
@@ -490,65 +635,9 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
           "extensively tested as the pyNTM code in general.  The API calls for this may also \n"
           "change more rapidly than the general pyNTM code base.\n")
 
-    elements = create_elements(model)
+    # elements = create_elements(model)
 
-    default_stylesheet = [
-        {
-            "selector": 'edge',
-            "style": {
-                "mid-target-arrow-color": "blue",
-                "mid-target-arrow-shape": "vee",
-                "curve-style": "bezier",
-                'label': "data(circuit_id)",
-                'line-color': "data(group)",
-                "font-size": font_size,
-                "opacity": 0.4,
-            }
-        },
-        {
-            "selector": "edge[group=\"failed\"]",
-            "style": {
-                "line-color": "#808080",
-                "curve-style": "bezier",
-                'label': "data(circuit_id)",
-                'line-style': 'dashed'
-            }
-        },
-        {
-            "selector": "node",
-            "style": {
-                "label": "data(label)",
-                'background-color': 'lightgrey',
-                "font-size": font_size,
-                "text-halign": 'center',
-                'text-valign': 'center',
-                'text-wrap': 'wrap',
-                'width': '25px',
-                'height': '25px',
-                'border-width': 1,
-                'border-color': 'dimgrey'
-            }
-        },
-        {
-            "selector": 'node[group=\"failed\"]',
-            "style": {
-                'text-color': '#FF0000',
-                'shape': 'rectangle',
-                'label': "data(label)",
-                'background-color': 'red'
 
-            }
-        },
-        {
-            "selector": 'node[group=\"midpoint\"]',
-            "style": {
-                'label': "data(label)",
-                'shape': 'rectangle',
-                'width': '10px',
-                'height': '10px'
-            }
-        },
-    ]
 
     # list of utilization ranges to display
     util_display_options = []
@@ -584,72 +673,6 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
     node_names.sort()
     node_list = [{'label': name, 'value': name} for name in node_names]
 
-    # Baseline selected object values
-    no_selected_interface_text = 'no int selected'
-    no_selected_demand_text = 'no demand selected'
-    no_selected_lsp_text = 'no lsp selected'
-
-    # Colors for the various selected objects
-    demand_color = '#DB7093'
-    lsp_color = '#610B21'
-    interface_color = '#ADD8E6'
-
-    styles = {
-        'all-content': {
-            'width': 'auto',
-            'height': 'auto'
-        },
-        "right_menu": {
-            'width': '25vw',
-            'min-width': '400px',
-            'max-width': '800px',
-            'height': '99%',
-            'position': 'absolute',
-            'top': '0',
-            'right': '0',
-            'zIndex': 100,
-            'fontFamily': 'arial',
-        },
-        'cytoscape': {
-            'position': 'absolute',
-            'width': '74vw',
-            'height': '100%',
-            'backgroundColor': '#D2B48C'
-        },
-        'json-output': {
-            'overflow-y': 'scroll',
-            'fontFamily': 'menlo',
-            'border': 'thin lightgrey solid',
-            'line-height': '1.5'
-        },
-        'tabs': {},
-        'tab': {'height': '75px',
-                'width': '200px',
-                'max-width': '200px',
-                'background-color': '#B695C0'
-                },
-        'tab-content': {
-            'max-width': '400px',
-            'min-width': '300px',
-            'height': '100%'
-        },
-        'interface-tab': {'height': '75px',
-                          'width': '200px',
-                          'max-width': '200px',
-                          'background-color': interface_color
-                          },
-        'demand-tab': {'height': '75px',
-                       'width': '200px',
-                       'max-width': '200px',
-                       'background-color': demand_color
-                       },
-        'lsp-tab': {'height': '75px',
-                    'width': '200px',
-                    'max-width': '200px',
-                    'background-color': lsp_color,
-                    'color': 'white'
-                    },
-    }
 
     # Define the app
     app = dash.Dash(__name__)
@@ -1267,5 +1290,4 @@ def make_visualization_beta(model, font_size='9px'):  # noqa C901
 
     app.run_server(debug=True)
 
-if __name__ == '__main__':
-    pass
+

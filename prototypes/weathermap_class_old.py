@@ -325,7 +325,6 @@ class Weathermap(object):
         node_names.sort()
         self.node_list = [{'label': name, 'value': name} for name in node_names]
 
-
     def create_visualization(self):
 
         # Make the json elements from objects in the model
@@ -342,7 +341,6 @@ class Weathermap(object):
 
         self.app = dash.Dash(__name__)
         self.app.layout = self.app_layout
-
 
         # Run server
         self.app.run_server(debug=True)
