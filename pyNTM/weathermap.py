@@ -651,7 +651,7 @@ class WeatherMap(object):  # noqa C901
 
         return util_display_options_list
 
-    def demand_sources_and_destinations(self): # TODO - replace this and lsp version with get_sources_and_destinations
+    def demand_sources_and_destinations(self):
         """
         Returns alphabetical, ascending list of demands sources and list of
         demand destinations for the Model object
@@ -961,8 +961,6 @@ class WeatherMap(object):  # noqa C901
             # Get source and destination info from the dropdowns
             ctx_src_inputs = ctx.inputs['lsp-source-callback.value']
             ctx_dest_inputs = ctx.inputs['lsp-destination-callback.value']
-
-            # lsp_sources_list, lsp_destinations_list = lsp_sources_and_destinations()
 
             if ctx_src_inputs is None and ctx_dest_inputs is None:
                 # No source or destination specified
