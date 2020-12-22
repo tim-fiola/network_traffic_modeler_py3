@@ -231,18 +231,12 @@ class RSVP_LSP(object):
         :param model: model object containing LSP
         :return: List of demands in model object that LSP carries
         """
-        from .flex_model import FlexModel
         demand_set = set()
         for demand in iter(model.demand_objects):
             for dmd_path in demand.path:
-                if self in dmd_path:
+                # TODO - add unit test to test for unrouted demands on an LSP
+                if dmd_path != 'Unrouted' and self in dmd_path:
                     demand_set.add(demand)
-            if isinstance(model, FlexModel):
-                # TODO - can remove this given changes to dmd_path above?  Try when tests pass
-                # Look for the demands from IGP shortcuts
-                for dmd_path in demand.path:
-                    if isinstance(dmd_path, list) and self in dmd_path:
-                        demand_set.add(demand)
 
         return list(demand_set)
 

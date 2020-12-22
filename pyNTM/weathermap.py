@@ -429,7 +429,7 @@ class WeatherMap(object):  # noqa C901
             node_b = int_b.node_object
 
             # lat, lon * spacing_factor for spacing on map
-            spacing_factor = 3
+            spacing_factor = 4
             node_a_y = node_a.lat * spacing_factor
             node_a_x = node_a.lon * spacing_factor
             node_b_y = node_b.lat * spacing_factor
@@ -819,7 +819,7 @@ class WeatherMap(object):  # noqa C901
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                                     interface.node_object.name),
                         "style": {
-                            "width": '4',
+                            "width": '6',
                             'line-style': 'dashed',
                             'target-arrow-color': demand_color,
                             'target-arrow-shape': 'triangle',
@@ -837,7 +837,7 @@ class WeatherMap(object):  # noqa C901
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                                     interface.remote_node_object.name),
                         "style": {
-                            "width": '4',
+                            "width": '6',
                             'line-style': 'dashed',
                             'source-arrow-color': demand_color,
                             'source-arrow-shape': 'triangle',
@@ -879,7 +879,7 @@ class WeatherMap(object):  # noqa C901
                                                                                     selected_interface_info['circuit_id']),
                         "style": {
                             'line-style': 'dotted',
-                            'width': '9',
+                            'width': '12',
                         }
                     }
 
@@ -929,8 +929,8 @@ class WeatherMap(object):  # noqa C901
                             "style": {
                                 "border-color": lsp_color,
                                 "border-width": "5px",
-                                'width': '40px',
-                                'height': '30px',
+                                'width': '50px',
+                                'height': '35px',
                             }
                         }
 
