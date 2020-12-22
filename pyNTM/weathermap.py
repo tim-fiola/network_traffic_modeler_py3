@@ -795,7 +795,7 @@ class WeatherMap(object):  # noqa C901
             if selected_demand_info is not None and \
                     selected_demand_info != '' and \
                     json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}] and \
-                    json.loads(selected_demand_info) != {"label": "no demand selected", "value": ""} and \
+                    json.loads(selected_demand_info) != {"label": no_selected_demand_text, "value": ""} and \
                     '"routed": false' not in selected_demand_info:
                 demand_dict = json.loads(selected_demand_info)
                 source = demand_dict['source']
@@ -1290,8 +1290,7 @@ class WeatherMap(object):  # noqa C901
             :param interface_info: serialized dict info about the interface
             :return: Demands on the interface
             """
-
-            if lsp_info and no_selected_lsp_text not in lsp_info:
+            if lsp_info and no_selected_lsp_text not in lsp_info and '"routed": false' not in lsp_info:
                 lsp_dict = json.loads(lsp_info)
                 lsp = model.get_rsvp_lsp(lsp_dict['source'], lsp_dict['dest'], lsp_dict['name'])
                 demands = lsp.demands_on_lsp(model)
