@@ -54,8 +54,8 @@ class WeatherMap(object):  # noqa C901
 
         # Baseline selected object values
         self.no_selected_interface_text = 'no int selected'
-        self.no_selected_demand_text = 'no demand selected'
-        self.no_selected_lsp_text = 'no lsp selected'
+        self.no_selected_demand_text = 'no routed demand selected'
+        self.no_selected_lsp_text = 'no routed lsp selected'
 
         # Colors for each object type
         self.demand_color = '#DB7093'
