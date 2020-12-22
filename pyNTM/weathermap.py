@@ -451,7 +451,6 @@ class WeatherMap(object):  # noqa C901
             nodes.append(new_node)
 
             # Create each end node
-            print((node_a, node_a.failed))
             nodes.append(self.make_json_node(node_a_x, node_a_y, node_a.name, node_a.name, failed=node_a.failed))
             nodes.append(self.make_json_node(node_b_x, node_b_y, node_b.name, node_b.name, failed=node_b.failed))
 
@@ -884,7 +883,9 @@ class WeatherMap(object):  # noqa C901
 
             # LSP path visualization
             if selected_lsp_info:
-                if no_selected_lsp_text not in selected_lsp_info:
+                # If there is an LSP selected and if the LSP is routed,
+                # modify the elements on the LSP's path
+                if no_selected_lsp_text not in selected_lsp_info and '"routed": false' not in selected_lsp_info:
                     selected_lsp_info = json.loads(selected_lsp_info)
                     lsp_interfaces, node_names = get_lsp_interface_data(model, selected_lsp_info)
 
@@ -1118,6 +1119,8 @@ class WeatherMap(object):  # noqa C901
             """
             ctx = dash.callback_context
 
+            # TODO - write logic to see if LSP is down
+
             if ctx.triggered[0]['prop_id'] == 'clear-lsp-button.n_clicks':
                 selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
             elif ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
@@ -1127,7 +1130,13 @@ class WeatherMap(object):  # noqa C901
             elif ctx.triggered[0]['value'] == json.dumps([{"source": "", "dest": "", "name": ""}]):
                 raise PreventUpdate
             else:
-                selected_lsp = ctx.triggered[0]['value']
+                lsp_info = json.loads(ctx.triggered[0]['value'])
+                lsp_object = model.get_rsvp_lsp(lsp_info['source'], lsp_info['dest'], lsp_info['name'])
+                if lsp_object.path == 'Unrouted':
+                    lsp_info['routed'] = False
+                else:
+                    lsp_info['routed'] = True
+                selected_lsp = json.dumps(lsp_info)
 
             return selected_lsp
 
@@ -1340,7 +1349,8 @@ class WeatherMap(object):  # noqa C901
                       [Input('selected-lsp-output', 'children')])
         def lsp_interfaces(lsp):
             if lsp:
-                if no_selected_lsp_text not in lsp:
+                if no_selected_lsp_text not in lsp and '"routed": false' not in lsp:
+                    # LSP is selected and selected LSP is routed
                     lsp = json.loads(lsp)
                     lsp = model.get_rsvp_lsp(lsp['source'], lsp['dest'], lsp['name'])
                     lsp_interfaces = lsp.path['interfaces']
@@ -1353,6 +1363,9 @@ class WeatherMap(object):  # noqa C901
                         interfaces_list.insert(0, null_choice)  # Should give user option to clear selected item
 
                     return interfaces_list
+                elif '"routed": false' in lsp:
+                    # LSP is selected but not routed
+                    raise PreventUpdate
                 else:
                     return [{'label': no_selected_lsp_text, 'value': no_selected_lsp_text}]
             else:
