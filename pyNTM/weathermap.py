@@ -168,7 +168,7 @@ class WeatherMap(object):  # noqa C901
                 }
             },
             {
-                "selector": 'node[group=\"failed\"]',
+                "selector": 'node[failed=\"True\"]',
                 "style": {
                     'text-color': '#FF0000',
                     'shape': 'rectangle',
@@ -189,7 +189,7 @@ class WeatherMap(object):  # noqa C901
         ]
 
     # #### Utility Functions #### #
-    def make_json_node(self, x, y, id, label, midpoint=False, neighbors=[]):
+    def make_json_node(self, x, y, id, label, midpoint=False, neighbors=[], failed=False):
         """
 
         :param x: x-coordinate (or longitude) of node
@@ -204,7 +204,7 @@ class WeatherMap(object):  # noqa C901
 
         json_node = {
             'position': {'x': x, 'y': y},
-            'data': {'id': id, 'label': label, 'group': ''},
+            'data': {'id': id, 'label': label, 'group': '', 'failed': str(failed)},
         }
 
         if midpoint:
@@ -449,13 +449,11 @@ class WeatherMap(object):  # noqa C901
             new_node = self.make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
                                            midpoint=True, neighbors=[node_a.name, node_b.name])
             nodes.append(new_node)
-            # Create each end node
-            nodes.append(self.make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
-            nodes.append(self.make_json_node(node_b_x, node_b_y, node_b.name, node_b.name))
 
-            # Create the edges
-            # {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
-            #           'utilization': 'failed'}}
+            # Create each end node
+            print((node_a, node_a.failed))
+            nodes.append(self.make_json_node(node_a_x, node_a_y, node_a.name, node_a.name, failed=node_a.failed))
+            nodes.append(self.make_json_node(node_b_x, node_b_y, node_b.name, node_b.name, failed=node_b.failed))
 
             # Make edges with midpoints
             edges.append(self.make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
