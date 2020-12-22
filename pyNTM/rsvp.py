@@ -233,10 +233,11 @@ class RSVP_LSP(object):
         """
         demand_set = set()
         for demand in iter(model.demand_objects):
-            for dmd_path in demand.path:
-                # TODO - add unit test to test for unrouted demands on an LSP
-                if dmd_path != 'Unrouted' and self in dmd_path:
-                    demand_set.add(demand)
+            # TODO - add unit test to test for unrouted demands on an LSP
+            if demand.path != 'Unrouted':
+                for dmd_path in demand.path:
+                    if self in dmd_path:
+                        demand_set.add(demand)
 
         return list(demand_set)
 

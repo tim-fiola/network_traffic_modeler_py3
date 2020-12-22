@@ -1296,6 +1296,8 @@ class WeatherMap(object):  # noqa C901
                 lsp_dict = json.loads(lsp_info)
                 lsp = model.get_rsvp_lsp(lsp_dict['source'], lsp_dict['dest'], lsp_dict['name'])
                 demands = lsp.demands_on_lsp(model)
+                # import pdb
+                # pdb.set_trace()
                 if len(demands) == 0:
                     return [{'label': 'no demands on lsp', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
