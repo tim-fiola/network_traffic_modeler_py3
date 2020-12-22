@@ -129,7 +129,7 @@ class WeatherMap(object):  # noqa C901
                             '75-89': 'orangered',
                             '90-99': 'darkred',
                             '100+': 'darkviolet',
-                            'failed': 'grey'}
+                            'failed': 'dimgrey'}
 
         self.default_stylesheet = [
             {
@@ -145,9 +145,8 @@ class WeatherMap(object):  # noqa C901
                 }
             },
             {
-                "selector": "edge[group=\"failed\"]",
+                "selector": "edge[group=\"dimgrey\"]",
                 "style": {
-                    "line-color": "#808080",
                     "curve-style": "bezier",
                     'label': "data(circuit_id)",
                     'line-style': 'dashed'
@@ -225,7 +224,7 @@ class WeatherMap(object):  # noqa C901
         group = None
 
         if utilization == 'Int is down':
-            group = 'failed'
+            group = 'dimgrey'  # TODO - create a failed_color = dimgrey
         elif utilization >= 100:
             group = util_ranges['100+']
         else:

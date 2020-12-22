@@ -3,7 +3,6 @@ sys.path.append('../')
 
 from pyNTM import PerformanceModel
 from pyNTM import FlexModel
-from pyNTM import make_visualization_beta
 from pyNTM import WeatherMap
 from pprint import pprint
 #
