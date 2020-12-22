@@ -795,7 +795,8 @@ class WeatherMap(object):  # noqa C901
             if selected_demand_info is not None and \
                     selected_demand_info != '' and \
                     json.loads(selected_demand_info) != [{'source': '', 'dest': '', 'name': ''}] and \
-                    json.loads(selected_demand_info) != {"label": "no demand selected", "value": ""}:
+                    json.loads(selected_demand_info) != {"label": "no demand selected", "value": ""} and \
+                    '"routed": false' not in selected_demand_info:
                 demand_dict = json.loads(selected_demand_info)
                 source = demand_dict['source']
                 destination = demand_dict['dest']
@@ -1119,8 +1120,6 @@ class WeatherMap(object):  # noqa C901
             """
             ctx = dash.callback_context
 
-            # TODO - write logic to see if LSP is down
-
             if ctx.triggered[0]['prop_id'] == 'clear-lsp-button.n_clicks':
                 selected_lsp = json.dumps({'label': no_selected_lsp_text, 'value': ''})
             elif ctx.triggered[0]['value'] is None or ctx.triggered[0]['value'] == '':
@@ -1211,7 +1210,13 @@ class WeatherMap(object):  # noqa C901
             elif ctx.triggered[0]['value'] == json.dumps([{"source": "", "dest": "", "name": ""}]):
                 raise PreventUpdate
             else:
-                selected_demand = ctx.triggered[0]['value']
+                demand_info = json.loads(ctx.triggered[0]['value'])
+                demand_object = model.get_demand_object(demand_info['source'], demand_info['dest'], demand_info['name'])
+                if demand_object.path == 'Unrouted':
+                    demand_info['routed'] = False
+                else:
+                    demand_info['routed'] = True
+                selected_demand = json.dumps(demand_info)
 
             return selected_demand
 
@@ -1312,7 +1317,8 @@ class WeatherMap(object):  # noqa C901
         def demand_interfaces(demand):
 
             if demand:
-                if no_selected_demand_text not in demand:
+                if no_selected_demand_text not in demand and '"routed": false' not in demand:
+                    # Demand is selected and selected demand is routed
                     demand = json.loads(demand)
                     dmd = model.get_demand_object(demand['source'], demand['dest'], demand['name'])
                     dmd_ints, dmd_lsps = find_demand_interfaces_and_lsps([dmd])
@@ -1334,6 +1340,9 @@ class WeatherMap(object):  # noqa C901
                         if len(lsp_list) > 0 and null_choice not in lsp_list:
                             lsp_list.insert(0, null_choice)  # Should give user option to clear selected item
                     return interfaces_list, lsp_list
+                elif '"routed": false' in demand:
+                    # Demand is selected but not routed
+                    raise PreventUpdate
 
                 else:
                     selected_demand = no_selected_demand_text
