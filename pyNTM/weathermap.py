@@ -62,10 +62,11 @@ class WeatherMap(object):  # noqa C901
         self.lsp_color = '#610B21'
         self.interface_color = '#ADD8E6'
 
+        self.failed_interface_color = 'dimgrey'
+
         self.app = dash.Dash(__name__)
 
         # Styling of the visualization layout
-        # TODO - tabs entry is just {}; delete it?
         self.styles = {
             'all-content': {
                 'width': 'auto',
@@ -129,7 +130,7 @@ class WeatherMap(object):  # noqa C901
                             '75-89': 'orangered',
                             '90-99': 'darkred',
                             '100+': 'darkviolet',
-                            'failed': 'dimgrey'}
+                            'failed': self.failed_interface_color}
 
         self.default_stylesheet = [
             {
@@ -156,7 +157,7 @@ class WeatherMap(object):  # noqa C901
                 "selector": "node",
                 "style": {
                     "label": "data(label)",
-                    'background-color': 'lightgrey',
+                    'background-color': '#90EE90',
                     "font-size": self.font_size,
                     "text-halign": 'center',
                     'text-valign': 'center',
@@ -171,9 +172,10 @@ class WeatherMap(object):  # noqa C901
                 "selector": 'node[failed=\"True\"]',
                 "style": {
                     'text-color': '#FF0000',
-                    'shape': 'rectangle',
+                    'shape': 'octagon',
                     'label': "data(label)",
-                    'background-color': 'red'
+                    'background-color': 'red',
+                    'border-color': '#B73239'
 
                 }
             },
@@ -183,7 +185,9 @@ class WeatherMap(object):  # noqa C901
                     'label': "data(label)",
                     'shape': 'rectangle',
                     'width': '10px',
-                    'height': '10px'
+                    'height': '10px',
+                    'background-color': 'lightgrey',
+                    'border-color': 'dimgrey'
                 }
             },
         ]
@@ -224,7 +228,7 @@ class WeatherMap(object):  # noqa C901
         group = None
 
         if utilization == 'Int is down':
-            group = 'dimgrey'  # TODO - create a failed_color = dimgrey
+            group = self.failed_interface_color
         elif utilization >= 100:
             group = util_ranges['100+']
         else:
@@ -629,7 +633,6 @@ class WeatherMap(object):  # noqa C901
 
         return app_layout
 
-    # TODO - move this to correct place
     print("\n*** NOTE: The make_visualization_beta function is a beta feature.  It may not have been as \n"
           "extensively tested as the pyNTM code in general.  The API calls for this may also \n"
           "change more rapidly than the general pyNTM code base.\n")
