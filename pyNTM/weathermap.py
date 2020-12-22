@@ -44,7 +44,7 @@ class WeatherMap(object):  # noqa C901
 
     def __init__(self, model):
         self.model = model
-        self.elements = []
+        # self.elements = []
         self.demand_sources = []
         self.demand_destinations = []
         self.lsp_sources = []
@@ -435,7 +435,7 @@ class WeatherMap(object):  # noqa C901
             capacity = int_a.capacity
 
             try:
-                ckt_id = int_a.circuit_id
+                ckt_id = str(int_a.circuit_id)
             except (AttributeError, ValueError):
                 ckt_id = "circuit_{}-{}".format(node_a.name, node_b.name)
 
@@ -448,7 +448,7 @@ class WeatherMap(object):  # noqa C901
             else:
                 midpoint_label = 'midpoint-{}'.format(ckt_id)
             new_node = self.make_json_node(midpoint_x, midpoint_y, midpoint_label, midpoint_label,
-                                      midpoint=True, neighbors=[node_a.name, node_b.name])
+                                           midpoint=True, neighbors=[node_a.name, node_b.name])
             nodes.append(new_node)
             # Create each end node
             nodes.append(self.make_json_node(node_a_x, node_a_y, node_a.name, node_a.name))
@@ -460,9 +460,9 @@ class WeatherMap(object):  # noqa C901
 
             # Make edges with midpoints
             edges.append(self.make_json_edge(node_a.name, midpoint_label, int_a_name, capacity, ckt_id,
-                                        int_a.utilization, self.util_ranges, int_a.cost))
+                                             int_a.utilization, self.util_ranges, int_a.cost))
             edges.append(self.make_json_edge(node_b.name, midpoint_label, int_b_name, capacity, ckt_id,
-                                        int_b.utilization, self.util_ranges, int_b.cost))
+                                             int_b.utilization, self.util_ranges, int_b.cost))
         updated_elements = nodes + edges
 
         return updated_elements
@@ -493,6 +493,7 @@ class WeatherMap(object):  # noqa C901
         """
 
         elements = self.create_elements()
+
         list_of_nodes = self.make_node_list()
 
         app_layout = html.Div(style=self.styles['all-content'], children=[
