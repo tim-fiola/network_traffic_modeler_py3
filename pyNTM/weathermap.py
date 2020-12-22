@@ -1291,6 +1291,7 @@ class WeatherMap(object):  # noqa C901
             :return: Demands on the interface
             """
             if lsp_info and no_selected_lsp_text not in lsp_info and '"routed": false' not in lsp_info:
+                # If an LSP is selected and the selected LSP is routed
                 lsp_dict = json.loads(lsp_info)
                 lsp = model.get_rsvp_lsp(lsp_dict['source'], lsp_dict['dest'], lsp_dict['name'])
                 demands = lsp.demands_on_lsp(model)
