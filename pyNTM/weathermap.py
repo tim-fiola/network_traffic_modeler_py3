@@ -767,7 +767,8 @@ class WeatherMap(object):  # noqa C901
                        Input('selected-demand-output', 'children'),
                        Input('selected-interface-output', 'children'),
                        Input('selected-lsp-output', 'children')])
-        def update_stylesheet(data, edges_to_highlight, selected_demand_info, selected_interface_info, selected_lsp_info):
+        def update_stylesheet(data, edges_to_highlight, selected_demand_info,
+                              selected_interface_info, selected_lsp_info):
             """
             Updates stylesheet with style for edges_to_highlight that will change line type
             for the edge to dashed and add pink arrows and squares to the demand edges and
