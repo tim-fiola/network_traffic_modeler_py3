@@ -36,7 +36,7 @@ from pyNTM import Demand
 import json
 
 
-class WeatherMap(model):  # noqa C901
+class WeatherMap(object):  # noqa C901
     """
 
 
@@ -61,6 +61,8 @@ class WeatherMap(model):  # noqa C901
         self.demand_color = '#DB7093'
         self.lsp_color = '#610B21'
         self.interface_color = '#ADD8E6'
+
+        self.app = dash.Dash(__name__)
 
         # Styling of the visualization layout
         # TODO - tabs entry is just {}; delete it?
@@ -492,36 +494,37 @@ class WeatherMap(model):  # noqa C901
 
         elements = self.create_elements()
         list_of_nodes = self.make_node_list()
-        app_layout = html.Div(style=self.style_info['all-content'], children=[
+
+        app_layout = html.Div(style=self.styles['all-content'], children=[
             cyto.Cytoscape(
                 id='cytoscape-prototypes',
                 layout={'name': 'preset'},
-                style=self.style_info['cytoscape'],
+                style=self.styles['cytoscape'],
                 elements=elements,
-                stylesheet=self.stylesheet,
+                stylesheet=self.default_stylesheet,
                 responsive=True
             ),
-            html.Div(className='right_menu', style=self.style_info['right_menu'], children=[
+            html.Div(className='right_menu', style=self.styles['right_menu'], children=[
                 html.P(children=["Selected Interface:  ",
                                  html.Button('Clear Interface Selection', id='clear-int-button', n_clicks=0), ]),
-                html.P(id='selected-interface-output', style=self.style_info['json-output']),
+                html.P(id='selected-interface-output', style=self.styles['json-output']),
                 html.P(children=["Selected Demand:  ",
                                  html.Button('Clear Demand Selection', id='clear-dmd-button', n_clicks=0), ]),
-                html.P(id='selected-demand-output', style=self.style_info['json-output']),
+                html.P(id='selected-demand-output', style=self.styles['json-output']),
                 html.P(children=["Selected RSVP LSP:  ",
                                  html.Button('Clear LSP Selection', id='clear-lsp-button', n_clicks=0), ]),
-                html.P(id='selected-lsp-output', style=self.style_info['json-output']),
-                dcc.Tabs(id='tabs', vertical=True, style=self.style_info['tabs'], children=[
-                    dcc.Tab(label='Utilization Visualization', style=self.style_info['tab'], children=[
+                html.P(id='selected-lsp-output', style=self.styles['json-output']),
+                dcc.Tabs(id='tabs', vertical=True, style=self.styles['tabs'], children=[
+                    dcc.Tab(label='Utilization Visualization', style=self.styles['tab'], children=[
                         dcc.Dropdown(
-                            style=self.style_info['tab-content'],
-                            id='utilization-dropdown-callback', options=self.utilization_display_info,
-                            value=[entry['value'] for entry in self.utilization_display_info],
+                            style=self.styles['tab-content'],
+                            id='utilization-dropdown-callback', options=self.utilization_display_info(),
+                            value=[entry['value'] for entry in self.utilization_display_info()],
                             multi=True,
                         )
                     ]),
-                    dcc.Tab(label='Find Demands', style=self.style_info['demand-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='Find Demands', style=self.styles['demand-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             html.P(
                                 "Clear the source or destination selection by selecting the 'X' on the right side of the"
                                 " selection menu"),
@@ -534,30 +537,30 @@ class WeatherMap(model):  # noqa C901
                             dcc.RadioItems(
                                 id='find-demands-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label='Demand to Interfaces', style=self.style_info['demand-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='Demand to Interfaces', style=self.styles['demand-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             dcc.RadioItems(
                                 id='demand-path-interfaces',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             )
                         ]),
                     ]),
-                    dcc.Tab(label='Demand to LSPs', style=self.style_info['demand-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='Demand to LSPs', style=self.styles['demand-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             dcc.RadioItems(
                                 id='demand-path-lsps',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             )
                         ]),
                     ]),
-                    dcc.Tab(label='Find Interfaces on Node', style=self.style_info['interface-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='Find Interfaces on Node', style=self.styles['interface-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             dcc.Dropdown(
                                 id='find-node', placeholder="Select a node by name",
                                 options=list_of_nodes
@@ -565,30 +568,30 @@ class WeatherMap(model):  # noqa C901
                             dcc.RadioItems(
                                 id='interfaces-on-node',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             )
                         ]),
                     ]),
-                    dcc.Tab(label='Interface to Demands', style=self.style_info['interface-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='Interface to Demands', style=self.styles['interface-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             dcc.RadioItems(
                                 id='interface-demand-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label="Interface to LSPs", style=self.style_info['interface-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label="Interface to LSPs", style=self.styles['interface-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             dcc.RadioItems(
                                 id="interface-lsp-callback",
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output'],
+                                style=self.styles['json-output'],
                             )
                         ])
                     ]),
-                    dcc.Tab(label='Find LSPs', style=self.style_info['lsp-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='Find LSPs', style=self.styles['lsp-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             html.P(
                                 "Clear the source or destination selection by selecting the 'X' on the right side of the"
                                 " selection menu"),
@@ -601,25 +604,25 @@ class WeatherMap(model):  # noqa C901
                             dcc.RadioItems(
                                 id='find-lsps-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label='LSP to Demands', style=self.style_info['lsp-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='LSP to Demands', style=self.styles['lsp-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             dcc.RadioItems(
                                 id='lsp-demand-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             ),
                         ]),
                     ]),
-                    dcc.Tab(label='LSP to Interfaces', style=self.style_info['lsp-tab'], children=[
-                        html.Div(style=self.style_info['tab-content'], children=[
+                    dcc.Tab(label='LSP to Interfaces', style=self.styles['lsp-tab'], children=[
+                        html.Div(style=self.styles['tab-content'], children=[
                             dcc.RadioItems(
                                 id='lsp-interface-callback',
                                 labelStyle={'display': 'inline-block'},
-                                style=self.style_info['json-output']
+                                style=self.styles['json-output']
                             ),
                         ]),
                     ]),
@@ -709,9 +712,33 @@ class WeatherMap(model):  # noqa C901
         :return:
         """
         # Define the app
-        app = dash.Dash(__name__)
+        app = self.app
+        model = self.model
 
         app.layout = self.make_app_layout()
+        default_stylesheet = self.default_stylesheet
+
+        demand_color = self.demand_color
+        lsp_color = self.lsp_color
+        demand_color = self.demand_color
+
+        no_selected_interface_text = self.no_selected_interface_text
+        no_selected_lsp_text = self.no_selected_lsp_text
+        no_selected_demand_text = self.no_selected_demand_text
+
+        lsp_sources_list, lsp_destinations_list = self.lsp_sources_and_destinations()
+        demand_sources_list, demand_destinations_list = self.demand_sources_and_destinations()
+
+        # Defs ported from class . . .
+        format_objects_for_display = self.format_objects_for_display
+        get_destinations = self.get_destinations
+        format_interfaces_for_display = self.format_interfaces_for_display
+        find_demand_interfaces_and_lsps = self.find_demand_interfaces_and_lsps
+        get_lsp_interface_data = self.get_lsp_interface_data
+
+
+
+
 
         # ## CALLBACK DEFS - DYNAMICALLY UPDATE VISUALIZATION BASED ON USER ACTION # ##
         # Def to list Node name dropdown
@@ -721,9 +748,9 @@ class WeatherMap(model):  # noqa C901
 
             if node:
                 node = self.model.get_node_object(node)
-                interfaces_on_node = node.interfaces(model)
+                interfaces_on_node = node.interfaces(self.model)
 
-                interface_info_to_display = self.format_interfaces_for_display(interfaces_on_node)
+                interface_info_to_display = format_interfaces_for_display(interfaces_on_node)
 
                 # Add a choice at the beginning of the list to null out selection
                 null_choice = {'label': self.no_selected_interface_text, 'value': ''}
@@ -914,7 +941,7 @@ class WeatherMap(model):  # noqa C901
                        Output('find-lsps-callback', 'options')],
                       [Input('lsp-source-callback', 'value'),
                        Input('lsp-destination-callback', 'value'), ])
-        def display_lsp_dropdowns(self, source, dest, lsps=[{'label': '', 'value': ''}]):
+        def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
             """
             Return the options for LSP source, LSP destination, and LSPs between the source and
             destination based on whether an LSP source and/or destination has been specified
@@ -931,7 +958,7 @@ class WeatherMap(model):  # noqa C901
             ctx_src_inputs = ctx.inputs['lsp-source-callback.value']
             ctx_dest_inputs = ctx.inputs['lsp-destination-callback.value']
 
-            lsp_sources_list, lsp_destinations_list = self.lsp_sources_and_destinations()
+            # lsp_sources_list, lsp_destinations_list = lsp_sources_and_destinations()
 
             if ctx_src_inputs is None and ctx_dest_inputs is None:
                 # No source or destination specified
@@ -1051,7 +1078,7 @@ class WeatherMap(model):  # noqa C901
                 # Source specified but no destination
                 src_options = [{'label': ctx_src_inputs, 'value': ctx_src_inputs}]
 
-                dest_list = get_destinations(ctx_src_inputs, model=model, object_type='demand')
+                dest_list = get_destinations(ctx_src_inputs, object_type='demand')
                 dest_list.sort()
                 dest_options = [{'label': dest, 'value': dest} for dest in dest_list]
 
@@ -1335,5 +1362,6 @@ class WeatherMap(model):  # noqa C901
         # ## END OF CALLBACK DEFS ## #
 
         app.run_server(debug=True)
+
 
 

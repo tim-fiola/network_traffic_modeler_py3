@@ -3,7 +3,8 @@ sys.path.append('../')
 
 from pyNTM import PerformanceModel
 from pyNTM import make_visualization_beta
-
+from pyNTM import WeatherMap
+from pprint import pprint
 #
 #
 #
@@ -22,4 +23,8 @@ model.update_simulation()
 #     print((interface, lat_lon_a, lat_lon_b))
 
 # vis = vu.make_visualization_beta(model)
-make_visualization_beta(model, font_size="20px")
+# make_visualization_beta(model, font_size="20px")
+
+wm = WeatherMap(model)
+
+wm.create_weathermap()
