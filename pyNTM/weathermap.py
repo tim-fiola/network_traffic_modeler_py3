@@ -66,6 +66,7 @@ class WeatherMap(object):  # noqa C901
 
         self.app = dash.Dash(__name__)
 
+        # TODO - modify styles and app_layout to display unrouted LSPs and Demands in red
         # Styling of the visualization layout
         self.styles = {
             'all-content': {
@@ -161,7 +162,6 @@ class WeatherMap(object):  # noqa C901
                     "font-size": self.font_size,
                     "text-halign": 'center',
                     'text-valign': 'center',
-                    'text-wrap': 'wrap',
                     'width': '25px',
                     'height': '25px',
                     'border-width': 1,
