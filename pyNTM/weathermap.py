@@ -483,8 +483,7 @@ class WeatherMap(object):  # noqa C901
 
     # ## END OF UTILITY FUNCTIONS ## #
 
-
-
+    # ## APP LAYOUT ## #
     def make_app_layout(self):
         """
         Creates the layout for the entire visualization
