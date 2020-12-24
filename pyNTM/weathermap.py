@@ -899,7 +899,7 @@ class WeatherMap(object):  # noqa C901
                             "style": {
                                 'line-style': 'dashed',
                                 'target-arrow-shape': 'chevron',
-                                'arrow-scale': '1.8',
+                                'arrow-scale': '1.2',
                                 'target-arrow-color': lsp_color,
                                 'z-axis': 2000
                             }
@@ -913,7 +913,7 @@ class WeatherMap(object):  # noqa C901
                             "style": {
                                 'line-style': 'dashed',
                                 'source-arrow-shape': 'chevron',
-                                'arrow-scale': '1.8',
+                                'arrow-scale': '1.2',
                                 'source-arrow-color': lsp_color,
                                 'z-axis': 2000
                             }
