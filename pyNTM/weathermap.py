@@ -30,8 +30,8 @@ except ModuleNotFoundError as e:
 
     print(msg)
 
-from pyNTM import RSVP_LSP
-from pyNTM import Demand
+from .rsvp import RSVP_LSP
+from .demand import Demand
 
 import json
 
@@ -632,10 +632,6 @@ class WeatherMap(object):  # noqa C901
 
         return app_layout
 
-    print("\n*** NOTE: The make_visualization_beta function is a beta feature.  It may not have been as \n"
-          "extensively tested as the pyNTM code in general.  The API calls for this may also \n"
-          "change more rapidly than the general pyNTM code base.\n")
-
     @property
     def util_display_options(self):
         """
@@ -710,6 +706,16 @@ class WeatherMap(object):  # noqa C901
 
         :return:
         """
+
+        print("\n*** NOTE: The make_visualization_beta function is a beta feature.  It may not have been as \n"
+              "extensively tested as the pyNTM code in general.  The API calls for this may also \n"
+              "change more rapidly than the general pyNTM code base.\n")
+        print()
+        print()
+        print("Visualization is available at http://127.0.0.1:8050/")
+        print()
+        print()
+
         # Define the app
         app = self.app
         model = self.model
@@ -734,10 +740,6 @@ class WeatherMap(object):  # noqa C901
         format_interfaces_for_display = self.format_interfaces_for_display
         find_demand_interfaces_and_lsps = self.find_demand_interfaces_and_lsps
         get_lsp_interface_data = self.get_lsp_interface_data
-
-
-
-
 
         # ## CALLBACK DEFS - DYNAMICALLY UPDATE VISUALIZATION BASED ON USER ACTION # ##
         # Def to list Node name dropdown
