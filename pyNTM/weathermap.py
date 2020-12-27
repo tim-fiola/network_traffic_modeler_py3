@@ -1385,6 +1385,3 @@ class WeatherMap(object):  # noqa C901
         # ## END OF CALLBACK DEFS ## #
 
         app.run_server(debug=True)
-
-
-
