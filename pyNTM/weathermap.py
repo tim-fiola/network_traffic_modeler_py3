@@ -36,7 +36,7 @@ from .demand import Demand
 import json
 
 
-class WeatherMap(object):  # noqa C901
+class WeatherMap(object):
     """
 
 
@@ -195,6 +195,7 @@ class WeatherMap(object):  # noqa C901
     # #### Utility Functions #### #
     def make_json_node(self, x, y, id, label, midpoint=False, neighbors=[], failed=False):
         """
+        Makes json data for a node
 
         :param x: x-coordinate (or longitude) of node
         :param y: y-coordinate (or latitude) of node
@@ -203,7 +204,7 @@ class WeatherMap(object):  # noqa C901
         :param midpoint: Is this a midpoint node?  True|False
         :param neighbors: directly connected nodes
 
-        :return:
+        :return: node data in json form
         """
 
         json_node = {
@@ -700,7 +701,7 @@ class WeatherMap(object):  # noqa C901
 
         return node_list
 
-    def create_weathermap(self):
+    def create_weathermap(self):  # noqa C901
         """
         This creates the actual display, pulling everything together
 
@@ -881,8 +882,8 @@ class WeatherMap(object):  # noqa C901
                                                                  selected_interface_info['circuit_id']),
                         "style": {
                             'line-style': 'dotted',
-                            'width': '12',
-                            }
+                            'width': '12'
+                                    }
                     }
 
                     new_style.append(new_entry_5)
@@ -920,7 +921,7 @@ class WeatherMap(object):  # noqa C901
                                 'arrow-scale': '1.2',
                                 'source-arrow-color': lsp_color,
                                 'z-axis': 2000
-                            }
+                                        }
                         }
 
                         new_style.append(new_entry_7)
@@ -948,16 +949,19 @@ class WeatherMap(object):  # noqa C901
                        Output('find-lsps-callback', 'options')],
                       [Input('lsp-source-callback', 'value'),
                        Input('lsp-destination-callback', 'value'), ])
-        def display_lsp_dropdowns(source, dest, lsps=[{'label': '', 'value': ''}]):
+        def display_lsp_dropdowns(source, dest):
             """
             Return the options for LSP source, LSP destination, and LSPs between the source and
             destination based on whether an LSP source and/or destination has been specified
 
-            :param source:
-            :param dest:
-            :param lsps:
-            :return:
+            :param source: LSP source node
+            :param dest: LSP destination node
+
+            :return: source options (based on selected destination), destination options (based on
+            selected source) and LSPs with selected source and/or destination
             """
+            # Baseline LSPs
+            lsps = [{'label': '', 'value': ''}]
 
             ctx = dash.callback_context
 
@@ -1036,15 +1040,19 @@ class WeatherMap(object):  # noqa C901
                        Output('find-demands-callback', 'options')],
                       [Input('demand-source-callback', 'value'),
                        Input('demand-destination-callback', 'value'), ])
-        def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}]):
+        def display_demand_dropdowns(source, dest):
             """
             Displays demands in model with selected source and/or destination
 
             :param source: demand source node
             :param dest: demand destination node
-            :param demands:
-            :return:
+
+            :return: source options (based on selected destination), destination options (based on
+            selected source) and demands with selected source and/or destination
             """
+
+            # Baseline demands
+            demands = [{'label': '', 'value': ''}]
 
             ctx = dash.callback_context
 
