@@ -526,8 +526,8 @@ class WeatherMap(object):  # noqa C901
                     dcc.Tab(label='Find Demands', style=self.styles['demand-tab'], children=[
                         html.Div(style=self.styles['tab-content'], children=[
                             html.P(
-                                "Clear the source or destination selection by selecting the 'X' on the right side of the"
-                                " selection menu"),
+                                "Clear the source or destination selection by selecting the 'X' on the right "
+                                "side of the selection menu"),
                             dcc.Dropdown(
                                 id='demand-source-callback', placeholder='Select a source node',
                             ),
@@ -593,8 +593,8 @@ class WeatherMap(object):  # noqa C901
                     dcc.Tab(label='Find LSPs', style=self.styles['lsp-tab'], children=[
                         html.Div(style=self.styles['tab-content'], children=[
                             html.P(
-                                "Clear the source or destination selection by selecting the 'X' on the right side of the"
-                                " selection menu"),
+                                "Clear the source or destination selection by selecting "
+                                "the 'X' on the right side of the selection menu"),
                             dcc.Dropdown(
                                 id='lsp-source-callback', placeholder='Select a source node',
                             ),
@@ -806,7 +806,7 @@ class WeatherMap(object):  # noqa C901
                 destination = demand_dict['dest']
                 # Find the demands that match the source and destination
                 try:
-                    dmds =self.model.parallel_demand_groups()['{}-{}'.format(source, destination)]
+                    dmds = self.model.parallel_demand_groups()['{}-{}'.format(source, destination)]
                 except KeyError:
                     return default_stylesheet + new_style
 
@@ -876,12 +876,13 @@ class WeatherMap(object):  # noqa C901
                 if no_selected_interface_text not in selected_interface_info:
                     selected_interface_info = json.loads(selected_interface_info)
                     new_entry_5 = {
-                        "selector": "edge[source=\"{}\"][circuit_id=\"{}\"]".format(selected_interface_info['source'],
-                                                                                    selected_interface_info['circuit_id']),
+                        "selector": "edge[source=\"{}\"]"
+                                    "[circuit_id=\"{}\"]".format(selected_interface_info['source'],
+                                                                 selected_interface_info['circuit_id']),
                         "style": {
                             'line-style': 'dotted',
                             'width': '12',
-                        }
+                            }
                     }
 
                     new_style.append(new_entry_5)
@@ -910,8 +911,9 @@ class WeatherMap(object):  # noqa C901
                         new_style.append(new_entry_6)
 
                         new_entry_7 = {
-                            "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
-                                                                                        interface.remote_node_object.name),
+                            "selector": "edge[circuit_id=\"{}\"]"
+                                        "[source=\"{}\"]".format(interface.circuit_id,
+                                                                 interface.remote_node_object.name),
                             "style": {
                                 'line-style': 'dashed',
                                 'source-arrow-shape': 'chevron',
@@ -1035,6 +1037,14 @@ class WeatherMap(object):  # noqa C901
                       [Input('demand-source-callback', 'value'),
                        Input('demand-destination-callback', 'value'), ])
         def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}]):
+            """
+            Displays demands in model with selected source and/or destination
+
+            :param source: demand source node
+            :param dest: demand destination node
+            :param demands:
+            :return:
+            """
 
             ctx = dash.callback_context
 
@@ -1053,7 +1063,7 @@ class WeatherMap(object):  # noqa C901
                 dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
 
                 key = "{}-{}".format(ctx_src_inputs, ctx_dest_inputs)
-                demand_list =self.model.parallel_demand_groups()[key]
+                demand_list = self.model.parallel_demand_groups()[key]
 
                 # Format demands for display
                 demands = format_objects_for_display(demand_list)
@@ -1067,7 +1077,7 @@ class WeatherMap(object):  # noqa C901
                 dest_options = [{'label': ctx_dest_inputs, 'value': ctx_dest_inputs}]
 
                 # Get the demands with specified destination
-                dmd_keys =self.model.parallel_demand_groups().keys()
+                dmd_keys = self.model.parallel_demand_groups().keys()
                 src_keys = [src_key for src_key in dmd_keys if src_key.split('-')[1] == ctx_dest_inputs]
                 demand_list = []
 
@@ -1115,10 +1125,13 @@ class WeatherMap(object):  # noqa C901
                        Input('clear-lsp-button', 'n_clicks')])
         def display_selected_lsp(path_lsps, find_lsps, interface_lsps, clear_lsp_button):
             """
+            Displays info about selected LSP, based on user's selection
 
-            :param path_lsps:
-            :param find_lsps:
-            :return:
+            :param path_lsps: LSP from a demand's path
+            :param find_lsps: LSP found based on source/dest
+            :param interface_lsps: LSPs egressing an interface
+            :param clear_lsp_button: button that clears LSP selection
+            :return: info about selected LSP; str({'label': '', 'value': ''})
             """
             ctx = dash.callback_context
 
@@ -1148,11 +1161,18 @@ class WeatherMap(object):  # noqa C901
                        Input('interfaces-on-node', 'value'),
                        Input('lsp-interface-callback', 'value'),
                        Input('clear-int-button', 'n_clicks')])
-        def display_selected_edge(data, demand_interface, node_interface, lsp_interface, clear_int_button):
+        def display_selected_edge(map_edge, demand_interface, node_interface, lsp_interface, clear_int_button):
             """
+            Displays selected edge (interface) based on user selection
 
-            :param data: list consisting of a single dict containing info about the edge/interface
-            :return: json string of a dict containing metadata about the selected edge
+            :param map_edge: selected edge on map
+            :param demand_interface: interface selected from demand's path
+            :param node_interface: interface selected from node
+            :param lsp_interface: interface selected from LSP path
+            :param clear_int_button: button that clears selected interface
+
+            :return: json string of a dict containing metadata about the selected edge;
+            str({'label': '', 'value': ''})
             """
 
             ctx = dash.callback_context
@@ -1298,7 +1318,8 @@ class WeatherMap(object):  # noqa C901
                 lsp = model.get_rsvp_lsp(lsp_dict['source'], lsp_dict['dest'], lsp_dict['name'])
                 demands = lsp.demands_on_lsp(model)
                 if len(demands) == 0:
-                    return [{'label': 'no demands on lsp', 'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
+                    return [{'label': 'no demands on lsp',
+                             'value': json.dumps([{'source': '', 'dest': '', 'name': ''}])}]
 
                 demands_on_lsp = format_objects_for_display(demands)
 
