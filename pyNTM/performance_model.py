@@ -1108,20 +1108,29 @@ class PerformanceModel(_MasterModel):
     def _lsp_routed_demand_path_detail(self, demand, lsps):
         """
         
-        :param demand: 
-        :return: 
+        :param demand: Demand object
+        :param lsps: list of LSPs that carry demand
+
+        :return: demand with path_detail property added
         """
         
         path_detail = {}
         num_paths = len(lsps) 
         
         for counter in num_paths:
+            path_name = "path_{}".format(counter)
             lsp = lsps[counter]
-            {
+            path_info = {
                 'items': [lsp],
                 'path_traffic': demand.traffic/num_paths,
                 'splits': {lsp}
             }
+
+            path_detail[path_name] = path_info
+
+        demand._path_detail = path_detail
+
+        return demand
 
             
 
