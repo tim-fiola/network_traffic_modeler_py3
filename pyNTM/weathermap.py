@@ -36,15 +36,13 @@ from .demand import Demand
 import json
 
 
-class WeatherMap(object):
+class WeatherMap(object):  # pragma: no cover
     """
-
-
+    A class to create an interactive visualization of a pyNTM Model object.
     """
 
     def __init__(self, model):
         self.model = model
-        # self.elements = []
         self.demand_sources = []
         self.demand_destinations = []
         self.lsp_sources = []
@@ -195,7 +193,7 @@ class WeatherMap(object):
     # #### Utility Functions #### #
     def make_json_node(self, x, y, id, label, midpoint=False, neighbors=[], failed=False):
         """
-        Makes json data for a node
+        Makes json data for a node for use in the WeatherMap
 
         :param x: x-coordinate (or longitude) of node
         :param y: y-coordinate (or latitude) of node
@@ -221,8 +219,22 @@ class WeatherMap(object):
 
     def make_json_edge(self, source_id, target_id, edge_name, capacity, circuit_id, utilization, util_ranges, cost):
         """
-        {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
-                  'utilization': 'failed', 'interface-name': edge_name}}
+        Makes json data for an Interface (edge) for use in the WeatherMap
+
+        :param source_id: Source node name
+        :param target_id: Destination node name
+        :param edge_name: Name of edge
+        :param capacity: Capacity of edge (Interface)
+        :param circuit_id: Circuit ID for Interface
+        :param utilization: Utilization of Interface
+        :param util_ranges: Utilization ranges
+        :param cost: Metric/cost of Interface
+
+        :return: json info about the edge/Interface
+
+        Example:
+                    {'data': {'source': 'two', 'target': 'one', "group": util_ranges["failed"], 'label': 'Ckt4',
+                    'utilization': 'failed', 'interface-name': edge_name}}
 
         """
 
@@ -394,10 +406,12 @@ class WeatherMap(object):
 
     def get_lsp_interface_data(self, model, lsp_data):
         """
-        Gets circuit_id and node info for each lsp in lsp_data
+        Gets Interfaces and Nodes that LSP transits
 
-        :param lsp_data:
-        :return: tuple of [list of circuit ids], set(node names)
+        :param model: Model object
+        :param lsp_data: data about LSP
+
+        :return: tuple of [list_of_Interfaces], set(Node_names)
         """
 
         lsp = model.get_rsvp_lsp(lsp_data['source'], lsp_data['dest'], lsp_data['name'])
@@ -410,11 +424,13 @@ class WeatherMap(object):
 
     def create_elements(self, group_midpoints=True):
         """
+        Creates elements (nodes, edges) in json form for the Nodes and Interfaces in the
+        Model for use to create the WeatherMap
 
-        :param model: pyNTM Model object
         :param group_midpoints: True|False.  Group all circuit midpoints that have common nodes.  This
         is helpful if you have multiple circuits between common nodes.  It will collapse the midpoint
-        nodes for all the circuits into a common midpoint node.
+        nodes for all the circuits into a common midpoint node.  Currently this only works for
+        group_midpoints=True; group_midpoints=False is not supported yet
 
         :return: element data (nodes, edges) for graphing in dash_cytoscape
         """
@@ -638,7 +654,8 @@ class WeatherMap(object):
         """
         Formats self.util_ranges into format used by web app
 
-        :return:
+        :return: List of utilization ranges; each element in the list has a
+        {'label': util_range, 'value': color} format
         """
         # list of utilization ranges to display
         util_display_options_list = []
@@ -652,7 +669,8 @@ class WeatherMap(object):
         Returns alphabetical, ascending list of demands sources and list of
         demand destinations for the Model object
 
-        :return:
+        :return: Sources and destination Node names for all Nodes that source or
+        sink a demand
         """
         # Fill in demand source and destination options
         demand_sources = set()
@@ -673,7 +691,8 @@ class WeatherMap(object):
         Returns alphabetical, ascending list of LSP sources and list of
         LSP destinations for the Model object
 
-        :return:
+        :return: Sources and destination Node names for all Nodes that source or
+        sink an LSP
         """
         # Fill in LSP source and destination options
         lsp_sources = set()
@@ -693,7 +712,9 @@ class WeatherMap(object):
     def make_node_list(self):
         """
         Returns sorted node list of node names (ascending alphabetically)
-        :return:
+
+        :return: Alphabetical list of Node names in {'label': name, 'value': name}
+        format
         """
         node_names = [node.name for node in self.model.node_objects]
         node_names.sort()
@@ -705,7 +726,7 @@ class WeatherMap(object):
         """
         This creates the actual display, pulling everything together
 
-        :return:
+        :return: an interactive visualization of the Model at http://127.0.0.1:8050/
         """
 
         print("\n*** NOTE: The make_visualization_beta function is a beta feature.  It may not have been as \n"
