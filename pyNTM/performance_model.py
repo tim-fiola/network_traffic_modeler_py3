@@ -1086,11 +1086,13 @@ class PerformanceModel(_MasterModel):
                         # Get the interface's existing traffic and add the
                         # portion of the demand's traffic
                         interface.traffic += traffic_per_demand_path
-                        
-                # Create path_detail for the LSP routed demand
-                demand = self._lsp_routed_demand_path_detail(demand, lsps)
 
-            # If demand_object is not taking LSPs end to end, IGP route it, using hop by hop ECMP
+                # Create path_detail for the LSP routed demand
+                demand_object._path_detail = self._lsp_routed_demand_path_detail(demand_object, lsps_for_demand)
+
+            # If demand_object is not taking LSPs en
+
+            # d to end, IGP route it, using hop by hop ECMP
             else:
                 # demand_traffic_per_int will be dict of
                 # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
@@ -1107,17 +1109,18 @@ class PerformanceModel(_MasterModel):
 
     def _lsp_routed_demand_path_detail(self, demand, lsps):
         """
-        
+        Adds path_detail property to demand routed over LSPs
+
         :param demand: Demand object
         :param lsps: list of LSPs that carry demand
 
         :return: demand with path_detail property added
         """
-        
+
         path_detail = {}
-        num_paths = len(lsps) 
-        
-        for counter in num_paths:
+        num_paths = len(lsps)
+
+        for counter in range(num_paths):
             path_name = "path_{}".format(counter)
             lsp = lsps[counter]
             path_info = {
@@ -1128,11 +1131,7 @@ class PerformanceModel(_MasterModel):
 
             path_detail[path_name] = path_info
 
-        demand._path_detail = path_detail
-
-        return demand
-
-            
+        return path_detail
 
     def _demand_traffic_per_int(self, demand):
         """
