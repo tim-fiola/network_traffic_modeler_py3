@@ -837,23 +837,6 @@ def display_demand_dropdowns(source, dest, demands=[{'label': '', 'value': ''}])
 
     return src_options, dest_options, demands
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # def that displays info about selected LSP
 @app.callback(Output('selected-lsp-output', 'children'),
               [Input('demand-path-lsps', 'value'),
