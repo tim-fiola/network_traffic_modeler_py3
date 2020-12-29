@@ -82,4 +82,5 @@ class Demand(object):
         :return: Dict of path entries (keys).  The value for each key is another dict with 3 keys: 'items',
         'splits', and 'path_traffic'.  Each is described above.
         """
+
         return self._path_detail

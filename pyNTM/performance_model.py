@@ -1126,7 +1126,7 @@ class PerformanceModel(_MasterModel):
             path_info = {
                 'items': [lsp],
                 'path_traffic': demand.traffic/num_paths,
-                'splits': {lsp}
+                'splits': {lsp: num_paths}
             }
 
             path_detail[path_name] = path_info
