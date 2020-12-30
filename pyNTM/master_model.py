@@ -47,8 +47,7 @@ class _MasterModel(object):
         - Number of unrouted LSPs
         - Number of unrouted Demands
 
-        :return: dict with the above as keys and the quantity of each for values and generators for
-        routed LSPs with no Demands, routed LSPs carrying Demands, Demands riding LSPs
+        :return: dict with the above as keys and the quantity of each for values and generators for routed LSPs with no Demands, routed LSPs carrying Demands, Demands riding LSPs  # noqa E501
 
         This is not cached currently and my be expensive to (re)run on a very large model.  Current best
         practice is to assign the output of this to a variable:
@@ -314,8 +313,7 @@ class _MasterModel(object):
         """
         Determine LSPs with same source and dest nodes
 
-        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
-        with matching source/dest nodes
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs with matching source/dest nodes  # noqa E501
 
         Example::
 
@@ -355,8 +353,7 @@ class _MasterModel(object):
         """
         Determine demands with same source and dest nodes
 
-        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of
-        demands with matching source/dest nodes
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands with matching source/dest nodes   # noqa E501
 
         Example::
 
@@ -875,8 +872,7 @@ class _MasterModel(object):
         Returns SRLG in self with srlg_name
 
         :param srlg_name: name of SRLG
-        :param raise_exception: raise an exception if SRLG with name=srlg_name does not
-        exist in self
+        :param raise_exception: raise an exception if SRLG with name=srlg_name does not exist in self
         :return: None
         """
 

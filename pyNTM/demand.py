@@ -57,7 +57,7 @@ class Demand(object):
         result of dividing the Demand's traffic by the max amount of path splits for an
         element in the path
 
-        For example::
+        For example:
             Demand(source = A, dest = E, traffic = 24, name = 'dmd_a_e_1') has 24 units of traffic
             'path_0': {
                 'items': [
@@ -79,8 +79,7 @@ class Demand(object):
             The traffic for the Demand has been split 6 times as it egresses Node('B') on the Interface
             B-to-E_3
 
-        :return: Dict of path entries (keys).  The value for each key is another dict with 3 keys: 'items',
-        'splits', and 'path_traffic'.  Each is described above.
+        :return: Dict of path entries (keys).  The value for each key is another dict with 3 keys: 'items', 'splits', and 'path_traffic'.  Each is described above.  # noqa E501
         """
 
         return self._path_detail

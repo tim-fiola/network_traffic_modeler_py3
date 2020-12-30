@@ -171,10 +171,10 @@ class PerformanceModel(_MasterModel):
             error_data.append(int_status_error_dict)
 
         # Look for multiple links between nodes (not allowed in Model)
-        if len(self.multiple_links_between_nodes()) > 0:
+        if len(self._multiple_links_between_nodes()) > 0:
             multiple_links_between_nodes = {
                 'multiple links between nodes detected; not allowed in Model object'
-                '(use Parallel_Link_Model)': self.multiple_links_between_nodes()
+                '(use Parallel_Link_Model)': self._multiple_links_between_nodes()
             }
 
             error_data.append(multiple_links_between_nodes)
@@ -317,7 +317,7 @@ class PerformanceModel(_MasterModel):
                     continue
 
                 # all_paths is list of paths from source to destination
-                all_paths = self.convert_graph_path_to_model_path(nx_sp)
+                all_paths = self._convert_graph_path_to_model_path(nx_sp)
 
                 demand.path = all_paths
 
@@ -365,7 +365,7 @@ class PerformanceModel(_MasterModel):
                 continue
 
             # Convert node hop by hop paths from G into Interface-based paths
-            all_paths = self.convert_graph_path_to_model_path(nx_sp)
+            all_paths = self._convert_graph_path_to_model_path(nx_sp)
 
             # # all_paths may have hops between nodes that can take different Interfaces;
             # # normalize those hops that could transit any of multiple Interfaces into
@@ -403,7 +403,7 @@ class PerformanceModel(_MasterModel):
             for interface in [interface for interface in lsp.path['interfaces'] if lsp.path != 'Unrouted']:
                 interface.reserved_bandwidth += lsp.reserved_bandwidth
 
-    def convert_graph_path_to_model_path(self, nx_sp):
+    def _convert_graph_path_to_model_path(self, nx_sp):
         """
         Converts list of Node names on path to list of Interfaces in Model on path.  This
         can only be used on MultiGraph paths because MultiGraphs only support a single edge
@@ -1291,7 +1291,7 @@ class PerformanceModel(_MasterModel):
 
         return traff_per_int
 
-    def multiple_links_between_nodes(self):
+    def _multiple_links_between_nodes(self):
         """
         Ensures there is no more than a single interface facing a
         given remote node (that there are no parallel interfaces

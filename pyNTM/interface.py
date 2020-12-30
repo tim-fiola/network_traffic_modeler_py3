@@ -304,9 +304,8 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
         :param srlg_name: name of srlg
         :param model: Model object
-        :param create_if_not_present: Boolean.  Create the SRLG if it
-        does not exist in model already.  True will create SRLG in
-        model; False will raise ModelException
+        :param create_if_not_present: Boolean.  Create the SRLG if it does not exist in model already.  True will create SRLG in model; False will raise ModelException  # noqa E501
+
         :return: None
         """
 

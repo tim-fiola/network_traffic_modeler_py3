@@ -194,10 +194,11 @@ class RSVP_LSP(object):
         is looking at paths that have interfaces already in its
         path['interfaces'] list.
 
-        :param model: Model object to search; this will typically be a Model
-        object consisting of only non-failed interfaces
+        :param model: Model object to search; this will typically be a Model object consisting of only non-failed interfaces  # noqa E501
         :param requested_bandwidth: number of units set for reserved_bandwidth
+
         :return: self with the current or updated path info
+
         """
 
         # Get candidate paths; only include interfaces that have requested_bandwidth
