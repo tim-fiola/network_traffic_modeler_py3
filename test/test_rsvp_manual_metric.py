@@ -1,7 +1,7 @@
 # TODO - add the unit tests for rsvp manual metric for both Flex and Performance Models
 import unittest
 from pyNTM import FlexModel
-# from pyNTM import ModelException
+from pyNTM import ModelException
 from pyNTM import PerformanceModel
 
 
@@ -83,9 +83,32 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
         self.assertEqual(lsp_b_d_1.traffic_on_lsp(model), 11)
         self.assertEqual(lsp_b_d_2.traffic_on_lsp(model), 11)
 
-    # Put a bad LSP metric in the model file (float, string); make sure it errors
+    # Reset a manual metric to default using -1
+    def test_lsp_reset_manual_metric(self):
+        model = FlexModel.load_model_file('test/flex_model_parallel_source_dest_lsps.csv')
+
+        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')  # this has manual_metric set to 20 from model file
+        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
+
+        lsp_b_d_1.manual_metric = -1
+
+        model.update_simulation()
+
+        self.assertEqual(lsp_b_d_1.topology_metric(model), 40)
+        self.assertEqual(lsp_b_d_1.traffic_on_lsp(model), 11)
+        self.assertEqual(lsp_b_d_2.traffic_on_lsp(model), 11)
 
     # Assign a bad LSP metric (float, string); make sure it fails
+    def test_lsp_bad_manual_metric(self):
+        model = FlexModel.load_model_file('test/flex_model_parallel_source_dest_lsps.csv')
+
+        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')  # this has manual_metric set to 20 from model file
+
+        err_msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric to -1 "
+
+        with self.assertRaises(ModelException) as context:
+            lsp_b_d_1.manual_metric = 20.1
+        self.assertTrue(err_msg in context.exception.args[0])
 
 
 class TestIGPShortcutsPerfModel(unittest.TestCase):
