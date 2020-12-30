@@ -2,7 +2,7 @@ import sys
 sys.path.append('../')
 
 from pyNTM import FlexModel
-from pyNTM import make_visualization_beta
+from pyNTM import WeatherMap
 
 #
 #
@@ -18,11 +18,8 @@ for interface in model.interface_objects:
 
     print((interface, lat_lon_a, lat_lon_b))
 
-# vis = vu.make_visualization_beta(model)
-make_visualization_beta(model, font_size="20px")
-
-# wm = Weathermap(model)
-# wm.create_visualization()
+wm = WeatherMap(model)
+wm.create_weathermap()
 
 
 

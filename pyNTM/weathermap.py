@@ -842,7 +842,7 @@ class WeatherMap(object):  # pragma: no cover
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                                     interface.node_object.name),
                         "style": {
-                            "width": '6',
+                            "width": '8',
                             'line-style': 'dashed',
                             'target-arrow-color': demand_color,
                             'target-arrow-shape': 'triangle',
@@ -860,7 +860,7 @@ class WeatherMap(object):  # pragma: no cover
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                                     interface.remote_node_object.name),
                         "style": {
-                            "width": '6',
+                            "width": '8',
                             'line-style': 'dashed',
                             'source-arrow-color': demand_color,
                             'source-arrow-shape': 'triangle',
@@ -893,22 +893,6 @@ class WeatherMap(object):  # pragma: no cover
 
                     new_style.append(new_entry_4)
 
-            # Selected edge differentiation on weathermap
-            if selected_interface_info:
-                if no_selected_interface_text not in selected_interface_info:
-                    selected_interface_info = json.loads(selected_interface_info)
-                    new_entry_5 = {
-                        "selector": "edge[source=\"{}\"]"
-                                    "[circuit_id=\"{}\"]".format(selected_interface_info['source'],
-                                                                 selected_interface_info['circuit_id']),
-                        "style": {
-                            'line-style': 'dotted',
-                            'width': '12'
-                                    }
-                    }
-
-                    new_style.append(new_entry_5)
-
             # LSP path visualization
             if selected_lsp_info:
                 # If there is an LSP selected and if the LSP is routed,
@@ -923,6 +907,7 @@ class WeatherMap(object):  # pragma: no cover
                                                                                         interface.node_object.name),
                             "style": {
                                 'line-style': 'dashed',
+                                'width': 9,
                                 'target-arrow-shape': 'chevron',
                                 'arrow-scale': '1.2',
                                 'target-arrow-color': lsp_color,
@@ -960,6 +945,22 @@ class WeatherMap(object):  # pragma: no cover
                         }
 
                         new_style.append(new_entry_8)
+
+            # Selected edge differentiation on weathermap
+            if selected_interface_info:
+                if no_selected_interface_text not in selected_interface_info:
+                    selected_interface_info = json.loads(selected_interface_info)
+                    new_entry_5 = {
+                        "selector": "edge[source=\"{}\"]"
+                                    "[circuit_id=\"{}\"]".format(selected_interface_info['source'],
+                                                                 selected_interface_info['circuit_id']),
+                        "style": {
+                            'line-style': 'dotted',
+                            'width': '12'
+                                    }
+                    }
+
+                    new_style.append(new_entry_5)
 
             return default_stylesheet + new_style
 
