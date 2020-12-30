@@ -191,9 +191,6 @@ class TestDemand(unittest.TestCase):
         self.assertTrue(dmd_a_e_1.path_detail['path_1']['items'][0] in dmd_a_e_1.path_detail['path_1']['splits'].keys())
         self.assertTrue(dmd_a_e_1.path_detail['path_2']['items'][0] in dmd_a_e_1.path_detail['path_2']['splits'].keys())
 
-    def test_path_detail_flex_model_igp_routed(self):
-        pass
-
     def test_lsp_demand_path_detail_flex_model_lsp_routed(self):
         model = FlexModel.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path.csv')
         model.update_simulation()

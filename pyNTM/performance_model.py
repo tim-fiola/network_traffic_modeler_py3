@@ -815,8 +815,10 @@ class PerformanceModel(_MasterModel):
     @classmethod
     def load_model_file(cls, data_file):    # TODO - make sure doc strings for this come out well in docs dir
         """
-        Opens a network_modeling data file and returns a model containing
-        the info in the data file.  The data file must be of the appropriate
+        Opens a network_modeling data file, returns a model containing
+        the info in the data file, and runs update_simulation().
+
+        The data file must be of the appropriate
         format to produce a valid model.  This cannot be used to open
         multiple models in a single python instance - there may be
         unpredictable results in the info in the models.
@@ -953,6 +955,8 @@ class PerformanceModel(_MasterModel):
         except ModelException as e:
             err_msg = e.args[0]
             raise ModelException(err_msg)
+
+        cls(interface_set, node_set, demand_set, lsp_set).update_simulation()
 
         return cls(interface_set, node_set, demand_set, lsp_set)
 
