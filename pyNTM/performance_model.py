@@ -1125,7 +1125,7 @@ class PerformanceModel(_MasterModel):
             lsp = lsps[counter]
             path_info = {
                 'items': [lsp],
-                'path_traffic': demand.traffic/num_paths,
+                'path_traffic': round((float(demand.traffic)/float(num_paths)), 4),
                 'splits': {lsp: num_paths}
             }
 
@@ -1263,7 +1263,7 @@ class PerformanceModel(_MasterModel):
 
             # Find path traffic
             max_split = max([split for split in traffic_splits_per_interface.values()])
-            path_traffic = float(demand.traffic) / float(max_split)
+            path_traffic = round(float(demand.traffic) / float(max_split), 4)
 
             shortest_path_info[path_key]['interfaces'] = path
             shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
