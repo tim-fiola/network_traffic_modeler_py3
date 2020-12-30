@@ -38,7 +38,7 @@ print()
 
 # display the traffic
 print('Interface traffic with no failures:')
-model1.update_simulation()
+
 model1.display_interfaces_traffic()
 print()
 print()
