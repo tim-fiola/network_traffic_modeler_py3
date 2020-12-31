@@ -3,7 +3,7 @@ Changelog
 
 3.0
 ---
-* WeatherMap class added in beta status to provide interactive visualization of network topology.  This is a beta feature and is not undergoing unit testing.  This feature is supported in the python3 interpreter, but not in the pypy3 interpreter
+* WeatherMap class added as beta feature to provide interactive visualization of network topology.  This is a beta feature and is not undergoing unit testing.  This feature is supported in the python3 interpreter, but not in the pypy3 interpreter.  This feature gives a very interactive and informative visualization of the topology
 * path_detail Demand property support in all Model classes; provides clarity on how much traffic is passing on a given Demand's path and how much of that traffic transits each component in the path
 * Python 3.5 no longer supported
 * Python 3.8 support added to unit/functional testing
