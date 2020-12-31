@@ -623,15 +623,15 @@ class PerformanceModel(_MasterModel):
             >>> model.get_all_paths_reservable_bw('A', 'B', False, 5, 10)
             {'path': [
             [Interface(name = 'A-to-D', cost = 40, capacity = 20.0,
-            node_object = Node('A'), remote_node_object = Node('D'), circuit_id = 2),
+              node_object = Node('A'), remote_node_object = Node('D'), circuit_id = 2),
             Interface(name = 'D-to-B', cost = 20, capacity = 125.0, node_object = Node('D'),
-            remote_node_object = Node('B'), circuit_id = 7)],
+              remote_node_object = Node('B'), circuit_id = 7)],
             [Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
-            remote_node_object = Node('D'), circuit_id = 2),
+              remote_node_object = Node('D'), circuit_id = 2),
             Interface(name = 'D-to-G', cost = 10, capacity = 100.0, node_object = Node('D'),
-            remote_node_object = Node('G'), circuit_id = 8),
+              remote_node_object = Node('G'), circuit_id = 8),
             Interface(name = 'G-to-B', cost = 10, capacity = 100.0, node_object = Node('G'),
-            remote_node_object = Node('B'), circuit_id = 9)]
+              remote_node_object = Node('B'), circuit_id = 9)]
             ]}
 
         """

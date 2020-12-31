@@ -722,6 +722,7 @@ class FlexModel(_MasterModel):
         the parallel LSPs from a common source to a common destination
 
         Example::
+
             [[RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_2'),
             RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_1')],
             [RSVP_LSP(source = D, dest = F, lsp_name = 'lsp_d_f_1')]]

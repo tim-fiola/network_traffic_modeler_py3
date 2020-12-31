@@ -57,15 +57,14 @@ class Demand(object):
         result of dividing the Demand's traffic by the max amount of path splits for an
         element in the path
 
-        For example:
-            Demand(source = A, dest = E, traffic = 24, name = 'dmd_a_e_1') has 24 units of traffic
+        For example, Demand(source = A, dest = E, traffic = 24, name = 'dmd_a_e_1') has 24 units of traffic::
+
             'path_0': {
-                'items': [
-                          Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
+                'items': [Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
                             remote_node_object = Node('B'), circuit_id = '1'),
-                          Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
+                        Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'),
                             remote_node_object = Node('E'), circuit_id = '27')
-                          ],
+                ],
                 'path_traffic': 4.0,
                 'splits': {Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
                             remote_node_object = Node('B'), circuit_id = '1'): 2,
