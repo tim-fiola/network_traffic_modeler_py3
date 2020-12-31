@@ -662,7 +662,8 @@ class PerformanceModel(_MasterModel):
         :param needed_bw: the amount of reservable bandwidth required on the path
         :return: Return the shortest path in dictionary form
 
-            Example:
+            Example::
+
                  shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
@@ -830,17 +831,17 @@ class PerformanceModel(_MasterModel):
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/sample_network_model_file.csv
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
         The following headers must exist, with the following tab-column
-        names beneath:
+        names beneath::
 
-        INTERFACES_TABLE
-        - node_object_name - name of node	where interface resides
-        - remote_node_object_name	- name of remote node
-        - name - interface name
-        - cost - IGP cost/metric for interface
-        - capacity - capacity
-        - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-        - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-        value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+            INTERFACES_TABLE
+            - node_object_name - name of node	where interface resides
+            - remote_node_object_name	- name of remote node
+            - name - interface name
+            - cost - IGP cost/metric for interface
+            - capacity - capacity
+            - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+            - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+            value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
         Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
         So a Node created from an Interface does not have to appear in the

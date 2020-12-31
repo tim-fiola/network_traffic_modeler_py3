@@ -1515,7 +1515,7 @@ class FlexModel(_MasterModel):
 
             NODES_TABLE -
             - name - name of node
-            - lon	- longitude (or y-coordinate)
+            - lon - longitude (or y-coordinate)
             - lat - latitude (or x-coordinate)
 
             Note - The NODES_TABLE is present for 2 reasons:
