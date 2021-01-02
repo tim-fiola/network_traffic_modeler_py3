@@ -446,7 +446,7 @@ class WeatherMap(object):  # pragma: no cover
             node_b = int_b.node_object
 
             # lat, lon * spacing_factor for spacing on map
-            spacing_factor = 4
+            spacing_factor = 3
             node_a_y = node_a.lat * spacing_factor
             node_a_x = node_a.lon * spacing_factor
             node_b_y = node_b.lat * spacing_factor
