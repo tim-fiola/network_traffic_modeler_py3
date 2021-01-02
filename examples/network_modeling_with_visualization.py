@@ -13,11 +13,7 @@ sys.path.append('../')  # noqa
 from pyNTM import PerformanceModel
 from pyNTM import Node
 
-# Try/except in case there are mpld3/tkinter import errors in graph_network_interactive
-try:
-    from graph_network import graph_network_interactive
-except ModuleNotFoundError as e:
-    print("Could not import graph_network due to error: {}".format(e))
+from pyNTM import WeatherMap
 
 from pprint import pprint
 import time
@@ -42,7 +38,7 @@ print()
 
 # display the traffic
 print('Interface traffic with no failures:')
-model1.update_simulation()
+
 model1.display_interfaces_traffic()
 print()
 print()
@@ -203,12 +199,14 @@ tot_time = t2 - t1
 print('tot_time = ', tot_time)
 print()
 
-# Try/except in case there are mpld3/tkinter import errors in graph_network_interactive
-print("Attempting to make interactive network graph in browser.")
+
+print("Making interactive network graph in browser.")
 try:
-    graph_network_interactive.make_interactive_network_graph(model1)
-except Exception as e:
-    print("Could not print graph due to error: {}".format(e))
-
-
-
+    vis = WeatherMap(model1)
+    vis.create_weathermap()
+except NameError as e:
+    print("{} Encountered.  Are the requirements for WeatherMap installed?".format(e))
+    print("The WeatherMap class is a beta feature and requires additional packages to be "
+          "installed: dash and dash-cytoscape")
+    print("pip3 install dash")
+    print("pip3 install dash-cytoscape")

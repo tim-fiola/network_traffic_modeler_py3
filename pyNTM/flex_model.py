@@ -278,7 +278,7 @@ class FlexModel(_MasterModel):
                 min_lsp_metric = min([lsp.effective_metric(self) for lsp in lsp_list])
                 for lsp in lsp_list:
                     if lsp.effective_metric(self) == min_lsp_metric:
-                        demand.path.append(lsp)
+                        demand.path.append([lsp])
 
             if demand.path == []:
                 src = demand.source_node_object.name
@@ -323,13 +323,10 @@ class FlexModel(_MasterModel):
           - if no, look at next node downstream with IGP shortcuts
         5.  Look for manually set RSVP LSP metrics that may alter the path calculations
 
-        :param paths: List of lists; each list contains egress Interfaces along the path from
-        source to destination (ordered from source to destination)
-        :param node_paths: List of lists; each list contains node names along the path from
-        source to destination (ordered from source to destination)
+        :param paths: List of lists; each list contains egress Interfaces along the path from source to destination (ordered from source to destination)  # noqa E501
+        :param node_paths: List of lists; each list contains node names along the path from source to destination (ordered from source to destination)
 
-        :return: List of lists; each list contains Interfaces and/or RSVP LSPs along each path
-        from source to destination
+        :return: List of lists; each list contains Interfaces and/or RSVP LSPs along each path from source to destination  # noqa E501
         """
 
         # Check node_paths for igp_shortcuts_enabled nodes
@@ -725,6 +722,7 @@ class FlexModel(_MasterModel):
         the parallel LSPs from a common source to a common destination
 
         Example::
+
             [[RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_2'),
             RSVP_LSP(source = B, dest = D, lsp_name = 'lsp_b_d_1')],
             [RSVP_LSP(source = D, dest = F, lsp_name = 'lsp_d_f_1')]]
@@ -974,12 +972,12 @@ class FlexModel(_MasterModel):
         # Using the paired interfaces (source_node, dest_node) pairs from G,
         # get the corresponding interface objects from the model to create
         # the Circuit object
-        for interface in graph_interfaces:
+        for interface in iter(graph_interfaces):
             # Get each interface from model for each
             try:
                 int1 = self.get_interface_object_from_nodes(interface[0], interface[1],
                                                             circuit_id=interface[2]['circuit_id'])[0]
-            except (TypeError, IndexError):
+            except (TypeError, IndexError):  # TODO - are the exception catches necessary?
                 msg = ("No matching Interface Object found: source node {}, dest node {} "
                        "circuit_id {} ".format(interface[0], interface[1], interface[2]['circuit_id']))
                 raise ModelException(msg)
@@ -1031,6 +1029,7 @@ class FlexModel(_MasterModel):
         :param local_node_name: Name of local node Interface resides on
         :param remote_node_name: Name of Interface's remote Node
         :param circuit_id: circuit_id of Interface (optional)
+
         :return: list of Interface objects with common local node and remote node
         """
 
@@ -1469,8 +1468,10 @@ class FlexModel(_MasterModel):
     @classmethod
     def load_model_file(cls, data_file):
         """
-        Opens a network_modeling data file and returns a model containing
-        the info in the data file.  The data file must be of the appropriate
+        Opens a network_modeling data file, returns a model containing
+        the info in the data file, and runs update_simulation().
+
+        The data file must be of the appropriate
         format to produce a valid model.  This cannot be used to open
         multiple models in a single python instance - there may be
         unpredictable results in the info in the models.
@@ -1490,52 +1491,52 @@ class FlexModel(_MasterModel):
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
 
         The following headers must exist, with the following tab-column
-        names beneath:
+        names beneath::
 
-        INTERFACES_TABLE
-        - node_object_name - name of node	where interface resides
-        - remote_node_object_name	- name of remote node
-        - name - interface name
-        - cost - IGP cost/metric for interface
-        - capacity - capacity
-        - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
-            - each circuit_id can only appear twice in the model
-            - circuit_id can be string or integer
-        - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-        - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-        value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
-        - manual_metric (optional) - manually assigned metric for LSP, if not using default metric from topology
-        shortest path
+            INTERFACES_TABLE
+            - node_object_name - name of node	where interface resides
+            - remote_node_object_name	- name of remote node
+            - name - interface name
+            - cost - IGP cost/metric for interface
+            - capacity - capacity
+            - circuit_id - id of the circuit; used to match two Interfaces into Circuits;
+                - each circuit_id can only appear twice in the model
+                - circuit_id can be string or integer
+            - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+            - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+            value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+            - manual_metric (optional) - manually assigned metric for LSP, if not using default metric from topology
+            shortest path
 
-        Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
-        So a Node created from an Interface does not have to appear in the
-        NODES_TABLE unless you want to add additional attributes for the Node
-        such as latitude/longitude
+            Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
+            So a Node created from an Interface does not have to appear in the
+            NODES_TABLE unless you want to add additional attributes for the Node
+            such as latitude/longitude
 
-        NODES_TABLE -
-        - name - name of node
-        - lon	- longitude (or y-coordinate)
-        - lat - latitude (or x-coordinate)
+            NODES_TABLE -
+            - name - name of node
+            - lon - longitude (or y-coordinate)
+            - lat - latitude (or x-coordinate)
 
-        Note - The NODES_TABLE is present for 2 reasons:
-        - to add a Node that has no interfaces
-        - and/or to add additional attributes for a Node inferred from
-        the INTERFACES_TABLE
+            Note - The NODES_TABLE is present for 2 reasons:
+            - to add a Node that has no interfaces
+            - and/or to add additional attributes for a Node inferred from
+            the INTERFACES_TABLE
 
-        DEMANDS_TABLE
-        - source - source node name
-        - dest - destination node name
-        - traffic	- amount of traffic on demand
-        - name - name of demand
+            DEMANDS_TABLE
+            - source - source node name
+            - dest - destination node name
+            - traffic	- amount of traffic on demand
+            - name - name of demand
 
-        RSVP_LSP_TABLE (this table is optional)
-        - source - source node name
-        - dest - destination node name
-        - name - name of LSP
-        - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-        if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
-        lsp_metric - manually assigned metric for LSP, if not using default metric from topology
-        shortest path (optional)
+            RSVP_LSP_TABLE (this table is optional)
+            - source - source node name
+            - dest - destination node name
+            - name - name of LSP
+            - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
+            if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
+            lsp_metric - manually assigned metric for LSP, if not using default metric from topology
+            shortest path (optional)
 
         Functional model files can be found in this directory in
         https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
@@ -1642,6 +1643,8 @@ class FlexModel(_MasterModel):
             err_msg = e.args[0]
             raise ModelException(err_msg)
 
+        cls(interface_set, node_set, demand_set, lsp_set).update_simulation()
+
         return cls(interface_set, node_set, demand_set, lsp_set)
 
     @classmethod
@@ -1687,9 +1690,8 @@ class FlexModel(_MasterModel):
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
-            # TODO - fix this; check for existence of remote node before adding new_interface; get
-            #  the remote node and use that as the new interface remote node
             node_names = [node.name for node in node_set]
+
             if node_name in node_names:
                 node_object = [node for node in node_set if node.name == node_name][0]
             else:

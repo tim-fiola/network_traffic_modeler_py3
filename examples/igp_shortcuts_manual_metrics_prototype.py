@@ -4,7 +4,6 @@ sys.path.append('../')
 from pyNTM import FlexModel
 
 model = FlexModel.load_model_file('flex_model_parallel_source_dest_lsps.csv')
-model.update_simulation()
 
 lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')  # lower metric
 lsp_b_d_3 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_3')  # lower metric

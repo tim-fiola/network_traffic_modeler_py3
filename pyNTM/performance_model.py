@@ -171,10 +171,10 @@ class PerformanceModel(_MasterModel):
             error_data.append(int_status_error_dict)
 
         # Look for multiple links between nodes (not allowed in Model)
-        if len(self.multiple_links_between_nodes()) > 0:
+        if len(self._multiple_links_between_nodes()) > 0:
             multiple_links_between_nodes = {
                 'multiple links between nodes detected; not allowed in Model object'
-                '(use Parallel_Link_Model)': self.multiple_links_between_nodes()
+                '(use Parallel_Link_Model)': self._multiple_links_between_nodes()
             }
 
             error_data.append(multiple_links_between_nodes)
@@ -302,7 +302,7 @@ class PerformanceModel(_MasterModel):
                 min_lsp_metric = min(lsp.effective_metric(self) for lsp in lsp_list)
                 for lsp in lsp_list:
                     if lsp.effective_metric(self) == min_lsp_metric:
-                        demand.path.append(lsp)
+                        demand.path.append([lsp])
 
             if demand.path == []:
                 src = demand.source_node_object.name
@@ -317,7 +317,7 @@ class PerformanceModel(_MasterModel):
                     continue
 
                 # all_paths is list of paths from source to destination
-                all_paths = self.convert_graph_path_to_model_path(nx_sp)
+                all_paths = self._convert_graph_path_to_model_path(nx_sp)
 
                 demand.path = all_paths
 
@@ -365,7 +365,7 @@ class PerformanceModel(_MasterModel):
                 continue
 
             # Convert node hop by hop paths from G into Interface-based paths
-            all_paths = self.convert_graph_path_to_model_path(nx_sp)
+            all_paths = self._convert_graph_path_to_model_path(nx_sp)
 
             # # all_paths may have hops between nodes that can take different Interfaces;
             # # normalize those hops that could transit any of multiple Interfaces into
@@ -403,7 +403,7 @@ class PerformanceModel(_MasterModel):
             for interface in [interface for interface in lsp.path['interfaces'] if lsp.path != 'Unrouted']:
                 interface.reserved_bandwidth += lsp.reserved_bandwidth
 
-    def convert_graph_path_to_model_path(self, nx_sp):
+    def _convert_graph_path_to_model_path(self, nx_sp):
         """
         Converts list of Node names on path to list of Interfaces in Model on path.  This
         can only be used on MultiGraph paths because MultiGraphs only support a single edge
@@ -501,8 +501,7 @@ class PerformanceModel(_MasterModel):
         # Determine which interfaces pair up into good circuits in G
         paired_interfaces = ((local_node_name, remote_node_name, data) for
                              (local_node_name, remote_node_name, data) in
-                             G.edges(data=True) if G.has_edge(remote_node_name,
-                                                              local_node_name))
+                             G.edges(data=True) if G.has_edge(remote_node_name, local_node_name))
 
         # Set interface object in_ckt = False and baseline the circuit_id
         for interface in iter(self.interface_objects):
@@ -553,8 +552,9 @@ class PerformanceModel(_MasterModel):
         Returns a list of Interface objects with the specified
         local and remote node names.
 
-        :param local_node_name:
-        :param remote_node_name:
+        :param local_node_name: Name of Interface local node
+        :param remote_node_name: Name of Interface remote node
+
         :return: Interface object with specified local node and remote node names
         """
         for interface in iter(self.interface_objects):
@@ -623,15 +623,15 @@ class PerformanceModel(_MasterModel):
             >>> model.get_all_paths_reservable_bw('A', 'B', False, 5, 10)
             {'path': [
             [Interface(name = 'A-to-D', cost = 40, capacity = 20.0,
-            node_object = Node('A'), remote_node_object = Node('D'), circuit_id = 2),
+              node_object = Node('A'), remote_node_object = Node('D'), circuit_id = 2),
             Interface(name = 'D-to-B', cost = 20, capacity = 125.0, node_object = Node('D'),
-            remote_node_object = Node('B'), circuit_id = 7)],
+              remote_node_object = Node('B'), circuit_id = 7)],
             [Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
-            remote_node_object = Node('D'), circuit_id = 2),
+              remote_node_object = Node('D'), circuit_id = 2),
             Interface(name = 'D-to-G', cost = 10, capacity = 100.0, node_object = Node('D'),
-            remote_node_object = Node('G'), circuit_id = 8),
+              remote_node_object = Node('G'), circuit_id = 8),
             Interface(name = 'G-to-B', cost = 10, capacity = 100.0, node_object = Node('G'),
-            remote_node_object = Node('B'), circuit_id = 9)]
+              remote_node_object = Node('B'), circuit_id = 9)]
             ]}
 
         """
@@ -662,7 +662,8 @@ class PerformanceModel(_MasterModel):
         :param needed_bw: the amount of reservable bandwidth required on the path
         :return: Return the shortest path in dictionary form
 
-            Example:
+            Example::
+
                  shortest_path = {'path': [list of shortest path routes], 'cost': path_cost}
         """
 
@@ -815,8 +816,10 @@ class PerformanceModel(_MasterModel):
     @classmethod
     def load_model_file(cls, data_file):    # TODO - make sure doc strings for this come out well in docs dir
         """
-        Opens a network_modeling data file and returns a model containing
-        the info in the data file.  The data file must be of the appropriate
+        Opens a network_modeling data file, returns a model containing
+        the info in the data file, and runs update_simulation().
+
+        The data file must be of the appropriate
         format to produce a valid model.  This cannot be used to open
         multiple models in a single python instance - there may be
         unpredictable results in the info in the models.
@@ -828,17 +831,17 @@ class PerformanceModel(_MasterModel):
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/sample_network_model_file.csv
         https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples/lsp_model_test_file.csv
         The following headers must exist, with the following tab-column
-        names beneath:
+        names beneath::
 
-        INTERFACES_TABLE
-        - node_object_name - name of node	where interface resides
-        - remote_node_object_name	- name of remote node
-        - name - interface name
-        - cost - IGP cost/metric for interface
-        - capacity - capacity
-        - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-        - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-        value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+            INTERFACES_TABLE
+            - node_object_name - name of node	where interface resides
+            - remote_node_object_name	- name of remote node
+            - name - interface name
+            - cost - IGP cost/metric for interface
+            - capacity - capacity
+            - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
+            - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
+            value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
         Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
         So a Node created from an Interface does not have to appear in the
@@ -954,6 +957,8 @@ class PerformanceModel(_MasterModel):
             err_msg = e.args[0]
             raise ModelException(err_msg)
 
+        cls(interface_set, node_set, demand_set, lsp_set).update_simulation()
+
         return cls(interface_set, node_set, demand_set, lsp_set)
 
     @classmethod
@@ -998,8 +1003,21 @@ class PerformanceModel(_MasterModel):
                                                                            lines.index(interface_line)))
                 raise ModelException(msg)
 
-            new_interface = Interface(name, int(cost), float(capacity), Node(node_name), Node(remote_node_name),
-                                      None, rsvp_enabled_bool, float(percent_reservable_bandwidth))
+            node_names = [node.name for node in node_set]
+
+            if node_name in node_names:
+                node_object = [node for node in node_set if node.name == node_name][0]
+            else:
+                node_object = Node(node_name)
+
+            if remote_node_name in node_names:
+                remote_node_object = [node for node in node_set if node.name == remote_node_name][0]
+            else:
+                remote_node_object = Node(remote_node_name)
+
+            new_interface = Interface(name, int(cost), int(capacity), node_object,
+                                      remote_node_object, None, rsvp_enabled_bool,
+                                      float(percent_reservable_bandwidth))
 
             if new_interface._key not in {
                 interface._key for interface in interface_set
@@ -1074,7 +1092,12 @@ class PerformanceModel(_MasterModel):
                         # portion of the demand's traffic
                         interface.traffic += traffic_per_demand_path
 
-            # If demand_object is not taking LSPs end to end, IGP route it, using hop by hop ECMP
+                # Create path_detail for the LSP routed demand
+                demand_object._path_detail = self._lsp_routed_demand_path_detail(demand_object, lsps_for_demand)
+
+            # If demand_object is not taking LSPs en
+
+            # d to end, IGP route it, using hop by hop ECMP
             else:
                 # demand_traffic_per_int will be dict of
                 # ('source_node_name-dest_node_name': <traffic from demand>) k,v pairs
@@ -1088,6 +1111,32 @@ class PerformanceModel(_MasterModel):
                     interface.traffic += traffic_from_demand
 
         return self
+
+    def _lsp_routed_demand_path_detail(self, demand, lsps):
+        """
+        Adds path_detail property to demand routed over LSPs
+
+        :param demand: Demand object
+        :param lsps: list of LSPs that carry demand
+
+        :return: demand with path_detail property added
+        """
+
+        path_detail = {}
+        num_paths = len(lsps)
+
+        for counter in range(num_paths):
+            path_name = "path_{}".format(counter)
+            lsp = lsps[counter]
+            path_info = {
+                'items': [lsp],
+                'path_traffic': round((float(demand.traffic)/float(num_paths)), 4),
+                'splits': {lsp: num_paths}
+            }
+
+            path_detail[path_name] = path_info
+
+        return path_detail
 
     def _demand_traffic_per_int(self, demand):
         """
@@ -1219,7 +1268,7 @@ class PerformanceModel(_MasterModel):
 
             # Find path traffic
             max_split = max([split for split in traffic_splits_per_interface.values()])
-            path_traffic = float(demand.traffic) / float(max_split)
+            path_traffic = round(float(demand.traffic) / float(max_split), 4)
 
             shortest_path_info[path_key]['interfaces'] = path
             shortest_path_info[path_key]['splits'] = traffic_splits_per_interface
@@ -1235,12 +1284,15 @@ class PerformanceModel(_MasterModel):
             for interface in info['interfaces']:
                 traff_per_int[interface] += info['path_traffic']
 
+        # Make shortest_path_info into the path_detail for the demand
+        demand._path_detail = shortest_path_info
+
         # Round all traffic values to 1 decimal place
         traff_per_int = {interface: round(traffic, 1) for interface, traffic in traff_per_int.items()}
 
         return traff_per_int
 
-    def multiple_links_between_nodes(self):
+    def _multiple_links_between_nodes(self):
         """
         Ensures there is no more than a single interface facing a
         given remote node (that there are no parallel interfaces

@@ -17,7 +17,6 @@ from pyNTM import PerformanceModel
 
 model = PerformanceModel.load_model_file('traffic_eng_example_model.csv')
 
-model.update_simulation()
 
 int_a_b = model.get_interface_object('A-to-B', 'A')
 int_a_c = model.get_interface_object('A-to-C', 'A')

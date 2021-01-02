@@ -38,9 +38,6 @@ class TestDemand(unittest.TestCase):
     def test_key(self):
         self.assertEqual(self.demand._key, (Node('nodeA').name, Node('nodeB').name, 'A-to-B'))
 
-    def test_add_demand_path(self):
-        self.demand._add_demand_path(self.model)
-
     def test_demand_behavior(self):
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
 
@@ -117,4 +114,4 @@ class TestDemand(unittest.TestCase):
 
         model.update_simulation()
 
-        self.assertEqual(str(dmd_a_b.path), "[RSVP_LSP(source = nodeA, dest = nodeB, lsp_name = 'lsp_a_b')]")
+        self.assertEqual(str(dmd_a_b.path), "[[RSVP_LSP(source = nodeA, dest = nodeB, lsp_name = 'lsp_a_b')]]")

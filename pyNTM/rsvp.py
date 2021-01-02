@@ -194,10 +194,11 @@ class RSVP_LSP(object):
         is looking at paths that have interfaces already in its
         path['interfaces'] list.
 
-        :param model: Model object to search; this will typically be a Model
-        object consisting of only non-failed interfaces
+        :param model: Model object to search; this will typically be a Model object consisting of only non-failed interfaces  # noqa E501
         :param requested_bandwidth: number of units set for reserved_bandwidth
+
         :return: self with the current or updated path info
+
         """
 
         # Get candidate paths; only include interfaces that have requested_bandwidth
@@ -231,15 +232,12 @@ class RSVP_LSP(object):
         :param model: model object containing LSP
         :return: List of demands in model object that LSP carries
         """
-        from .flex_model import FlexModel
         demand_set = set()
         for demand in iter(model.demand_objects):
-            if self in demand.path:
-                demand_set.add(demand)
-            if isinstance(model, FlexModel):
-                # Look for the demands from IGP shortcuts
+            # TODO - add unit test to test for unrouted demands on an LSP
+            if demand.path != 'Unrouted':
                 for dmd_path in demand.path:
-                    if isinstance(dmd_path, list) and self in dmd_path:
+                    if self in dmd_path:
                         demand_set.add(demand)
 
         return list(demand_set)

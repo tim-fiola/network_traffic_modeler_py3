@@ -30,7 +30,7 @@ int_a_b = model.get_interface_object('A-to-B', 'A')
 print("model LSPs are:")
 pprint(model.rsvp_lsp_objects)
 print()
-model.update_simulation()
+
 print("Here are the LSPs are their effective and actual metrics")
 for lsp in model.rsvp_lsp_objects:
     print(lsp, lsp.effective_metric(model), lsp.topology_metric(model))

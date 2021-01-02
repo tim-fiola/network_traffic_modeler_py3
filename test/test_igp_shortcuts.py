@@ -48,7 +48,7 @@ class TestIGPShortcuts(unittest.TestCase):
         self.assertIn([int_a_b, lsp_b_d_1, lsp_d_f_1], dmd_a_f_1.path)
         self.assertIn([int_a_b, lsp_b_d_2, lsp_d_f_1], dmd_a_f_1.path)
 
-        self.assertEqual(dmd_d_f_1.path, [lsp_d_f_1])
+        self.assertEqual(dmd_d_f_1.path, [[lsp_d_f_1]])
 
         # Verify interface traffic
         self.assertEqual(int_a_b.traffic, 5.0)
@@ -213,7 +213,7 @@ class TestIGPShortcuts(unittest.TestCase):
         self.assertIn([int_a_b, lsp_b_d_1, lsp_d_f_1], dmd_a_f_1.path)
         self.assertNotIn(lsp_b_d_2, dmd_a_f_1.path)
 
-        self.assertEqual(dmd_d_f_1.path, [lsp_d_f_1])
+        self.assertEqual(dmd_d_f_1.path, [[lsp_d_f_1]])
 
         # Verify interface traffic
         self.assertEqual(int_a_b.traffic, 10.0)
@@ -254,7 +254,7 @@ class TestIGPShortcuts(unittest.TestCase):
         self.assertNotIn(lsp_b_d_1, dmd_a_f_1.path)
         self.assertIn([int_a_b, lsp_b_d_2, lsp_d_f_1], dmd_a_f_1.path)
 
-        self.assertEqual(dmd_d_f_1.path, [lsp_d_f_1])
+        self.assertEqual(dmd_d_f_1.path, [[lsp_d_f_1]])
 
         # Verify interface traffic
         self.assertEqual(int_a_b.traffic, 5.0)

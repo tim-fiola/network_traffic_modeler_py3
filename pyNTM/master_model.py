@@ -47,8 +47,7 @@ class _MasterModel(object):
         - Number of unrouted LSPs
         - Number of unrouted Demands
 
-        :return: dict with the above as keys and the quantity of each for values and generators for
-        routed LSPs with no Demands, routed LSPs carrying Demands, Demands riding LSPs
+        :return: dict with the above as keys and the quantity of each for values and generators for routed LSPs with no Demands, routed LSPs carrying Demands, Demands riding LSPs  # noqa E501
 
         This is not cached currently and my be expensive to (re)run on a very large model.  Current best
         practice is to assign the output of this to a variable:
@@ -81,9 +80,10 @@ class _MasterModel(object):
 
         # Find unrouted LSPs
         for dmd in iter(self.demand_objects):
-            for object in dmd.path:
-                if isinstance(object, RSVP_LSP):
-                    dmds_riding_lsps.add(dmd)
+            for path in dmd.path:
+                for object in path:
+                    if isinstance(object, RSVP_LSP):
+                        dmds_riding_lsps.add(dmd)
         unrouted_lsps = [lsp for lsp in self.rsvp_lsp_objects if lsp.path == 'Unrouted']
 
         # Update the quantities in simulation_data
@@ -313,8 +313,7 @@ class _MasterModel(object):
         """
         Determine LSPs with same source and dest nodes
 
-        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs
-        with matching source/dest nodes
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs with matching source/dest nodes  # noqa E501
 
         Example::
 
@@ -354,8 +353,7 @@ class _MasterModel(object):
         """
         Determine demands with same source and dest nodes
 
-        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of
-        demands with matching source/dest nodes
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of demands with matching source/dest nodes   # noqa E501
 
         Example::
 
@@ -546,7 +544,7 @@ class _MasterModel(object):
             igp_shortcuts_enabled_value = new_node.igp_shortcuts_enabled = node_info[3]
         except IndexError:
             igp_shortcuts_enabled_value = False
-        if new_node.name not in {node.name for node in node_set}:  # Pick up orphan nodes
+        if node_name not in {node.name for node in node_set}:  # Pick up orphan nodes
             node_set.add(new_node)
             new_node.lat = node_lat
             new_node.lon = node_lon
@@ -556,6 +554,7 @@ class _MasterModel(object):
             existing_node.lat = node_lat
             existing_node.lon = node_lon
             existing_node.igp_shortcuts_enabled = igp_shortcuts_enabled_value
+
         return node_set
 
     def _does_interface_exist(self, interface_name, node_object_name):
@@ -873,8 +872,7 @@ class _MasterModel(object):
         Returns SRLG in self with srlg_name
 
         :param srlg_name: name of SRLG
-        :param raise_exception: raise an exception if SRLG with name=srlg_name does not
-        exist in self
+        :param raise_exception: raise an exception if SRLG with name=srlg_name does not exist in self
         :return: None
         """
 

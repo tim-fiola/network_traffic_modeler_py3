@@ -4,6 +4,7 @@ sys.path.append('../')
 from pprint import pprint
 
 from pyNTM import FlexModel
+from pyNTM import WeatherMap
 
 # Make the Parallel_Link_Model
 model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
@@ -43,4 +44,25 @@ for path in all_paths['path']:
     pprint(path)
     print()
 
+# Look at a demand path in detail
+print()
+dmd_a_e_1 = model.get_demand_object('A', 'E', 'dmd_a_e_1')
+print("Look at path_detail for {}:".format(dmd_a_e_1))
 
+pprint(dmd_a_e_1.path_detail)
+print()
+print()
+
+
+# Create visualization
+print("Creating visualization:")
+
+try:
+    vis = WeatherMap(model)
+    vis.create_weathermap()
+except NameError as e:
+    print("{} Encountered.  Are the requirements for WeatherMap installed?".format(e))
+    print("The WeatherMap class is a beta feature and requires additional packages to be "
+          "installed: dash and dash-cytoscape")
+    print("pip3 install dash")
+    print("pip3 install dash-cytoscape")
