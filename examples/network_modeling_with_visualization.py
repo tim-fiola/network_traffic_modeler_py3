@@ -201,8 +201,12 @@ print()
 
 
 print("Making interactive network graph in browser.")
-wm = WeatherMap(model1)
-wm.create_weathermap()
-
-
-
+try:
+    vis = WeatherMap(model1)
+    vis.create_weathermap()
+except NameError as e:
+    print("{} Encountered.  Are the requirements for WeatherMap installed?".format(e))
+    print("The WeatherMap class is a beta feature and requires additional packages to be "
+          "installed: dash and dash-cytoscape")
+    print("pip3 install dash")
+    print("pip3 install dash-cytoscape")
