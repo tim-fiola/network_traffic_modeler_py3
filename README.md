@@ -75,6 +75,13 @@ For upgrade:
 pip3 install --upgrade pyNTM
 ```
 
+If using the WeatherMap class, also install the `dash` and `dash-cytoscape` modules explicitly:
+```
+pip3 install pyNTM
+pip3 install dash
+pip3 install dash-cytoscape
+```
+
 Training
 =========
 See the training modules at https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-
