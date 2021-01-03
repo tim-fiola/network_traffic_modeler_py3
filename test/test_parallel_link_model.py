@@ -208,8 +208,9 @@ class TestModel(unittest.TestCase):
 
     def test_ckt_mismatch_int_capacity_file_load(self):
         err_msg = 'circuits_with_mismatched_interface_capacity'
+        model = FlexModel.load_model_file('test/mismatched_ckt_int_capacity_topology_parallel_links.csv')
         with self.assertRaises(ModelException) as context:
-            FlexModel.load_model_file('test/mismatched_ckt_int_capacity_topology_parallel_links.csv')
+            model.update_simulation()
         self.assertTrue(err_msg in context.exception.args[0][1][0].keys())
 
     def test_get_bad_node(self):
