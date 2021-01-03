@@ -5,7 +5,7 @@ with open("requirements.txt", "r") as fs:
     reqs = [r for r in fs.read().splitlines() if (
         len(r) > 0 and not r.startswith("#"))]
 
-version = '3.0'
+version = '3.1'
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

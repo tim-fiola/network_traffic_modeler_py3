@@ -1,6 +1,11 @@
 Changelog
 =========
 
+3.1
+---
+* Removed automatic call of load_model_file class methods performing update_simulation() call automatically.
+
+
 3.0
 ---
 * WeatherMap class added as beta feature to provide interactive visualization of network topology.  This is a beta feature and is not undergoing unit testing.  This feature is supported in the python3 interpreter, but not in the pypy3 interpreter.  This feature gives a very interactive and informative visualization of the topology

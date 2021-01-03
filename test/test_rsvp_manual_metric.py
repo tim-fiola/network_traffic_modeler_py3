@@ -71,6 +71,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # traffic should take LSPs due to better protocol preference;
     def test_lsp_metric_higher_than_igp_metric(self):
         model = FlexModel.load_model_file('test/flex_model_parallel_source_dest_lsps.csv')
+        model.update_simulation()
 
         lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
         lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
@@ -86,6 +87,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # Reset a manual metric to default using -1
     def test_lsp_reset_manual_metric(self):
         model = FlexModel.load_model_file('test/flex_model_parallel_source_dest_lsps.csv')
+        model.update_simulation()
 
         lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')  # this has manual_metric set to 20 from model file
         lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
@@ -101,7 +103,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # Assign a bad LSP metric (float, string); make sure it fails
     def test_lsp_bad_manual_metric(self):
         model = FlexModel.load_model_file('test/flex_model_parallel_source_dest_lsps.csv')
-
+        model.update_simulation()
         lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')  # this has manual_metric set to 20 from model file
 
         err_msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric to -1 "

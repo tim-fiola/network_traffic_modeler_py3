@@ -8,6 +8,7 @@ from pyNTM import WeatherMap
 
 # Make the Parallel_Link_Model
 model = FlexModel.load_model_file('model_test_topology_multidigraph.csv')
+model.update_simulation()
 
 print()
 # Get shorteset path from Node A to Node D
