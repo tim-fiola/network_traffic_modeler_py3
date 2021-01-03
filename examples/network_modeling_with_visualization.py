@@ -22,6 +22,8 @@ t1 = time.time()
 
 # Load a network Model file with info on nodes, interfaces, and demands
 model1 = PerformanceModel.load_model_file('sample_network_model_file.csv')
+model1.update_simulation()
+
 print('model1 is type', type(model1))
 print()
 

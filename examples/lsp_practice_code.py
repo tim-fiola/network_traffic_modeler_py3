@@ -15,6 +15,7 @@ from pprint import pprint
 # 5.  A non lsp demand will properly route
 
 model = PerformanceModel.load_model_file('lsp_model_test_file.csv')
+model.update_simulation()
 
 # Test 1
 print("model is", model)

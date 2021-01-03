@@ -957,8 +957,6 @@ class PerformanceModel(_MasterModel):
             err_msg = e.args[0]
             raise ModelException(err_msg)
 
-        cls(interface_set, node_set, demand_set, lsp_set).update_simulation()
-
         return cls(interface_set, node_set, demand_set, lsp_set)
 
     @classmethod
