@@ -1436,5 +1436,3 @@ class WeatherMap(object):  # pragma: no cover
         # ## END OF CALLBACK DEFS ## #
 
         app.run_server()
-
-
