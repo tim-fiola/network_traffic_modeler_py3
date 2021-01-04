@@ -15,4 +15,4 @@ from .interface import Interface  # noqa: F401
 from .rsvp import RSVP_LSP  # noqa: F401
 from .performance_model import PerformanceModel  # noqa: F401
 from .performance_model import Model  # noqa: F401
-from .weathermap import WeatherMap  # noqa: F401
+# from .weathermap import WeatherMap  # noqa: F401

@@ -13,7 +13,7 @@ sys.path.append('../')  # noqa
 from pyNTM import PerformanceModel
 from pyNTM import Node
 
-from pyNTM import WeatherMap
+from pyNTM.weathermap import WeatherMap
 
 from pprint import pprint
 import time

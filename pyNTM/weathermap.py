@@ -8,22 +8,24 @@ try:
     from dash.exceptions import PreventUpdate
 except ModuleNotFoundError as e:
 
-    msg = '''Error during import: {}. dash, dash_cytoscape,
-    dash_core_components, and dash_html_components modules are
-    required for the visualization_utility to run.
+    msg = '''Error during import: {}.
 
-    This visualization utility is a beta feature and so all of its
+    Reminder: the 'dash' and 'dash-cytoscape' packages are
+    required for the WeatherMap Class to run.
+
+    The WeatherMap class is a beta feature and so all of its
     dependencies are not installed with the rest of the package.
 
     If you encountered this error using the python3 interpreter,
-    run the following commands in your OS CLI:
+    run the following commands in your OS CLI if you want to use WeatherMap
+    for visualization:
         pip3 install dash
         pip3 install dash-cytoscape
 
     These modules may not be compatible with the pypy3 interpreter.
 
-    If you encountered this error using pypy3, try using the python3
-    interpreter instead.
+    If you are unable to install 'dash' and 'dash-cytoscape' in pypy3, use
+    the python3 interpreter instead.
 
     These requirements are also specified in requirements_visualization.txt
     in the github repo.'''.format(e)
