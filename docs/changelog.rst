@@ -1,5 +1,9 @@
 Changelog
 =========
+3.3
+---
+* Import of the WeatherMap class must be done from pyNTM.weathermap instead of directly from pyNTM.  This prevents a warning message that is otherwise superficial unless you are using the WeatherMap class
+
 3.2
 ---
 * Fixed bug in WeatherMap class that caused scripts with WeatherMap to run 2x and to not be able to run a WeatherMap class live from the python3 CLI
