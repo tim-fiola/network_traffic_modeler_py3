@@ -1,5 +1,8 @@
 Changelog
 =========
+3.2
+---
+* Fixed bug in WeatherMap class that caused scripts with WeatherMap to run 2x and to not be able to run a WeatherMap class live from the python3 CLI
 
 3.1
 ---
