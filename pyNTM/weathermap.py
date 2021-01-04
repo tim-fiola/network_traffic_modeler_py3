@@ -8,8 +8,8 @@ try:
     from dash.exceptions import PreventUpdate
 except ModuleNotFoundError as e:
 
-    msg = '''Error during import: {}. 
-    
+    msg = '''Error during import: {}.
+
     Reminder: the 'dash' and 'dash-cytoscape' packages are
     required for the WeatherMap Class to run.
 
