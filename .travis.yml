@@ -5,10 +5,7 @@ python:
 - 3.8
 - pypy3
 install:
-- sudo apt update
-- sudo apt upgrade
 - sudo add-apt-repository ppa:linuxuprising/java
-- sudo apt update
 - sudo apt-get install oracle-java11-installer
 - java -version
 - pip install -r requirements.txt
