@@ -16,16 +16,10 @@ except ModuleNotFoundError as e:
     The WeatherMap class is a beta feature and so all of its
     dependencies are not installed with the rest of the package.
 
-    If you encountered this error using the python3 interpreter,
-    run the following commands in your OS CLI if you want to use WeatherMap
-    for visualization:
-        pip3 install dash
-        pip3 install dash-cytoscape
-
-    These modules may not be compatible with the pypy3 interpreter.
-
-    If you are unable to install 'dash' and 'dash-cytoscape' in pypy3, use
-    the python3 interpreter instead.
+    If you encountered this error, install the following packages
+    in your python3 or pypy3 interpreter:
+        dash
+        dash-cytoscape
 
     These requirements are also specified in requirements_visualization.txt
     in the github repo.'''.format(e)
