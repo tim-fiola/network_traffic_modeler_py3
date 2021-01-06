@@ -84,7 +84,7 @@ pip3 install dash-cytoscape
 
 Visualization
 =============
-Info about the new WeatherMap class that provides visualization is available in the wiki: https://github.com/tim-fiola/network_traffic_modeler_py3/wiki/Visualizing-the-network-with-the-WeatherMap-Class-(beta)
+Info about the new WeatherMap class that provides visualization is available in the wiki: https://github.com/tim-fiola/network_traffic_modeler_py3/wiki/Visualizing-the-network-with-the-WeatherMap-Class
 
 Training
 =========
