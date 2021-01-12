@@ -443,9 +443,10 @@ class WeatherMap(object):  # pragma: no cover
 
             # lat, lon * spacing_factor for spacing on map
             spacing_factor = 3
-            node_a_y = node_a.lat * spacing_factor
+
+            node_a_y = -node_a.lat * spacing_factor  # Added - sign here, for some reason y axis is inverted
             node_a_x = node_a.lon * spacing_factor
-            node_b_y = node_b.lat * spacing_factor
+            node_b_y = -node_b.lat * spacing_factor  # Added - sign here, for some reason y axis is inverted
             node_b_x = node_b.lon * spacing_factor
 
             capacity = int_a.capacity

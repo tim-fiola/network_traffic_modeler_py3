@@ -56,7 +56,7 @@ class Node(object):
         """
         return self._failed
 
-    @failed.setter
+    @failed.setter  # TODO - failing the node via node.failed does not fail the interfaces . .
     def failed(self, status):
         if not isinstance(status, bool):
             raise ModelException('must be boolean')
