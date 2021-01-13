@@ -5,8 +5,7 @@ from pprint import pprint
 from pyNTM import FlexModel
 from pyNTM.weathermap import WeatherMap
 
-# TODO - do functional test for this model file?  Check for correct paths?
-model = FlexModel.load_model_file('igp_shortcuts_model_mult_lsps_in_path_parallel_links.csv')
+model = FlexModel.load_model_file('igp_shortcuts_model_mult_lsps_in_path_parallel_links_2.csv')
 
 
 model.update_simulation()
@@ -21,5 +20,7 @@ pprint(dmd_a_f.path)
 
 
 wm = WeatherMap(model)
+
+wm.spacing_factor = 4
 
 wm.create_weathermap()

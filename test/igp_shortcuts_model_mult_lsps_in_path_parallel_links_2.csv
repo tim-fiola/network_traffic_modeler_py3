@@ -1,0 +1,47 @@
+INTERFACES_TABLE
+node_object_name	remote_node_object_name	name	cost	capacity	circuit_id
+A	B	A-B	10	100	1
+B	A	B-A	10	100	1
+B	C	B-C	10	100	2
+C	B	C-B	10	100	2
+B	C	B-C_2	10	100	9
+C	B	C-B_2	10	100	9
+C	D	C-D	10	100	3
+D	C	D-C	10	100	3
+D	E	D-E	10	100	4
+E	D	E-D	10	100	4
+E	F	E-F	10	100	5
+F	E	F-E	10	100	5
+A	G	A-G	25	100	6
+G	A	G-A	25	100	6
+G	F	G-F	25	100	7
+F	G	F-G	25	100	7
+G	F	G-F_2	25	100	8
+F	G	F-G_2	25	100	8
+
+
+NODES_TABLE
+name	lon	lat	igp_shortcuts_enabled
+A	0	0	True
+B	60	0	True
+C	120	0	True
+D	180	0	True
+E	240	0	True
+F	300	0	True
+G	150	-150	True
+
+
+DEMANDS_TABLE
+source	dest	traffic	name
+A	F	100	dmd_a_f_1
+D	F	20	dmd_d_f_1
+D	E	10	dmd_d_f_1
+A	C	10	dmd_a_c_1
+
+
+RSVP_LSP_TABLE
+source	dest	name
+B	D	lsp_b_d_1
+B	D	lsp_b_d_2
+C	E	lsp_c_e_1
+D	F	lsp_d_f_1

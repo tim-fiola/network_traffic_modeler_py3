@@ -1,5 +1,11 @@
 Changelog
 =========
+3.3.1
+-----
+* Fixed bug in FlexModel to account for complex topology scenario involving ECMP demand paths with multipe IGP shortcut LSPs and parallel links
+* Added spacing_factor as a WeatherMap configurable parameter
+* Added another test to functional tests within test_parallel_link_model for complex topology
+
 3.3
 ---
 * Import of the WeatherMap class must be done from pyNTM.weathermap instead of directly from pyNTM.  This prevents a warning message that is otherwise superficial unless you are using the WeatherMap class

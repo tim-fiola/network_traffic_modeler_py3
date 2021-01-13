@@ -427,7 +427,8 @@ class FlexModel(_MasterModel):
                 if finalized_path != -1:
                     for path in finalized_path:
                         # finalized_path may be a list of lists, so add each component path
-                        finalized_paths.append(path)
+                        if path not in finalized_paths:
+                            finalized_paths.append(path)
                 else:
                     finalized_paths.append(interface_path)
         else:

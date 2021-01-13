@@ -550,6 +550,7 @@ class TestModel(unittest.TestCase):
         int_g_f = model.get_interface_object('G-F', 'G')
         int_g_f_2 = model.get_interface_object('G-F_2', 'G')
         int_a_b = model.get_interface_object('A-B', 'A')
+        int_d_e = model.get_interface_object('D-E', 'D')
         lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
         lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
         lsp_d_f_1 = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
@@ -565,3 +566,36 @@ class TestModel(unittest.TestCase):
         self.assertIn(dmd_a_f_path_4, dmd_a_f.path)
 
         self.assertEqual(4, len(dmd_a_f.path))
+
+        self.assertEqual(80, int_d_e.utilization)
+
+    def test_complex_topology_demand_path_2(self):
+        # Functional test for demand path across a topology where demand takes
+        # multiple ECMP paths.  Some paths have parallel links, the other paths
+        # have multiple IGP shortcut LSPs
+        model = Parallel_Link_Model.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path_parallel_links_2.csv')
+        model.update_simulation()
+
+        dmd_a_f = model.get_demand_object('A', 'F', 'dmd_a_f_1')
+        int_a_g = model.get_interface_object('A-G', 'A')
+        int_g_f = model.get_interface_object('G-F', 'G')
+        int_g_f_2 = model.get_interface_object('G-F_2', 'G')
+        int_a_b = model.get_interface_object('A-B', 'A')
+        int_d_e = model.get_interface_object('D-E', 'D')
+        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
+        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
+        lsp_d_f_1 = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
+
+        dmd_a_f_path_1 = [int_a_g, int_g_f]
+        dmd_a_f_path_2 = [int_a_g, int_g_f_2]
+        dmd_a_f_path_3 = [int_a_b, lsp_b_d_1, lsp_d_f_1]
+        dmd_a_f_path_4 = [int_a_b, lsp_b_d_2, lsp_d_f_1]
+
+        self.assertIn(dmd_a_f_path_1, dmd_a_f.path)
+        self.assertIn(dmd_a_f_path_2, dmd_a_f.path)
+        self.assertIn(dmd_a_f_path_3, dmd_a_f.path)
+        self.assertIn(dmd_a_f_path_4, dmd_a_f.path)
+
+        self.assertEqual(4, len(dmd_a_f.path))
+
+        self.assertEqual(80, int_d_e.utilization)
