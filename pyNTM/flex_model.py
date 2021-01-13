@@ -280,7 +280,7 @@ class FlexModel(_MasterModel):
                     if lsp.effective_metric(self) == min_lsp_metric:
                         demand.path.append([lsp])
 
-            if demand.path == []:
+            if demand.path == []:  # There are no end to end LSPs for the demand
                 src = demand.source_node_object.name
                 dest = demand.dest_node_object.name
 
@@ -331,6 +331,7 @@ class FlexModel(_MasterModel):
 
         # Check node_paths for igp_shortcuts_enabled nodes
         # TODO - this can likely be optimized
+
         all_nodes_in_paths = []
         for node_path in node_paths:
             all_nodes_in_paths = all_nodes_in_paths + node_path
@@ -345,6 +346,7 @@ class FlexModel(_MasterModel):
 
         # ## Find LSPs on shortcut_enabled_nodes that connect to downstream nodes in paths ## #
         # Substitute IGP enabled LSPs for Interfaces in paths
+
         paths_with_lsps = self._insert_lsp_shortcuts(node_paths, paths)
 
         if len(paths_with_lsps) == 1:
@@ -366,10 +368,9 @@ class FlexModel(_MasterModel):
         :return:  List of lists; each list is a path with any possible LSP shortcuts inserted in place
         of the any applicable Interfaces
         """
-        # List that will hold the paths that contain LSPs
-        paths_with_lsps = []
+
         # Substitute IGP enabled LSPs for Interfaces in paths
-        for node_path, interface_path in zip(node_paths, paths):
+        for node_path in node_paths:
             # Find Nodes along the path that have igp_shortcuts_enabled and have
             # LSPs to downstream Nodes in the path
             path_lsps = []  # List of LSPs to substitute into path
@@ -418,20 +419,22 @@ class FlexModel(_MasterModel):
                             next_node_to_check.append(lsp_end_node)
                             break
 
-            # Now that path_lsps is known, substitute those into path
-            if len(path_lsps) > 0:
-                path = interface_path
-                path_with_lsps = self._insert_lsps_into_path(path_lsps, path)
-                if path_with_lsps != -1:
-                    for component_path in path_with_lsps:
-                        paths_with_lsps.append(component_path)
+        # Now that path_lsps is known, substitute those into path
+        finalized_paths = []
+        if len(path_lsps) > 0:
+            for interface_path in paths:
+                finalized_path = self._insert_lsps_into_path(path_lsps, interface_path)
+                if finalized_path != -1:
+                    for path in finalized_path:
+                        # finalized_path may be a list of lists, so add each component path
+                        finalized_paths.append(path)
                 else:
-                    paths_with_lsps.append(interface_path)
-            else:
-                # No LSPs on path;
-                paths_with_lsps.append(interface_path)
+                    finalized_paths.append(interface_path)
+        else:
+            # No LSPs available for shortcuts
+            finalized_paths = paths
 
-        return paths_with_lsps
+        return finalized_paths
 
     def _inspect_for_lsp_metrics(self, paths_with_lsps):
         """
