@@ -50,13 +50,14 @@ class Node(object):
     def failed(self):
         """
         Is node failed?  Boolean.  It is NOT recommended to directly
-        modify this property.  Rather, use Node.fail or Node.unfail.
+        modify this property.  Rather, Model methods fail_node(node_name) and
+        unfail_node(node_name)
 
         :return: Boolean - is node failed?
         """
         return self._failed
 
-    @failed.setter  # TODO - failing the node via node.failed does not fail the interfaces . .
+    @failed.setter
     def failed(self, status):
         if not isinstance(status, bool):
             raise ModelException('must be boolean')

@@ -146,7 +146,7 @@ class TestModel(unittest.TestCase):
 
     # Find all simple paths less than 2 hops from A to D; no required
     # bandwidth needed
-    def test_all_paths_cutoff(self):  # TODO - may need to modify this after adding parallel links
+    def test_all_paths_cutoff(self):
         model = FlexModel.load_model_file('test/parallel_link_model_test_topology.csv')
         model.update_simulation()
         all_paths = model.get_all_paths_reservable_bw('A', 'D', False, 2, 0)

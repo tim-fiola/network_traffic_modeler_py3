@@ -104,7 +104,10 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
     @failed.setter
     def failed(self, status):
         """
-        Puts logical guardrails on conditions of interface failure status
+        Puts logical guardrails on conditions of interface failure status.
+        It is NOT recommended to modify this directly.  Use the Model methods
+        fail_interface(interface_name, node_name) and
+        unfail_interface(interface_name, node_name)
 
         :param status: boolean; input by user
         :return: self._failed; boolean

@@ -1,4 +1,3 @@
-# TODO - add the unit tests for rsvp manual metric for both Flex and Performance Models
 import unittest
 from pyNTM import FlexModel
 from pyNTM import ModelException
