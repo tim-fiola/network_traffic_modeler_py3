@@ -10,14 +10,16 @@ except ModuleNotFoundError as e:
 
     msg = '''Error during import: {}.
 
-    Reminder: the 'dash' and 'dash-cytoscape' packages are
-    required for the WeatherMap Class to run.
+    Reminder: The WeatherMap class is a beta feature and some
+    items are still being worked out.
 
-    The WeatherMap class is a beta feature and so all of its
-    dependencies are not installed with the rest of the package.
+    As such, the 'dash' and 'dash-cytoscape' packages are
+    required for the WeatherMap Class to run and must be
+    explicitly installed (they are not automatically
+    installed as part of the pyNTM install).
 
     If you encountered this error, install the following packages
-    in your python3 or pypy3 interpreter:
+    explicitly in your python3 or pypy3 interpreter:
         dash
         dash-cytoscape
 
@@ -55,6 +57,9 @@ class WeatherMap(object):  # pragma: no cover
         self.demand_color = '#DB7093'
         self.lsp_color = '#610B21'
         self.interface_color = '#ADD8E6'
+
+        # Default spacing factor (spacing between Nodes); lat, lon * spacing_factor for spacing on map
+        self.spacing_factor = 3
 
         self.failed_interface_color = 'dimgrey'
 
@@ -441,12 +446,10 @@ class WeatherMap(object):  # pragma: no cover
             node_a = int_a.node_object
             node_b = int_b.node_object
 
-            # lat, lon * spacing_factor for spacing on map
-            spacing_factor = 3
-            node_a_y = node_a.lat * spacing_factor
-            node_a_x = node_a.lon * spacing_factor
-            node_b_y = node_b.lat * spacing_factor
-            node_b_x = node_b.lon * spacing_factor
+            node_a_y = -node_a.lat * self.spacing_factor  # Added - sign here, for some reason y axis is inverted
+            node_a_x = node_a.lon * self.spacing_factor
+            node_b_y = -node_b.lat * self.spacing_factor  # Added - sign here, for some reason y axis is inverted
+            node_b_x = node_b.lon * self.spacing_factor
 
             capacity = int_a.capacity
 

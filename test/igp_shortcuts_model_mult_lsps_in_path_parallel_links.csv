@@ -31,8 +31,10 @@ G	150	-150	True
 
 DEMANDS_TABLE
 source	dest	traffic	name
-A	F	10	dmd_a_f_1
-D	F	8	dmd_d_f_1
+A	F	100	dmd_a_f_1
+D	F	20	dmd_d_f_1
+D	E	10	dmd_d_f_1
+A	C	10	dmd_a_c_1
 
 
 RSVP_LSP_TABLE

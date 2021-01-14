@@ -280,7 +280,7 @@ class FlexModel(_MasterModel):
                     if lsp.effective_metric(self) == min_lsp_metric:
                         demand.path.append([lsp])
 
-            if demand.path == []:
+            if demand.path == []:  # There are no end to end LSPs for the demand
                 src = demand.source_node_object.name
                 dest = demand.dest_node_object.name
 
@@ -331,6 +331,7 @@ class FlexModel(_MasterModel):
 
         # Check node_paths for igp_shortcuts_enabled nodes
         # TODO - this can likely be optimized
+
         all_nodes_in_paths = []
         for node_path in node_paths:
             all_nodes_in_paths = all_nodes_in_paths + node_path
@@ -344,12 +345,32 @@ class FlexModel(_MasterModel):
             return paths
 
         # ## Find LSPs on shortcut_enabled_nodes that connect to downstream nodes in paths ## #
+        # Substitute IGP enabled LSPs for Interfaces in paths
 
-        # List that will hold the paths that contain LSPs
-        paths_with_lsps = []
+        paths_with_lsps = self._insert_lsp_shortcuts(node_paths, paths)
+
+        if len(paths_with_lsps) == 1:
+            return paths_with_lsps
+
+        # Inspect paths to determine if manually set LSP metrics affect path selection
+        finalized_paths = self._inspect_for_lsp_metrics(paths_with_lsps)
+
+        return finalized_paths
+
+    def _insert_lsp_shortcuts(self, node_paths, paths):
+        """
+        Given node_paths and paths, finds and inserts LSPs from shortcut-enabled nodes
+        along the path
+
+        :param paths: List of lists; each list contains egress Interfaces along the path from source to destination (ordered from source to destination)  # noqa E501
+        :param node_paths: List of lists; each list contains node names along the path from source to destination (ordered from source to destination)
+
+        :return:  List of lists; each list is a path with any possible LSP shortcuts inserted in place
+        of the any applicable Interfaces
+        """
 
         # Substitute IGP enabled LSPs for Interfaces in paths
-        for node_path, interface_path in zip(node_paths, paths):
+        for node_path in node_paths:
             # Find Nodes along the path that have igp_shortcuts_enabled and have
             # LSPs to downstream Nodes in the path
             path_lsps = []  # List of LSPs to substitute into path
@@ -398,21 +419,21 @@ class FlexModel(_MasterModel):
                             next_node_to_check.append(lsp_end_node)
                             break
 
-            # Now that path_lsps is known, substitute those into path
-            if len(path_lsps) > 0:
-                path = interface_path
-                path_with_lsps = self._insert_lsps_into_path(path_lsps, path)
-                for component_path in path_with_lsps:
-                    paths_with_lsps.append(component_path)
-            else:
-                # No LSPs on path;
-                paths_with_lsps.append(interface_path)
-
-        if len(paths_with_lsps) == 1:
-            return paths_with_lsps
-
-        # Inspect paths to determine if manually set LSP metrics affect path selection
-        finalized_paths = self._inspect_for_lsp_metrics(paths_with_lsps)
+        # Now that path_lsps is known, substitute those into path
+        finalized_paths = []
+        if len(path_lsps) > 0:
+            for interface_path in paths:
+                finalized_path = self._insert_lsps_into_path(path_lsps, interface_path)
+                if finalized_path != -1:
+                    for path in finalized_path:
+                        # finalized_path may be a list of lists, so add each component path
+                        if path not in finalized_paths:
+                            finalized_paths.append(path)
+                else:
+                    finalized_paths.append(interface_path)
+        else:
+            # No LSPs available for shortcuts
+            finalized_paths = paths
 
         return finalized_paths
 
@@ -746,10 +767,19 @@ class FlexModel(_MasterModel):
             # [(start_index, end_index, parallel_lsp_1),. .
             # . . ((start_index, end_index, parallel_lsp_x)]
             lsp_group_slices = []
-            start_interface = [interface for interface in path if isinstance(interface, Interface) and
-                               interface.node_object == lsp_group[0].source_node_object][0]
-            end_interface = [interface for interface in path if isinstance(interface, Interface) and
-                             interface.remote_node_object == lsp_group[0].dest_node_object][0]
+
+            try:
+                start_interface = [interface for interface in path if isinstance(interface, Interface) and
+                                   interface.node_object == lsp_group[0].source_node_object][0]
+
+                end_interface = [interface for interface in path if isinstance(interface, Interface) and
+                                 interface.remote_node_object == lsp_group[0].dest_node_object][0]
+
+            except IndexError:
+                # There is no LSP source/dest match for the Interfaces in path; this may happen
+                # with Demands that take ECMP paths, where one path has LSP shortcuts and other
+                # paths do not have LSP shortcuts
+                return -1  # code for no LSPs on path
 
             slice_to_sub_start_index = path.index(start_interface)
             slice_to_sub_end_index = path.index(end_interface) + 1
@@ -1466,7 +1496,7 @@ class FlexModel(_MasterModel):
         return G
 
     @classmethod
-    def load_model_file(cls, data_file):
+    def load_model_file(cls, data_file):  # TODO - allow commas instead of tabs
         """
         Opens a network_modeling data file, returns a model containing
         the info in the data file, and runs update_simulation().
