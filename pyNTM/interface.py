@@ -184,7 +184,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         """
 
         # find the remote interface
-        remote_interface = Interface.get_remote_interface(self, model)  # TODO - use self instead of Interface?
+        remote_interface = Interface.get_remote_interface(self, model)
 
         # check to see if the local and remote node are failed
         if self.node_object.failed is False and self.remote_node_object.failed is False:
@@ -267,7 +267,6 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
         dmd_list = list(dmd_set)
 
-        # TODO - add % of each demand that is on the interface next to the demand
         return dmd_list
 
     def lsps(self, model):
