@@ -46,7 +46,7 @@ class WeatherMap(object):  # pragma: no cover
         self.lsp_sources = []
         self.lsp_destinations = []
         self.node_list = []
-        self.font_size = '9px'
+        self.font_size = '15px'
 
         # Baseline selected object values
         self.no_selected_interface_text = 'no int selected'
@@ -59,9 +59,17 @@ class WeatherMap(object):  # pragma: no cover
         self.interface_color = '#ADD8E6'
 
         # Default spacing factor (spacing between Nodes); lat, lon * spacing_factor for spacing on map
-        self.spacing_factor = 3
+        # If you have a lot of Nodes with coordinates that are close to each other, a larger
+        # spacing_factor may provide easier readability
+        self.spacing_factor = 5
 
         self.failed_interface_color = 'dimgrey'
+
+        # Edge widths
+        self.default_interface_width = 8
+        self.demand_interface_width = 11
+        self.lsp_interface_width = 14
+        self.selected_interface_width = 16
 
         self.app = dash.Dash(__name__)
 
@@ -136,6 +144,7 @@ class WeatherMap(object):  # pragma: no cover
             {
                 "selector": 'edge',
                 "style": {
+                    'width': str(self.default_interface_width),
                     "mid-target-arrow-color": "blue",
                     "mid-target-arrow-shape": "vee",
                     "curve-style": "bezier",
@@ -161,8 +170,8 @@ class WeatherMap(object):  # pragma: no cover
                     "font-size": self.font_size,
                     "text-halign": 'center',
                     'text-valign': 'center',
-                    'width': '25px',
-                    'height': '25px',
+                    'width': '30px',
+                    'height': '30px',
                     'border-width': 1,
                     'border-color': 'dimgrey'
                 }
@@ -183,8 +192,8 @@ class WeatherMap(object):  # pragma: no cover
                 "style": {
                     'label': "data(label)",
                     'shape': 'rectangle',
-                    'width': '10px',
-                    'height': '10px',
+                    'width': '26px',
+                    'height': '26px',
                     'background-color': 'lightgrey',
                     'border-color': 'dimgrey'
                 }
@@ -841,7 +850,7 @@ class WeatherMap(object):  # pragma: no cover
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                                     interface.node_object.name),
                         "style": {
-                            "width": '8',
+                            'width': str(self.demand_interface_width),
                             'line-style': 'dashed',
                             'target-arrow-color': demand_color,
                             'target-arrow-shape': 'triangle',
@@ -849,6 +858,7 @@ class WeatherMap(object):  # pragma: no cover
                             'mid-target-arrow-shape': 'triangle',
                             'source-arrow-color': demand_color,
                             'source-arrow-shape': 'square',
+                            'arrow-scale': '.9',
                             'zIndex': 1000,
                         }
                     }
@@ -859,7 +869,7 @@ class WeatherMap(object):  # pragma: no cover
                         "selector": "edge[circuit_id=\"{}\"][source=\"{}\"]".format(interface.circuit_id,
                                                                                     interface.remote_node_object.name),
                         "style": {
-                            "width": '8',
+                            'width': str(self.demand_interface_width),
                             'line-style': 'dashed',
                             'source-arrow-color': demand_color,
                             'source-arrow-shape': 'triangle',
@@ -867,6 +877,7 @@ class WeatherMap(object):  # pragma: no cover
                             'mid-source-arrow-shape': 'triangle',
                             'target-arrow-color': demand_color,
                             'target-arrow-shape': 'square',
+                            'arrow-scale': '.9',
                             'zIndex': 1000,
                         }
                     }
@@ -906,9 +917,9 @@ class WeatherMap(object):  # pragma: no cover
                                                                                         interface.node_object.name),
                             "style": {
                                 'line-style': 'dashed',
-                                'width': 9,
+                                'width': str(self.lsp_interface_width),
                                 'target-arrow-shape': 'chevron',
-                                'arrow-scale': '1.2',
+                                'arrow-scale': '.9',
                                 'target-arrow-color': lsp_color,
                                 'z-axis': 2000
                             }
@@ -923,7 +934,7 @@ class WeatherMap(object):  # pragma: no cover
                             "style": {
                                 'line-style': 'dashed',
                                 'source-arrow-shape': 'chevron',
-                                'arrow-scale': '1.2',
+                                'arrow-scale': '.9',
                                 'source-arrow-color': lsp_color,
                                 'z-axis': 2000
                                         }
@@ -938,8 +949,8 @@ class WeatherMap(object):  # pragma: no cover
                             "style": {
                                 "border-color": lsp_color,
                                 "border-width": "5px",
-                                'width': '50px',
-                                'height': '35px',
+                                'width': '45px',
+                                'height': '30px',
                             }
                         }
 
@@ -955,7 +966,7 @@ class WeatherMap(object):  # pragma: no cover
                                                                  selected_interface_info['circuit_id']),
                         "style": {
                             'line-style': 'dotted',
-                            'width': '12'
+                            'width': str(self.selected_interface_width)
                                     }
                     }
 

@@ -21,6 +21,6 @@ pprint(dmd_a_f.path)
 
 wm = WeatherMap(model)
 
-wm.spacing_factor = 4
+wm.spacing_factor = 5
 
 wm.create_weathermap()
