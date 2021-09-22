@@ -170,8 +170,8 @@ class WeatherMap(object):  # pragma: no cover
                     "font-size": self.font_size,
                     "text-halign": 'center',
                     'text-valign': 'center',
-                    'width': '30px',
-                    'height': '30px',
+                    'width': '40px',
+                    'height': '40px',
                     'border-width': 1,
                     'border-color': 'dimgrey'
                 }

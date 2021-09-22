@@ -41,6 +41,8 @@ Contents
 
    install
    examples
+   model_file
+   workflows
    api
    changelog
 
