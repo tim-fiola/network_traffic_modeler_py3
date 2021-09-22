@@ -32,5 +32,6 @@ However, the ``NODES`` table does have a couple of use cases:
 * It can be used to add attributes to inferred nodes: ``lat`` (latitude, or y-coordinate), ``lon`` (longitude, or x-coordinate), and ``igp_shortcuts_enabled`` (whether IGP shortcuts are enabled for the node)
 * It can be used to declare a node that does not have any interfaces yet (aka an *orphan* node)
 
-> Note: ``lat`` and ``lon`` can be used instead for (y, x) grid coordinates; there are no restrictions on the integer values those attributes can have.
+.. note::
+   ``lat`` and ``lon`` can be used instead for (y, x) grid coordinates; there are no restrictions on the integer values those attributes can have.
 
