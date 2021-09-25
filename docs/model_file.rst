@@ -35,3 +35,7 @@ However, the ``NODES`` table does have a couple of use cases:
 .. note::
    ``lat`` and ``lon`` can be used instead for (y, x) grid coordinates; there are no restrictions on the integer values those attributes can have.
 
+Demands
+*******
+
+Demands represent traffic on the network. Each demand represents an amount of traffic ingressing the network at a specific layer 3 (source) node and egressing the network at a specific layer 3 (destination) node.
