@@ -79,18 +79,15 @@ class Interface(object):
         return hash(self.name + self.node_object.name)
 
     def __repr__(self):
-        return (
-            "%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
-remote_node_object = %r, circuit_id = %r)"
-            % (
-                self.__class__.__name__,
-                self.name,
-                self.cost,
-                self.capacity,
-                self.node_object,
-                self.remote_node_object,
-                self.circuit_id,
-            )
+        return "%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
+remote_node_object = %r, circuit_id = %r)" % (
+            self.__class__.__name__,
+            self.name,
+            self.cost,
+            self.capacity,
+            self.node_object,
+            self.remote_node_object,
+            self.circuit_id,
         )
 
     @property
@@ -169,8 +166,8 @@ remote_node_object = %r, circuit_id = %r)"
 
             # Check to see if both nodes are failed = False
             if (
-                self.node_object.failed is False and
-                    self.remote_node_object.failed is False
+                self.node_object.failed is False
+                and self.remote_node_object.failed is False
             ):
                 self._failed = False
 
@@ -249,8 +246,8 @@ remote_node_object = %r, circuit_id = %r)"
 
         for interface in (interface for interface in model.interface_objects):
             if (
-                interface.node_object.name == self.remote_node_object.name and
-                    interface.circuit_id == self.circuit_id
+                interface.node_object.name == self.remote_node_object.name
+                and interface.circuit_id == self.circuit_id
             ):
                 remote_interface = interface
                 break

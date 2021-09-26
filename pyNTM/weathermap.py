@@ -1004,8 +1004,8 @@ class WeatherMap(object):  # pragma: no cover
                 # Add a choice at the beginning of the list to null out selection
                 null_choice = {"label": self.no_selected_interface_text, "value": ""}
                 if (
-                    len(interface_info_to_display) > 0 and
-                        null_choice not in interface_info_to_display
+                    len(interface_info_to_display) > 0
+                    and null_choice not in interface_info_to_display
                 ):
                     interface_info_to_display.insert(
                         0, null_choice
@@ -1060,13 +1060,13 @@ class WeatherMap(object):  # pragma: no cover
 
             # Demand source and destination path visualization
             if (
-                selected_demand_info is not None and
-                    selected_demand_info != "" and
-                    json.loads(selected_demand_info) !=
-                    [{"source": "", "dest": "", "name": ""}] and
-                    json.loads(selected_demand_info) !=
-                    {"label": no_selected_demand_text, "value": ""} and
-                    '"routed": false' not in selected_demand_info
+                selected_demand_info is not None
+                and selected_demand_info != ""
+                and json.loads(selected_demand_info)
+                != [{"source": "", "dest": "", "name": ""}]
+                and json.loads(selected_demand_info)
+                != {"label": no_selected_demand_text, "value": ""}
+                and '"routed": false' not in selected_demand_info
             ):
                 demand_dict = json.loads(selected_demand_info)
                 source = demand_dict["source"]
@@ -1147,8 +1147,8 @@ class WeatherMap(object):  # pragma: no cover
                 # If there is an LSP selected and if the LSP is routed,
                 # modify the elements on the LSP's path
                 if (
-                    no_selected_lsp_text not in selected_lsp_info and
-                        '"routed": false' not in selected_lsp_info
+                    no_selected_lsp_text not in selected_lsp_info
+                    and '"routed": false' not in selected_lsp_info
                 ):
                     selected_lsp_info = json.loads(selected_lsp_info)
                     lsp_interfaces, node_names = get_lsp_interface_data(
@@ -1527,16 +1527,16 @@ class WeatherMap(object):  # pragma: no cover
             ctx = dash.callback_context
 
             if (
-                ctx.triggered[0]["prop_id"] == "clear-int-button.n_clicks" or
-                    ctx.triggered[0]["value"] == ""
+                ctx.triggered[0]["prop_id"] == "clear-int-button.n_clicks"
+                or ctx.triggered[0]["value"] == ""
             ):
                 # Clear interface selection button clicked
                 selected_interface = json.dumps(
                     {"label": no_selected_interface_text, "value": ""}
                 )
             elif (
-                ctx.triggered[0]["prop_id"] == "cytoscape-prototypes.selectedEdgeData" and
-                len(ctx.triggered[0]["value"]) > 0
+                ctx.triggered[0]["prop_id"] == "cytoscape-prototypes.selectedEdgeData"
+                and len(ctx.triggered[0]["value"]) > 0
             ):
                 # If trigger is 'cytoscape-prototypes.selectedEdgeData' and
                 # the selected edge is not null
@@ -1713,8 +1713,8 @@ class WeatherMap(object):  # pragma: no cover
                 # Add a choice at the beginning of the list to null out selection
                 null_choice = {"label": no_selected_demand_text, "value": ""}
                 if (
-                    len(demands_on_interface) > 0 and
-                        null_choice not in demands_on_interface
+                    len(demands_on_interface) > 0
+                    and null_choice not in demands_on_interface
                 ):
                     demands_on_interface.insert(
                         0, null_choice
@@ -1737,9 +1737,9 @@ class WeatherMap(object):  # pragma: no cover
             :return: Demands on the interface
             """
             if (
-                lsp_info and
-                    no_selected_lsp_text not in lsp_info and
-                    '"routed": false' not in lsp_info
+                lsp_info
+                and no_selected_lsp_text not in lsp_info
+                and '"routed": false' not in lsp_info
             ):
                 # If an LSP is selected and the selected LSP is routed
                 lsp_dict = json.loads(lsp_info)
@@ -1783,8 +1783,8 @@ class WeatherMap(object):  # pragma: no cover
 
             if demand:
                 if (
-                    no_selected_demand_text not in demand and
-                        '"routed": false' not in demand
+                    no_selected_demand_text not in demand
+                    and '"routed": false' not in demand
                 ):
                     # Demand is selected and selected demand is routed
                     demand = json.loads(demand)

@@ -69,11 +69,11 @@ class PerformanceModel(_MasterModel):
     """
 
     def __init__(
-            self,
-            interface_objects=set(),
-            node_objects=set(),
-            demand_objects=set(),
-            rsvp_lsp_objects=set(),
+        self,
+        interface_objects=set(),
+        node_objects=set(),
+        demand_objects=set(),
+        rsvp_lsp_objects=set(),
     ):
         self.interface_objects = interface_objects
         self.node_objects = node_objects
@@ -234,9 +234,9 @@ class PerformanceModel(_MasterModel):
 
         srlg_errors = {}
         for (
-                srlg
+            srlg
         ) in (
-                self.srlg_objects
+            self.srlg_objects
         ):  # pragma: no cover  # noqa  # TODO - perhaps cover this later in unit testing
             nodes_in_srlg_but_srlg_not_in_node_srlgs = [
                 node for node in srlg.node_objects if srlg not in node.srlgs
@@ -269,9 +269,9 @@ class PerformanceModel(_MasterModel):
         # If the interface is not failed, then by definition, the nodes are
         # not failed
         for interface_object in (
-                interface_object
-                for interface_object in self.interface_objects
-                if interface_object.failed is not True
+            interface_object
+            for interface_object in self.interface_objects
+            if interface_object.failed is not True
         ):
             non_failed_interfaces.add(interface_object)
             available_nodes.add(interface_object.node_object)
@@ -431,7 +431,8 @@ class PerformanceModel(_MasterModel):
             # Determine which candidate paths have enough reservable bandwidth
             for path in all_paths:
                 if (
-                        min([interface.reservable_bandwidth for interface in path]) >= lsp.setup_bandwidth
+                    min([interface.reservable_bandwidth for interface in path])
+                    >= lsp.setup_bandwidth
                 ):
                     candidate_path_info_w_reservable_bw.append(path)
 
@@ -504,7 +505,7 @@ class PerformanceModel(_MasterModel):
         return all_paths
 
     def _make_weighted_network_graph(
-            self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
+        self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
     ):
         """
         Returns a networkx weighted networkx multidigraph object from
@@ -527,8 +528,8 @@ class PerformanceModel(_MasterModel):
                 interface
                 for interface in self.interface_objects
                 if (
-                    interface.failed is False and
-                    interface.reservable_bandwidth >= needed_bw
+                    interface.failed is False
+                    and interface.reservable_bandwidth >= needed_bw
                 )
             )
         elif include_failed_circuits is True:
@@ -655,22 +656,22 @@ class PerformanceModel(_MasterModel):
         """
         for interface in iter(self.interface_objects):
             if (
-                    interface.node_object.name == local_node_name and
-                    interface.remote_node_object.name == remote_node_name
+                interface.node_object.name == local_node_name
+                and interface.remote_node_object.name == remote_node_name
             ):
                 return interface
 
     def add_circuit(
-            self,
-            node_a_object,
-            node_b_object,
-            node_a_interface_name,
-            node_b_interface_name,
-            cost_intf_a=1,
-            cost_intf_b=1,
-            capacity=1000,
-            failed=False,
-            circuit_id=None,
+        self,
+        node_a_object,
+        node_b_object,
+        node_a_interface_name,
+        node_b_interface_name,
+        cost_intf_a=1,
+        cost_intf_b=1,
+        capacity=1000,
+        failed=False,
+        circuit_id=None,
     ):
         """
         Creates component Interface objects for a new Circuit in the Model.
@@ -729,12 +730,12 @@ class PerformanceModel(_MasterModel):
         self.validate_model()
 
     def get_all_paths_reservable_bw(
-            self,
-            source_node_name,
-            dest_node_name,
-            include_failed_circuits=True,
-            cutoff=10,
-            needed_bw=0,
+        self,
+        source_node_name,
+        dest_node_name,
+        include_failed_circuits=True,
+        cutoff=10,
+        needed_bw=0,
     ):
         """
         For a source and dest node name pair, find all simple path(s) with at
@@ -829,7 +830,7 @@ class PerformanceModel(_MasterModel):
             return converted_path
 
     def get_shortest_path_for_routed_lsp(
-            self, source_node_name, dest_node_name, lsp, needed_bw
+        self, source_node_name, dest_node_name, lsp, needed_bw
     ):
         """
         For a source and dest node name pair, find the shortest path(s) with at
@@ -971,7 +972,7 @@ class PerformanceModel(_MasterModel):
 
     @classmethod
     def load_model_file(
-            cls, data_file
+        cls, data_file
     ):  # TODO - make sure doc strings for this come out well in docs dir
         """
         Opens a network_modeling data file, returns a model containing
@@ -1122,7 +1123,7 @@ class PerformanceModel(_MasterModel):
 
     @classmethod
     def _extract_interface_data_and_implied_nodes(
-            cls, int_info_begin_index, int_info_end_index, lines
+        cls, int_info_begin_index, int_info_end_index, lines
     ):
         """
         Extracts interface data from lines and adds Interface objects to a set.
@@ -1272,8 +1273,8 @@ class PerformanceModel(_MasterModel):
                 lsps_for_demand = [
                     lsp
                     for lsp in candidate_lsps_for_demand
-                    if lsp.effective_metric(self) == min_metric and
-                    "Unrouted" not in lsp.path
+                    if lsp.effective_metric(self) == min_metric
+                    and "Unrouted" not in lsp.path
                 ]
             except (KeyError, ValueError):
                 # If there is no LSP group that matches the demand source/dest (KeyError) or there are no routed
@@ -1553,11 +1554,11 @@ class Model(PerformanceModel):
     """
 
     def __init__(
-            self,
-            interface_objects=set(),
-            node_objects=set(),
-            demand_objects=set(),
-            rsvp_lsp_objects=set(),
+        self,
+        interface_objects=set(),
+        node_objects=set(),
+        demand_objects=set(),
+        rsvp_lsp_objects=set(),
     ):
         self.interface_objects = interface_objects
         self.node_objects = node_objects

@@ -152,8 +152,8 @@ class RSVP_LSP(object):
 
         if self.initial_manual_metric:
             if (
-                isinstance(self.initial_manual_metric, int) and
-                    self.initial_manual_metric > 0
+                isinstance(self.initial_manual_metric, int)
+                and self.initial_manual_metric > 0
             ):
                 self._manual_metric = self.initial_manual_metric
                 self.initial_manual_metric = None
@@ -171,8 +171,8 @@ class RSVP_LSP(object):
     def manual_metric(self, value):
         if self.initial_manual_metric:
             if (
-                isinstance(self.initial_manual_metric, int) and
-                    self.initial_manual_metric > 0
+                isinstance(self.initial_manual_metric, int)
+                and self.initial_manual_metric > 0
             ):
                 self._manual_metric = self.initial_manual_metric
                 self.initial_manual_metric = None

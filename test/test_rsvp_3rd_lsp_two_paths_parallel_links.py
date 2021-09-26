@@ -81,7 +81,8 @@ class TestRSVPLSPAddLSP3LSPs(unittest.TestCase):
         # At least one of the interfaces from A to B will have a
         # reserved_bandwidth of 135.0 units
         self.assertTrue(
-            [int_a_b_1.reserved_bandwidth, int_a_b_2.reserved_bandwidth].count(135.0) >= 1
+            [int_a_b_1.reserved_bandwidth, int_a_b_2.reserved_bandwidth].count(135.0)
+            >= 1
         )
 
     def test_add_more_traffic(self):

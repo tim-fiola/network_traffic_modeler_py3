@@ -385,8 +385,8 @@ class _MasterModel(object):
                 parallel_lsp_groups[key] = []
                 for lsp in self.rsvp_lsp_objects:
                     if (
-                        lsp.source_node_object.name == src_node_name and
-                            lsp.dest_node_object.name == dest_node_name
+                        lsp.source_node_object.name == src_node_name
+                        and lsp.dest_node_object.name == dest_node_name
                     ):
                         parallel_lsp_groups[key].append(lsp)
 
@@ -422,8 +422,8 @@ class _MasterModel(object):
                 parallel_demand_groups[key] = []
                 for dmd in self.demand_objects:
                     if (
-                        dmd.source_node_object.name == src_node_name and
-                            dmd.dest_node_object.name == dest_node_name
+                        dmd.source_node_object.name == src_node_name
+                        and dmd.dest_node_object.name == dest_node_name
                     ):
                         parallel_demand_groups[key].append(dmd)
 
@@ -752,8 +752,8 @@ class _MasterModel(object):
         # Ensure local and remote nodes are failed == False and set reservable
         # bandwidth on each interface to interface.capacity
         if (
-            self.get_node_object(interface_object.node_object.name).failed is False and
-                self.get_node_object(remote_interface.node_object.name).failed is False
+            self.get_node_object(interface_object.node_object.name).failed is False
+            and self.get_node_object(remote_interface.node_object.name).failed is False
         ):
 
             remote_interface.failed = False
@@ -1149,9 +1149,9 @@ class _MasterModel(object):
 
         for demand in model_demand_iterator:
             if (
-                demand.source_node_object.name == source_node_name and
-                    demand.dest_node_object.name == dest_node_name and
-                    demand.name == demand_name
+                demand.source_node_object.name == source_node_name
+                and demand.dest_node_object.name == dest_node_name
+                and demand.name == demand_name
             ):
                 demand_to_return = demand
                 return demand_to_return
