@@ -9,6 +9,27 @@ To install the Python modules required for development, run
 ``pip3 install -r requirements_dev.txt``
 
 
+The Black Code Formatter
+************************
+
+pyNTM uses the `black <https://pypi.org/project/black/>`_ code formatter. ``black`` is an opinionated formatter that
+will make changes to your files to bring them in line with the ``black`` standards.
+
+
+Setting Up Pre-Commit Hooks
+***************************
+
+You will need to install the pre-commit hooks to run ``black``.
+
+Run ``pre-commit install``:
+
+```
+(venv) PycharmProjects/network_traffic_modeler_py3 % pre-commit install
+pre-commit installed at .git/hooks/pre-commit
+```
+
+This will set up a check that runs ``black`` prior to allowing a commit.
+
 Local Unit Testing
 ******************
 

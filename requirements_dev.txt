@@ -1,5 +1,7 @@
 sphinx
 sphinx_rtd_theme
+pre-commit
+black
 pytest>=4.5.0
 pytest-cov
 pytest-flake8
