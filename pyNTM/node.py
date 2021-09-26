@@ -22,13 +22,13 @@ class Node(object):
         self._igp_shortcuts_enabled = False
 
         # Validate lat, lon values
-        if not(isinstance(lat, float)) and not(isinstance(lat, int)):
-            raise ValueError('lat must be a float value')
-        if not(isinstance(lon, float)) and not(isinstance(lon, int)):
-            raise ValueError('lon must be a float value')
+        if not (isinstance(lat, float)) and not (isinstance(lat, int)):
+            raise ValueError("lat must be a float value")
+        if not (isinstance(lon, float)) and not (isinstance(lon, int)):
+            raise ValueError("lon must be a float value")
 
     def __repr__(self):
-        return 'Node(%r)' % self.name
+        return "Node(%r)" % self.name
 
     # Modify __eq__ and __hash__ default behavior for Node class
     # to allow us to easily determine if a Node instance is equivalent to another.
@@ -60,7 +60,7 @@ class Node(object):
     @failed.setter
     def failed(self, status):
         if not isinstance(status, bool):
-            raise ModelException('must be boolean')
+            raise ModelException("must be boolean")
 
         if status is False:  # False means Node would not be failed
             # Check for any SRLGs with self as a member and get status
@@ -68,7 +68,9 @@ class Node(object):
             failed_srlgs = [srlg for srlg in self.srlgs if srlg.failed is True]
             if len(failed_srlgs) > 0:
                 self._failed = True
-                raise ModelException("Node must be failed since it is a member of one or more SRLGs that are failed")
+                raise ModelException(
+                    "Node must be failed since it is a member of one or more SRLGs that are failed"
+                )
             else:
                 self._failed = False
 
@@ -111,9 +113,9 @@ class Node(object):
     def igp_shortcuts_enabled(self, status):
         if isinstance(status, bool):
             self._igp_shortcuts_enabled = status
-        elif status == 'True':
+        elif status == "True":
             self.igp_shortcuts_enabled = True
-        elif status == 'False':
+        elif status == "False":
             self.igp_shortcuts_enabled = False
         else:
             raise ValueError("igp_shortcuts must be boolean")
@@ -179,7 +181,9 @@ class Node(object):
                 model.srlg_objects.add(new_srlg)
                 self._srlgs.add(new_srlg)
             else:
-                msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+                msg = "An SRLG with name {} does not exist in the Model".format(
+                    srlg_name
+                )
                 raise ModelException(msg)
         else:
             # SRLG does exist in model; add self to that SRLG

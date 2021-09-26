@@ -1,6 +1,7 @@
 """An object representing a Node interface"""
 
 from .exceptions import ModelException
+
 # from .rsvp import RSVP_LSP
 from .srlg import SRLG
 
@@ -8,14 +9,25 @@ from .srlg import SRLG
 class Interface(object):
     """An object representing a Node's Interface"""
 
-    def __init__(self, name, cost, capacity, node_object, remote_node_object,
-                 circuit_id=None, rsvp_enabled=True, percent_reservable_bandwidth=100):
+    def __init__(
+        self,
+        name,
+        cost,
+        capacity,
+        node_object,
+        remote_node_object,
+        circuit_id=None,
+        rsvp_enabled=True,
+        percent_reservable_bandwidth=100,
+    ):
         self.name = name
         self.cost = cost
         self.capacity = capacity
         self.node_object = node_object
         self.remote_node_object = remote_node_object
-        self.circuit_id = circuit_id  # Has no role in Model object, only in Parallel_Model_Object
+        self.circuit_id = (
+            circuit_id  # Has no role in Model object, only in Parallel_Model_Object
+        )
         self.traffic = 0.0
         self._failed = False
         self._reserved_bandwidth = 0.0
@@ -33,30 +45,53 @@ class Interface(object):
         if not isinstance(other_object, Interface):
             return NotImplemented
 
-        return [self.node_object, self.remote_node_object, self.name,
-                self.capacity, self.circuit_id] == [other_object.node_object,
-                                                    other_object.remote_node_object, other_object.name,
-                                                    other_object.capacity, other_object.circuit_id]
+        return [
+            self.node_object,
+            self.remote_node_object,
+            self.name,
+            self.capacity,
+            self.circuit_id,
+        ] == [
+            other_object.node_object,
+            other_object.remote_node_object,
+            other_object.name,
+            other_object.capacity,
+            other_object.circuit_id,
+        ]
 
     def __ne__(self, other_object):
-        return [self.node_object, self.remote_node_object, self.name,
-                self.capacity, self.circuit_id] != [other_object.node_object,
-                                                    other_object.remote_node_object, other_object.name,
-                                                    other_object.capacity, other_object.circuit_id]
+        return [
+            self.node_object,
+            self.remote_node_object,
+            self.name,
+            self.capacity,
+            self.circuit_id,
+        ] != [
+            other_object.node_object,
+            other_object.remote_node_object,
+            other_object.name,
+            other_object.capacity,
+            other_object.circuit_id,
+        ]
 
     def __hash__(self):
         # return hash(tuple(sorted(self.__dict__.items())))
-        return hash(self.name+self.node_object.name)
+        return hash(self.name + self.node_object.name)
 
     def __repr__(self):
-        return '%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
-remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
-                                              self.name,
-                                              self.cost,
-                                              self.capacity,
-                                              self.node_object,
-                                              self.remote_node_object,
-                                              self.circuit_id)
+        return (
+            "%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
+remote_node_object = %r, circuit_id = %r)"
+            % (
+                self.__class__.__name__,
+                self.name,
+                self.cost,
+                self.capacity,
+                self.node_object,
+                self.remote_node_object,
+                self.circuit_id,
+            )
+        )
 
     @property
     def reservable_bandwidth(self):
@@ -66,7 +101,9 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         """
 
         if self.rsvp_enabled is True:
-            res_bw = (self.capacity * (self.percent_reservable_bandwidth / 100)) - self.reserved_bandwidth
+            res_bw = (
+                self.capacity * (self.percent_reservable_bandwidth / 100)
+            ) - self.reserved_bandwidth
             return round(res_bw, 1)
         else:
             return -1.0
@@ -89,7 +126,9 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         if isinstance(value, float) or isinstance(value, int):
             self._reserved_bandwidth = value
         else:
-            raise ModelException("Interface reserved_bandwidth must be a float or integer")
+            raise ModelException(
+                "Interface reserved_bandwidth must be a float or integer"
+            )
 
     @property
     def failed(self):
@@ -113,7 +152,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         :return: self._failed; boolean
         """
         if not (isinstance(status, bool)):
-            raise ModelException('must be boolean value')
+            raise ModelException("must be boolean value")
 
         # Check for membership in any failed SRLGs
         if status is False:
@@ -123,11 +162,16 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
             if len(failed_srlgs) > 0:
                 self._failed = True
                 self.reserved_bandwidth = 0
-                raise ModelException("Interface must be failed since it is a member "
-                                     "of one or more SRLGs that are failed")
+                raise ModelException(
+                    "Interface must be failed since it is a member "
+                    "of one or more SRLGs that are failed"
+                )
 
             # Check to see if both nodes are failed = False
-            if self.node_object.failed is False and self.remote_node_object.failed is False:
+            if (
+                self.node_object.failed is False and
+                    self.remote_node_object.failed is False
+            ):
                 self._failed = False
 
             else:
@@ -156,7 +200,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
     @capacity.setter
     def capacity(self, capacity):
-        if not(capacity > 0):
+        if not (capacity > 0):
             raise ModelException("Interface capacity must be greater than 0")
         self._capacity = capacity
 
@@ -204,20 +248,27 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         """
 
         for interface in (interface for interface in model.interface_objects):
-            if interface.node_object.name == self.remote_node_object.name and interface.circuit_id == self.circuit_id:
+            if (
+                interface.node_object.name == self.remote_node_object.name and
+                    interface.circuit_id == self.circuit_id
+            ):
                 remote_interface = interface
                 break
 
         # Sanity check
-        if remote_interface.remote_node_object.interfaces(model) == self.node_object.interfaces(model):
+        if remote_interface.remote_node_object.interfaces(
+            model
+        ) == self.node_object.interfaces(model):
             return remote_interface
         else:  # pragma: no cover
             print("Interface validation debug info follows:")
             print(remote_interface.remote_node_object.interfaces(model))
             print(self.node_object.interfaces(model))
-            message = ('Internal Validation Error {} and {} fail validation checks; did you '
-                       'forget to run update_simulation() on the model after making a change or '
-                       'loading a model file?'.format(remote_interface, self))
+            message = (
+                "Internal Validation Error {} and {} fail validation checks; did you "
+                "forget to run update_simulation() on the model after making a change or "
+                "loading a model file?".format(remote_interface, self)
+            )
             raise ModelException(message)
 
     def get_circuit_object(self, model):
@@ -228,8 +279,7 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         :param model: model object containing self
         :return: Circuit object containing self
         """
-        ckt = model.get_circuit_object_from_interface(self.name,
-                                                      self.node_object.name)
+        ckt = model.get_circuit_object_from_interface(self.name, self.node_object.name)
         return ckt
 
     def demands(self, model):
@@ -240,7 +290,9 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
         :return: list of Demand objects egressing self
         """
         dmd_set = set()
-        routed_demands = (demand for demand in model.demand_objects if demand.path != 'Unrouted')
+        routed_demands = (
+            demand for demand in model.demand_objects if demand.path != "Unrouted"
+        )
         for demand in routed_demands:
 
             for dmd_path in demand.path:
@@ -258,9 +310,10 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
                 #     # num_paths += 1
                 #     dmd_set.add(demand)
                 from .rsvp import RSVP_LSP
+
                 for object in dmd_path:
                     if isinstance(object, RSVP_LSP):
-                        if self in object.path['interfaces']:
+                        if self in object.path["interfaces"]:
                             dmd_set.add(demand)
                     elif self in dmd_path:
                         dmd_set.add(demand)
@@ -279,8 +332,10 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
         lsp_set = set()
 
-        for lsp in (lsp for lsp in model.rsvp_lsp_objects if 'Unrouted' not in lsp.path):
-            if self in lsp.path['interfaces']:
+        for lsp in (
+            lsp for lsp in model.rsvp_lsp_objects if "Unrouted" not in lsp.path
+        ):
+            if self in lsp.path["interfaces"]:
                 lsp_set.add(lsp)
 
         lsp_list = list(lsp_set)
@@ -288,12 +343,12 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
 
     @property
     def utilization(self):
-        """Returns utilization percent = (self.traffic/self.capacity)*100 """
-        if self.traffic == 'Down':
-            return 'Int is down'
+        """Returns utilization percent = (self.traffic/self.capacity)*100"""
+        if self.traffic == "Down":
+            return "Int is down"
         else:
-            util = (self.traffic / self.capacity)*100
-            return float('%.2f' % util)
+            util = (self.traffic / self.capacity) * 100
+            return float("%.2f" % util)
 
     @property
     def srlgs(self):
@@ -331,7 +386,9 @@ remote_node_object = %r, circuit_id = %r)' % (self.__class__.__name__,
                 remote_int = self.get_remote_interface(model)
                 remote_int._srlgs.add(new_srlg)
             else:
-                msg = "An SRLG with name {} does not exist in the Model".format(srlg_name)
+                msg = "An SRLG with name {} does not exist in the Model".format(
+                    srlg_name
+                )
                 raise ModelException(msg)
         else:
             # SRLG does exist in model; add self to that SRLG
