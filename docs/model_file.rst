@@ -39,3 +39,26 @@ Demands
 *******
 
 Demands represent traffic on the network. Each demand represents an amount of traffic ingressing the network at a specific layer 3 (source) node and egressing the network at a specific layer 3 (destination) node.
+
+In the ``DEMANDS_TABLE`` table section, there are four headers:
+
+* ``source`` - the source node for the traffic; the node in the model where the traffic originates
+* ``dest`` - the destination node for the traffic; the node in the model where the traffic terminates
+* ``traffic`` - the amount of traffic in the demand
+* ``name`` - the name of the demand; there can be multiple demands with matching source and dest nodes - the name is the differentiator
+
+  * there cannot be multiple demands with matching ``source``, ``dest``, and ``name`` values
+
+RSVP LSPs
+*********
+
+These are in the ``RSVP_LSP_TABLE``.  This table has three columns:
+
+* ``source`` - the source node for the LSP; the node in the model where the LSP originates
+* ``dest`` - the destination node for the LSP; the node in the model where the LSP terminates
+* ``name`` - the name of the LSP; there can be multiple LSPs with matching source and dest nodes - the name is the differentiator
+
+  * there cannot be multiple LSPs with matching ``source``, ``dest``, and ``name`` values
+
+* ``configured_setup_bw`` -
+* ``manual_metric`` -

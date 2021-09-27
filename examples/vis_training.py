@@ -10,7 +10,6 @@ model = FlexModel.load_model_file(
     "igp_shortcuts_model_mult_lsps_in_path_parallel_links_2.csv"
 )
 
-
 model.update_simulation()
 
 sp_a_f = model.get_shortest_path("A", "F")

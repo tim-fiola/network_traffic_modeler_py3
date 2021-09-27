@@ -8,7 +8,7 @@ from pyNTM import FlexModel
 from pyNTM.weathermap import WeatherMap
 
 # Make the Parallel_Link_Model
-model = FlexModel.load_model_file("model_test_topology_multidigraph.csv")
+model = FlexModel.load_model_file("model_test_topology_flexmodel.csv")
 model.update_simulation()
 
 print()
