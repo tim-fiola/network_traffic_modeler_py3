@@ -1,33 +1,9 @@
-try:
-    import dash
-    import dash_cytoscape as cyto
-    from dash import dcc
-    from dash import html
-    from dash.dependencies import Input, Output
-    from dash.exceptions import PreventUpdate
-except ModuleNotFoundError as e:
-
-    msg = """Error during import: {}.
-
-    Reminder: The WeatherMap class is a beta feature and some
-    items are still being worked out.
-
-    As such, the 'dash' and 'dash-cytoscape' packages are
-    required for the WeatherMap Class to run and must be
-    explicitly installed (they are not automatically
-    installed as part of the pyNTM install).
-
-    If you encountered this error, install the following packages
-    explicitly in your python3 or pypy3 interpreter:
-        dash
-        dash-cytoscape
-
-    These requirements are also specified in requirements_visualization.txt
-    in the github repo.""".format(
-        e
-    )
-
-    print(msg)
+import dash
+import dash_cytoscape as cyto
+from dash import dcc
+from dash import html
+from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
 
 from .rsvp import RSVP_LSP
 from .demand import Demand

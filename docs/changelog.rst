@@ -1,5 +1,15 @@
 Changelog
 =========
+
+3.3.2
+-----
+* Updated test environment to Focal linux (from Xenial) to allow dash and dash-cytoscape for visualization
+
+  * Allows for moving WeatherMap from beta to production in future
+
+* Heavy updates for docs
+* Implemented black code formatting
+
 3.3.1
 -----
 * Fixed bug in FlexModel to account for complex topology scenario involving ECMP demand paths with multipe IGP shortcut LSPs and parallel links
