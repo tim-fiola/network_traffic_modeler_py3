@@ -5,7 +5,7 @@ Changelog
 -----
 * Updated test environment to Focal linux (from Xenial) to allow dash and dash-cytoscape for visualization
 
-  * Allows for moving WeatherMap from beta to production in future
+  * Allows for moving WeatherMap from beta to production in future; CI tests all failed when using dash packages in Xenial
 
 * Heavy updates for docs
 * Implemented black code formatting
