@@ -1,12 +1,12 @@
 language: python
 dist: focal
 python:
-- 3.6
-- 3.7
-- 3.8
+#- 3.6
+#- 3.7
+#- 3.8
 - pypy3
 before_install:
-- sudo apt-get install python3-dev
+- sudo apt-get install pypy3-dev
 install:
 - pip install -r requirements.txt
 - pip install -r requirements_dev.txt
