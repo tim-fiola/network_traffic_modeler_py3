@@ -14,6 +14,7 @@ jobs:
       - pip install .
       script:
       - pytest
+      - black
       after_success: coveralls
     - stage: test
       language: python
@@ -26,6 +27,7 @@ jobs:
       - pip install .
       script:
       - pytest
+      - black
       after_success: coveralls
     - stage: test
       language: python
@@ -38,6 +40,7 @@ jobs:
       - pip install .
       script:
       - pytest
+      - black
       after_success: coveralls
     - stage: test
       language: python
