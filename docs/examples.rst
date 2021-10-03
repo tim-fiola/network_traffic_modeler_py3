@@ -2,7 +2,7 @@ Examples
 =========
 
 Demo/Example scripts
-----------------
+--------------------
 
 These scripts are in the ``examples`` directory and are meant to showcase different capabilities and how to use them.
 

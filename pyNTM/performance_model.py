@@ -752,6 +752,7 @@ class PerformanceModel(_MasterModel):
         :param needed_bw: the amount of reservable bandwidth required on the path
         :param cutoff: max amount of path hops
         :return: Return the path(s) in dictionary form:
+
         Example::
 
             >>> model.get_all_paths_reservable_bw('A', 'B', False, 5, 10)

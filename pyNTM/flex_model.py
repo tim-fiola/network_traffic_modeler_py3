@@ -356,14 +356,17 @@ class FlexModel(_MasterModel):
         2.  If none of the nodes on the path have IGP shortcuts, continue to next path
         3.  If some nodes have IGP shortcuts enabled, note the hop number (1, 2, 3, etc)
         4.  For nodes that have IGP shortcuts, is there an LSP from that node to a downstream node on the path?
+
           - if yes, compare the IGP metric of the path to the LSP remote node to that of the LSP metric to that node
           - if no, look at next node downstream with IGP shortcuts
+
         5.  Look for manually set RSVP LSP metrics that may alter the path calculations
 
         :param paths: List of lists; each list contains egress Interfaces along the path from source to destination (ordered from source to destination)  # noqa E501
         :param node_paths: List of lists; each list contains node names along the path from source to destination (ordered from source to destination)
 
         :return: List of lists; each list contains Interfaces and/or RSVP LSPs along each path from source to destination  # noqa E501
+
         """
 
         # Check node_paths for igp_shortcuts_enabled nodes
