@@ -1766,8 +1766,6 @@ class FlexModel(_MasterModel):
             - rsvp_enabled (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
             - percent_reservable_bandwidth (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
             value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
-            - manual_metric (optional) - manually assigned metric for LSP, if not using default metric from topology
-            shortest path
 
             Note - The existence of Nodes will be inferred from the INTERFACES_TABLE.
             So a Node created from an Interface does not have to appear in the
@@ -1778,6 +1776,7 @@ class FlexModel(_MasterModel):
             - name - name of node
             - lon - longitude (or y-coordinate)
             - lat - latitude (or x-coordinate)
+            - igp_shortcuts_enabled(default=False)
 
             Note - The NODES_TABLE is present for 2 reasons:
             - to add a Node that has no interfaces
@@ -1796,7 +1795,7 @@ class FlexModel(_MasterModel):
             - name - name of LSP
             - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
             if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
-            lsp_metric - manually assigned metric for LSP, if not using default metric from topology
+            - manual_lsp_metric - manually assigned metric for LSP, if not using default metric from topology
             shortest path (optional)
 
         Functional model files can be found in this directory in
@@ -1825,7 +1824,7 @@ class FlexModel(_MasterModel):
             A	B	80	dmd_a_b_1
 
             RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw manual_metric
+            source	dest	name    configured_setup_bw manual_lsp_metric
             A	B	lsp_a_b_1   10  19
             A	B	lsp_a_b_2       6
 

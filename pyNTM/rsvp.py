@@ -138,7 +138,7 @@ class RSVP_LSP(object):
             raise ModelException(msg)
 
     @property
-    def manual_metric(self):
+    def manual_lsp_metric(self):
         """
         Manual metric for LSP.  If set, this value will override
         the default (shortest path) metric for effective_metric.
@@ -159,7 +159,7 @@ class RSVP_LSP(object):
                 self.initial_manual_metric = None
             else:
                 msg = (
-                    "RSVP LSP metric must be positive integer value.  Or, set manual_metric "
+                    "RSVP LSP metric must be positive integer value.  Or, set manual_lsp_metric "
                     "to -1 to clear the manual_metric and have the LSP inherit "
                     "the default metric (that of the shortest path)"
                 )
@@ -167,8 +167,8 @@ class RSVP_LSP(object):
 
         return self._manual_metric
 
-    @manual_metric.setter
-    def manual_metric(self, value):
+    @manual_lsp_metric.setter
+    def manual_lsp_metric(self, value):
         if self.initial_manual_metric:
             if (
                 isinstance(self.initial_manual_metric, int)
@@ -184,7 +184,7 @@ class RSVP_LSP(object):
             self._manual_metric = "not set"
         else:
             msg = (
-                "RSVP LSP metric must be positive integer value.  Or, set manual_metric "
+                "RSVP LSP metric must be positive integer value.  Or, set manual_lsp_metric "
                 "to -1 to clear the manual_metric and have the LSP inherit "
                 "the default metric (that of the shortest path)"
             )
@@ -323,9 +323,9 @@ class RSVP_LSP(object):
         :param model: model object containing self
         :return: metric for the LSP's shortest possible path
         """
-        if self.manual_metric != "not set":
+        if self.manual_lsp_metric != "not set":
             self.initial_manual_metric = None
-            return self.manual_metric
+            return self.manual_lsp_metric
         elif "Unrouted" in self.path:
             return "Unrouted"
         else:

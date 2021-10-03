@@ -203,7 +203,7 @@ class TestIGPShortcuts(unittest.TestCase):
         dmd_d_f_1 = model.get_demand_object("D", "F", "dmd_d_f_1")
 
         # Give lsp a lower than default metric
-        lsp_b_d_1.manual_metric = 15
+        lsp_b_d_1.manual_lsp_metric = 15
         model.update_simulation()
 
         dmd_path_1 = [int_a_b, lsp_b_d_1, lsp_d_f_1]
@@ -242,7 +242,7 @@ class TestIGPShortcuts(unittest.TestCase):
         self.assertIn(lsp_c_e_1, int_c_d.lsps(model))
 
         # Give lsp_b_d_1 a higher than default metric
-        lsp_b_d_1.manual_metric = 25
+        lsp_b_d_1.manual_lsp_metric = 25
         model.update_simulation()
 
         dmd_path_2_1 = [int_a_g, int_g_f]

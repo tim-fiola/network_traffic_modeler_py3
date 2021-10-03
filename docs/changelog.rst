@@ -1,14 +1,20 @@
 Changelog
 =========
 
-3.3.2
+4.0.0
 -----
 * Updated test environment to Focal linux (from Xenial) to allow dash and dash-cytoscape for visualization
 
   * Allows for moving WeatherMap from beta to production in future; CI tests all failed when using dash packages in Xenial
+  * It's no longer necessary to explicitly install the visualization requirements separately
 
 * Heavy updates for docs
-* Implemented black code formatting
+* Implemented black code formatting for local commits and in Travis CI/CD pipeline
+* Implemented standard column name for RSVP LSP attribute to describe a manually assigned metric:
+
+  * FlexModel had ``lsp_metric`` column name
+  * PerformanceModel had ``manual_metric`` column name
+  * Standardized column name to ``manual_lsp_metric``
 
 3.3.1
 -----
@@ -27,7 +33,6 @@ Changelog
 3.1
 ---
 * Removed automatic call of load_model_file class methods performing update_simulation() call automatically.
-
 
 3.0
 ---
