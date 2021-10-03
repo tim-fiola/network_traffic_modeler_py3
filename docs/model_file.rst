@@ -62,9 +62,7 @@ INTERFACES_TABLE
 * ``cost`` - IGP cost/metric for interface
 * ``capacity`` - capacity
 * ``rsvp_enabled`` (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-* ``percent_reservable_bandwidth`` (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
-
+* ``percent_reservable_bandwidth`` (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
 FlexModel
 *********
@@ -82,10 +80,8 @@ INTERFACES_TABLE
   * ``circuit_id`` can be string or integer
 
 * ``rsvp_enabled`` (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
-* ``percent_reservable_bandwidth`` (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this
-value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
-* ``manual_metric`` (optional) - manually assigned metric for LSP, if not using default metric from topology
-shortest path
+* ``percent_reservable_bandwidth`` (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
+* ``manual_metric`` (optional) - manually assigned metric for LSP, if not using default metric from topology shortest path
 
 .. important::
    Column order matters. If you wish to use an optional column to the right of an optional column you don't want to specify a value for, you must still include the optional headers to the left of the column you wish to specify a value for.
@@ -175,10 +171,8 @@ The ``RSVP_LSP_TABLE`` has the following columns:
 
   * There cannot be multiple LSPs with matching ``source``, ``dest``, and ``name`` values
 
-* ``configured_setup_bw`` (optional) - if LSP has a fixed, static configured setup bandwidth, place that static value here,
-if LSP is auto-bandwidth, then leave this blank for the LSP
-* ``manual_metric`` (optional) - manually assigned metric for LSP, if not using default metric from topology
-shortest path
+* ``configured_setup_bw`` (optional) - if LSP has a fixed, static configured setup bandwidth, place that static value here, if LSP is auto-bandwidth, then leave this blank for the LSP
+* ``manual_metric`` (optional) - manually assigned metric for LSP, if not using default metric from topology shortest path
 
 .. important::
    Column order matters.  If you wish to use an optional column to the right of an optional column you don't want to specify a value for, you must still include the optional headers to the left of the column you wish to specify a value for.

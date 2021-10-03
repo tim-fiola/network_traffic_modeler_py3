@@ -42,10 +42,12 @@ Contents
    install
    examples
    model_file
+   rsvp_lsp
    workflows
+   visualization
+   development
    api
    changelog
-
 
 Indices and tables
 ===================
