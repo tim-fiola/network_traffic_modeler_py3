@@ -12,9 +12,10 @@ Changelog
 * Implemented black code formatting for local commits and in Travis CI/CD pipeline
 * Implemented standard column name for RSVP LSP attribute to describe a manually assigned metric:
 
-  * FlexModel had ``lsp_metric`` column name
-  * PerformanceModel had ``manual_metric`` column name
+  * FlexModel had ``lsp_metric`` column name in docstrings and examples
+  * PerformanceModel had ``manual_metric`` column name in docstrings and examples
   * Standardized column name to ``manual_metric``
+  * This was a purely cosmetic change as the actual manual_metric is based on the column's order in the table, not the column name.
 
 
 3.3.1
