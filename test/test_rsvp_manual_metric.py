@@ -117,7 +117,6 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
             "B", "D", "lsp_b_d_1"
         )  # this has manual_metric set to 20 from model file
 
-        # TODO - document the -1 setting
         err_msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric to -1 "
 
         with self.assertRaises(ModelException) as context:
