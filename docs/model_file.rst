@@ -131,5 +131,5 @@ These are in the ``RSVP_LSP_TABLE``.
 
 * ``configured_setup_bw`` - if LSP has a fixed, static configured setup bandwidth, place that static value here,
 if LSP is auto-bandwidth, then leave this blank for the LSP
-* ``manual_lsp_metric`` - manually assigned metric for LSP, if not using default metric from topology
+* ``manual_metric`` - manually assigned metric for LSP, if not using default metric from topology
 shortest path

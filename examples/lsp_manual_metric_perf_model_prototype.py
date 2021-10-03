@@ -14,13 +14,13 @@ lsp_a_d_2 = model.get_rsvp_lsp("A", "D", "lsp_a_d_2")
 
 print("lsp_a_d_2 config_setup_bw = {}".format(lsp_a_d_2.configured_setup_bandwidth))
 print("lsp_a_d_2 setup_bw = {}".format(lsp_a_d_2.setup_bandwidth))
-print("lsp_a_d_2 manual_metric = {}".format(lsp_a_d_2.manual_lsp_metric))
+print("lsp_a_d_2 manual_metric = {}".format(lsp_a_d_2.manual_metric))
 print("lsp_a_d_2 path = ")
 pprint(lsp_a_d_2.path)
 
 print()
 print("lsp_a_d_1 setup_bw = {}".format(lsp_a_d_1.configured_setup_bandwidth))
-print("lsp_a_d_1 manual_metric = {}".format(lsp_a_d_1.manual_lsp_metric))
+print("lsp_a_d_1 manual_metric = {}".format(lsp_a_d_1.manual_metric))
 print("lsp_a_d_1 effective_metric = {}".format(lsp_a_d_1.effective_metric(model)))
 print("lsp_a_d_1 topology_metric = {}".format(lsp_a_d_1.topology_metric(model)))
 

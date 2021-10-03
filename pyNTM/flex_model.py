@@ -1795,7 +1795,7 @@ class FlexModel(_MasterModel):
             - name - name of LSP
             - configured_setup_bw - if LSP has a fixed, static configured setup bandwidth, place that static value here,
             if LSP is auto-bandwidth, then leave this blank for the LSP (optional)
-            - manual_lsp_metric - manually assigned metric for LSP, if not using default metric from topology
+            - manual_metric - manually assigned metric for LSP, if not using default metric from topology
             shortest path (optional)
 
         Functional model files can be found in this directory in
@@ -1824,7 +1824,7 @@ class FlexModel(_MasterModel):
             A	B	80	dmd_a_b_1
 
             RSVP_LSP_TABLE
-            source	dest	name    configured_setup_bw manual_lsp_metric
+            source	dest	name    configured_setup_bw manual_metric
             A	B	lsp_a_b_1   10  19
             A	B	lsp_a_b_2       6
 

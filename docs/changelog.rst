@@ -1,7 +1,7 @@
 Changelog
 =========
 
-4.0.0
+3.4.0
 -----
 * Updated test environment to Focal linux (from Xenial) to allow dash and dash-cytoscape for visualization
 
@@ -14,7 +14,8 @@ Changelog
 
   * FlexModel had ``lsp_metric`` column name
   * PerformanceModel had ``manual_metric`` column name
-  * Standardized column name to ``manual_lsp_metric``
+  * Standardized column name to ``manual_metric``
+
 
 3.3.1
 -----
