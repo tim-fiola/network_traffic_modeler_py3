@@ -44,6 +44,7 @@ Contents
    model_file
    rsvp_lsp
    demand
+   interface
    workflows
    visualization
    development
