@@ -15,6 +15,8 @@ For example, if a demand has ``traffic`` = 100, it can be 100Mpbs, 100Gbps, etc.
 
 If the entire demand transits a single interface (# ECMP = 1) with a ``capacity`` of 200 Gbps  (and no other demands transit the interface), the interface's computed ``utilization`` will be 50%.
 
+A demand's path is
+
 
 The ``path_detail`` Property
 ****************************
@@ -70,4 +72,12 @@ Since the minimum amount of traffic found on any object in ``path_0`` is 4 units
 For more information on demands,see the `demand docstrings`_.
 
 .. _demand docstrings: ./api.html#demand
+
+Please see the `pyNTM Training Modules repository module 2`_ for info and walk-through exercises for demands, including:
+
+* Finding traffic demands egressing a given interface
+* Finding all ECMP paths for a specific demand
+
+.. _pyNTM Training Modules repository module 2: https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-/blob/master/pyNTM_training_module_2_v2.pdf
+
 
