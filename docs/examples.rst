@@ -22,8 +22,8 @@ The ``network_modeling_client_code_examples_read_from_dict.py`` file demo2 the f
 * demand path changes before/after a link failure
 * adding traffic
 
-Visualization Demo Script
--------------------------
+Demo Script With Visualization
+------------------------------
 
 There is also a visualization script, which showcases a current beta feature.
 See the `visualization <visualization.rst>`_ docs page for more details.

@@ -43,6 +43,7 @@ Contents
    examples
    model_file
    rsvp_lsp
+   demand
    workflows
    visualization
    development

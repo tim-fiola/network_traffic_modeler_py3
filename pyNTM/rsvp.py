@@ -25,7 +25,7 @@ class RSVP_LSP(object):
 
     reserved_bandwidth: amount of bandwidth reserved by this LSP
 
-    setup_bandwidth: amount of bandwidth this LSP wants to signal for
+    setup_bandwidth: amount of bandwidth this LSP attempts to signal for when it sets up
 
     """
 
@@ -145,8 +145,8 @@ class RSVP_LSP(object):
 
         This value must be a positive integer.
 
-        To restore the LSP's default metric (that of the shortest path),
-        set this value to -1.
+        To restore the LSP's default metric (that of the shortest path) in a
+        live simulation, set this value to -1.
 
         """
 
