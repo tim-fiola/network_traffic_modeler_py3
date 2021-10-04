@@ -82,7 +82,6 @@ or::
 .. tip::
    When submitting a pull request, your build will be tested against black and the unit tests, so it's advantageous to test them locally prior so they don't fail in the CI pipeline.
 
-
 Remove your virtualenv
 ----------------------
 
