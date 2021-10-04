@@ -79,6 +79,10 @@ or::
 
     ``python3 -m pytest``
 
+.. tip::
+   When submitting a pull request, your build will be tested against black and the unit tests, so it's advantageous to test them locally prior so they don't fail in the CI pipeline.
+
+
 Remove your virtualenv
 ----------------------
 
@@ -91,3 +95,17 @@ Deactivate "venv" that unsets the virtual env variables::
 Remove directory "venv"::
 
    $ rm -rf venv
+
+pypy3
+-----
+
+pyNTM is compatible with the pypy3 interpreter. The pypy3 interpreter provides a 70-80% performance improvement over the python3 interpreter.
+
+.. tip::
+   By *performance*, we mean the time it takes to converge the model to produce a simulation (running  ``update_simulation``).
+
+It is recommended, however, to *develop* in **python3**. Developing in **pypy3** is **NOT** recommended, because some of the developer tools are not compatible in a pypy3 environment.
+
+
+
+

@@ -3,9 +3,9 @@ Changelog
 
 3.4.0
 -----
-* Updated test environment to Focal linux (from Xenial) to allow dash and dash-cytoscape for visualization
+* Updated test environment to Focal linux (from Xenial) to allow dash and dash-cytoscape package import for visualization
 
-  * Allows for moving WeatherMap from beta to production in future; CI tests all failed when using dash packages in Xenial
+  * Allows for moving WeatherMap from beta to production in future
   * It's no longer necessary to explicitly install the visualization requirements separately
 
 * Heavy updates for docs
@@ -15,8 +15,7 @@ Changelog
   * FlexModel had ``lsp_metric`` column name in docstrings and examples
   * PerformanceModel had ``manual_metric`` column name in docstrings and examples
   * Standardized column name to ``manual_metric``
-  * This was a purely cosmetic change as the actual manual_metric is based on the column's order in the table, not the column name.
-
+  * This was a purely cosmetic change as the actual ``manual_metric`` is based on the column's order in the table, not the specific column name
 
 3.3.1
 -----
