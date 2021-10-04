@@ -30,9 +30,6 @@ Please see the `pyNTM Training Modules repository module 3`_ for info and walk-t
 
 .. _pyNTM Training Modules repository module 3: https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-/blob/master/pyNTM_training_module_3.pdf
 
-
-
-
 Please see the `pyNTM Training Modules repository module 4`_ for info and walk-through exercises for
 
 * RSVP LSP model data files
@@ -49,11 +46,9 @@ Please see the `pyNTM Training Modules repository module 4`_ for info and walk-t
 
 .. _pyNTM Training Modules repository module 4: https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-/blob/master/pyNTM_training_module_4.pdf
 
-
-
 Please see the `pyNTM Training Modules repository module 5`_ for info and walk-through exercises for
 
 * How to create a visualization using the WeatherMap
 * WeatherMap visual components overview
 
-.. _pyNTM Training Modules repository module 5`: https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-/blob/master/pyNTM_visualization_training.pdf
+.. _pyNTM Training Modules repository module 5: https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-/blob/master/pyNTM_visualization_training.pdf
