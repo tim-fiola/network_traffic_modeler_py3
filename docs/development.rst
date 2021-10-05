@@ -27,9 +27,22 @@ Activate "venv" that sets up the required env variables::
 
    $ source venv/bin/activate
 
-Install pyNTM's required packages with "pip3"::
 
-    (venv) $ pip3 install -r requirements.txt
+Clone the repo per https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository#cloning-a-repository::
+
+   (venv) % git clone https://github.com/tim-fiola/network_traffic_modeler_py3.git
+   Cloning into 'network_traffic_modeler_py3'...
+   remote: Enumerating objects: 1622, done.
+   remote: Counting objects: 100% (378/378), done.
+   remote: Compressing objects: 100% (256/256), done.
+   remote: Total 1622 (delta 247), reused 214 (delta 120), pack-reused 1244
+   Receiving objects: 100% (1622/1622), 770.31 KiB | 1.89 MiB/s, done.
+   Resolving deltas: 100% (1107/1107), done.
+   (venv)  %
+
+Install pyNTM's required packages with "pip3"::
+    (venv) % cd network_traffic_modeler_py3
+    (venv) % pip3 install -r requirements.txt
 
 Installing Development Requirements
 -----------------------------------

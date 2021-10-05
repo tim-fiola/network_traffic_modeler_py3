@@ -52,3 +52,19 @@ Please see the `pyNTM Training Modules repository module 5`_ for info and walk-t
 * WeatherMap visual components overview
 
 .. _pyNTM Training Modules repository module 5: https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-/blob/master/pyNTM_visualization_training.pdf
+
+Checking Network Health
+***********************
+
+There are a some results to watch for in your simulations that will indicate a network augment or re-architecture of your existing or planned network may be helpful.
+
+IGP routing is deterministic and much simpler to interpret; one obvious warning sign is over-utilized links.
+
+It gets a bit more difficult with RSVP, especially with auto-bandwidth enabled, to determine if the network is under stress.
+RSVP auto-bandwidth behavior can be non-deterministic, meaning that there may be multiple different end-states the network will converge to, depending on the order in which the LSPs signal and how long each layer 3 node takes to compute the paths for its LSPs and a host of other factors.
+
+With this being the case, there are a few behavior in the model to watch for when running RSVP that may indicate a network augment or re-architecture may be helpful:
+
+* Large quantities of LSPs not on the shortest path
+* LSPs reserving less bandwidth than they are carrying
+* Some LSPs not being able to signal due to lack of available setup bandwidth in the path

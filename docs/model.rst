@@ -51,27 +51,34 @@ The ``FlexModel`` class allows for:
 * Multiple Circuits between 2 Nodes
 * RSVP LSP IGP shortcuts, whereby LSPs can carry traffic demands downstream, even if the demand does not have matching source and destination as the LSP
 
-How do I know the simulation worked correctly?
+How do I know the simulations work correctly?
 **********************************************
 
-There are a couple safeguards in place to ensure the simulation's mechanics are correct:
+There are many safeguards in place to ensure the simulation's mechanics are correct:
 
-* Functional tests in the CI/CD pipeline check for the expected mechanics and results for each routing method (ECMP, single path, RSVP, RSVP resignaling, etc) in various topology scenarios
+* Multiple functional tests in the CI/CD pipeline check for the expected mechanics and results for each routing method (ECMP, single path, RSVP, RSVP resignaling, etc) and other features in various topology scenarios:
+
   * If any of these tests fail, the build will fail and the bad code will not make it into production
-  * This helps ensure that functionality works as expected and that new features and fixes don't break prior functionality
-* The model object has internal checks that happen automatically during ``update_simulation()`` method
+
+    * This helps ensure that functionality works as expected and that new features and fixes don't break prior functionality
+
+  * There are over 300 unit and functional tests in the pyNTM CI/CD pipeline
+  * There are dozens of topology-specific functional tests in the pyNTM CI/CD pipeline that ensure the simulation works properly for different topologies, and more are added for each new feature
+
+* The model object has internal checks that happen automatically during the ``update_simulation()`` execution:
+
   * Flagging interfaces that are not part of a circuit
-  * If an interface's RSVP reserved bandwidth is greater than the interface's capacity
+  * Flagging if an interface's RSVP reserved bandwidth is greater than the interface's capacity
   * Verifying that each interface's RSVP reserved bandwidth matches the sum of the reserved bandwidth for the LSPs egressing the interface
   * Checks that the interface names on each node are unique
-  * Validates that each of the component interfaces in a circuit match
-  * Validate that each node in an SRLG has the SRLG in the node's ``srlgs`` set
+  * Validates that the capacities of each of the component interfaces in a circuit match
+  * Validates that each node in an SRLG has the SRLG in the node's ``srlgs`` set
   * No duplicate node names are present in the topology
 
-The PerformanceModel also checks for
+The PerformanceModel subclass also verifies that
 
-* IGP shortcuts not enabled
-* No more than a single circuit (edge) between any two nodes
+* IGP shortcuts are not enabled for nodes
+* There is no more than a single circuit (edge) between any two nodes
 
 Note that there are more checks involving RSVP than IGP/ECMP routing because there are more mechanics involved when RSVP is running, whereas the straight IGP/ECMP routing is much simpler.
 
