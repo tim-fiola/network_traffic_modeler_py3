@@ -6,12 +6,16 @@ class SRLG(object):
     """
     Represents a collection of Model objects with shared risk factors.
     Can include:
+
     - Nodes
-    - Circuits
+    - Interfaces
 
     When self.failed = True, the members will go to a failed state as well.
     When self.failed returns to False, the members will also return to
     failed = False.
+
+    When an interface is added to an SRLG, the other interface in the
+    interface's circuit is also automatically added to the SRLG.
 
     """
 

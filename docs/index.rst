@@ -43,10 +43,12 @@ Contents
 
    install
    examples
+   model
    model_file
    rsvp_lsp
    demand
    interface
+   srlg
    workflows
    visualization
    development

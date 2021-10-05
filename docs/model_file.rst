@@ -8,33 +8,11 @@ The network model file contains basic information about the network topology:
 * Demands (traffic)
 * RSVP LSPs
 
-It is a **tab-separated** values file.
+Since there is a lot of information needed to create a model, using the model file to load network data is recommended.
 
-Model Type Subclasses
----------------------
+The network model file is a **tab-separated** values file.
 
-There are two network model subclasses: FlexModel and PerformanceModel. In general, the FlexModel can accommodate more
-topology variations, but at the price of a slightly longer convergence time while the PerformanceModel can only handle
-simpler network architectures, but with the benefit of better convergence time.
-
-All model classes support:
-
-* IGP routing
-* RSVP LSPs carrying traffic demands that have matching source and destination as the RSVP LSPs
-* RSVP auto-bandwidth or fixed bandwidth
-* RSVP LSP manual metrics
-
-The PerformanceModel class allows for:
-
-* Single Circuits between 2 Nodes
-* Error messages if it detects use of IGP shortcuts or multiple Circuits between 2 Nodes
-
-The FlexModel class allows for:
-
-* Multiple Circuits between 2 Nodes
-* RSVP LSP IGP shortcuts, whereby LSPs can carry traffic demands downstream, even if the demand does not have matching source and destination as the LSP
-
-The model file categories for each model subclass are explained below.
+The sections below describe the model file's table headers for the FlexModel and PerformanceModel subclasses.
 
 Model File Interface Headers
 ----------------------------
@@ -49,7 +27,6 @@ Since there can only be a single connection (circuit) between any two nodes, the
 
 The ``FlexModel`` requires a ``circuit_id`` to appropriately match two interfaces into a circuit. The ``circuit_id`` must be included for each interface in the model file's ``INTERFACES_TABLE``.
 There must be exactly two instances of a given ``circuit_id`` in the ``INTERFACES_TABLE``: any more or any less will result in extra/unmatched interfaces and will cause an error when the file is loaded.
-
 
 PerformanceModel Interfaces
 ***************************

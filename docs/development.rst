@@ -3,6 +3,12 @@ Development
 
 If you wish to contribute PRs to pyNTM, the sections below describe how to set up your development environment.
 
+Currently, pyNTM adheres to the *black* code formatting and *flake8*. More info on *black* is below.
+
+The *black* code formatting and *flake8* checks occur in the CI/CD pipeline.
+
+The sections below cover how to set up your local dev environment to run these checks prior to submitting a pull request.
+
 Set Up Your Virtual Environment
 -------------------------------
 
