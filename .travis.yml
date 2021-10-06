@@ -57,10 +57,14 @@ jobs:
     - stage: deploy
       language: python
       dist: focal
+      python:
+      - 3.8
       provider: pypi
       user: fooelisa
       password:
         secure: Il7M6sZuR5Wx1yAHUO12q3siC2bLRvjMIOsvNd0sMZW5/vQtjgG7Jp+Nr6/wYOiPrxvIQc2dfqt026i74Ly9prlhb4voTHjc6cHJYXeCYbBVuzbvn9W0oI86DrYmo8KVsNNg1yObvgTZDzk/xWS3PNQXN9J1mDder9VXkDkWLjWMkRskpA8ENSStMqE5+stx7HhKsYkDWPgXT84wFdLobGvOcLOVTwPjwsnjJyQVrJBX3SE+mN6peEOAMChXVNxMgdFZsbQ6jhi9sUIRcvSeehpuqqxkfE7iodLFrMb0ZIT+B6Yz5xLQRjGA+ueGEohs22xkvdwKQcDcbdZSPtHFE/QBEY3Hos5XZvbrEbcedHq0GmwfuuXWHXS4HQVv3yNk0cbTckE6sxOGqWHCS0uYBF5nCLGxcYBlejw/vGvtMlVAYAvNx6kYR9Bf26YVnm8oLxQIcBhlWI3TD47beFb8WZCdp62/KyeFUd6ogJCMuvx8/dg93nZkiFIJFseHY99YQ48IkZrofuohURf227e6JTZzU5AYA5RrapyB+5QGqsJZOVVtQqHP0nLX5RNdUDpr4BxgCAvR8CtwqCW02Zp49xB+/A/WL3d6/tJKed5061q3vpFAC9npaVfPhrLKv8WasvHkYQN73ZqJwFB+HMaQrXead/+icCYxW9vh7TX8kMY=
       distributions: "sdist bdist_wheel"
       skip_existing: true
-      if: (tag IS present) OR (branch = master)
+      on:
+        tags: true
+        branch: master
