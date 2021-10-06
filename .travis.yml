@@ -55,6 +55,8 @@ jobs:
       - pytest
       after_success: coveralls
     - stage: deploy
+      language: python
+      dist: focal
       provider: pypi
       user: fooelisa
       password:
