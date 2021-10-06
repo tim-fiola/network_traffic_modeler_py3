@@ -3,7 +3,7 @@ Changelog
 
 3.4.0
 -----
-* Updated test environment to Focal linux (from Xenial) to allow dash and dash-cytoscape package import for visualization
+* Updated test environment to Focal linux (from Xenial) to allow ``dash`` and ``dash-cytoscape`` package import in CI/CD for visualization
 
   * Allows for moving WeatherMap from beta to production in future
   * It's no longer necessary to explicitly install the visualization requirements separately
