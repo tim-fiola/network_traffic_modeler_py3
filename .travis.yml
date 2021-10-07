@@ -1,6 +1,6 @@
-language: ruby
+language: python
 os: linux
-dist: xenial
+dist: focal
 stages:
   - test
   - name: deploy
