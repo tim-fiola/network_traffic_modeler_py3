@@ -54,7 +54,7 @@ jobs:
       - pytest
       after_success: coveralls
     - stage: deploy
-      if: branch = master and tags = true
+      if: branch = master AND tag IS present
       language: python
       dist: focal
       python: 3.8
