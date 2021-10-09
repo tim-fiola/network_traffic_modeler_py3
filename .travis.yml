@@ -55,9 +55,6 @@ jobs:
       after_success: coveralls
     - stage: deploy
       if: tag IS present
-      language: python
-      dist: focal
-      python: 3.8
       deploy:
         provider: pypi
         username: "__token__"
