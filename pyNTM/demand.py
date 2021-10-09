@@ -7,17 +7,17 @@ class Demand(object):
     A representation of traffic load on the modeled network
     """
 
-    def __init__(self, source_node_object, dest_node_object, traffic=0, name='none'):
+    def __init__(self, source_node_object, dest_node_object, traffic=0, name="none"):
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.traffic = traffic
         self.name = name
-        self.path = 'Unrouted'
-        self._path_detail = 'Unrouted_detail'
+        self.path = "Unrouted"
+        self._path_detail = "Unrouted_detail"
 
         # Validate traffic value
-        if not(isinstance(traffic, (int, float))) or traffic < 0:
-            raise ValueError('Must be a positive int or float')
+        if not (isinstance(traffic, (int, float))) or traffic < 0:
+            raise ValueError("Must be a positive int or float")
 
     @property
     def _key(self):
@@ -25,11 +25,12 @@ class Demand(object):
         return (self.source_node_object.name, self.dest_node_object.name, self.name)
 
     def __repr__(self):
-        return 'Demand(source = %s, dest = %s, traffic = %s, name = %r)' % \
-               (self.source_node_object.name,
-                self.dest_node_object.name,
-                self.traffic,
-                self.name)
+        return "Demand(source = %s, dest = %s, traffic = %s, name = %r)" % (
+            self.source_node_object.name,
+            self.dest_node_object.name,
+            self.traffic,
+            self.name,
+        )
 
     @property
     def path_detail(self):
@@ -47,17 +48,13 @@ class Demand(object):
         Splits can be used to calculate how much of the Demand's traffic is on a certain path
         (see path_traffic below) or how much of the Demand's traffic is on a certain element.
 
-        As an example of the latter, in the example below, the demand has 24 units of traffic.
-        the 'splits' section shows that the Interface from A to B has 2 splits, which means that
-        24 units/2 splits = 12 units of traffic are on the Interface from A to B for that specific
-        path.  If the same Interface/LSP is part of multiple unique paths for a Demand, the traffic
-        per path must be summed to get the total amount of traffic the Demand has on the Interface/LSP.
+        The demand object's ``path_detail`` property can be very useful to determine how much of the demand's
+        traffic egresses each object (interface, LSP) in the path.
 
-        path_traffic: the amount of traffic on that specific path.  Path traffic will be the
-        result of dividing the Demand's traffic by the max amount of path splits for an
-        element in the path
+        For example, sample demand ``Demand(source = A, dest = E, traffic = 24, name = 'dmd_a_e_1')``
+        has 24 units of traffic.
 
-        For example, Demand(source = A, dest = E, traffic = 24, name = 'dmd_a_e_1') has 24 units of traffic::
+        Here is the ``path_0`` entry for the sample demand::
 
             'path_0': {
                 'items': [Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'),
@@ -72,11 +69,17 @@ class Demand(object):
                             remote_node_object = Node('E'), circuit_id = '27'): 6}
             }
 
-            path_traffic for path_0 = 24 units of traffic/6 splits  (Interface B-to-E_3 has 6 splits)
-                                    = 4 units of traffic/path
+        The ``path_0`` component of the ``path_detail`` property in this example shows the following:
 
-            The traffic for the Demand has been split 6 times as it egresses Node('B') on the Interface
-            B-to-E_3
+        * ``Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), circuit_id = '1')`` has **2** splits
+        * ``Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'), remote_node_object = Node('E'), circuit_id = '27')`` has **6** splits
+
+        To get the amount of traffic load from the specific demand that transits each interface, divide the amount of traffic that the demand has by the number of splits for the object:
+
+        * ``Interface(name = 'A-to-B', cost = 4, capacity = 100, node_object = Node('A'), remote_node_object = Node('B'), circuit_id = '1')`` carries **24 / 2 = 12** units of traffic from the sample demand.
+        * ``Interface(name = 'B-to-E_3', cost = 3, capacity = 200, node_object = Node('B'), remote_node_object = Node('E'), circuit_id = '27')`` carries **24 / 6 = 4** units of traffic from the sample demand.
+
+        Since the minimum amount of traffic found on any object in ``path_0`` is 4 units of traffic, ``path_traffic`` for ``path_0`` = 4.
 
         :return: Dict of path entries (keys).  The value for each key is another dict with 3 keys: 'items', 'splits', and 'path_traffic'.  Each is described above.  # noqa E501
         """

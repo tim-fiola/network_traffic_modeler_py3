@@ -2,16 +2,17 @@
 
 
 class Circuit(object):
-    """A circuit is an object consisting of 2 connected interfaces """
+    """A circuit is an object consisting of 2 connected interfaces"""
 
     def __init__(self, interface_a, interface_b):
         self.interface_a = interface_a
         self.interface_b = interface_b
 
     def __repr__(self):
-        return 'Circuit(%r, %r)' \
-               % (self.interface_a,
-                  self.interface_b,)
+        return "Circuit(%r, %r)" % (
+            self.interface_a,
+            self.interface_b,
+        )
 
     def _key(self):
         return (self.interface_a._key, self.interface_b._key)

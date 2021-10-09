@@ -6,12 +6,16 @@ class SRLG(object):
     """
     Represents a collection of Model objects with shared risk factors.
     Can include:
+
     - Nodes
-    - Circuits
+    - Interfaces
 
     When self.failed = True, the members will go to a failed state as well.
     When self.failed returns to False, the members will also return to
     failed = False.
+
+    When an interface is added to an SRLG, the other interface in the
+    interface's circuit is also automatically added to the SRLG.
 
     """
 
@@ -19,7 +23,9 @@ class SRLG(object):
         # self.circuit_objects = circuit_objects
         # self.node_objects = node_objects
         if name in set([srlg.name for srlg in model.srlg_objects]):
-            raise ModelException("SRLG with name {} already exists in Model".format(name))
+            raise ModelException(
+                "SRLG with name {} already exists in Model".format(name)
+            )
         else:
             self.name = name
             self.model = model
@@ -38,7 +44,7 @@ class SRLG(object):
         if isinstance(status, bool):
             self._failed = status
         else:
-            raise ModelException('must be boolean')
+            raise ModelException("must be boolean")
 
     @property
     def node_objects(self):
@@ -47,5 +53,11 @@ class SRLG(object):
 
     @property
     def interface_objects(self):
-        interfaces = set([interface for interface in self.model.interface_objects if self in interface.srlgs])
+        interfaces = set(
+            [
+                interface
+                for interface in self.model.interface_objects
+                if self in interface.srlgs
+            ]
+        )
         return interfaces

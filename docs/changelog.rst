@@ -1,5 +1,22 @@
 Changelog
 =========
+
+3.4.0
+-----
+* Updated test environment to Focal linux (from Xenial) to allow ``dash`` and ``dash-cytoscape`` package import in CI/CD for visualization
+
+  * Allows for moving WeatherMap from beta to production in future
+  * It's no longer necessary to explicitly install the visualization requirements separately
+
+* Heavy updates for docs
+* Implemented black code formatting for local commits and in Travis CI/CD pipeline
+* Implemented standard column name for RSVP LSP attribute to describe a manually assigned metric:
+
+  * FlexModel had ``lsp_metric`` column name in docstrings and examples
+  * PerformanceModel had ``manual_metric`` column name in docstrings and examples
+  * Standardized column name to ``manual_metric``
+  * This was a purely cosmetic change as the actual ``manual_metric`` is based on the column's order in the table, not the specific column name
+
 3.3.1
 -----
 * Fixed bug in FlexModel to account for complex topology scenario involving ECMP demand paths with multipe IGP shortcut LSPs and parallel links
@@ -17,7 +34,6 @@ Changelog
 3.1
 ---
 * Removed automatic call of load_model_file class methods performing update_simulation() call automatically.
-
 
 3.0
 ---

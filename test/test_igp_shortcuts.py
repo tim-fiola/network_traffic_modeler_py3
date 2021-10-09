@@ -5,7 +5,6 @@ from pyNTM import PerformanceModel
 
 
 class TestIGPShortcuts(unittest.TestCase):
-
     def test_traffic_on_shortcut_lsps(self):
         """
         Verify Interface and LSP traffic when IGP shortcuts enabled
@@ -15,27 +14,29 @@ class TestIGPShortcuts(unittest.TestCase):
         # The demands should take LSPs starting on the first
         # node that has shortcuts and should take the LSP that
         # leads it closest to the demand destination
-        model = FlexModel.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path.csv')
+        model = FlexModel.load_model_file(
+            "test/igp_shortcuts_model_mult_lsps_in_path.csv"
+        )
         model.update_simulation()
 
         # Get all the interface objects
-        int_a_b = model.get_interface_object('A-B', 'A')
-        int_b_c = model.get_interface_object('B-C', 'B')
-        int_c_d = model.get_interface_object('C-D', 'C')
-        int_d_e = model.get_interface_object('D-E', 'D')
-        int_e_f = model.get_interface_object('E-F', 'E')
-        int_a_g = model.get_interface_object('A-G', 'A')
-        int_g_f = model.get_interface_object('G-F', 'G')
+        int_a_b = model.get_interface_object("A-B", "A")
+        int_b_c = model.get_interface_object("B-C", "B")
+        int_c_d = model.get_interface_object("C-D", "C")
+        int_d_e = model.get_interface_object("D-E", "D")
+        int_e_f = model.get_interface_object("E-F", "E")
+        int_a_g = model.get_interface_object("A-G", "A")
+        int_g_f = model.get_interface_object("G-F", "G")
 
         # Get all LSP objects
-        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
-        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
-        lsp_c_e_1 = model.get_rsvp_lsp('C', 'E', 'lsp_c_e_1')
-        lsp_d_f_1 = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
+        lsp_b_d_1 = model.get_rsvp_lsp("B", "D", "lsp_b_d_1")
+        lsp_b_d_2 = model.get_rsvp_lsp("B", "D", "lsp_b_d_2")
+        lsp_c_e_1 = model.get_rsvp_lsp("C", "E", "lsp_c_e_1")
+        lsp_d_f_1 = model.get_rsvp_lsp("D", "F", "lsp_d_f_1")
 
         # Get demand objects
-        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
-        dmd_d_f_1 = model.get_demand_object('D', 'F', 'dmd_d_f_1')
+        dmd_a_f_1 = model.get_demand_object("A", "F", "dmd_a_f_1")
+        dmd_d_f_1 = model.get_demand_object("D", "F", "dmd_d_f_1")
 
         # Verify traffic on LSPs
         self.assertEqual(lsp_b_d_1.traffic_on_lsp(model), 2.5)
@@ -69,9 +70,11 @@ class TestIGPShortcuts(unittest.TestCase):
 
     def test_igp_shortcut_node_attributes(self):
         # The IGP shortcut attribute should be True
-        model = FlexModel.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path.csv')
+        model = FlexModel.load_model_file(
+            "test/igp_shortcuts_model_mult_lsps_in_path.csv"
+        )
 
-        node_b = model.get_node_object('B')
+        node_b = model.get_node_object("B")
 
         self.assertTrue(node_b.igp_shortcuts_enabled)
 
@@ -79,22 +82,24 @@ class TestIGPShortcuts(unittest.TestCase):
     # and disappear from lsp_b_d_1/2 and lsp_d_f_1
     def test_remove_shortcuts_node_b(self):
 
-        model = FlexModel.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path.csv')
+        model = FlexModel.load_model_file(
+            "test/igp_shortcuts_model_mult_lsps_in_path.csv"
+        )
 
-        node_b = model.get_node_object('B')
+        node_b = model.get_node_object("B")
 
         node_b.igp_shortcuts_enabled = False
 
         model.update_simulation()
 
         # Get LSP objects
-        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
-        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
-        lsp_c_e_1 = model.get_rsvp_lsp('C', 'E', 'lsp_c_e_1')
-        lsp_d_f_1 = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
+        lsp_b_d_1 = model.get_rsvp_lsp("B", "D", "lsp_b_d_1")
+        lsp_b_d_2 = model.get_rsvp_lsp("B", "D", "lsp_b_d_2")
+        lsp_c_e_1 = model.get_rsvp_lsp("C", "E", "lsp_c_e_1")
+        lsp_d_f_1 = model.get_rsvp_lsp("D", "F", "lsp_d_f_1")
 
-        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
-        dmd_d_f_1 = model.get_demand_object('D', 'F', 'dmd_d_f_1')
+        dmd_a_f_1 = model.get_demand_object("A", "F", "dmd_a_f_1")
+        dmd_d_f_1 = model.get_demand_object("D", "F", "dmd_d_f_1")
 
         # Half the traffic from dmd_a_f_1 should be on lsp_c_e_1
         self.assertEqual(lsp_c_e_1.traffic_on_lsp(model), 5.0)
@@ -119,23 +124,25 @@ class TestIGPShortcuts(unittest.TestCase):
         Test LSP and Interface traffic.
         """
 
-        model = FlexModel.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path.csv')
+        model = FlexModel.load_model_file(
+            "test/igp_shortcuts_model_mult_lsps_in_path.csv"
+        )
         model.update_simulation()
 
         # Get all LSP objects
-        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
-        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
-        lsp_c_e_1 = model.get_rsvp_lsp('C', 'E', 'lsp_c_e_1')
-        lsp_d_f_1 = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
+        lsp_b_d_1 = model.get_rsvp_lsp("B", "D", "lsp_b_d_1")
+        lsp_b_d_2 = model.get_rsvp_lsp("B", "D", "lsp_b_d_2")
+        lsp_c_e_1 = model.get_rsvp_lsp("C", "E", "lsp_c_e_1")
+        lsp_d_f_1 = model.get_rsvp_lsp("D", "F", "lsp_d_f_1")
 
         # Get some node objects
-        node_b = model.get_node_object('B')
-        node_c = model.get_node_object('C')
-        node_d = model.get_node_object('D')
-        node_e = model.get_node_object('E')
+        node_b = model.get_node_object("B")
+        node_c = model.get_node_object("C")
+        node_d = model.get_node_object("D")
+        node_e = model.get_node_object("E")
 
         # Get LSP object
-        dmd_d_f_1 = model.get_demand_object('D', 'F', 'dmd_d_f_1')
+        dmd_d_f_1 = model.get_demand_object("D", "F", "dmd_d_f_1")
 
         # Set the node igp_shortcuts_enabled attribute to False
         node_b.igp_shortcuts_enabled = False
@@ -157,12 +164,12 @@ class TestIGPShortcuts(unittest.TestCase):
 
     def test_igp_shortcut_perf_model(self):
 
-        model = PerformanceModel.load_model_file('test/igp_routing_topology.csv')
+        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
 
-        node_a = model.get_node_object('A')
+        node_a = model.get_node_object("A")
         node_a.igp_shortcuts_enabled = True
 
-        err_msg = 'igp_shortcuts_enabled not allowed in PerformanceModel, but present on these Nodes'
+        err_msg = "igp_shortcuts_enabled not allowed in PerformanceModel, but present on these Nodes"
 
         with self.assertRaises(ModelException) as context:
             model.update_simulation()
@@ -172,26 +179,28 @@ class TestIGPShortcuts(unittest.TestCase):
     # not split at A
     def test_changed_metric(self):
 
-        model = FlexModel.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path.csv')
+        model = FlexModel.load_model_file(
+            "test/igp_shortcuts_model_mult_lsps_in_path.csv"
+        )
 
         # Get all the interface objects
-        int_a_b = model.get_interface_object('A-B', 'A')
-        int_b_c = model.get_interface_object('B-C', 'B')
-        int_c_d = model.get_interface_object('C-D', 'C')
-        int_d_e = model.get_interface_object('D-E', 'D')
-        int_e_f = model.get_interface_object('E-F', 'E')
-        int_a_g = model.get_interface_object('A-G', 'A')
-        int_g_f = model.get_interface_object('G-F', 'G')
+        int_a_b = model.get_interface_object("A-B", "A")
+        int_b_c = model.get_interface_object("B-C", "B")
+        int_c_d = model.get_interface_object("C-D", "C")
+        int_d_e = model.get_interface_object("D-E", "D")
+        int_e_f = model.get_interface_object("E-F", "E")
+        int_a_g = model.get_interface_object("A-G", "A")
+        int_g_f = model.get_interface_object("G-F", "G")
 
         # Get all LSP objects
-        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
-        lsp_b_d_2 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_2')
-        lsp_c_e_1 = model.get_rsvp_lsp('C', 'E', 'lsp_c_e_1')
-        lsp_d_f_1 = model.get_rsvp_lsp('D', 'F', 'lsp_d_f_1')
+        lsp_b_d_1 = model.get_rsvp_lsp("B", "D", "lsp_b_d_1")
+        lsp_b_d_2 = model.get_rsvp_lsp("B", "D", "lsp_b_d_2")
+        lsp_c_e_1 = model.get_rsvp_lsp("C", "E", "lsp_c_e_1")
+        lsp_d_f_1 = model.get_rsvp_lsp("D", "F", "lsp_d_f_1")
 
         # Get demand objects
-        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
-        dmd_d_f_1 = model.get_demand_object('D', 'F', 'dmd_d_f_1')
+        dmd_a_f_1 = model.get_demand_object("A", "F", "dmd_a_f_1")
+        dmd_d_f_1 = model.get_demand_object("D", "F", "dmd_d_f_1")
 
         # Give lsp a lower than default metric
         lsp_b_d_1.manual_metric = 15
@@ -276,13 +285,15 @@ class TestIGPShortcuts(unittest.TestCase):
     # If an LSP from A to F is added, all traffic should take that LSP
     def test_direct_lsp_preemption(self):
 
-        model = FlexModel.load_model_file('test/igp_shortcuts_model_mult_lsps_in_path.csv')
-        dmd_a_f_1 = model.get_demand_object('A', 'F', 'dmd_a_f_1')
-        model.add_rsvp_lsp('A', 'F', 'lsp_a_f_1')
-        lsp_a_f_1 = model.get_rsvp_lsp('A', 'F', 'lsp_a_f_1')
-        lsp_b_d_1 = model.get_rsvp_lsp('B', 'D', 'lsp_b_d_1')
-        int_a_g = model.get_interface_object('A-G', 'A')
-        int_a_b = model.get_interface_object('A-B', 'A')
+        model = FlexModel.load_model_file(
+            "test/igp_shortcuts_model_mult_lsps_in_path.csv"
+        )
+        dmd_a_f_1 = model.get_demand_object("A", "F", "dmd_a_f_1")
+        model.add_rsvp_lsp("A", "F", "lsp_a_f_1")
+        lsp_a_f_1 = model.get_rsvp_lsp("A", "F", "lsp_a_f_1")
+        lsp_b_d_1 = model.get_rsvp_lsp("B", "D", "lsp_b_d_1")
+        int_a_g = model.get_interface_object("A-G", "A")
+        int_a_b = model.get_interface_object("A-B", "A")
 
         model.update_simulation()
 

@@ -10,13 +10,15 @@ This is a network traffic modeler written in python 3. This library allows users
 
 Changes to the topology can be done to simulate new routers, circuits, circuit capacity, network failures, etc. Changes to the traffic matrix can be done to simulate increases/decreases in existing traffic or additional traffic matrix entries.
 
-Examine and run the client code to get an understanding of how this code works.
+Examine and run the `client code examples`_, these docs, and check out the `pyNTM training repository`_ to get an understanding of how to use this code and the use cases.
 
-Currently this modeling code supports OSPF/ISIS routing and RSVP auto-bandwidth LSPs.
-For a network with hundreds of nodes and thousands of LSPs, it may take several minutes for the model to converge when update_simulation is called.
+.. _pyNTM training repository: https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-
+
+.. _client code examples: https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
+
+For a network with hundreds of nodes and thousands of LSPs, it may take several minutes for the model to converge when ``update_simulation`` is called.
 
 There are no implied or explicit warranties associated with this app.
-
 
 Full API set use cases include
 -------------------------------
@@ -41,9 +43,17 @@ Contents
 
    install
    examples
+   model
+   model_file
+   rsvp_lsp
+   demand
+   interface
+   srlg
+   workflows
+   visualization
+   development
    api
    changelog
-
 
 Indices and tables
 ===================

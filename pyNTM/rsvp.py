@@ -25,21 +25,27 @@ class RSVP_LSP(object):
 
     reserved_bandwidth: amount of bandwidth reserved by this LSP
 
-    setup_bandwidth: amount of bandwidth this LSP wants to signal for
+    setup_bandwidth: amount of bandwidth this LSP attempts to signal for when it sets up
 
     """
 
-    def __init__(self, source_node_object, dest_node_object,
-                 lsp_name='none', configured_setup_bandwidth=None, configured_manual_metric=None):
+    def __init__(
+        self,
+        source_node_object,
+        dest_node_object,
+        lsp_name="none",
+        configured_setup_bandwidth=None,
+        configured_manual_metric=None,
+    ):
 
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.lsp_name = lsp_name
-        self.path = 'Unrouted - initial'
-        self.reserved_bandwidth = 'Unrouted - initial'
-        self._setup_bandwidth = 'Unrouted - initial'
+        self.path = "Unrouted - initial"
+        self.reserved_bandwidth = "Unrouted - initial"
+        self._setup_bandwidth = "Unrouted - initial"
         self.configured_setup_bandwidth = configured_setup_bandwidth
-        self._manual_metric = 'not set'
+        self._manual_metric = "not set"
         self.initial_manual_metric = configured_manual_metric
 
     @property
@@ -48,10 +54,11 @@ class RSVP_LSP(object):
         return (self.source_node_object.name, self.dest_node_object.name, self.lsp_name)
 
     def __repr__(self):
-        return 'RSVP_LSP(source = %s, dest = %s, lsp_name = %r)' % \
-               (self.source_node_object.name,
-                self.dest_node_object.name,
-                self.lsp_name)
+        return "RSVP_LSP(source = %s, dest = %s, lsp_name = %r)" % (
+            self.source_node_object.name,
+            self.dest_node_object.name,
+            self.lsp_name,
+        )
 
     def _find_path_cost_and_headroom_routed_lsp(self, candidate_paths):
         """
@@ -72,7 +79,7 @@ class RSVP_LSP(object):
         candidate_path_info = []
 
         # Find the path cost and path headroom for each path candidate
-        for path in candidate_paths['path']:
+        for path in candidate_paths["path"]:
             path_cost = sum(interface.cost for interface in path)
             # Find the path cost and reservable bandwidth on each path.
             # If the path you are examining has an interface that is on
@@ -80,8 +87,10 @@ class RSVP_LSP(object):
             # reserved bandwidth for the LSP to that interface
             proto_reservable_bw = {}
             for interface in path:
-                if interface in self.path['interfaces']:
-                    proto_reservable_bw[interface] = interface.reservable_bandwidth + self.reserved_bandwidth
+                if interface in self.path["interfaces"]:
+                    proto_reservable_bw[interface] = (
+                        interface.reservable_bandwidth + self.reserved_bandwidth
+                    )
                 else:
                     proto_reservable_bw[interface] = interface.reservable_bandwidth
 
@@ -90,8 +99,11 @@ class RSVP_LSP(object):
             # interface's reservable_bandwidth
             baseline_path_reservable_bw = min(proto_reservable_bw.values())
 
-            path_info = {'interfaces': path, 'path_cost': path_cost,
-                         'baseline_path_reservable_bw': baseline_path_reservable_bw}
+            path_info = {
+                "interfaces": path,
+                "path_cost": path_cost,
+                "baseline_path_reservable_bw": baseline_path_reservable_bw,
+            }
 
             candidate_path_info.append(path_info)
 
@@ -133,20 +145,24 @@ class RSVP_LSP(object):
 
         This value must be a positive integer.
 
-        To restore the LSP's default metric (that of the shortest path),
-        set this value to -1.
+        To restore the LSP's default metric (that of the shortest path) in a
+        live simulation, set this value to -1.
 
         """
 
         if self.initial_manual_metric:
-            if (isinstance(self.initial_manual_metric, int) and
-                    self.initial_manual_metric > 0):
+            if (
+                isinstance(self.initial_manual_metric, int)
+                and self.initial_manual_metric > 0
+            ):
                 self._manual_metric = self.initial_manual_metric
                 self.initial_manual_metric = None
             else:
-                msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric " \
-                      "to -1 to clear the manual_metric and have the LSP inherit " \
-                      "the default metric (that of the shortest path)"
+                msg = (
+                    "RSVP LSP metric must be positive integer value.  Or, set manual_metric "
+                    "to -1 to clear the manual_metric and have the LSP inherit "
+                    "the default metric (that of the shortest path)"
+                )
                 raise ModelException(msg)
 
         return self._manual_metric
@@ -154,8 +170,10 @@ class RSVP_LSP(object):
     @manual_metric.setter
     def manual_metric(self, value):
         if self.initial_manual_metric:
-            if (isinstance(self.initial_manual_metric, int) and
-                    self.initial_manual_metric > 0):
+            if (
+                isinstance(self.initial_manual_metric, int)
+                and self.initial_manual_metric > 0
+            ):
                 self._manual_metric = self.initial_manual_metric
                 self.initial_manual_metric = None
         elif isinstance(value, int) and value > 0:
@@ -163,11 +181,13 @@ class RSVP_LSP(object):
             self._manual_metric = value
         elif value == -1:
             self.initial_manual_metric = None
-            self._manual_metric = 'not set'
+            self._manual_metric = "not set"
         else:
-            msg = "RSVP LSP metric must be positive integer value.  Or, set manual_metric " \
-                  "to -1 to clear the manual_metric and have the LSP inherit " \
-                  "the default metric (that of the shortest path)"
+            msg = (
+                "RSVP LSP metric must be positive integer value.  Or, set manual_metric "
+                "to -1 to clear the manual_metric and have the LSP inherit "
+                "the default metric (that of the shortest path)"
+            )
             raise ModelException(msg)
 
     def topology_metric(self, model):
@@ -178,10 +198,10 @@ class RSVP_LSP(object):
         :param model: model object containing self
         :return: sum of the metrics of the Interfaces that the LSP transits
         """
-        if 'Unrouted' in self.path:
-            metric = 'Unrouted'
+        if "Unrouted" in self.path:
+            metric = "Unrouted"
         else:
-            metric = sum(interface.cost for interface in self.path['interfaces'])
+            metric = sum(interface.cost for interface in self.path["interfaces"])
 
         return metric
 
@@ -203,12 +223,17 @@ class RSVP_LSP(object):
 
         # Get candidate paths; only include interfaces that have requested_bandwidth
         # of reservable_bandwidth
-        candidate_paths = model.get_shortest_path_for_routed_lsp(self.source_node_object.name,
-                                                                 self.dest_node_object.name,
-                                                                 self, requested_bandwidth)
+        candidate_paths = model.get_shortest_path_for_routed_lsp(
+            self.source_node_object.name,
+            self.dest_node_object.name,
+            self,
+            requested_bandwidth,
+        )
 
         # Find the path cost and path headroom for each path candidate
-        candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(candidate_paths)
+        candidate_path_info = self._find_path_cost_and_headroom_routed_lsp(
+            candidate_paths
+        )
 
         # If there are no paths with enough headroom, return self
         if len(candidate_path_info) == 0:
@@ -235,7 +260,7 @@ class RSVP_LSP(object):
         demand_set = set()
         for demand in iter(model.demand_objects):
             # TODO - add unit test to test for unrouted demands on an LSP
-            if demand.path != 'Unrouted':
+            if demand.path != "Unrouted":
                 for dmd_path in demand.path:
                     if self in dmd_path:
                         demand_set.add(demand)
@@ -256,16 +281,23 @@ class RSVP_LSP(object):
         total_traffic = sum(demand.traffic for demand in self.demands_on_lsp(model))
 
         key = "{}-{}".format(self.source_node_object.name, self.dest_node_object.name)
-        parallel_routed_lsps = [lsp for lsp in parallel_lsp_groups[key] if 'Unrouted' not in lsp.path]
+        parallel_routed_lsps = [
+            lsp for lsp in parallel_lsp_groups[key] if "Unrouted" not in lsp.path
+        ]
 
         # Find min metric within parallel_routed_lsps
         min_metric = min({lsp.effective_metric(model) for lsp in parallel_routed_lsps})
 
-        min_cost_parallel_lsps = [lsp for lsp in parallel_routed_lsps if lsp.effective_metric(model) == min_metric]
+        min_cost_parallel_lsps = [
+            lsp
+            for lsp in parallel_routed_lsps
+            if lsp.effective_metric(model) == min_metric
+        ]
 
         source_dest_match_traffic = total_traffic / len(min_cost_parallel_lsps)
 
         from .performance_model import PerformanceModel, Model
+
         if isinstance(model, PerformanceModel) or isinstance(model, Model):
             # If it's PerformanceModel, IGP shortcuts not supported, all traffic
             # routes on the parallel LSPs
@@ -276,8 +308,8 @@ class RSVP_LSP(object):
             for demand_object in self.demands_on_lsp(model):
                 for path, path_data in demand_object.path_detail.items():
                     # Check if self is in path_data
-                    if self in path_data['items']:
-                        igp_shortcut_traffic += path_data['path_traffic']
+                    if self in path_data["items"]:
+                        igp_shortcut_traffic += path_data["path_traffic"]
 
         return igp_shortcut_traffic
 
@@ -291,11 +323,12 @@ class RSVP_LSP(object):
         :param model: model object containing self
         :return: metric for the LSP's shortest possible path
         """
-        if self.manual_metric != 'not set':
+        if self.manual_metric != "not set":
             self.initial_manual_metric = None
             return self.manual_metric
-        elif 'Unrouted' in self.path:
-            return 'Unrouted'
+        elif "Unrouted" in self.path:
+            return "Unrouted"
         else:
-            return model.get_shortest_path(self.source_node_object.name,
-                                           self.dest_node_object.name, needed_bw=0)['cost']
+            return model.get_shortest_path(
+                self.source_node_object.name, self.dest_node_object.name, needed_bw=0
+            )["cost"]
