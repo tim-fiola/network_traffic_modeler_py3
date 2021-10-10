@@ -48,6 +48,6 @@ jobs:
         provider: pypi
         username: "__token__"
         password:
-          secure: pypi-AgEIcHlwaS5vcmcCJGRlMTI5OGUyLTljN2MtNDZmMS1hOGU4LWU3NzBhOGRhN2UzNQACNnsicGVybWlzc2lvbnMiOiB7InByb2plY3RzIjogWyJweW50bSJdfSwgInZlcnNpb24iOiAxfQAABiBZDhveEmG0QAjuONYIJclL5VtfABiUsVhqOtbSLbWQjg
+          secure: "pypi-AgEIcHlwaS5vcmcCJGRlMTI5OGUyLTljN2MtNDZmMS1hOGU4LWU3NzBhOGRhN2UzNQACNnsicGVybWlzc2lvbnMiOiB7InByb2plY3RzIjogWyJweW50bSJdfSwgInZlcnNpb24iOiAxfQAABiBZDhveEmG0QAjuONYIJclL5VtfABiUsVhqOtbSLbWQjg"
         skip_existing: true
         distributions: "sdist bdist_wheel"
