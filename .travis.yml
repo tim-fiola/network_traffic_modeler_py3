@@ -11,12 +11,13 @@ install:
 - pip install .
 script:
 - pytest
+- black .
 after_success: coveralls
 deploy:
   provider: pypi
   username: __token__
   password:
-    secure: b3cUPff9nWf8I/HUM8rDcQjZc7dw0AHYrwyzlPMb/uS1r8KCX7+CiKKRvIbUsFBlOkLTCMCsl4rd4Hygehd1Z2zJRiEv62jfeICSkKiaA54I8BytG0ummdBABdoVDDmNoOlf5PZAVMGH15LQ2PqtuLWqS+wV0Ylf9unSlKxKlvpL5a4UoVPMEv8RdZ0T9CyOwXGQw7McRHsYTmT6/EhPoKGXj/j/xGmvs0lep4k7+rCIxYQGjdruO/jVYQOTc4R1cPiHadS29MKnAcmepT5A+rqqlAZrvuPIqFzA+bFJg+sk6YaLXnmnMDxtjxAgeMu+/BpmaYDIA2emb04z5p6ibiruAIrgJ/ONLTO1UF1ZGJ8Uanl2qOVOMQ+5x0pQXEOmqbc/PcsPkXiqnTz6kZHoBT94aUF/5CI53nICIvsRXci8IxWl8CYq/Fv/913vKbHZaIWEhGC6kJE4b8jha87eeN7v6Gkn1o2DM4PAoO6SuUE3xcwhxBmlW4si1jG1aNTrVluHZyPpDQuXi1iV/D79tmuXB00yQ1XskX/qtTetnRhtYVlp/H6VncKFvp2iC695AYw6woXsyGHqsIaVfBl582eyWh/dph3hxH04Ca8fHqTJfrBYyEecX+UkmG2+TGkkUZzSEAQcRVyiIb+7PV+IFVt5VLYiLH5wjATOPnLaoyk=
+    secure: $PYPI_UPLOAD_TOKEN
   distributions: sdist bdist_wheel
   skip_existing: true
   on:
