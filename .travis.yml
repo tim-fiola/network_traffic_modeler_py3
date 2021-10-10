@@ -48,6 +48,6 @@ jobs:
         provider: pypi
         username: "__token__"
         password:
-          secure: "pypi-AgEIcHlwaS5vcmcCJGRlMTI5OGUyLTljN2MtNDZmMS1hOGU4LWU3NzBhOGRhN2UzNQACNnsicGVybWlzc2lvbnMiOiB7InByb2plY3RzIjogWyJweW50bSJdfSwgInZlcnNpb24iOiAxfQAABiBZDhveEmG0QAjuONYIJclL5VtfABiUsVhqOtbSLbWQjg"
+          secure: "fUIktANqn+x/qWeDSwBtBFKarBNkEghPn40ZhycHeO1KbGuFwODo8ziZMitWV7cxcv8Gh57JrnFcBWXQYytx8M8iUJGldvAEYoR1e4ce1dB/Aqwyd33Tkeh+t8twBuZZD6x4oRxkcFXWOby9Ekz5NBxJXeniRRaY3rwxXRaehBqYHflmpwTgrdmKapGzCkobcKxmtweZtOuxL8HfY2vyCVyBPbahOYhzl1wzHfu4orPuNmRYq1h3x9W7nDxd2tAOHgOggk/hk5Rt1jI7SeTRY9290x6V6uRPtkkNzkbicroFl0j+8EOn8AdfdPYxaA8QKrh1qfbs03vYlNhqH+9KRnUQqKSUccR1uoDoKZY2B9dJx8hZHyI/ORRZxaKjwuDEB7OGx0TXtZK+4vh++CgrrZVxORiJP/6J27eN85whfy/W4X35OaIjG0KO1J5UhJM/cqbgl6qRTRMBIp0Vgz3BX5PsmuVMLwaxnvLIuLskrDIJPNNLN2HdNdshxE2iR8e59AansgsRIxJ1oN1F7/mIfdzoWMMMxaGVBkSQg6Bf7U2jZuyILUPwhYwFl+Ncy+sBAKOXCg/ucU2koWonCO2GkT3JjaB1qcoaiWqbJBeiQ7Jcq2oK7FsPM2LyYTUNNkeJtTOguyCadQ+DGvlpGAmtBZd++IZVLSV9crTSFwDLQ+c="
         skip_existing: true
         distributions: "sdist bdist_wheel"
