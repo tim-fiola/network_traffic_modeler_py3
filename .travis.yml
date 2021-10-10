@@ -1,53 +1,24 @@
 language: python
 os: linux
 dist: focal
-stages:
-  - test
-  - name: deploy
-jobs:
-  include:
-    - stage: test
-      language: python
-      dist: focal
-      python: 3.6
-      install:
-      - pip install -r requirements.txt
-      - pip install -r requirements_dev.txt
-      - pip install .
-      script:
-      - pytest
-      - black .
-      after_success: coveralls
-    - stage: test
-      language: python
-      dist: focal
-      python: 3.7
-      install:
-      - pip install -r requirements.txt
-      - pip install -r requirements_dev.txt
-      - pip install .
-      script:
-      - pytest
-      - black .
-      after_success: coveralls
-    - stage: test
-      language: python
-      dist: focal
-      python: 3.8
-      install:
-      - pip install -r requirements.txt
-      - pip install -r requirements_dev.txt
-      - pip install .
-      script:
-      - pytest
-      - black .
-      after_success: coveralls
-    - stage: deploy
-      if: tag IS present
-      deploy:
-        provider: pypi
-        username: "__token__"
-        password:
-          secure: "teg7J89PePoikpST0ELVwc22bztZGT9VZtA1ujnqQgQ7dAHNgrexwLWUmIu5SKaiObUfJOpEeFmUuENDCl1Hn0WDgq0pbaIwgKUFIktarleAujTWRroKjRzPdbGunCV+QmltRFzFmxoAdPoddbX8SG6iCgHzXxLEOHi1I8qrrq8RIIiEeuOlowRQzIuklhWAvO+aY1RjgSsXH5gfRW/klwWFctlV07hrjGyMXBPTrvC3sjPiJbykxgGA7Ap8lM/bCcYry0S0iP4nnO27jQTNeTzSxpZp8CuHfGuHCvYVDAFe3V/jy7q1kUM0mXMnORb/WtdBisjtM0bcjrUGEkz8DF9LAb0cDc6p1poG5BmhKpNSPmDziXU+cSJAluRx4UH17XMoSgTIZZs2JrfQOAbYMaYCbqchVzgsa9ZAC6C5Sf1h1naEUZrDYhNQOMCfNT0clZh02GKU2aOGvfNONbRgLIBTEEc20S00/CRxHkT91ZiD0cxuKLQqlwlyg5Y1pZWHPjCcsvapb/9Y+4zzTm98T9sFiAkhbOq6vQtGtmbRX1w+Vc4NwVCWKviFjKHYWQQ/0E+xCueZNyjDWLQF8Wf48yI+6bABdp51qjqKwUCF3/0RJoFn8d6PUsYvQo8lXkoDmj742CnMkHqnC9qyfvdl3jqeEqs2Z6mjHY67NsRqjrI="
-        skip_existing: true
-        distributions: "sdist bdist_wheel"
+python:
+- 3.6
+- 3.7
+- 3.8
+install:
+- pip install -r requirements.txt
+- pip install -r requirements_dev.txt
+- pip install .
+script:
+- pytest
+after_success: coveralls
+deploy:
+  provider: pypi
+  username: "__token__"
+  password:
+    secure: "teg7J89PePoikpST0ELVwc22bztZGT9VZtA1ujnqQgQ7dAHNgrexwLWUmIu5SKaiObUfJOpEeFmUuENDCl1Hn0WDgq0pbaIwgKUFIktarleAujTWRroKjRzPdbGunCV+QmltRFzFmxoAdPoddbX8SG6iCgHzXxLEOHi1I8qrrq8RIIiEeuOlowRQzIuklhWAvO+aY1RjgSsXH5gfRW/klwWFctlV07hrjGyMXBPTrvC3sjPiJbykxgGA7Ap8lM/bCcYry0S0iP4nnO27jQTNeTzSxpZp8CuHfGuHCvYVDAFe3V/jy7q1kUM0mXMnORb/WtdBisjtM0bcjrUGEkz8DF9LAb0cDc6p1poG5BmhKpNSPmDziXU+cSJAluRx4UH17XMoSgTIZZs2JrfQOAbYMaYCbqchVzgsa9ZAC6C5Sf1h1naEUZrDYhNQOMCfNT0clZh02GKU2aOGvfNONbRgLIBTEEc20S00/CRxHkT91ZiD0cxuKLQqlwlyg5Y1pZWHPjCcsvapb/9Y+4zzTm98T9sFiAkhbOq6vQtGtmbRX1w+Vc4NwVCWKviFjKHYWQQ/0E+xCueZNyjDWLQF8Wf48yI+6bABdp51qjqKwUCF3/0RJoFn8d6PUsYvQo8lXkoDmj742CnMkHqnC9qyfvdl3jqeEqs2Z6mjHY67NsRqjrI="
+  distributions: "sdist bdist_wheel"
+  skip_existing: true
+  on:
+    tags: true
+    branch: master
