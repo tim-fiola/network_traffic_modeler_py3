@@ -29,3 +29,5 @@
 #  - new client code example that uses a save_model call
 
 # TODO - test model with demands over LSPs and routed demands in same Model - check to see if did this
+
+# TODO - travis.yml - add jobs.include again to get pypy interpreter tested
