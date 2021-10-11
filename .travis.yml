@@ -4,6 +4,7 @@ dist: focal
 stages:
   - test
   - name: deploy
+    if: tag IS present
 jobs:
   include:
     - stage: test
@@ -54,7 +55,6 @@ jobs:
       - pytest
       after_success: coveralls
     - stage: deploy
-      if: tag IS present
       deploy:
         provider: pypi
         username: __token__
