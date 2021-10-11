@@ -3,24 +3,10 @@ from setuptools import setup, find_packages
 with open("requirements.txt", "r") as fs:
     reqs = [r for r in fs.read().splitlines() if (len(r) > 0 and not r.startswith("#"))]
 
-version = "3.4.0"
+version = "3.4.1"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-
-# long_description = (
-#     "This is a network traffic modeler written in python 3. The main use cases involve "
-#     "understanding how your layer 3 traffic will transit a given topology.  You can modify the "
-#     "topology (add/remove layer 3 Nodes, Circuits, Shared Risk Link Groups), fail elements in the "
-#     "topology, or add new traffic Demands to the topology. pyNTM is a simulation engine that will "
-#     "converge the modeled topology to give you insight as to how traffic will transit a given "
-#     "topology, either steady state or with failures. This library allows users "
-#     "to define a layer 3 network "
-#     "topology, define a traffic matrix, and then run a simulation to determine how the traffic will "
-#     "traverse the topology, traverse a modified topology, and fail over. If you've used Cariden MATE "
-#     "or WANDL, this code solves for some of the same basic use cases those do.  This package is in "
-#     "no way related to those, or any, commercial products.  IGP and RSVP routing is supported."
-# )
 
 setup(
     name="pyNTM",

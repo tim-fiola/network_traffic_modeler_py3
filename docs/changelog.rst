@@ -1,7 +1,7 @@
 Changelog
 =========
 
-3.4.0
+3.4.1
 -----
 * Updated test environment to Focal linux (from Xenial) to allow ``dash`` and ``dash-cytoscape`` package import in CI/CD for visualization
 
@@ -16,6 +16,12 @@ Changelog
   * PerformanceModel had ``manual_metric`` column name in docstrings and examples
   * Standardized column name to ``manual_metric``
   * This was a purely cosmetic change as the actual ``manual_metric`` is based on the column's order in the table, not the specific column name
+
+
+3.4.0
+-----
+* This build, while functional, was yanked from pypi for reasons related to troubleshooting a new CI/CD pipeline.  Let's just say there was some drama around that, and the migration to travis-ci.com.  These things happen.
+* 3.4.0 features moved to 3.4.1 build
 
 3.3.1
 -----
