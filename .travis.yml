@@ -1,52 +1,24 @@
 language: python
 os: linux
 dist: focal
-stages:
-  - test
-  - name: deploy
-    if: tag IS present
-jobs:
-  include:
-    - stage: test
-      language: python
-      dist: focal
-      python: 3.6
-      install:
-      - pip install -r requirements.txt
-      - pip install -r requirements_dev.txt
-      - pip install .
-      script:
-      - pytest
-      - black .
-      after_success: coveralls
-    - stage: test
-      language: python
-      dist: focal
-      python: 3.7
-      install:
-      - pip install -r requirements.txt
-      - pip install -r requirements_dev.txt
-      - pip install .
-      script:
-      - pytest
-      - black .
-      after_success: coveralls
-    - stage: test
-      language: python
-      dist: focal
-      python: 3.8
-      install:
-      - pip install -r requirements.txt
-      - pip install -r requirements_dev.txt
-      - pip install .
-      script:
-      - pytest
-      - black .
-      after_success: coveralls
-    - stage: deploy
-      deploy:
-        provider: pypi
-        username: __token__
-        password: $PYPI_UPLOAD_TOKEN
-        skip_existing: true
-        distributions: "sdist bdist_wheel"
+python:
+- 3.6
+- 3.7
+- 3.8
+install:
+- pip install -r requirements.txt
+- pip install -r requirements_dev.txt
+- pip install .
+script:
+- pytest
+- black .
+after_success: coveralls
+deploy:
+  provider: pypi
+  username: __token__
+  password: $PYPI_UPLOAD_TOKEN
+  distributions: sdist bdist_wheel
+  skip_existing: true
+  on:
+    tags: true
+    branch: master
