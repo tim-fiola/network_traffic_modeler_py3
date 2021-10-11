@@ -58,7 +58,7 @@ Optimization
 There are two main areas where we are looking to optimize:
 - Performance - converging the model to produce a simulation, especially in a model with RSVP LSPs, is intensive.  Improving the time it takes to converge the simulation results in better productivity and improved user experience
   - pyNTM supports the pypy3 interpreter, which results in 60-90% better performance than the python3 interpreter
-
+  - In this case, *performance* refers to how long it takes to converge a model to produce a simulation; for larger models, pypy3 provides much better performance
 - Data retrieval - the simulation produces an extraordinary amount of data.  Currently, the model is only retaining a fraction of the data generated during the model convergence.  It's our goal to introduce something like an sqlite database in the model objects to hold all this information.  This will improve user experience and allow SQL queries against the model object.
 
 
