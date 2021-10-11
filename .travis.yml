@@ -68,3 +68,23 @@ jobs:
         on:
           tags: true
           branch: master
+    - stage: test
+      language: python
+      dist: focal
+      python: pypy3
+      install:
+      - pip install -r requirements.txt
+      - pip install -r requirements_dev_pypy.txt
+      - pip install .
+      script:
+      - pytest
+      after_success: coveralls
+      deploy:
+        provider: pypi
+        username: __token__
+        password: $PYPI_UPLOAD_TOKEN
+        distributions: sdist bdist_wheel
+        skip_existing: true
+        on:
+          tags: true
+          branch: master
