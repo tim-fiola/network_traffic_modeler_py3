@@ -27,12 +27,8 @@ This library allows users to define a layer 3 network topology, define a traffic
 pyNTM can be used as an open source solution to answer WAN planning questions; you can also run pyNTM alongside a commercial solution as a validation/check on the commercial solution.
 
 
-Training
---------
-See the training modules at https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-
-
-Example Scripts
----------------
+Example Scripts and Training
+----------------------------
 
 See the [example directory](https://github.com/tim-fiola/network_traffic_modeler_py3/blob/master/examples).
 
