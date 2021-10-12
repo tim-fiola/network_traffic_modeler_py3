@@ -38,9 +38,6 @@ Examine and run the `client code examples`_, these docs, and check out the `pyNT
 
 .. _client code examples: https://github.com/tim-fiola/network_traffic_modeler_py3/tree/master/examples
 
-For a network with hundreds of nodes and thousands of LSPs, it may take several minutes for the model to converge when ``update_simulation`` is called.
-
-There are no implied or explicit warranties associated with this app.
 
 Full API set use cases include
 -------------------------------
