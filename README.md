@@ -21,22 +21,6 @@ This library allows users to define a layer 3 network topology, define a traffic
 
 pyNTM can be used as an open source solution to answer WAN planning questions; you can also run pyNTM alongside a commercial solution as a validation/check on the commercial solution.
 
-pyNTM Model Classes
-==================================
-In pyNTM, the Model objects house the network topology objects: traffic Demands, layer 3 Nodes, Circuits, Shared Risk Link Groups (SRLGs), Interfaces, etc.  The Model classes control how all the contained objects interact with each other during Model convergence to produce simulation results.
-
-There are two subclasses of Model objects: the PerformanceModel object and the newer FlexModel object (introduced in version 1.6).  
-Starting in version 1.7, what used to be called the Model class is now the PerformanceModel Class.  The former Parallel_Link_Model
-class is now known as the FlexModel class.  
-There are two main differences between the two types of objects:
-- The PerformanceModel object only allows a single Circuit between two layer 3 Nodes; while the FlexModel allows multiple Circuits between the same two Nodes.
-- The Performance Model will have better performance (measured in time to converge) than the FlexModel.  This is because the FlexModel has additional checks to account for potential multiple Circuits between Nodes and other topology features such as IGP shortcuts.
-
-The legacy Model and Parallel_Link_Model should still work as they have been made subclasses of the PerformanceModel and FlexModel classes, respectively.
-
-The PerformanceModel class is good to use for the following topology criteria:
-- There is only one link (Circuit) between each layer 3 Node
-- IGP-only routing and/or RSVP LSP routing with no IGP shortcuts (traffic source and destination matches LSP source and destination)
 
 Training
 =========
@@ -66,6 +50,24 @@ For upgrade:
 ```bash
 pip3 install --upgrade pyNTM
 ```
+
+
+pyNTM Model Classes
+==================================
+In pyNTM, the Model objects house the network topology objects: traffic Demands, layer 3 Nodes, Circuits, Shared Risk Link Groups (SRLGs), Interfaces, etc.  The Model classes control how all the contained objects interact with each other during Model convergence to produce simulation results.
+
+There are two subclasses of Model objects: the PerformanceModel object and the newer FlexModel object (introduced in version 1.6).  
+Starting in version 1.7, what used to be called the Model class is now the PerformanceModel Class.  The former Parallel_Link_Model
+class is now known as the FlexModel class.  
+There are two main differences between the two types of objects:
+- The PerformanceModel object only allows a single Circuit between two layer 3 Nodes; while the FlexModel allows multiple Circuits between the same two Nodes.
+- The Performance Model will have better performance (measured in time to converge) than the FlexModel.  This is because the FlexModel has additional checks to account for potential multiple Circuits between Nodes and other topology features such as IGP shortcuts.
+
+The legacy Model and Parallel_Link_Model should still work as they have been made subclasses of the PerformanceModel and FlexModel classes, respectively.
+
+The PerformanceModel class is good to use for the following topology criteria:
+- There is only one link (Circuit) between each layer 3 Node
+- IGP-only routing and/or RSVP LSP routing with no IGP shortcuts (traffic source and destination matches LSP source and destination)
 
 
 Which Model Class To Use
