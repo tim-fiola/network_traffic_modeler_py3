@@ -21,7 +21,10 @@ from pprint import pprint
 
 import itertools
 import networkx as nx
+import pandas as pd
 import random
+
+from dataclasses import dataclass
 
 from .circuit import Circuit
 from .interface import Interface
@@ -32,12 +35,14 @@ from .utilities import find_end_index
 from .node import Node
 
 
+
 # TODO - call to analyze model for Unrouted LSPs and LSPs not on shortest path
 # TODO - add support for SRLGs in load_model_file
 # TODO - add attribute for Node/Interface whereby an object can be failed by itself
 #  and not unfail when a parent SRLG unfails
 
 
+@dataclass
 class FlexModel(_MasterModel):
     """
     A network model object consisting of the following base components:

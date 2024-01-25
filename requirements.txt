@@ -2,3 +2,4 @@ networkx==2.4
 jinja2
 dash
 dash-cytoscape
+pandas
