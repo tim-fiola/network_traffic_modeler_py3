@@ -16,8 +16,12 @@ from .exceptions import ModelException  # noqa: F401
 # from .performance_model import PerformanceModel  # noqa: F401
 # from .performance_model import Model  # noqa: F401
 
-from .pandas_interface import Interface  # noqa: F401
-from .pandas_model import Model  # noqa: F401
-from .pandas_node import Node  # noqa: F401
+# from .dataclass_interface import Interface  # noqa: F401
+# from .dataclass_model import Model  # noqa: F401
+# from .dataclass_node import Node  # noqa: F401
+
+from .pandas_dataframe_model import Model
+from .pandas_dataframe_nodes import Nodes_dataframe
+from .pandas_dataframe_interfaces import Interfaces_dataframe
 
 # from .weathermap import WeatherMap  # noqa: F401

@@ -1,7 +1,7 @@
 from .exceptions import ModelException
 
 from dataclasses import dataclass
-from .pandas_node import Node
+from .dataclass_node import Node
 
 
 @dataclass

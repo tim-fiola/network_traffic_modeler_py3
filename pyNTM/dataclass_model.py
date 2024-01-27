@@ -2,8 +2,8 @@
 from .exceptions import ModelException
 from .utilities import find_end_index
 
-from .pandas_node import Node
-from .pandas_interface import Interface
+from .dataclass_node import Node
+from .dataclass_interface import Interface
 
 from dataclasses import dataclass
 
