@@ -11,13 +11,15 @@ import numpy as np
 
 @dataclass
 class Model(object):
-    interfaces_dataFrame: pd.DataFrame
-    nodes_dataFrame: pd.DataFrame
+    interfaces_dataframe: pd.DataFrame
+    nodes_dataframe: pd.DataFrame
+    demands_dataframe: pd.DataFrame
+    lsps_dataframe: pd.DataFrame
 
     def __repr__(self):
         return "DFModel(Interfaces: %s, Nodes: %s,)" % (
-            len(self.interfaces_dataFrame),
-            len(self.nodes_dataFrame),
+            len(self.interfaces_dataframe),
+            len(self.nodes_dataframe),
         )
 
     @classmethod
@@ -65,31 +67,108 @@ class Model(object):
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
 
-        nodes_dataframe, nodes_to_add = cls._add_nodes_from_data(
+        nodes_dataframe = cls._add_nodes_from_data(
                 node_lines, nodes_dataframe
         )
 
-        # Add nodes_to_add to nodes_dataframe
-        additional_nodes_dataframe = pd.DataFrame(nodes_to_add, columns=['node_name', 'node_uuid', 'lon',
-                                                                         'lat', 'igp_shortcuts_enabled'])
-        # Combine nodes_dataframe with the additional_nodes_dataframe
-        nodes_dataframe = pd.concat([nodes_dataframe, additional_nodes_dataframe])
-        # Reset the index
-        nodes_dataframe = nodes_dataframe.reset_index(drop=True)
-        # Check for duplicate node_names (nodes must be unique)
-        duplicate_node_names_check = nodes_dataframe['node_name'].duplicated()
-        duplicate_node_names_indices = duplicate_node_names_check.index[duplicate_node_names_check == True]
+        # Populate demands_dataframe
+        demands_info_begin_index = lines.index("DEMANDS_TABLE") + 2
+        demands_info_end_index = find_end_index(demands_info_begin_index, lines)
+        # There may or may not be LSPs in the model, so if there are not,
+        # set the demands_info_end_index as the last line in the file
+        if not demands_info_end_index:
+            demands_info_end_index = len(lines)
 
-        if len(duplicate_node_names_indices) != 0:
-            # Query nodes_datafrome for duplicate nodes
-            duplicate_node_names_list = []
-            for index in duplicate_node_names_indices:
-                duplicate_node_names_list.append(nodes_dataframe._get_value(index, 'node_name'))
-            except_msg = "Duplicate node names found in rows {}; check input data in " \
-                         "'INTERFACES_TABLE' and 'NODES_TABLE'".format(duplicate_node_names_list)
+        demands_lines = lines[demands_info_begin_index:demands_info_end_index]
+        demands_dataframe = cls._add_demands_from_data(demands_lines)
+
+        # Populate lsps_dataframe (if LSPs are present)
+        try:
+            lsp_info_begin_index = lines.index("RSVP_LSP_TABLE") + 2
+            lsp_lines = lines[lsp_info_begin_index:]
+            lsps_dataframe = cls._add_lsps_from_data(lsp_lines, nodes_dataframe)
+        except ValueError:
+            print("RSVP_LSP_TABLE not in file; no LSPs added to model")
+            lsps_dataframe = pd.DataFrame
+        except ModelException as e:
+            err_msg = e.args[0]
+            raise ModelException(err_msg)
+
+        return cls(interfaces_dataframe, nodes_dataframe, demands_dataframe, lsps_dataframe)
+
+    @classmethod
+    def _add_lsps_from_data(
+            cls, lsp_lines, nodes_dataframe
+    ):
+        # List of LSP info to add to lsps_dataframe
+        lsps_list = []
+
+        for lsp_line in lsp_lines:
+            lsp_info = lsp_line.split(',')
+
+            # Verify that the source node is in the nodes_dataframe
+            location = nodes_dataframe.loc[nodes_dataframe['node_name'] == lsp_info[0]]
+            if location.empty:
+                err_msg = "No Node with name {} in Model; {}".format(lsp_info[0], lsp_line)
+                raise ModelException(err_msg)
+
+            # Verify that the dest node is in the nodes_dataframe
+            location = nodes_dataframe.loc[nodes_dataframe['node_name'] == lsp_info[1]]
+            if location.empty:
+                err_msg = "No Node with name {} in Model; {}".format(lsp_info[1], lsp_line)
+                raise ModelException(err_msg)
+
+            try:
+                configured_setup_bw = float(lsp_info[3])
+            except (IndexError, ModelException, ValueError):
+                configured_setup_bw = None
+            try:
+                manual_metric = int(lsp_info[4])
+            except (IndexError, ModelException, ValueError):
+                manual_metric = None
+
+            # Define a unique key for each LSP (source__dest__name)
+            _key = lsp_info[0]+"__"+lsp_info[1]+"__"+lsp_info[2]
+            lsp_entry = [lsp_info[0], lsp_info[1], lsp_info[2], _key,configured_setup_bw, manual_metric]
+            lsps_list.append(lsp_entry)
+
+        lsp_columns = ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']
+        lsps_dataframe = pd.DataFrame(lsps_list, columns=lsp_columns)
+
+        # Check for LSP _key uniqueness
+        cls.uniqueness_check(lsps_dataframe, '_key', 'LSP')
+
+        return lsps_dataframe
+
+    @classmethod
+    def uniqueness_check(cls, dataframe, column_name_to_check_for_duplicates, item_type_in_column):
+        duplicate_item_check = dataframe[column_name_to_check_for_duplicates].duplicated()
+        duplicate_indices = duplicate_item_check.index[duplicate_item_check == True]
+        if len(duplicate_indices) != 0:
+            # Query datafrome for duplicate items
+            duplicate_item_list = []
+            for index in duplicate_indices:
+                duplicate_item_list.append(dataframe._get_value(index, column_name_to_check_for_duplicates))
+            except_msg = "Duplicate {} {} found {}; check input data "\
+                .format(item_type_in_column, column_name_to_check_for_duplicates, duplicate_item_list)
             raise ModelException(except_msg)
 
-        return cls(interfaces_dataframe, nodes_dataframe)
+    @classmethod
+    def _add_demands_from_data(
+            cls, demands_lines
+    ):
+        dmd_columns = ['source', 'dest', 'traffic', 'name', '_key']
+        demands_list = [demand.split(',') for demand in demands_lines]
+        demands_list.append((demands_list[0]+'__'+demands_list[1]+'__'+demands_list[4]))
+
+        demands_dataframe = pd.DataFrame(demands_list, columns=dmd_columns)
+
+        # Verify uniqueness of names
+        cls.uniqueness_check(demands_dataframe, 'name', 'demand')
+        cls.uniqueness_check(demands_dataframe, '_key', 'demand')
+
+        return demands_dataframe
+
 
     @classmethod
     def _add_nodes_from_data(
@@ -101,7 +180,6 @@ class Model(object):
         for node_line in node_lines:
 
             # Build a list of lists, each list with name,node_lon,node_lat,igp_shortcuts_enabled
-
             node_info = node_line.split(",")
             node_name = node_info[0]
             # Set latitude
@@ -149,7 +227,27 @@ class Model(object):
                 # Update the list that we will add to the nodes_dataframe at the end
                 nodes_to_add.append(node_info_list)
 
-        return nodes_dataframe, nodes_to_add
+            # Add nodes_to_add to nodes_dataframe
+            additional_nodes_dataframe = pd.DataFrame(nodes_to_add, columns=['node_name', 'node_uuid', 'lon',
+                                                                             'lat', 'igp_shortcuts_enabled'])
+            # Combine nodes_dataframe with the additional_nodes_dataframe
+            nodes_dataframe = pd.concat([nodes_dataframe, additional_nodes_dataframe])
+            # Reset the index
+            nodes_dataframe = nodes_dataframe.reset_index(drop=True)
+            # Check for duplicate node_names (nodes must be unique)
+            duplicate_node_names_check = nodes_dataframe['node_name'].duplicated()
+            duplicate_node_names_indices = duplicate_node_names_check.index[duplicate_node_names_check == True]
+
+            if len(duplicate_node_names_indices) != 0:
+                # Query nodes_datafrome for duplicate nodes
+                duplicate_node_names_list = []
+                for index in duplicate_node_names_indices:
+                    duplicate_node_names_list.append(nodes_dataframe._get_value(index, 'node_name'))
+                except_msg = "Duplicate node names found {}; check input data in " \
+                             "'INTERFACES_TABLE' and 'NODES_TABLE'".format(duplicate_node_names_list)
+                raise ModelException(except_msg)
+
+        return nodes_dataframe
 
     @classmethod
     def _extract_interface_data_and_implied_nodes(
@@ -230,16 +328,10 @@ class Model(object):
             node_set.add(remote_node_name)
 
             # See if the interface already exists, if not, add to interface_list
-            if (node_name, name)not in {
-                (line[0], line[2]) for line in interface_list
-            }:
-                interface_list.append(line_data)
-            else:
-                print(
-                    "{} combo already exists in model; disregarding line {}".format(
-                       (node_name, name), lines.index(interface_line)
-                    )
-                )
+            # Create Interface _key for uniqueness
+            _key = node_name+'__'+name
+            line_data.append(_key)
+            interface_list.append((line_data))
 
             # Derive Nodes from the Interface data
             if node_name not in node_set:
@@ -254,12 +346,17 @@ class Model(object):
         node_list = [[node, uuid.uuid4(), None, None, None ] for node in node_list]
 
         # Create the Node and Interface dataframes
-        Nodes_Dataframe = pd.DataFrame(node_list, columns=['node_name', 'node_uuid', 'lon',
+        nodes_dataframe = pd.DataFrame(node_list, columns=['node_name', 'node_uuid', 'lon',
                                                            'lat', 'igp_shortcuts_enabled'])
-        interface_table_columns = ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
-                                   "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid"]
-        Interfaces_Dataframe = pd.DataFrame(interface_list, columns=interface_table_columns )
+        # Check for duplicates in nodes_dataframe
+        cls.uniqueness_check(nodes_dataframe, 'node_name', 'node')
 
-        return Interfaces_Dataframe, Nodes_Dataframe
+        interface_table_columns = ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
+                                   "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key"]
+        interfaces_dataframe = pd.DataFrame(interface_list, columns=interface_table_columns )
+        # Check for uniqueness in interfaces_dataframe
+        cls.uniqueness_check(interfaces_dataframe, '_key', 'interface')
+
+        return interfaces_dataframe, nodes_dataframe
 
 
