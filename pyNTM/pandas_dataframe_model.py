@@ -11,13 +11,13 @@ import numpy as np
 
 @dataclass
 class Model(object):
-    Interfaces_DataFrame: pd.DataFrame
-    Nodes_DataFrame: pd.DataFrame
+    interfaces_dataFrame: pd.DataFrame
+    nodes_dataFrame: pd.DataFrame
 
     def __repr__(self):
         return "DFModel(Interfaces: %s, Nodes: %s,)" % (
-            len(self.Interfaces_DataFrame),
-            len(self.Nodes_DataFrame),
+            len(self.interfaces_dataFrame),
+            len(self.nodes_dataFrame),
         )
 
     @classmethod
@@ -56,8 +56,6 @@ class Model(object):
             )
             raise ModelException(msg)
 
-        # TODO - add check for node uniqueness? or is this done later on already?
-
         interfaces_dataframe, nodes_dataframe = cls._extract_interface_data_and_implied_nodes(
             int_info_begin_index, int_info_end_index, lines
         )
@@ -67,19 +65,31 @@ class Model(object):
         nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
 
-        # Define the explicit nodes info from the file
-
-        nodes_info_begin_index = lines.index("NODES_TABLE") + 2
-        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
-        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
-
         nodes_dataframe, nodes_to_add = cls._add_nodes_from_data(
                 node_lines, nodes_dataframe
         )
 
         # Add nodes_to_add to nodes_dataframe
+        additional_nodes_dataframe = pd.DataFrame(nodes_to_add, columns=['node_name', 'node_uuid', 'lon',
+                                                                         'lat', 'igp_shortcuts_enabled'])
+        # Combine nodes_dataframe with the additional_nodes_dataframe
+        nodes_dataframe = pd.concat([nodes_dataframe, additional_nodes_dataframe])
+        # Reset the index
+        nodes_dataframe = nodes_dataframe.reset_index(drop=True)
+        # Check for duplicate node_names (nodes must be unique)
+        duplicate_node_names_check = nodes_dataframe['node_name'].duplicated()
+        duplicate_node_names_indices = duplicate_node_names_check.index[duplicate_node_names_check == True]
 
+        if len(duplicate_node_names_indices) != 0:
+            # Query nodes_datafrome for duplicate nodes
+            duplicate_node_names_list = []
+            for index in duplicate_node_names_indices:
+                duplicate_node_names_list.append(nodes_dataframe._get_value(index, 'node_name'))
+            except_msg = "Duplicate node names found in rows {}; check input data in " \
+                         "'INTERFACES_TABLE' and 'NODES_TABLE'".format(duplicate_node_names_list)
+            raise ModelException(except_msg)
 
+        return cls(interfaces_dataframe, nodes_dataframe)
 
     @classmethod
     def _add_nodes_from_data(
