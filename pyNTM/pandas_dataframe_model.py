@@ -6,6 +6,7 @@ import uuid
 import pandas as pd
 from pandas import DataFrame
 
+import numpy as np
 
 
 @dataclass
@@ -61,7 +62,84 @@ class Model(object):
             int_info_begin_index, int_info_end_index, lines
         )
 
-        return cls(interfaces_dataframe, nodes_dataframe)
+        # Define the explicit nodes info from the file
+        nodes_info_begin_index = lines.index("NODES_TABLE") + 2
+        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
+        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
+
+        # Define the explicit nodes info from the file
+
+        nodes_info_begin_index = lines.index("NODES_TABLE") + 2
+        nodes_info_end_index = find_end_index(nodes_info_begin_index, lines)
+        node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
+
+        nodes_dataframe, nodes_to_add = cls._add_nodes_from_data(
+                node_lines, nodes_dataframe
+        )
+
+        # Add nodes_to_add to nodes_dataframe
+
+
+
+    @classmethod
+    def _add_nodes_from_data(
+        cls, node_lines, nodes_dataframe
+    ):
+        # Build a list of nodes that are not in nodes_dataframe already
+        nodes_to_add = []
+
+        for node_line in node_lines:
+
+            # Build a list of lists, each list with name,node_lon,node_lat,igp_shortcuts_enabled
+
+            node_info = node_line.split(",")
+            node_name = node_info[0]
+            # Set latitude
+            try:
+                node_lat = float(node_info[2])
+            except (ValueError, IndexError):
+                node_lat = 0
+            # Set longitude
+            try:
+                node_lon = float(node_info[1])
+            except (ValueError, IndexError):
+                node_lon = 0
+
+            # Set igp_shortcuts_enabled bool
+            try:
+                igp_shortcuts_enabled = node_info[3]
+                if igp_shortcuts_enabled not in ["True", "False"]:
+                    raise ModelException("igp_shortcuts_enabled must be 'True' or 'False'")
+            except IndexError:
+                igp_shortcuts_enabled = False
+
+            node_info_list = [node_name, node_lon, node_lat, igp_shortcuts_enabled]
+
+            # Check to see if node_name is already in nodes_dataframe  # TODO - need to redefine this
+            location = nodes_dataframe.loc[nodes_dataframe['node_name'] == node_name]
+
+            if not location.empty:  # Node is already in the nodes_dataframe
+                # Node's index in nodes_dataframe
+                location_index = location.index.values[0]
+                # If so, check for lat,lon,igp_shortcuts_enabled values being present
+                lon_missing = location.lon.values == None
+                lat_missing = location.lat.values == None
+                igp_shortcuts_enabled_missing = location.igp_shortcuts_enabled.values == None
+
+                if lon_missing:
+                    nodes_dataframe.at[location_index, 'lon'] = node_lon
+                if lat_missing:
+                    nodes_dataframe.at[location_index, 'lat'] = node_lat
+                if igp_shortcuts_enabled_missing:
+                    nodes_dataframe.at[location_index, 'igp_shortcuts_enabled'] = igp_shortcuts_enabled
+
+            else:  # Node is not already in nodes_dataframe and needs to be added
+                # Insert the UUID in node_info_list
+                node_info_list.insert(1, uuid.uuid4())
+                # Update the list that we will add to the nodes_dataframe at the end
+                nodes_to_add.append(node_info_list)
+
+        return nodes_dataframe, nodes_to_add
 
     @classmethod
     def _extract_interface_data_and_implied_nodes(
@@ -162,13 +240,16 @@ class Model(object):
         # Convert the node_set to a list and add UUID to nodes
         # Must convert set to list because a set can't hold lists
         node_list = list(node_set)
-        # Add UUID to each node for uniqueness
-        node_list = [[node, uuid.uuid4()] for node in node_list]
+        # Add UUID to each node for uniqueness; also add None placeholder for node lat and lon and igp_shortcuts_enabled
+        node_list = [[node, uuid.uuid4(), None, None, None ] for node in node_list]
 
         # Create the Node and Interface dataframes
-        Nodes_Dataframe = pd.DataFrame(node_list, columns=['node_name', 'node_uuid'])
+        Nodes_Dataframe = pd.DataFrame(node_list, columns=['node_name', 'node_uuid', 'lon',
+                                                           'lat', 'igp_shortcuts_enabled'])
         interface_table_columns = ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
                                    "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid"]
         Interfaces_Dataframe = pd.DataFrame(interface_list, columns=interface_table_columns )
 
         return Interfaces_Dataframe, Nodes_Dataframe
+
+
