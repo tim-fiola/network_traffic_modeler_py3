@@ -4,10 +4,8 @@ from .utilities import find_end_index
 from dataclasses import dataclass
 import uuid
 import pandas as pd
-from pandas import DataFrame
 
-import numpy as np
-
+import networkx as nx
 
 @dataclass
 class Model(object):
@@ -158,8 +156,11 @@ class Model(object):
             cls, demands_lines
     ):
         dmd_columns = ['source', 'dest', 'traffic', 'name', '_key']
-        demands_list = [demand.split(',') for demand in demands_lines]
-        demands_list.append((demands_list[0]+'__'+demands_list[1]+'__'+demands_list[4]))
+        demands_list = []
+        for demand in demands_lines:
+            dmd = demand.split(',')
+            dmd.append(dmd[0]+'__'+dmd[1]+'__'+dmd[3])
+            demands_list.append(dmd)
 
         demands_dataframe = pd.DataFrame(demands_list, columns=dmd_columns)
 
@@ -168,7 +169,6 @@ class Model(object):
         cls.uniqueness_check(demands_dataframe, '_key', 'demand')
 
         return demands_dataframe
-
 
     @classmethod
     def _add_nodes_from_data(
@@ -203,16 +203,16 @@ class Model(object):
 
             node_info_list = [node_name, node_lon, node_lat, igp_shortcuts_enabled]
 
-            # Check to see if node_name is already in nodes_dataframe  # TODO - need to redefine this
+            # Check to see if node_name is already in nodes_dataframe
             location = nodes_dataframe.loc[nodes_dataframe['node_name'] == node_name]
 
             if not location.empty:  # Node is already in the nodes_dataframe
                 # Node's index in nodes_dataframe
                 location_index = location.index.values[0]
                 # If so, check for lat,lon,igp_shortcuts_enabled values being present
-                lon_missing = location.lon.values == None
-                lat_missing = location.lat.values == None
-                igp_shortcuts_enabled_missing = location.igp_shortcuts_enabled.values == None
+                lon_missing = location.lon.values is None
+                lat_missing = location.lat.values is None
+                igp_shortcuts_enabled_missing = location.igp_shortcuts_enabled.values is None
 
                 if lon_missing:
                     nodes_dataframe.at[location_index, 'lon'] = node_lon
@@ -227,25 +227,32 @@ class Model(object):
                 # Update the list that we will add to the nodes_dataframe at the end
                 nodes_to_add.append(node_info_list)
 
-            # Add nodes_to_add to nodes_dataframe
+        # Add nodes_to_add to nodes_dataframe
+        if len(nodes_to_add) > 0:
             additional_nodes_dataframe = pd.DataFrame(nodes_to_add, columns=['node_name', 'node_uuid', 'lon',
                                                                              'lat', 'igp_shortcuts_enabled'])
             # Combine nodes_dataframe with the additional_nodes_dataframe
             nodes_dataframe = pd.concat([nodes_dataframe, additional_nodes_dataframe])
             # Reset the index
             nodes_dataframe = nodes_dataframe.reset_index(drop=True)
-            # Check for duplicate node_names (nodes must be unique)
-            duplicate_node_names_check = nodes_dataframe['node_name'].duplicated()
-            duplicate_node_names_indices = duplicate_node_names_check.index[duplicate_node_names_check == True]
 
-            if len(duplicate_node_names_indices) != 0:
-                # Query nodes_datafrome for duplicate nodes
-                duplicate_node_names_list = []
-                for index in duplicate_node_names_indices:
-                    duplicate_node_names_list.append(nodes_dataframe._get_value(index, 'node_name'))
-                except_msg = "Duplicate node names found {}; check input data in " \
-                             "'INTERFACES_TABLE' and 'NODES_TABLE'".format(duplicate_node_names_list)
-                raise ModelException(except_msg)
+        # Check for duplicate node_names (nodes must be unique)
+        duplicate_node_names_check = nodes_dataframe['node_name'].duplicated()
+        duplicate_node_names_indices = duplicate_node_names_check.index[duplicate_node_names_check == True]
+
+        if len(duplicate_node_names_indices) != 0:
+            # Query nodes_datafrome for duplicate nodes
+            duplicate_node_names_list = []
+            for index in duplicate_node_names_indices:
+                duplicate_node_names_list.append(nodes_dataframe._get_value(index, 'node_name'))
+            except_msg = "Duplicate node names found {}; check input data in " \
+                         "'INTERFACES_TABLE' and 'NODES_TABLE'".format(duplicate_node_names_list)
+            raise ModelException(except_msg)
+
+        # Specify data types in each column for nodes_dataframe
+        nodes_dataframe = nodes_dataframe.astype(dtype={"node_name": "str", "node_uuid": "str", "lon": "float64",
+                                                        "lat": "float64", "igp_shortcuts_enabled": "bool",
+                                                        "failed": "bool"})
 
         return nodes_dataframe
 
@@ -331,7 +338,9 @@ class Model(object):
             # Create Interface _key for uniqueness
             _key = node_name+'__'+name
             line_data.append(_key)
-            interface_list.append((line_data))
+            line_data.append(False)  # Failed state defaults to false
+            line_data.append(0)  # Percent reserved bandwidth is computed during convergence
+            interface_list.append(line_data)
 
             # Derive Nodes from the Interface data
             if node_name not in node_set:
@@ -342,21 +351,200 @@ class Model(object):
         # Convert the node_set to a list and add UUID to nodes
         # Must convert set to list because a set can't hold lists
         node_list = list(node_set)
-        # Add UUID to each node for uniqueness; also add None placeholder for node lat and lon and igp_shortcuts_enabled
-        node_list = [[node, uuid.uuid4(), None, None, None ] for node in node_list]
+        # Add UUID to each node for uniqueness; also add None placeholder for node lat and lon and
+        # igp_shortcuts_enabled.  Also add a column for Failed state boolean
+        node_list = [[node, uuid.uuid4(), None, None, None, False ] for node in node_list]
 
         # Create the Node and Interface dataframes
         nodes_dataframe = pd.DataFrame(node_list, columns=['node_name', 'node_uuid', 'lon',
-                                                           'lat', 'igp_shortcuts_enabled'])
+                                                           'lat', 'igp_shortcuts_enabled', 'failed'])
         # Check for duplicates in nodes_dataframe
         cls.uniqueness_check(nodes_dataframe, 'node_name', 'node')
 
         interface_table_columns = ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
-                                   "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key"]
+                                   "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key",
+                                   "failed", "_percent_reserved_bandwidth"]
         interfaces_dataframe = pd.DataFrame(interface_list, columns=interface_table_columns )
         # Check for uniqueness in interfaces_dataframe
         cls.uniqueness_check(interfaces_dataframe, '_key', 'interface')
 
         return interfaces_dataframe, nodes_dataframe
 
+    def _make_weighted_network_graph_mdg(
+        self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
+    ):
+        """
+        Returns a networkx weighted networkx multidigraph object from
+        the input Model object
 
+        :param include_failed_circuits: include interfaces from currently failed
+        circuits in the graph?
+        :param needed_bw: how much reservable_bandwidth is required?
+        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+
+        :return: networkx multidigraph with edges that conform to the needed_bw and
+        rsvp_required parameters
+        """
+
+        G = nx.MultiDiGraph()
+
+        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
+        if include_failed_circuits is False:
+            considered_interfaces = (
+                interface
+                for interface in self.interface_objects
+                if (
+                    interface.failed is False
+                    and interface.reservable_bandwidth >= needed_bw
+                )
+            )
+
+
+        elif include_failed_circuits is True:
+            considered_interfaces = (
+                interface
+                for interface in self.interface_objects
+                if interface.reservable_bandwidth >= needed_bw
+            )
+
+        if rsvp_required is True:
+            edge_names = (
+                (
+                    interface.node_object.name,
+                    interface.remote_node_object.name,
+                    {
+                        "cost": interface.cost,
+                        "interface": interface,
+                        "circuit_id": interface.circuit_id,
+                    },
+                )
+                for interface in considered_interfaces
+                if interface.rsvp_enabled is True
+            )
+        else:
+            edge_names = (
+                (
+                    interface.node_object.name,
+                    interface.remote_node_object.name,
+                    {
+                        "cost": interface.cost,
+                        "interface": interface,
+                        "circuit_id": interface.circuit_id,
+                    },
+                )
+                for interface in considered_interfaces
+            )
+
+        # Add edges to networkx DiGraph
+        G.add_edges_from(edge_names)
+
+        # Add all the nodes
+        node_name_iterator = (node.name for node in self.node_objects)
+        G.add_nodes_from(node_name_iterator)
+
+        return G
+
+    def validate_model(self):
+        """
+        Validates that data fed into the model creates a valid network model
+        """
+
+        # create circuits table, flags ints that are not part of a circuit
+        circuits = self._make_circuits_multidigraph(return_exception=True)
+
+
+
+    def _make_circuits_multidigraph(
+        self, return_exception=True, include_failed_circuits=True
+    ):
+        """
+        Matches interface objects into circuits and returns the circuits list
+
+        :param return_exception: Should an exception be returned if not all the
+                                 interfaces can be matched into a circuit?
+        :param include_failed_circuits:  Should circuits that will be in a
+                                         failed state be created?
+
+        :return: a set of Circuit objects in the Model, each Circuit
+                 comprised of two Interface objects
+        """
+
+        G = self._make_weighted_network_graph_mdg(
+            include_failed_circuits=include_failed_circuits
+        )
+
+        # Determine which interfaces pair up into good circuits in G
+        graph_interfaces = (
+            (local_node_name, remote_node_name, data)
+            for (local_node_name, remote_node_name, data) in G.edges(data=True)
+            if G.has_edge(remote_node_name, local_node_name)
+        )
+
+        # Set interface object in_ckt = False
+        for interface in iter(self.interface_objects):
+            interface.in_ckt = False
+
+        circuits = set([])
+
+        # Using the paired interfaces (source_node, dest_node) pairs from G,
+        # get the corresponding interface objects from the model to create
+        # the Circuit object
+        for interface in iter(graph_interfaces):
+            # Get each interface from model for each
+            try:
+                int1 = self.get_interface_object_from_nodes(
+                    interface[0], interface[1], circuit_id=interface[2]["circuit_id"]
+                )[0]
+            except (
+                TypeError,
+                IndexError,
+            ):  # TODO - are the exception catches necessary?
+                msg = (
+                    "No matching Interface Object found: source node {}, dest node {} "
+                    "circuit_id {} ".format(
+                        interface[0], interface[1], interface[2]["circuit_id"]
+                    )
+                )
+                raise ModelException(msg)
+            try:
+                int2 = self.get_interface_object_from_nodes(
+                    interface[1], interface[0], circuit_id=interface[2]["circuit_id"]
+                )[0]
+            except (TypeError, IndexError):
+                msg = (
+                    "No matching Interface Object found: source node {}, dest node {} "
+                    "circuit_id {} ".format(
+                        interface[1], interface[0], interface[2]["circuit_id"]
+                    )
+                )
+                raise ModelException(msg)
+            # Mark the interfaces as in ckt
+            if int1.in_ckt is False and int2.in_ckt is False:
+                # Mark interface objects as in_ckt = True
+                int1.in_ckt = True
+                int2.in_ckt = True
+
+                ckt = Circuit(int1, int2)
+                circuits.add(ckt)
+
+        # Find any interfaces that don't have counterpart
+        exception_ints_not_in_ckt = [
+            (local_node_name, remote_node_name, data)
+            for (local_node_name, remote_node_name, data) in G.edges(data=True)
+            if not (G.has_edge(remote_node_name, local_node_name))
+        ]
+
+        if exception_ints_not_in_ckt:
+            exception_msg = (
+                "WARNING: These interfaces were not matched "
+                "into a circuit {}".format(exception_ints_not_in_ckt)
+            )
+            if return_exception:
+                raise ModelException(exception_msg)
+            else:
+                return {"data": exception_ints_not_in_ckt}
+
+        self.circuit_objects = circuits
+
+# TODO - validate_model
+# TODO - update_simulation (rename to converge_model)

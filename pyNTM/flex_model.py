@@ -21,7 +21,6 @@ from pprint import pprint
 
 import itertools
 import networkx as nx
-import pandas as pd
 import random
 
 from dataclasses import dataclass

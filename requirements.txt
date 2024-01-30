@@ -1,5 +1,6 @@
-networkx==2.4
+networkx==3.2.1
 jinja2
 dash
 dash-cytoscape
 pandas
+numpy
