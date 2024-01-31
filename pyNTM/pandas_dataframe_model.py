@@ -22,6 +22,7 @@ class Model(object):
             len(self.nodes_dataframe),
         )
 
+
     @classmethod
     def load_model_file(cls, data_file):
 
@@ -446,13 +447,38 @@ class Model(object):
 
         return G
 
-    def _circuit_ids_validated(self, interfaces_dataframe):
+    def validated_circuit_ids(self):
+        """
+
+        Returns:
+
+        """
+
+
+        # Get the circuit_ids from the dataframe
+        circuit_ids = self.interfaces_dataframe['circuit_id'].to_list()
+        # Count the occurrence of each circuit ID
+        ckt_id_occurrences = Counter(circuit_ids)
+        # Get the values the occurrences of each circuit_id
+        unique_circuit_ids = ckt_id_occurrences.values()
+        # The set of circuit_ids should be == {2} because each circuit_id maps to exactly two interfaces
+        valid_id_matching = set(unique_circuit_ids) == {2}
+
+        if valid_id_matching:
+            return list(ckt_id_occurrences.keys())
+        else:
+            violations = {}
+            for k,v in ckt_id_occurrences:
+                if v != 2:
+                    violations[k] = v
+            except_msg = "The following circuit IDs appear, but not exactly two times. " \
+                         "This dict has key, value = circuit_id, # of occurrences  {}".format(violations)
+            raise ModelException(except_msg)
+
+    def _circuit_ids_validated(self):
         """
         Validates the interfaces in a dataframe
         - each circuit ID is used exactly two interfaces
-
-        Args:
-            interfaces_dataframe
 
         Returns:
             Boolean True if the dataframe passes tests; raises ModelException if
@@ -465,9 +491,9 @@ class Model(object):
         # Count the occurrence of each circuit ID
         ckt_id_occurrences = Counter(circuit_ids)
         # Get the values the occurrences of each circuit_id
-        ckt_id_occurrences_keys = ckt_id_occurrences.values()
+        unique_circuit_ids = ckt_id_occurrences.values()
         # The set of circuit_ids should be == {2} because each circuit_id maps to exactly two interfaces
-        valid_id_matching = set(ckt_id_occurrences_keys) == {2}
+        valid_id_matching = set(unique_circuit_ids) == {2}
 
         if valid_id_matching:
             return True
@@ -485,7 +511,10 @@ class Model(object):
         Validates that data fed into the model creates a valid network model
         """
 
+        # Verify that each circuit_id appears exactly twice
         circuit_ids_validated = self._circuit_ids_validated(self.interfaces_dataframe)
+
+        # Verify circuit component interface matching capacity
 
 # TODO - validate_model
 # TODO - update_simulation (rename to converge_model)
