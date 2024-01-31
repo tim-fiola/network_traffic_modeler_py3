@@ -1,6 +1,8 @@
 from .exceptions import ModelException
 from .utilities import find_end_index
 
+from collections import Counter
+
 from dataclasses import dataclass
 import uuid
 import pandas as pd
@@ -444,107 +446,46 @@ class Model(object):
 
         return G
 
+    def _circuit_ids_validated(self, interfaces_dataframe):
+        """
+        Validates the interfaces in a dataframe
+        - each circuit ID is used exactly two interfaces
+
+        Args:
+            interfaces_dataframe
+
+        Returns:
+            Boolean True if the dataframe passes tests; raises ModelException if
+            any circuit_id does not occur exactly twice
+
+        """
+
+        # Get the circuit_ids from the dataframe
+        circuit_ids = self.interfaces_dataframe['circuit_id'].to_list()
+        # Count the occurrence of each circuit ID
+        ckt_id_occurrences = Counter(circuit_ids)
+        # Get the values the occurrences of each circuit_id
+        ckt_id_occurrences_keys = ckt_id_occurrences.values()
+        # The set of circuit_ids should be == {2} because each circuit_id maps to exactly two interfaces
+        valid_id_matching = set(ckt_id_occurrences_keys) == {2}
+
+        if valid_id_matching:
+            return True
+        else:
+            violations = {}
+            for k,v in ckt_id_occurrences:
+                if v != 2:
+                    violations[k] = v
+            except_msg = "The following circuit IDs appear, but not exactly two times. " \
+                         "This dict has key, value = circuit_id, # of occurrences  {}".format(violations)
+            raise ModelException(except_msg)
+
     def validate_model(self):
         """
         Validates that data fed into the model creates a valid network model
         """
 
-        # create circuits table, flags ints that are not part of a circuit
-        circuits = self._make_circuits_multidigraph(return_exception=True)
-
-
-
-    def _make_circuits_multidigraph(
-        self, return_exception=True, include_failed_circuits=True
-    ):
-        """
-        Matches interface objects into circuits and returns the circuits list
-
-        :param return_exception: Should an exception be returned if not all the
-                                 interfaces can be matched into a circuit?
-        :param include_failed_circuits:  Should circuits that will be in a
-                                         failed state be created?
-
-        :return: a set of Circuit objects in the Model, each Circuit
-                 comprised of two Interface objects
-        """
-
-        G = self._make_weighted_network_graph_mdg(
-            include_failed_circuits=include_failed_circuits
-        )
-
-        # Determine which interfaces pair up into good circuits in G
-        graph_interfaces = (
-            (local_node_name, remote_node_name, data)
-            for (local_node_name, remote_node_name, data) in G.edges(data=True)
-            if G.has_edge(remote_node_name, local_node_name)
-        )
-
-        # Set interface object in_ckt = False
-        for interface in iter(self.interface_objects):
-            interface.in_ckt = False
-
-        circuits = set([])
-
-        # Using the paired interfaces (source_node, dest_node) pairs from G,
-        # get the corresponding interface objects from the model to create
-        # the Circuit object
-        for interface in iter(graph_interfaces):
-            # Get each interface from model for each
-            try:
-                int1 = self.get_interface_object_from_nodes(
-                    interface[0], interface[1], circuit_id=interface[2]["circuit_id"]
-                )[0]
-            except (
-                TypeError,
-                IndexError,
-            ):  # TODO - are the exception catches necessary?
-                msg = (
-                    "No matching Interface Object found: source node {}, dest node {} "
-                    "circuit_id {} ".format(
-                        interface[0], interface[1], interface[2]["circuit_id"]
-                    )
-                )
-                raise ModelException(msg)
-            try:
-                int2 = self.get_interface_object_from_nodes(
-                    interface[1], interface[0], circuit_id=interface[2]["circuit_id"]
-                )[0]
-            except (TypeError, IndexError):
-                msg = (
-                    "No matching Interface Object found: source node {}, dest node {} "
-                    "circuit_id {} ".format(
-                        interface[1], interface[0], interface[2]["circuit_id"]
-                    )
-                )
-                raise ModelException(msg)
-            # Mark the interfaces as in ckt
-            if int1.in_ckt is False and int2.in_ckt is False:
-                # Mark interface objects as in_ckt = True
-                int1.in_ckt = True
-                int2.in_ckt = True
-
-                ckt = Circuit(int1, int2)
-                circuits.add(ckt)
-
-        # Find any interfaces that don't have counterpart
-        exception_ints_not_in_ckt = [
-            (local_node_name, remote_node_name, data)
-            for (local_node_name, remote_node_name, data) in G.edges(data=True)
-            if not (G.has_edge(remote_node_name, local_node_name))
-        ]
-
-        if exception_ints_not_in_ckt:
-            exception_msg = (
-                "WARNING: These interfaces were not matched "
-                "into a circuit {}".format(exception_ints_not_in_ckt)
-            )
-            if return_exception:
-                raise ModelException(exception_msg)
-            else:
-                return {"data": exception_ints_not_in_ckt}
-
-        self.circuit_objects = circuits
+        circuit_ids_validated = self._circuit_ids_validated(self.interfaces_dataframe)
 
 # TODO - validate_model
 # TODO - update_simulation (rename to converge_model)
