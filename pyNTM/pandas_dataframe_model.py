@@ -4,6 +4,8 @@ from .utilities import find_end_index
 from collections import Counter
 
 from dataclasses import dataclass
+from dataclasses import Field
+
 import uuid
 import pandas as pd
 
@@ -22,10 +24,36 @@ class Model(object):
             len(self.nodes_dataframe),
         )
 
+    @staticmethod
+    def nodes_dataframe_column_names():
+        return ["node_name", "node_uuid", "lon", "lat", "igp_shortcuts_enabled", "failed"]
+
+    @staticmethod
+    def nodes_dataframe_dtypes(self):
+        return {"node_name": "string",
+                "node_uuid": "string",
+                "lon": "float64",
+                "lat": "float64",
+                "igp_shortcuts_enabled": "bool",
+                "failed": "bool"}
+
+    @staticmethod
+    def lsp_column_names():
+        return ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']
+
+    @staticmethod
+    def demand_column_names():
+        return ['source', 'dest', 'traffic', 'name', '_key']
+
+    @staticmethod
+    def interface_dataframe_column_names():
+        return ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
+                "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key",
+                "failed", "_percent_reserved_bandwidth"]
+
 
     @classmethod
     def load_model_file(cls, data_file):
-
         # Open the file with the data, read it, and split it into lines
         with open(data_file, "r", encoding="utf-8-sig") as f:
             data = f.read()
@@ -95,6 +123,9 @@ class Model(object):
             err_msg = e.args[0]
             raise ModelException(err_msg)
 
+        # Specify data types in each column for nodes_dataframe
+        nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes(cls))
+
         return cls(interfaces_dataframe, nodes_dataframe, demands_dataframe, lsps_dataframe)
 
     @classmethod
@@ -133,8 +164,7 @@ class Model(object):
             lsp_entry = [lsp_info[0], lsp_info[1], lsp_info[2], _key,configured_setup_bw, manual_metric]
             lsps_list.append(lsp_entry)
 
-        lsp_columns = ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']
-        lsps_dataframe = pd.DataFrame(lsps_list, columns=lsp_columns)
+        lsps_dataframe = pd.DataFrame(lsps_list, columns=cls.lsp_column_names())
 
         # Check for LSP _key uniqueness
         cls.uniqueness_check(lsps_dataframe, '_key', 'LSP')
@@ -158,14 +188,13 @@ class Model(object):
     def _add_demands_from_data(
             cls, demands_lines
     ):
-        dmd_columns = ['source', 'dest', 'traffic', 'name', '_key']
         demands_list = []
         for demand in demands_lines:
             dmd = demand.split(',')
             dmd.append(dmd[0]+'__'+dmd[1]+'__'+dmd[3])
             demands_list.append(dmd)
 
-        demands_dataframe = pd.DataFrame(demands_list, columns=dmd_columns)
+        demands_dataframe = pd.DataFrame(demands_list, columns=cls.demand_column_names())
 
         # Verify uniqueness of names
         cls.uniqueness_check(demands_dataframe, 'name', 'demand')
@@ -213,9 +242,10 @@ class Model(object):
                 # Node's index in nodes_dataframe
                 location_index = location.index.values[0]
                 # If so, check for lat,lon,igp_shortcuts_enabled values being present
-                lon_missing = location.lon.values is None
-                lat_missing = location.lat.values is None
-                igp_shortcuts_enabled_missing = location.igp_shortcuts_enabled.values is None
+                # '== None' is appropriate here; 'is None' provides different value
+                lon_missing = location.lon.values == None
+                lat_missing = location.lat.values == None
+                igp_shortcuts_enabled_missing = location.igp_shortcuts_enabled.values == None
 
                 if lon_missing:
                     nodes_dataframe.at[location_index, 'lon'] = node_lon
@@ -227,13 +257,16 @@ class Model(object):
             else:  # Node is not already in nodes_dataframe and needs to be added
                 # Insert the UUID in node_info_list
                 node_info_list.insert(1, uuid.uuid4())
+
+                # Add the node failure status (set to False)
+                node_info_list.append(False)
+
                 # Update the list that we will add to the nodes_dataframe at the end
                 nodes_to_add.append(node_info_list)
 
         # Add nodes_to_add to nodes_dataframe
         if len(nodes_to_add) > 0:
-            additional_nodes_dataframe = pd.DataFrame(nodes_to_add, columns=['node_name', 'node_uuid', 'lon',
-                                                                             'lat', 'igp_shortcuts_enabled'])
+            additional_nodes_dataframe = pd.DataFrame(nodes_to_add, columns=cls.nodes_dataframe_column_names())
             # Combine nodes_dataframe with the additional_nodes_dataframe
             nodes_dataframe = pd.concat([nodes_dataframe, additional_nodes_dataframe])
             # Reset the index
@@ -253,9 +286,7 @@ class Model(object):
             raise ModelException(except_msg)
 
         # Specify data types in each column for nodes_dataframe
-        nodes_dataframe = nodes_dataframe.astype(dtype={"node_name": "str", "node_uuid": "str", "lon": "float64",
-                                                        "lat": "float64", "igp_shortcuts_enabled": "bool",
-                                                        "failed": "bool"})
+        nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes(cls))
 
         return nodes_dataframe
 
@@ -359,15 +390,14 @@ class Model(object):
         node_list = [[node, uuid.uuid4(), None, None, None, False ] for node in node_list]
 
         # Create the Node and Interface dataframes
-        nodes_dataframe = pd.DataFrame(node_list, columns=['node_name', 'node_uuid', 'lon',
-                                                           'lat', 'igp_shortcuts_enabled', 'failed'])
+        nodes_dataframe = pd.DataFrame(node_list, columns=cls.nodes_dataframe_column_names())
         # Check for duplicates in nodes_dataframe
         cls.uniqueness_check(nodes_dataframe, 'node_name', 'node')
 
-        interface_table_columns = ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
+        interface_dataframe_columns = ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
                                    "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key",
                                    "failed", "_percent_reserved_bandwidth"]
-        interfaces_dataframe = pd.DataFrame(interface_list, columns=interface_table_columns )
+        interfaces_dataframe = pd.DataFrame(interface_list, columns=cls.interface_dataframe_column_names())
         # Check for uniqueness in interfaces_dataframe
         cls.uniqueness_check(interfaces_dataframe, '_key', 'interface')
 
@@ -450,10 +480,10 @@ class Model(object):
     def validated_circuit_ids(self):
         """
 
-        Returns:
+        Returns: A list of circuit IDs that have been verified to have exactly 2 occurrences in the
+        interfaces_dataframe
 
         """
-
 
         # Get the circuit_ids from the dataframe
         circuit_ids = self.interfaces_dataframe['circuit_id'].to_list()
@@ -503,8 +533,34 @@ class Model(object):
                 if v != 2:
                     violations[k] = v
             except_msg = "The following circuit IDs appear, but not exactly two times. " \
-                         "This dict has key, value = circuit_id, # of occurrences  {}".format(violations)
+                         "This dict has key, value = circuit_id, # of occurrences:  {}".format(violations)
             raise ModelException(except_msg)
+
+    def validate_circuit_capacities(self):
+        """
+        Verify that the interface capacities that have a common circuit_id have matching capacities
+        Verify that there are only 2 instances of a given circuit_id in the interfaces_dataframe
+        Returns: A list of interfaces with common ciruit_id but whose capacities don't match
+
+        """
+
+        # Query the interfaces for a given id to make sure the capacities match
+        for ckt_id in self.validated_circuit_ids():
+            capacities = self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id]['capacity']
+            # Verify that there are only 2 rows
+            if len(capacities != 2):
+                error_msg = "The circuit_id {} has {} entries in the interfaces_dataframe; check input data".\
+                    format(ckt_id, len(capacities))
+                raise ModelException(error_msg)
+            # Verify that the capacities match in the 2 rows with the common circuit_id
+            if capacities.values[0] != capacities.values[1]:
+                error_msg = "The circuit_id {} has mismatching capacity values on the interface objects".format(ckt_id)
+                raise ModelException(error_msg)
+
+
+
+
+
 
     def validate_model(self):
         """
@@ -515,6 +571,8 @@ class Model(object):
         circuit_ids_validated = self._circuit_ids_validated(self.interfaces_dataframe)
 
         # Verify circuit component interface matching capacity
+
+
 
 # TODO - validate_model
 # TODO - update_simulation (rename to converge_model)

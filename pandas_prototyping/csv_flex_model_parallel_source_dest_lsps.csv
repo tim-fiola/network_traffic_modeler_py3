@@ -17,6 +17,7 @@ C,0,50
 D,-50,0
 E,25,25
 F,50,67
+noo-cow, 54, 67
 
 DEMANDS_TABLE
 source,dest,traffic,name
