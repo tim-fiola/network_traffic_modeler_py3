@@ -28,3 +28,7 @@ RSVP_LSP_TABLE
 source,dest,name,configured_setup_bw,manual_metric
 B,D,lsp_b_d_1,,20
 B,D,lsp_b_d_2
+A,B,lsp_a_b_1
+A,C,lsp_a_c_1
+A,C,lsp_a_c_2
+D,C,lsp_d_c_1

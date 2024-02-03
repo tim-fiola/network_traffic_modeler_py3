@@ -4,12 +4,18 @@ from .utilities import find_end_index
 from collections import Counter
 
 from dataclasses import dataclass
-from dataclasses import Field
+
 
 import uuid
 import pandas as pd
 
 import networkx as nx
+
+'''
+To set a value in a specific cell in a dataframe:
+    model.interfaces_dataframe.at[1, '_reserved_bandwidth'] = 102
+'''
+
 
 @dataclass
 class Model(object):
@@ -26,7 +32,7 @@ class Model(object):
 
     @staticmethod
     def nodes_dataframe_column_names():
-        return ["node_name", "node_uuid", "lon", "lat", "igp_shortcuts_enabled", "failed"]
+        return ["node_name", "node_uuid", "lon", "lat", "igp_shortcuts_enabled", "failed"]  # TODO - add srlg_group list
 
     @staticmethod
     def nodes_dataframe_dtypes(self):
@@ -35,11 +41,11 @@ class Model(object):
                 "lon": "float64",
                 "lat": "float64",
                 "igp_shortcuts_enabled": "bool",
-                "failed": "bool"}
+                "failed": "bool"}  # TODO - add srlg_group list
 
     @staticmethod
     def lsp_column_names():
-        return ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']
+        return ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']  # TODO make dtypes dict
 
     @staticmethod
     def demand_column_names():
@@ -49,8 +55,22 @@ class Model(object):
     def interface_dataframe_column_names():
         return ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
                 "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key",
-                "failed", "_percent_reserved_bandwidth"]
+                "failed",]  # TODO - add srlg_group list
 
+    @staticmethod
+    def interface_dataframe_dtypes(self):
+        return {
+            "node_name": "string",
+            "remote_node_name": "string",
+            "interface_name": "string",
+            "cost": "float64",
+            "capacity": "float64",
+            "circuit_id": "string",
+            "rsvp_enabled_bool": "bool",
+            "percent_reservable_bandwidth": "float64",
+            "interface_uuid": "string",
+            "_key": "string",
+            "failed": "bool"}  # TODO - add srlg_group list
 
     @classmethod
     def load_model_file(cls, data_file):
@@ -264,6 +284,8 @@ class Model(object):
                 # Update the list that we will add to the nodes_dataframe at the end
                 nodes_to_add.append(node_info_list)
 
+                # Update srlg membership
+
         # Add nodes_to_add to nodes_dataframe
         if len(nodes_to_add) > 0:
             additional_nodes_dataframe = pd.DataFrame(nodes_to_add, columns=cls.nodes_dataframe_column_names())
@@ -373,7 +395,6 @@ class Model(object):
             _key = node_name+'__'+name
             line_data.append(_key)
             line_data.append(False)  # Failed state defaults to false
-            line_data.append(0)  # Percent reserved bandwidth is computed during convergence
             interface_list.append(line_data)
 
             # Derive Nodes from the Interface data
@@ -394,10 +415,9 @@ class Model(object):
         # Check for duplicates in nodes_dataframe
         cls.uniqueness_check(nodes_dataframe, 'node_name', 'node')
 
-        interface_dataframe_columns = ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
-                                   "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key",
-                                   "failed", "_percent_reserved_bandwidth"]
         interfaces_dataframe = pd.DataFrame(interface_list, columns=cls.interface_dataframe_column_names())
+        interfaces_dataframe = interfaces_dataframe.astype(dtype=cls.interface_dataframe_dtypes(cls))
+
         # Check for uniqueness in interfaces_dataframe
         cls.uniqueness_check(interfaces_dataframe, '_key', 'interface')
 
@@ -536,7 +556,7 @@ class Model(object):
                          "This dict has key, value = circuit_id, # of occurrences:  {}".format(violations)
             raise ModelException(except_msg)
 
-    def validate_circuit_capacities(self):
+    def mismatched_circuit_capacities(self):
         """
         Verify that the interface capacities that have a common circuit_id have matching capacities
         Verify that there are only 2 instances of a given circuit_id in the interfaces_dataframe
@@ -544,35 +564,135 @@ class Model(object):
 
         """
 
+        ckt_ids_w_mismatched_capacities = []
+
         # Query the interfaces for a given id to make sure the capacities match
-        for ckt_id in self.validated_circuit_ids():
+        for ckt_id in self.validated_circuit_ids():  # TODO - see if we can get rid of the python iteration
             capacities = self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id]['capacity']
             # Verify that there are only 2 rows
             if len(capacities != 2):
-                error_msg = "The circuit_id {} has {} entries in the interfaces_dataframe; check input data".\
+                ckt_ids_w_mismatched_capacities.append(ckt_id)
+                error_msg = "The circuit_id {} has {} entries in the interfaces_dataframe; there must be exactly 2" \
+                            "entries with a given circuit_id.  Check input data".\
                     format(ckt_id, len(capacities))
                 raise ModelException(error_msg)
             # Verify that the capacities match in the 2 rows with the common circuit_id
             if capacities.values[0] != capacities.values[1]:
-                error_msg = "The circuit_id {} has mismatching capacity values on the interface objects".format(ckt_id)
-                raise ModelException(error_msg)
+                ckt_ids_w_mismatched_capacities.append(ckt_id)
 
+        if len(ckt_ids_w_mismatched_capacities) > 0:
+            error_msg = "The following circuit_id values have mismatched interface capacities: \n {}". \
+                format(ckt_ids_w_mismatched_capacities)
+            raise ModelException(error_msg)
 
+    def _reserved_bw_error_checks(self):
+        """
+        Checks interface for the following:
+        - Is reserved_bandwidth > capacity?
+        - Does reserved_bandwidth for interface match the sum of the
+        reserved_bandwidth for the LSPs egressing interface?
+        """
 
+        # Query the interfaces_dataframe for columns where _reserved_bandwidth > capacity
+        res_bw_errors = self.interfaces_dataframe.loc[
+            self.interfaces_dataframe['_reserved_bandwidth'] > self.interfaces_dataframe['capacity']]
 
-
+        if len(res_bw_errors) > 0:
+            error_msg = "There was an internal error: '_reserved_bandwidth > 'capacity' on these interfaces: \n {}"\
+                .format(res_bw_errors)
+            raise ModelException(error_msg)
 
     def validate_model(self):
         """
         Validates that data fed into the model creates a valid network model
         """
+        # Verify no duplicate node names
+
+        # Check for duplicates in nodes_dataframe
+        self.uniqueness_check(self.nodes_dataframe, 'node_name', 'node')
+
+        # Check for uniqueness for interface names in interfaces_dataframe
+        self.uniqueness_check(self.interfaces_dataframe, '_key', 'interface')
+
+        # Validate LSP name uniqueness check
+        self.uniqueness_check(self.lsps_dataframe, 'name', 'lsp')
 
         # Verify that each circuit_id appears exactly twice
         circuit_ids_validated = self._circuit_ids_validated(self.interfaces_dataframe)
 
-        # Verify circuit component interface matching capacity
+        # Verify circuit component interfaces have matching capacity
+        self.mismatched_circuit_capacities()
+
+        # Validate RSVP reserved bandwidth is not gt interface capacity
+        self._reserved_bw_error_checks()
+
+        # Verify no SRLG errors  # TODO - add this when srlgs are in model
+
+    def parallel_lsp_groups(self):
+        """
+        Determine LSPs with same source and dest nodes
+
+        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs with matching source/dest nodes  # noqa E501
+        """
+
+        # Find LSPs that have common source and destination nodes
 
 
 
-# TODO - validate_model
-# TODO - update_simulation (rename to converge_model)
+    def _populate_lsp_src_dest_nodes(self):
+        """
+        Populates the _src_dest_nodes column in the lsps_dataframe
+
+        """
+
+        self.lsps_dataframe["_src_dest_nodes"] = self.lsps_dataframe['source'] + "___" + self.lsps_dataframe['dest']
+
+    def _route_lsps(self):
+        """
+        Route LSPs
+        Returns:
+
+        """
+
+        # TODO
+
+    def _populate_dmd_src_dest_nodes(self):
+        """
+        Populates the _src_dest_nodes column in the demands_dataframe
+
+        """
+
+        self.demands_dataframe["_src_dest_nodes"] = self.demands_dataframe['source'] + "___" \
+                                                    + self.demands_dataframe['dest']
+
+    def converge_model(self):
+        """
+        Updates the simulation state; this needs to be run any time there is
+        a change to the state of the Model, such as failing an interface, adding
+        a Demand, adding/removing and LSP, etc.
+
+        This call does not carry forward any state from the previous simulation
+        results.
+        """
+
+        # Populate _src_dest_nodes column in lsps_dataframe
+        self._populate_lsp_src_dest_nodes()
+
+        # Populate _src_dest_nodes column in demands_dataframe
+        self._populate_dmd_src_dest_nodes()
+
+        # Route the LSPs
+        # TODO
+
+        # Route the Demands
+        # TODO
+
+        # Add the _reserved_bandwidth and _percent_reserved_bandwidth columns to interfaces_dataframe
+        # TODO
+
+
+
+
+
+
+
