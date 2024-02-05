@@ -23,11 +23,13 @@ DEMANDS_TABLE
 source,dest,traffic,name
 A,D,12,dmd_a_d_1
 B,D,10,dmd_b_d_1
+A,D,20,dmd_a_d_2
+B,D,30,dmd_b_d_2
 
 RSVP_LSP_TABLE
 source,dest,name,configured_setup_bw,manual_metric
 B,D,lsp_b_d_1,,20
-B,D,lsp_b_d_2
+B,D,lsp_b_d_2,10
 A,B,lsp_a_b_1
 A,C,lsp_a_c_1
 A,C,lsp_a_c_2

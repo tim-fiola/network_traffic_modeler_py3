@@ -35,7 +35,7 @@ class Model(object):
         return ["node_name", "node_uuid", "lon", "lat", "igp_shortcuts_enabled", "failed"]  # TODO - add srlg_group list
 
     @staticmethod
-    def nodes_dataframe_dtypes(self):
+    def nodes_dataframe_dtypes():
         return {"node_name": "string",
                 "node_uuid": "string",
                 "lon": "float64",
@@ -48,8 +48,27 @@ class Model(object):
         return ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']  # TODO make dtypes dict
 
     @staticmethod
+    def lsps_dataframe_dtypes():
+        return {"source": "string",
+                "dest": "string",
+                "name": "string",
+                "_key": "string",
+                "configured_setup_bw": "float64",
+                "manual_metric": "float64"
+        }
+
+    @staticmethod
     def demand_column_names():
         return ['source', 'dest', 'traffic', 'name', '_key']
+
+    @staticmethod
+    def demand_dataframe_dtypes():
+        return { "source": "string",
+                 "dest": "string",
+                 "traffic": "float64",
+                 "name": "string",
+                 "_key": "string"
+        }
 
     @staticmethod
     def interface_dataframe_column_names():
@@ -129,7 +148,7 @@ class Model(object):
             demands_info_end_index = len(lines)
 
         demands_lines = lines[demands_info_begin_index:demands_info_end_index]
-        demands_dataframe = cls._add_demands_from_data(demands_lines)
+        demands_dataframe = cls._add_demands_from_data(demands_lines).astype(dtype=cls.demand_dataframe_dtypes())
 
         # Populate lsps_dataframe (if LSPs are present)
         try:
@@ -144,7 +163,7 @@ class Model(object):
             raise ModelException(err_msg)
 
         # Specify data types in each column for nodes_dataframe
-        nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes(cls))
+        nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes())
 
         return cls(interfaces_dataframe, nodes_dataframe, demands_dataframe, lsps_dataframe)
 
@@ -184,7 +203,8 @@ class Model(object):
             lsp_entry = [lsp_info[0], lsp_info[1], lsp_info[2], _key,configured_setup_bw, manual_metric]
             lsps_list.append(lsp_entry)
 
-        lsps_dataframe = pd.DataFrame(lsps_list, columns=cls.lsp_column_names())
+        lsps_dataframe = pd.DataFrame(lsps_list, columns=cls.lsp_column_names()).\
+            astype(dtype=cls.lsps_dataframe_dtypes())
 
         # Check for LSP _key uniqueness
         cls.uniqueness_check(lsps_dataframe, '_key', 'LSP')
@@ -308,7 +328,7 @@ class Model(object):
             raise ModelException(except_msg)
 
         # Specify data types in each column for nodes_dataframe
-        nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes(cls))
+        nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes())
 
         return nodes_dataframe
 
@@ -628,17 +648,6 @@ class Model(object):
 
         # Verify no SRLG errors  # TODO - add this when srlgs are in model
 
-    def parallel_lsp_groups(self):
-        """
-        Determine LSPs with same source and dest nodes
-
-        :return: dict with entries where key is 'source_node_name-dest_node_name' and value is a list of LSPs with matching source/dest nodes  # noqa E501
-        """
-
-        # Find LSPs that have common source and destination nodes
-
-
-
     def _populate_lsp_src_dest_nodes(self):
         """
         Populates the _src_dest_nodes column in the lsps_dataframe
@@ -654,7 +663,56 @@ class Model(object):
 
         """
 
-        # TODO
+        # Get parallel LSP Groups
+        parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
+
+        # For each parallel LSP group, get the corresponding demand group  # TODO - can we do a pivot table here or otherwise get rid of the python loop?
+        for lsp_group in parallel_lsp_groups:
+            demands = self.demands_dataframe[self.demands_dataframe['_src_dest_nodes'] == lsp_group]
+            traffic = demands['traffic'].sum()
+
+
+            # reserved bandwidth on transited Interfaces
+            self._determine_lsp_setup_bw(lsp_group, traffic)
+
+
+            # Determine specific paths for each LSP
+
+
+
+        # TODO - finish this after _determine_lsp_setup_bw is finished
+
+    def _determine_lsp_setup_bw(self, lsp_group, traffic):
+        """
+        Determine reserved bandwidth for each LSP
+
+        Args:
+            lsp_group: name of grouping for LPSs with common source and destination
+            traffic: amount of traffic to be added to parallel LSPs
+
+        Returns: None; determines path and reserved bandwidth for each LSP in lsps
+        and also consumes reservable bandwidth on each Interface each LSP transits
+
+        """
+
+        # Check to see if configured_setup_bw is set; if so, set
+        # _setup_bandwidth to configured_setup_bandwidth value
+        self.lsps_dataframe.loc[self.lsps_dataframe['configured_setup_bw'].notnull(),
+                                '_setup_bandwidth'] = self.lsps_dataframe['configured_setup_bw']
+
+        # For LSPs without configured_setup_bw set, sum up the traffic in the corresponding demand group and
+        # spread that over the LSPs
+
+        # Get the LSPs in the LSP group from the dataframe  # TODO - left off here: get the setup_bandwidth to populate for the LSPs that don't have configured setup bw
+        lsps = self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group]
+
+        # Update the _setup_bandwidth for the LSPs
+        lsps.loc[lsps['configured_setup_bw'].isnull(), '_setup_bandwidth'] = float(traffic)/len(lsps)
+
+        # Update the dataframe with the LSP info
+
+        import pdb
+        pdb.set_trace()
 
     def _populate_dmd_src_dest_nodes(self):
         """
@@ -663,7 +721,26 @@ class Model(object):
         """
 
         self.demands_dataframe["_src_dest_nodes"] = self.demands_dataframe['source'] + "___" \
-                                                    + self.demands_dataframe['dest']
+                                                  + self.demands_dataframe['dest']
+
+    def _populate_dmd_src_dest_agg_traffic(self):
+        """
+        Populates the sum of the 'traffic' values for demands with common _src_dest_nodes
+        value.  Adds this sum in a _src_dest_nodes_agg_traffic column
+
+        """
+
+        # Find the unique demand groups
+        unique_dmd_groups = self.demands_dataframe._src_dest_nodes.unique()
+
+        for dmd_group in unique_dmd_groups:  # TODO - can this be done without a python iteration?
+            # Sum up the traffic for each unique demand group
+            traff_sum = self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes']
+                                                   == dmd_group, 'traffic'].sum()
+
+            # Populate traffic sum for each demand group in a new _src_dest_nodes_agg_traffic column
+            self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] ==
+                                       dmd_group, '_src_dest_nodes_agg_traffic'] = traff_sum
 
     def converge_model(self):
         """
@@ -681,8 +758,12 @@ class Model(object):
         # Populate _src_dest_nodes column in demands_dataframe
         self._populate_dmd_src_dest_nodes()
 
+        # Populate the amount of aggregate traffic for
+        # each _src_dest_nodes column in demands_dataframe
+        self._populate_dmd_src_dest_agg_traffic()
+
         # Route the LSPs
-        # TODO
+        self._route_lsps()
 
         # Route the Demands
         # TODO
