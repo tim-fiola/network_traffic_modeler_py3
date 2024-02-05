@@ -25,6 +25,8 @@ A,D,12,dmd_a_d_1
 B,D,10,dmd_b_d_1
 A,D,20,dmd_a_d_2
 B,D,30,dmd_b_d_2
+A,C,40,dmd_a_c_1
+A,C,50,dmd_a_c_2
 
 RSVP_LSP_TABLE
 source,dest,name,configured_setup_bw,manual_metric
