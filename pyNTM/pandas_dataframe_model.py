@@ -678,8 +678,6 @@ class Model(object):
 
             # Determine specific paths for each LSP
 
-
-
         # TODO - finish this after _determine_lsp_setup_bw is finished
 
     def _determine_lsp_setup_bw(self, lsp_group, traffic):
@@ -695,24 +693,17 @@ class Model(object):
 
         """
 
+        # Get the LSPs in the LSP group from the lsps_dataframe
+        lsps = self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group]
+
+        # Update the _setup_bandwidth for the LSPs in lsp_group
+        self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                lsp_group, ['_setup_bandwidth']] = float(traffic)/len(lsps)
+
         # Check to see if configured_setup_bw is set; if so, set
         # _setup_bandwidth to configured_setup_bandwidth value
         self.lsps_dataframe.loc[self.lsps_dataframe['configured_setup_bw'].notnull(),
                                 '_setup_bandwidth'] = self.lsps_dataframe['configured_setup_bw']
-
-        # For LSPs without configured_setup_bw set, sum up the traffic in the corresponding demand group and
-        # spread that over the LSPs
-
-        # Get the LSPs in the LSP group from the dataframe  # TODO - left off here: get the setup_bandwidth to populate for the LSPs that don't have configured setup bw
-        lsps = self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group]
-
-        # Update the _setup_bandwidth for the LSPs
-        lsps.loc[lsps['configured_setup_bw'].isnull(), '_setup_bandwidth'] = float(traffic)/len(lsps)
-
-        # Update the dataframe with the LSP info
-
-        import pdb
-        pdb.set_trace()
 
     def _populate_dmd_src_dest_nodes(self):
         """
