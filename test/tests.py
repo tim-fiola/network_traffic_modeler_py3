@@ -8,6 +8,9 @@ class SourceDestNodes(unittest.TestCase):
         self.model.converge_model()
 
     def lsp_setup_bandwidth(self):
-        self.model.lsps_dataframe.set_index('_key')
+        """
+        Make sure the calculated _setup_bandwidth is the expected value
+        """
+        # Index by lsp _key and then find _setup_bandwidth for the lsp with the specific _key
         lsp_setup_bw = self.model.lsps_dataframe.set_index('_key').loc['B__D__lsp_b_d_1']['_setup_bandwidth']
         self.assertEqual(lsp_setup_bw, 20)
