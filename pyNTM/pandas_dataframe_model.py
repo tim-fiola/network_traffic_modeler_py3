@@ -213,6 +213,15 @@ class Model(object):
 
     @classmethod
     def uniqueness_check(cls, dataframe, column_name_to_check_for_duplicates, item_type_in_column):
+        """
+        Checks for duplication in a column (column_name_to_check_for_duplicates)
+        Args:
+            dataframe: dataframe to check
+            column_name_to_check_for_duplicates: column name in which to check for duplicate values
+            item_type_in_column: description of the type of object the dataframe describes (node, interface, etc)
+
+            Raises exception if duplicate found
+        """
         duplicate_item_check = dataframe[column_name_to_check_for_duplicates].duplicated()
         duplicate_indices = duplicate_item_check.index[duplicate_item_check == True]
         if len(duplicate_indices) != 0:
@@ -671,14 +680,47 @@ class Model(object):
             demands = self.demands_dataframe[self.demands_dataframe['_src_dest_nodes'] == lsp_group]
             traffic = demands['traffic'].sum()
 
-
-            # reserved bandwidth on transited Interfaces
+            # Find around of setup bandwidth each LSP needs
             self._determine_lsp_setup_bw(lsp_group, traffic)
-
 
             # Determine specific paths for each LSP
 
+
+
         # TODO - finish this after _determine_lsp_setup_bw is finished
+
+    def _find_lsp_paths(self, lsps):
+        """
+        Determine paths for each LSP in lsps
+        Args:
+            lsps: dataframe of LSPs to find paths for
+
+        Returns:
+
+        """
+        pass
+
+    def _make_weighted_network_graph_mdg(
+        self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
+    ):
+        """
+        Returns a networkx weighted networkx multidigraph object from
+        the input Model object
+
+        :param include_failed_circuits: include interfaces from currently failed
+        circuits in the graph?
+        :param needed_bw: how much reservable_bandwidth is required?
+        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+
+        :return: networkx multidigraph with edges that conform to the needed_bw and
+        rsvp_required parameters
+        """
+
+        G = nx.MultiDiGraph()
+
+        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
+        # if include_failed_circuits is False:
+        #     considered_interfaces =
 
     def _determine_lsp_setup_bw(self, lsp_group, traffic):
         """
@@ -687,10 +729,6 @@ class Model(object):
         Args:
             lsp_group: name of grouping for LPSs with common source and destination
             traffic: amount of traffic to be added to parallel LSPs
-
-        Returns: None; determines path and reserved bandwidth for each LSP in lsps
-        and also consumes reservable bandwidth on each Interface each LSP transits
-
         """
 
         # Get the LSPs in the LSP group from the lsps_dataframe
@@ -753,8 +791,13 @@ class Model(object):
         # each _src_dest_nodes column in demands_dataframe
         self._populate_dmd_src_dest_agg_traffic()
 
+        # Add _circuit_failed and _interface_failed status columns and compute values of each
+        self._set_circuit_and_int_status()
+
         # Route the LSPs
         self._route_lsps()
+
+
 
         # Route the Demands
         # TODO
@@ -762,9 +805,37 @@ class Model(object):
         # Add the _reserved_bandwidth and _percent_reserved_bandwidth columns to interfaces_dataframe
         # TODO
 
+    def _set_circuit_and_int_status(self):
+        """
+        Read the interface for each circuit_id and make _circuit_failed and _interface_failed columns.
+        If one or both of the two interfaces is failed=True, then the _circuit_failed and _interface_failed
+        columns will read True; otherwise they will be False
+        """
 
+        ckt_ids = self.validated_circuit_ids()
 
+        # Add a new column2 to interfaces_dataframe with dtype bool
+        self.interfaces_dataframe['_circuit_failed'] = None
+        self.interfaces_dataframe['_circuit_failed'].astype(bool)
+        self.interfaces_dataframe['_interface_failed'] = None
+        self.interfaces_dataframe['_interface_failed'].astype(bool)
 
+        for ckt_id in ckt_ids:  # TODO - is there a way to avoid doing a python iteration?
+            ckt_ints = self.interfaces_dataframe[self.interfaces_dataframe['circuit_id'] == ckt_id]
 
-
-
+            # Check to see if either of the two interfaces if failed = True
+            # circuit_ids = self.interfaces_dataframe['circuit_id'].to_list()
+            circuit_status = ckt_ints['failed'].unique().tolist()
+            if True in circuit_status:
+                self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
+                                              ['_circuit_failed']] = True
+                self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
+                                              ['_interface_failed']] = True
+            elif circuit_status == [False]:
+                self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
+                                              ['_circuit_failed']] = False
+                self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
+                                              ['_interface_failed']] = False
+            else:
+                # Raise exception for non-boolean in 'failed' column
+                raise ModelException("Unexpected value in 'failed' column: {}".format(circuit_status))

@@ -14,3 +14,26 @@ class SourceDestNodes(unittest.TestCase):
         # Index by lsp _key and then find _setup_bandwidth for the lsp with the specific _key
         lsp_setup_bw = self.model.lsps_dataframe.set_index('_key').loc['B__D__lsp_b_d_1']['_setup_bandwidth']
         self.assertEqual(lsp_setup_bw, 20)
+
+    # Make sure demand _src_dest_nodes groups are valid
+
+    # Make sure demands _src_dest_nodes_agg_traffic values are valid
+
+    # Make sure demand _key values are valid
+
+    # Make sure LSP _src_dest_nodes groups are valid
+
+    # Make sure LSP _key values are valid
+
+    # Make sure LSP _setup_bandwidth values  are valid
+
+    # Make sure interface _circuit_failed column is valid
+    # True/True, True/False, False/False scenarios
+
+    # Make sure interface _interface_failed column is valid
+    # True/True, True/False, False/False scenarios
+
+
+
+
+
