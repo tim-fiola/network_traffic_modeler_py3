@@ -4,6 +4,8 @@ import sys
 
 sys.path.append("../")
 
+from pprint import pprint
+
 from pyNTM import Model
 
 

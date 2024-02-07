@@ -5,6 +5,8 @@ from collections import Counter
 
 from dataclasses import dataclass
 
+import itertools
+
 import uuid
 
 import numpy as np
@@ -703,9 +705,6 @@ class Model(object):
 
             path = {}
 
-            import pdb
-            pdb.set_trace()
-
             # Get the shortest paths in networkx multidigraph
             try:
                 nx_sp = list(
@@ -728,6 +727,70 @@ class Model(object):
             # Convert node hop by hop paths from G into Interface-based paths
             all_paths = self._get_all_paths_mdg(G, nx_sp)
 
+            # Make sure that each path in all_paths only has a single link
+            # between each node.  This is path normalization
+            path_list = self._normalize_multidigraph_paths(all_paths)  # TODO - test this will parallel links
+
+
+    def _normalize_multidigraph_paths(self, path_info):  # TODO - static?
+        """
+        Takes the multidigraph_path_info and normalizes it to create all the
+        path combos that only have one link between each node.
+
+        :param path_info: List of of interface hops from a source
+        node to a destination node.  Each hop in the path
+        is a list of all the interfaces from the current node
+        to the next node.
+
+        :return: List of lists.  Each component list is a list with a unique
+        Interface combination for the egress Interfaces from source to destination
+
+        path_info example from source node 'B' to destination node 'D'.
+        Example::
+
+            [
+                [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                        remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
+                        complete path
+                [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '28'),
+                  Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '8'),
+                  Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                        remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
+                [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                        remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of path 2
+            ]
+
+        Example::
+
+            [
+                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
+                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
+                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '28'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
+                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '18'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
+                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
+                    remote_node_object = Node('G'), circuit_id = '8'),
+                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
+                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
+            ]
+
+        """
+        # List to hold unique path(s)
+        path_list = []
+
+        for path in path_info:
+            path = list(itertools.product(*path))
+            for path_option in path:
+                path_list.append(list(path_option))
+
+        return path_list
 
     def _get_all_paths_mdg(self, G, nx_sp):
         """
@@ -747,10 +810,10 @@ class Model(object):
         destination nodes.  Each 'hop' in a given path may include multiple possible
         Interfaces that could be transited from one node to the next adjacent node.
 
-        Example::
+        Example return::
 
             all_paths from 'A' to 'D' is a list of lists; notice that there are
-            two Interfacs that could be transited from Node 'B' to Node 'G'
+            two Interfacs that could be transited from Node 'B' to Node 'G' # TODO - update this example
             [[[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
                 remote_node_object = Node('D'), circuit_id = 1)]],
             [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
@@ -770,6 +833,7 @@ class Model(object):
 
         all_paths = []
         for path in nx_sp:
+            print("path = {}".format(path))
             current_hop = path[0]
             this_path = []
             for next_hop in path[1:]:
@@ -784,13 +848,13 @@ class Model(object):
                     if interface_item["cost"] == min_weight
                 ]
 
-                # Add Interface(s) to this_hop list and add traffic to Interfaces
+                # Add Interface(s) to this_hop list
                 for link_index in ecmp_links:
-                    this_hop.append(G[current_hop][next_hop][link_index]["interface"])
+                    this_hop.append((current_hop, G[current_hop][next_hop][link_index]["interface"], ))
                 this_path.append(this_hop)
                 current_hop = next_hop
-            all_paths.append(this_path)
 
+            all_paths.append(this_path)
         return all_paths
 
 
