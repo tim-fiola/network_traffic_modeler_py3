@@ -5,8 +5,9 @@ from collections import Counter
 
 from dataclasses import dataclass
 
-
 import uuid
+
+import numpy as np
 import pandas as pd
 
 import networkx as nx
@@ -55,7 +56,7 @@ class Model(object):
                 "_key": "string",
                 "configured_setup_bw": "float64",
                 "manual_metric": "float64"
-        }
+                }
 
     @staticmethod
     def demand_column_names():
@@ -63,18 +64,18 @@ class Model(object):
 
     @staticmethod
     def demand_dataframe_dtypes():
-        return { "source": "string",
-                 "dest": "string",
-                 "traffic": "float64",
-                 "name": "string",
-                 "_key": "string"
-        }
+        return {"source": "string",
+                "dest": "string",
+                "traffic": "float64",
+                "name": "string",
+                "_key": "string"
+                }
 
     @staticmethod
     def interface_dataframe_column_names():
         return ["node_name", "remote_node_name", "interface_name", "cost", "capacity", "circuit_id",
                 "rsvp_enabled_bool", "percent_reservable_bandwidth", "interface_uuid", "_key",
-                "failed",]  # TODO - add srlg_group list
+                "failed", ]  # TODO - add srlg_group list
 
     @staticmethod
     def interface_dataframe_dtypes(self):
@@ -136,7 +137,7 @@ class Model(object):
         node_lines = lines[nodes_info_begin_index:nodes_info_end_index]
 
         nodes_dataframe = cls._add_nodes_from_data(
-                node_lines, nodes_dataframe
+            node_lines, nodes_dataframe
         )
 
         # Populate demands_dataframe
@@ -199,11 +200,11 @@ class Model(object):
                 manual_metric = None
 
             # Define a unique key for each LSP (source__dest__name)
-            _key = lsp_info[0]+"__"+lsp_info[1]+"__"+lsp_info[2]
-            lsp_entry = [lsp_info[0], lsp_info[1], lsp_info[2], _key,configured_setup_bw, manual_metric]
+            _key = lsp_info[0] + "__" + lsp_info[1] + "__" + lsp_info[2]
+            lsp_entry = [lsp_info[0], lsp_info[1], lsp_info[2], _key, configured_setup_bw, manual_metric]
             lsps_list.append(lsp_entry)
 
-        lsps_dataframe = pd.DataFrame(lsps_list, columns=cls.lsp_column_names()).\
+        lsps_dataframe = pd.DataFrame(lsps_list, columns=cls.lsp_column_names()). \
             astype(dtype=cls.lsps_dataframe_dtypes())
 
         # Check for LSP _key uniqueness
@@ -229,7 +230,7 @@ class Model(object):
             duplicate_item_list = []
             for index in duplicate_indices:
                 duplicate_item_list.append(dataframe._get_value(index, column_name_to_check_for_duplicates))
-            except_msg = "Duplicate {} {} found {}; check input data "\
+            except_msg = "Duplicate {} {} found {}; check input data " \
                 .format(item_type_in_column, column_name_to_check_for_duplicates, duplicate_item_list)
             raise ModelException(except_msg)
 
@@ -240,7 +241,7 @@ class Model(object):
         demands_list = []
         for demand in demands_lines:
             dmd = demand.split(',')
-            dmd.append(dmd[0]+'__'+dmd[1]+'__'+dmd[3])
+            dmd.append(dmd[0] + '__' + dmd[1] + '__' + dmd[3])
             demands_list.append(dmd)
 
         demands_dataframe = pd.DataFrame(demands_list, columns=cls.demand_column_names())
@@ -253,7 +254,7 @@ class Model(object):
 
     @classmethod
     def _add_nodes_from_data(
-        cls, node_lines, nodes_dataframe
+            cls, node_lines, nodes_dataframe
     ):
         # Build a list of nodes that are not in nodes_dataframe already
         nodes_to_add = []
@@ -343,7 +344,7 @@ class Model(object):
 
     @classmethod
     def _extract_interface_data_and_implied_nodes(
-        cls, int_info_begin_index, int_info_end_index, lines
+            cls, int_info_begin_index, int_info_end_index, lines
     ):
         """
         Extracts interface data from lines and adds Interface objects to a set.
@@ -421,7 +422,7 @@ class Model(object):
 
             # See if the interface already exists, if not, add to interface_list
             # Create Interface _key for uniqueness
-            _key = node_name+'__'+name
+            _key = node_name + '__' + name
             line_data.append(_key)
             line_data.append(False)  # Failed state defaults to false
             interface_list.append(line_data)
@@ -437,7 +438,7 @@ class Model(object):
         node_list = list(node_set)
         # Add UUID to each node for uniqueness; also add None placeholder for node lat and lon and
         # igp_shortcuts_enabled.  Also add a column for Failed state boolean
-        node_list = [[node, uuid.uuid4(), None, None, None, False ] for node in node_list]
+        node_list = [[node, uuid.uuid4(), None, None, None, False] for node in node_list]
 
         # Create the Node and Interface dataframes
         nodes_dataframe = pd.DataFrame(node_list, columns=cls.nodes_dataframe_column_names())
@@ -453,7 +454,7 @@ class Model(object):
         return interfaces_dataframe, nodes_dataframe
 
     def _make_weighted_network_graph_mdg(
-        self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
+            self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
     ):
         """
         Returns a networkx weighted networkx multidigraph object from
@@ -472,57 +473,37 @@ class Model(object):
 
         # Get all the edges that meet 'failed' and 'reservable_bw' criteria
         if include_failed_circuits is False:
-            considered_interfaces = (
-                interface
-                for interface in self.interface_objects
-                if (
-                    interface.failed is False
-                    and interface.reservable_bandwidth >= needed_bw
-                )
-            )
-
+            considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe
+                                                                  ['_interface_failed'] == False]
 
         elif include_failed_circuits is True:
-            considered_interfaces = (
-                interface
-                for interface in self.interface_objects
-                if interface.reservable_bandwidth >= needed_bw
-            )
+            considered_interfaces = self.interfaces_dataframe
 
+        # Need to create edge_names in form (node_name, remote_node_name, {"cost": cost,
+        #                                                                  "interface": interface_name,
+        #                                                                  "circuit_id": circuit_id})
         if rsvp_required is True:
-            edge_names = (
-                (
-                    interface.node_object.name,
-                    interface.remote_node_object.name,
-                    {
-                        "cost": interface.cost,
-                        "interface": interface,
-                        "circuit_id": interface.circuit_id,
-                    },
-                )
-                for interface in considered_interfaces
-                if interface.rsvp_enabled is True
-            )
+            df = considered_interfaces.loc[considered_interfaces['rsvp_enabled_bool'] == True]
+            edge_names = [(df.loc[x, 'node_name'], df.loc[x, 'remote_node_name'],
+                           {"cost": df.loc[x, 'cost'],
+                            "interface": df.loc[x, 'interface_name'],
+                            "circuit_id": df.loc[x, "circuit_id"]})
+                          for x in range(len(considered_interfaces))
+            ]
         else:
-            edge_names = (
-                (
-                    interface.node_object.name,
-                    interface.remote_node_object.name,
-                    {
-                        "cost": interface.cost,
-                        "interface": interface,
-                        "circuit_id": interface.circuit_id,
-                    },
-                )
-                for interface in considered_interfaces
-            )
+            df = considered_interfaces
+            edge_names = [(df.loc[x, 'node_name'], df.loc[x, 'remote_node_name'],
+                           {"cost": df.loc[x, 'cost'],
+                            "interface": df.loc[x, 'interface_name'],
+                            "circuit_id": df.loc[x, "circuit_id"]})
+                          for x in range(len(considered_interfaces))
+            ]
 
         # Add edges to networkx DiGraph
         G.add_edges_from(edge_names)
 
         # Add all the nodes
-        node_name_iterator = (node.name for node in self.node_objects)
-        G.add_nodes_from(node_name_iterator)
+        G.add_nodes_from(self.nodes_dataframe.node_name.unique())
 
         return G
 
@@ -547,7 +528,7 @@ class Model(object):
             return list(ckt_id_occurrences.keys())
         else:
             violations = {}
-            for k,v in ckt_id_occurrences:
+            for k, v in ckt_id_occurrences:
                 if v != 2:
                     violations[k] = v
             except_msg = "The following circuit IDs appear, but not exactly two times. " \
@@ -578,7 +559,7 @@ class Model(object):
             return True
         else:
             violations = {}
-            for k,v in ckt_id_occurrences:
+            for k, v in ckt_id_occurrences:
                 if v != 2:
                     violations[k] = v
             except_msg = "The following circuit IDs appear, but not exactly two times. " \
@@ -602,7 +583,7 @@ class Model(object):
             if len(capacities != 2):
                 ckt_ids_w_mismatched_capacities.append(ckt_id)
                 error_msg = "The circuit_id {} has {} entries in the interfaces_dataframe; there must be exactly 2" \
-                            "entries with a given circuit_id.  Check input data".\
+                            "entries with a given circuit_id.  Check input data". \
                     format(ckt_id, len(capacities))
                 raise ModelException(error_msg)
             # Verify that the capacities match in the 2 rows with the common circuit_id
@@ -627,7 +608,7 @@ class Model(object):
             self.interfaces_dataframe['_reserved_bandwidth'] > self.interfaces_dataframe['capacity']]
 
         if len(res_bw_errors) > 0:
-            error_msg = "There was an internal error: '_reserved_bandwidth > 'capacity' on these interfaces: \n {}"\
+            error_msg = "There was an internal error: '_reserved_bandwidth > 'capacity' on these interfaces: \n {}" \
                 .format(res_bw_errors)
             raise ModelException(error_msg)
 
@@ -671,6 +652,19 @@ class Model(object):
         Returns:
 
         """
+        # Add column _routed to lsps_dataframe
+        # NOTE - this 2 step method to add columns was needed to specify the dtype for the
+        # column and to prevent a 'future warning' from pandas
+        self.lsps_dataframe['_routed'] = None
+        self.lsps_dataframe['_routed'].astype(bool)
+
+        # Add column _path to lsps_dataframe
+        self.lsps_dataframe['_path'] = None
+        self.lsps_dataframe['_path'].astype(object)
+
+        # Add column _reserved_bandwidth to lsps_dataframe
+        self.lsps_dataframe['_reserved_bandwidth'] = None
+        self.lsps_dataframe['_reserved_bandwidth'].astype(float)
 
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
@@ -684,12 +678,10 @@ class Model(object):
             self._determine_lsp_setup_bw(lsp_group, traffic)
 
             # Determine specific paths for each LSP
+            self._find_lsp_paths(lsp_group)
 
 
-
-        # TODO - finish this after _determine_lsp_setup_bw is finished
-
-    def _find_lsp_paths(self, lsps):
+    def _find_lsp_paths(self, lsp_group):
         """
         Determine paths for each LSP in lsps
         Args:
@@ -698,29 +690,111 @@ class Model(object):
         Returns:
 
         """
-        pass
 
-    def _make_weighted_network_graph_mdg(
-        self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
-    ):
+        # Get the LSPs in the LSP group from the lsps_dataframe
+        lsps = self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group]
+
+        for lsp in lsps.iterrows():
+            G = self._make_weighted_network_graph_mdg(
+                include_failed_circuits=False,
+                rsvp_required=True,
+                needed_bw=lsp[1]['_setup_bandwidth'],
+            )
+
+            path = {}
+
+            import pdb
+            pdb.set_trace()
+
+            # Get the shortest paths in networkx multidigraph
+            try:
+                nx_sp = list(
+                    nx.all_shortest_paths(
+                        G,
+                        lsp[1]['source'],
+                        lsp[1]['dest'],
+                        weight="cost",
+                    )
+                )
+            except nx.exception.NetworkXNoPath:
+                # There is no path
+                # Find the row of the lsp in the lsps_dataframe and update the _path,
+                # _routed, and _reserved_bandwidth cells
+                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_routed'] = False
+                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_path'] = []
+                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
+                continue
+
+            # Convert node hop by hop paths from G into Interface-based paths
+            all_paths = self._get_all_paths_mdg(G, nx_sp)
+
+
+    def _get_all_paths_mdg(self, G, nx_sp):
         """
-        Returns a networkx weighted networkx multidigraph object from
-        the input Model object
+        Examines hop-by-hop paths in G and determines specific
+        edges transited from one hop to the next
 
-        :param include_failed_circuits: include interfaces from currently failed
-        circuits in the graph?
-        :param needed_bw: how much reservable_bandwidth is required?
-        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+        :param G:  networkx multidigraph object containing nx_sp, contains
+        Interface objects in edge data
+        :param nx_sp:  List of node paths in G
 
-        :return: networkx multidigraph with edges that conform to the needed_bw and
-        rsvp_required parameters
+        Example::
+
+            nx_sp from A to D in graph G::
+             [['A', 'D'], ['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
+
+        :return:  List of lists of possible specific model paths from source to
+        destination nodes.  Each 'hop' in a given path may include multiple possible
+        Interfaces that could be transited from one node to the next adjacent node.
+
+        Example::
+
+            all_paths from 'A' to 'D' is a list of lists; notice that there are
+            two Interfacs that could be transited from Node 'B' to Node 'G'
+            [[[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
+                remote_node_object = Node('D'), circuit_id = 1)]],
+            [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = 2)],
+             [Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
+                remote_node_object = Node('D'), circuit_id = 3)]],
+            [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
+                remote_node_object = Node('B'), circuit_id = 4)],
+             [Interface(name = 'B-to-G', cost = 10, capacity = 100.0, node_object = Node('B'),
+                remote_node_object = Node('G'), circuit_id = 5),
+              Interface(name = 'B-to-G_2', cost = 10, capacity = 50.0, node_object = Node('B'),
+                remote_node_object = Node('G'), circuit_id = 6)],
+            [Interface(name = 'G-to-D', cost = 10, capacity = 100.0, node_object = Node('G'),
+                remote_node_object = Node('D'), circuit_id = 7)]]]
+
         """
 
-        G = nx.MultiDiGraph()
+        all_paths = []
+        for path in nx_sp:
+            current_hop = path[0]
+            this_path = []
+            for next_hop in path[1:]:
+                this_hop = []
+                values_source_hop = G[current_hop][next_hop].values()
+                min_weight = min(d["cost"] for d in values_source_hop)
+                ecmp_links = [
+                    interface_index
+                    for interface_index, interface_item in G[current_hop][
+                        next_hop
+                    ].items()
+                    if interface_item["cost"] == min_weight
+                ]
 
-        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
-        # if include_failed_circuits is False:
-        #     considered_interfaces =
+                # Add Interface(s) to this_hop list and add traffic to Interfaces
+                for link_index in ecmp_links:
+                    this_hop.append(G[current_hop][next_hop][link_index]["interface"])
+                this_path.append(this_hop)
+                current_hop = next_hop
+            all_paths.append(this_path)
+
+        return all_paths
+
+
+
 
     def _determine_lsp_setup_bw(self, lsp_group, traffic):
         """
@@ -736,7 +810,7 @@ class Model(object):
 
         # Update the _setup_bandwidth for the LSPs in lsp_group
         self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
-                                lsp_group, ['_setup_bandwidth']] = float(traffic)/len(lsps)
+                                lsp_group, ['_setup_bandwidth']] = float(traffic) / len(lsps)
 
         # Check to see if configured_setup_bw is set; if so, set
         # _setup_bandwidth to configured_setup_bandwidth value
@@ -750,7 +824,7 @@ class Model(object):
         """
 
         self.demands_dataframe["_src_dest_nodes"] = self.demands_dataframe['source'] + "___" \
-                                                  + self.demands_dataframe['dest']
+                                                    + self.demands_dataframe['dest']
 
     def _populate_dmd_src_dest_agg_traffic(self):
         """
@@ -797,15 +871,12 @@ class Model(object):
         # Route the LSPs
         self._route_lsps()
 
-
-
         # Route the Demands
         # TODO
 
-        # Add the _reserved_bandwidth and _percent_reserved_bandwidth columns to interfaces_dataframe
-        # TODO
 
     def _set_circuit_and_int_status(self):
+
         """
         Read the interface for each circuit_id and make _circuit_failed and _interface_failed columns.
         If one or both of the two interfaces is failed=True, then the _circuit_failed and _interface_failed
@@ -828,14 +899,14 @@ class Model(object):
             circuit_status = ckt_ints['failed'].unique().tolist()
             if True in circuit_status:
                 self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
-                                              ['_circuit_failed']] = True
+                ['_circuit_failed']] = True
                 self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
-                                              ['_interface_failed']] = True
+                ['_interface_failed']] = True
             elif circuit_status == [False]:
                 self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
-                                              ['_circuit_failed']] = False
+                ['_circuit_failed']] = False
                 self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id,
-                                              ['_interface_failed']] = False
+                ['_interface_failed']] = False
             else:
                 # Raise exception for non-boolean in 'failed' column
                 raise ModelException("Unexpected value in 'failed' column: {}".format(circuit_status))

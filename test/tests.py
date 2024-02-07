@@ -33,6 +33,11 @@ class SourceDestNodes(unittest.TestCase):
     # Make sure interface _interface_failed column is valid
     # True/True, True/False, False/False scenarios
 
+    # Make sure node names are not duplicated
+    # len(self.model.nodes_dataframe) == len(self.model.nodes_dataframe.node_name.unique())
+
+    # If LSP is not routed, the reserved_bandwidth should be NaN and path should be []
+
 
 
 
