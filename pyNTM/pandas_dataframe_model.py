@@ -481,15 +481,18 @@ class Model(object):
         elif include_failed_circuits is True:
             considered_interfaces = self.interfaces_dataframe
 
-        # Need to create edge_names in form (node_name, remote_node_name, {"cost": cost,
-        #                                                                  "interface": interface_name,
-        #                                                                  "circuit_id": circuit_id})
+        # Need to create edge_names in form (node_name, remote_node_name,
+        # {"cost": cost,
+        # "interface": interface_name,
+        # "circuit_id": circuit_id,
+        # "remaining_reservable_bw": _remaining_reservable_bandwidth })
         if rsvp_required is True:
             df = considered_interfaces.loc[considered_interfaces['rsvp_enabled_bool'] == True]
             edge_names = [(df.loc[x, 'node_name'], df.loc[x, 'remote_node_name'],
                            {"cost": df.loc[x, 'cost'],
                             "interface": df.loc[x, 'interface_name'],
-                            "circuit_id": df.loc[x, "circuit_id"]})
+                            "circuit_id": df.loc[x, "circuit_id"],
+                            "remaining_reservable_bw": df.loc[x, "_remaining_reservable_bandwidth"]})
                           for x in range(len(considered_interfaces))
             ]
         else:
@@ -668,6 +671,20 @@ class Model(object):
         self.lsps_dataframe['_reserved_bandwidth'] = None
         self.lsps_dataframe['_reserved_bandwidth'].astype(float)
 
+        # Add a _reserved_bandwidth column that will reflect how much bandwidth is
+        # reserved by LSPs and baseline it to 0
+        self.interfaces_dataframe['_reserved_bandwidth'] = None
+        self.interfaces_dataframe['_reserved_bandwidth'].astype(float)
+        self.interfaces_dataframe['_reserved_bandwidth'] = 0
+
+        # Add a _remaining_reservable_bandwidth column that will reflect how much
+        # bandwidth is left to be reserved by LSPs
+        self.interfaces_dataframe['_remaining_reservable_bandwidth'] = None
+        self.interfaces_dataframe['_remaining_reservable_bandwidth'].astype(float)
+        self.interfaces_dataframe['_remaining_reservable_bandwidth'] = \
+            self.interfaces_dataframe['capacity'] * self.interfaces_dataframe['percent_reservable_bandwidth'] \
+            / 100 - self.interfaces_dataframe['_reserved_bandwidth']
+
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
 
@@ -729,7 +746,21 @@ class Model(object):
 
             # Make sure that each path in all_paths only has a single link
             # between each node.  This is path normalization
-            path_list = self._normalize_multidigraph_paths(all_paths)  # TODO - test this will parallel links
+            candidate_path_info = self._normalize_multidigraph_paths(all_paths)
+
+            # Establish candidate paths with enough reservable bandwidth
+            candidate_path_info_w_reservable_bw = []
+
+            # Get the LSP's _setup_bandwidth
+            setup_bw = lsp[1]['_setup_bandwidth']
+            # Determine if there are paths that have enough _remaining_reservable_bandwidth
+            import pdb
+            pdb.set_trace()
+
+
+
+
+
 
 
     def _normalize_multidigraph_paths(self, path_info):  # TODO - static?
@@ -833,7 +864,6 @@ class Model(object):
 
         all_paths = []
         for path in nx_sp:
-            print("path = {}".format(path))
             current_hop = path[0]
             this_path = []
             for next_hop in path[1:]:
@@ -842,15 +872,16 @@ class Model(object):
                 min_weight = min(d["cost"] for d in values_source_hop)
                 ecmp_links = [
                     interface_index
-                    for interface_index, interface_item in G[current_hop][
-                        next_hop
-                    ].items()
+                    for interface_index, interface_item in G[current_hop][next_hop].items()
                     if interface_item["cost"] == min_weight
                 ]
 
                 # Add Interface(s) to this_hop list
                 for link_index in ecmp_links:
-                    this_hop.append((current_hop, G[current_hop][next_hop][link_index]["interface"], ))
+                    this_hop.append({"current_node": current_hop,
+                                     "int_name": G[current_hop][next_hop][link_index]["interface"],
+                                     "remaining_reservable_bw": G[current_hop][next_hop][link_index]["remaining_reservable_bw"]
+                                     })
                 this_path.append(this_hop)
                 current_hop = next_hop
 

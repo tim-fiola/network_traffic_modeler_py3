@@ -10,7 +10,7 @@ from pyNTM import Model
 
 
 
-model = Model.load_model_file("csv_flex_model_parallel_source_dest_lsps.csv")
+model = Model.load_model_file("parallel_link_model_test_topology.csv")
 model.converge_model()
 
 

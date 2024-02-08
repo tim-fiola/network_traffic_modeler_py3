@@ -38,7 +38,7 @@ class SourceDestNodes(unittest.TestCase):
 
     # If LSP is not routed, the reserved_bandwidth should be NaN and path should be []
 
-
+    # Validate ints['_remaining_reservable_bandwidth'] = ints['capacity']*ints['percent_reservable_bandwidth']/100 - ints['_reserved_bandwidth']
 
 
 
