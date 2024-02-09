@@ -213,6 +213,9 @@ class Model(object):
         # Check for LSP _key uniqueness
         cls.uniqueness_check(lsps_dataframe, '_key', 'LSP')
 
+        # Set the dataframe index to the _key column
+        lsps_dataframe = lsps_dataframe.set_index('_key')
+
         return lsps_dataframe
 
     @classmethod
@@ -801,12 +804,20 @@ class Model(object):
             else:
                 lsp_path = lowest_metric_paths[0]
 
+            # Remove the remaining_reservable_bw from the lsp_path interfaces since it's not useful anymore
+            for interface in lsp_path['path']:
+                del (interface['remaining_reservable_bw'])
+
+            # Populate the LSP's path in the lsps_dataframe in a list
+            # Construct the _key(index)
+            key = lsp[1]['_src_dest_nodes'] + '__' + lsp[1]['name']
+            self.lsps_dataframe.at[key, '_path'] = [lsp_path]
+
             import pdb
             pdb.set_trace()
 
-            # Populate the LSP's path in the lsps_dataframe
-
             # Increment the path interfaces' _reserved_bandwidth in the interfaces_dataframe
+
 
 
 
