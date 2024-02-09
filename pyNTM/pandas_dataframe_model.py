@@ -457,7 +457,7 @@ class Model(object):
         return interfaces_dataframe, nodes_dataframe
 
     def _make_weighted_network_graph_mdg(
-            self, include_failed_circuits=True, needed_bw=0, rsvp_required=False
+            self, include_failed_circuits=True, rsvp_required=False
     ):
         """
         Returns a networkx weighted networkx multidigraph object from
@@ -465,22 +465,22 @@ class Model(object):
 
         :param include_failed_circuits: include interfaces from currently failed
         circuits in the graph?
-        :param needed_bw: how much reservable_bandwidth is required?
         :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
 
-        :return: networkx multidigraph with edges that conform to the needed_bw and
+        :return: networkx multidigraph with edges that conform to the
         rsvp_required parameters
         """
 
         G = nx.MultiDiGraph()
 
-        # Get all the edges that meet 'failed' and 'reservable_bw' criteria
+        # Get all the edges that meet failed=True/False criteria
         if include_failed_circuits is False:
             considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe
                                                                   ['_interface_failed'] == False]
 
         elif include_failed_circuits is True:
             considered_interfaces = self.interfaces_dataframe
+
 
         # Need to create edge_names in form (node_name, remote_node_name,
         # {"cost": cost,
@@ -718,10 +718,7 @@ class Model(object):
             G = self._make_weighted_network_graph_mdg(
                 include_failed_circuits=False,
                 rsvp_required=True,
-                needed_bw=lsp[1]['_setup_bandwidth'],
             )
-
-            path = {}
 
             # Get the shortest paths in networkx multidigraph
             try:
@@ -769,13 +766,17 @@ class Model(object):
                 self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
                 continue
 
-            # Find path(s) with lowest metric
-            lowest_metric_paths = []
-            import pdb
-            pdb.set_trace()
+            # Find path metrics
+            paths_w_metrics = []
+            for path in candidate_path_info_w_reservable_bw:
+                path_cost = 0
+                for hop in path:
+                    path_cost += hop['int_cost']
+                paths_w_metrics.append({'path': path, 'path_cost': path_cost})
 
-
-
+            # Find the path(s) with the lowest metric
+            lowest_metric = min([path['path_cost'] for path in paths_w_metrics])
+            lowest_metric_paths = [path for path in paths_w_metrics if path['path_cost'] == lowest_metric]
 
             # If multiple lowest_metric_paths, find those with the fewest hops
             if not lowest_metric_paths:
@@ -786,19 +787,29 @@ class Model(object):
             elif len(lowest_metric_paths) > 1:
                 # Find the path with the lowest path metric
                 fewest_hops = min(
-                    len(path) for path in lowest_metric_paths
+                    len(path['path']) for path in lowest_metric_paths
                 )
                 lowest_hop_count_paths = [
                     path
                     for path in lowest_metric_paths
-                    if len(path) == fewest_hops
+                    if len(path['path']) == fewest_hops
                 ]
                 if len(lowest_hop_count_paths) > 1:
-                    new_path = random.choice(lowest_hop_count_paths)
+                    lsp_path = random.choice(lowest_hop_count_paths)
                 else:
-                    new_path = lowest_hop_count_paths[0]
+                    lsp_path = lowest_hop_count_paths[0]
             else:
-                new_path = lowest_metric_paths[0]
+                lsp_path = lowest_metric_paths[0]
+
+            import pdb
+            pdb.set_trace()
+
+            # Populate the LSP's path in the lsps_dataframe
+
+            # Increment the path interfaces' _reserved_bandwidth in the interfaces_dataframe
+
+
+
 
 
 
