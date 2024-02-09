@@ -11,6 +11,7 @@ import uuid
 
 import numpy as np
 import pandas as pd
+import random
 
 import networkx as nx
 
@@ -753,9 +754,56 @@ class Model(object):
 
             # Get the LSP's _setup_bandwidth
             setup_bw = lsp[1]['_setup_bandwidth']
+
             # Determine if there are paths that have enough _remaining_reservable_bandwidth
+            for path in candidate_path_info:
+                # Get the interface in the candidate path with the minimum remaining_reservable_bw
+                # and compare it to the setup_bw for the LSP
+                if min(hop["remaining_reservable_bw"] for hop in path) >= setup_bw:
+                    candidate_path_info_w_reservable_bw.append(path)
+
+            # Make sure there is at least 1 candidate path available
+            if not candidate_path_info_w_reservable_bw:
+                # Set the LSP _routed to False and the _reserved_bandwidth to np.nan
+                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_routed'] = False
+                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
+                continue
+
+            # Find path(s) with lowest metric
+            lowest_metric_paths = []
             import pdb
             pdb.set_trace()
+
+
+
+
+            # If multiple lowest_metric_paths, find those with the fewest hops
+            if not lowest_metric_paths:
+                # Set the LSP _routed to False and the _reserved_bandwidth to np.nan
+                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_routed'] = False
+                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
+                continue
+            elif len(lowest_metric_paths) > 1:
+                # Find the path with the lowest path metric
+                fewest_hops = min(
+                    len(path) for path in lowest_metric_paths
+                )
+                lowest_hop_count_paths = [
+                    path
+                    for path in lowest_metric_paths
+                    if len(path) == fewest_hops
+                ]
+                if len(lowest_hop_count_paths) > 1:
+                    new_path = random.choice(lowest_hop_count_paths)
+                else:
+                    new_path = lowest_hop_count_paths[0]
+            else:
+                new_path = lowest_metric_paths[0]
+
+
+
+
+
 
 
 
@@ -880,16 +928,14 @@ class Model(object):
                 for link_index in ecmp_links:
                     this_hop.append({"current_node": current_hop,
                                      "int_name": G[current_hop][next_hop][link_index]["interface"],
-                                     "remaining_reservable_bw": G[current_hop][next_hop][link_index]["remaining_reservable_bw"]
+                                     "remaining_reservable_bw": G[current_hop][next_hop][link_index]["remaining_reservable_bw"],
+                                     "int_cost": G[current_hop][next_hop][link_index]["cost"]
                                      })
                 this_path.append(this_hop)
                 current_hop = next_hop
 
             all_paths.append(this_path)
         return all_paths
-
-
-
 
     def _determine_lsp_setup_bw(self, lsp_group, traffic):
         """
