@@ -6,6 +6,9 @@ sys.path.append("../")
 
 from pprint import pprint
 
+import pandas as pd
+pd.options.display.max_colwidth = 120
+
 from pyNTM import Model
 
 

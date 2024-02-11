@@ -169,6 +169,12 @@ class Model(object):
         # Specify data types in each column for nodes_dataframe
         nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes())
 
+        # Set the dataframe indices to the _key column (node_name is the key for nodes_dataframe)
+        interfaces_dataframe =  interfaces_dataframe.set_index('_key')
+        nodes_dataframe = nodes_dataframe.set_index('node_name')
+        demands_dataframe = demands_dataframe.set_index('_key')
+        lsps_dataframe = lsps_dataframe.set_index('_key')
+
         return cls(interfaces_dataframe, nodes_dataframe, demands_dataframe, lsps_dataframe)
 
     @classmethod
@@ -202,8 +208,8 @@ class Model(object):
             except (IndexError, ModelException, ValueError):
                 manual_metric = None
 
-            # Define a unique key for each LSP (source__dest__name)
-            _key = lsp_info[0] + "__" + lsp_info[1] + "__" + lsp_info[2]
+            # Define a unique key for each LSP (source___dest___name)
+            _key = lsp_info[0] + "___" + lsp_info[1] + "___" + lsp_info[2]
             lsp_entry = [lsp_info[0], lsp_info[1], lsp_info[2], _key, configured_setup_bw, manual_metric]
             lsps_list.append(lsp_entry)
 
@@ -212,9 +218,6 @@ class Model(object):
 
         # Check for LSP _key uniqueness
         cls.uniqueness_check(lsps_dataframe, '_key', 'LSP')
-
-        # Set the dataframe index to the _key column
-        lsps_dataframe = lsps_dataframe.set_index('_key')
 
         return lsps_dataframe
 
@@ -247,7 +250,7 @@ class Model(object):
         demands_list = []
         for demand in demands_lines:
             dmd = demand.split(',')
-            dmd.append(dmd[0] + '__' + dmd[1] + '__' + dmd[3])
+            dmd.append(dmd[0] + '___' + dmd[1] + '___' + dmd[3])
             demands_list.append(dmd)
 
         demands_dataframe = pd.DataFrame(demands_list, columns=cls.demand_column_names())
@@ -428,7 +431,7 @@ class Model(object):
 
             # See if the interface already exists, if not, add to interface_list
             # Create Interface _key for uniqueness
-            _key = node_name + '__' + name
+            _key = node_name + '___' + name
             line_data.append(_key)
             line_data.append(False)  # Failed state defaults to false
             interface_list.append(line_data)
@@ -497,7 +500,7 @@ class Model(object):
                             "interface": df.loc[x, 'interface_name'],
                             "circuit_id": df.loc[x, "circuit_id"],
                             "remaining_reservable_bw": df.loc[x, "_remaining_reservable_bandwidth"]})
-                          for x in range(len(considered_interfaces))
+                          for x in df.index.tolist()
             ]
         else:
             df = considered_interfaces
@@ -505,14 +508,13 @@ class Model(object):
                            {"cost": df.loc[x, 'cost'],
                             "interface": df.loc[x, 'interface_name'],
                             "circuit_id": df.loc[x, "circuit_id"]})
-                          for x in range(len(considered_interfaces))
+                          for x in df.index.tolist()
             ]
-
         # Add edges to networkx DiGraph
         G.add_edges_from(edge_names)
 
         # Add all the nodes
-        G.add_nodes_from(self.nodes_dataframe.node_name.unique())
+        G.add_nodes_from(considered_interfaces.index.tolist())
 
         return G
 
@@ -685,9 +687,12 @@ class Model(object):
         # bandwidth is left to be reserved by LSPs
         self.interfaces_dataframe['_remaining_reservable_bandwidth'] = None
         self.interfaces_dataframe['_remaining_reservable_bandwidth'].astype(float)
-        self.interfaces_dataframe['_remaining_reservable_bandwidth'] = \
-            self.interfaces_dataframe['capacity'] * self.interfaces_dataframe['percent_reservable_bandwidth'] \
-            / 100 - self.interfaces_dataframe['_reserved_bandwidth']
+        self._recalculate_remaining_res_bw()  # TODO - can this be moved/removed?
+
+        # Add a _lsps_egressing column that will hold a list of LSPs that egress that interface
+        self.interfaces_dataframe['_lsps_egressing'] = None
+        self.interfaces_dataframe['_lsps_egressing'].astype(object)
+        self.interfaces_dataframe['_lsps_egressing'] = np.empty((len(self.interfaces_dataframe), 0)).tolist()
 
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
@@ -703,6 +708,10 @@ class Model(object):
             # Determine specific paths for each LSP
             self._find_lsp_paths(lsp_group)
 
+    def _recalculate_remaining_res_bw(self):
+        self.interfaces_dataframe['_remaining_reservable_bandwidth'] = \
+            self.interfaces_dataframe['capacity'] * self.interfaces_dataframe['percent_reservable_bandwidth'] \
+            / 100 - self.interfaces_dataframe['_reserved_bandwidth']
 
     def _find_lsp_paths(self, lsp_group):
         """
@@ -808,15 +817,33 @@ class Model(object):
             for interface in lsp_path['path']:
                 del (interface['remaining_reservable_bw'])
 
-            # Populate the LSP's path in the lsps_dataframe in a list
             # Construct the _key(index)
-            key = lsp[1]['_src_dest_nodes'] + '__' + lsp[1]['name']
+            key = lsp[1]['_src_dest_nodes'] + '___' + lsp[1]['name']
+            # Populate the lsp_path in the lsps_dataframe in a list
             self.lsps_dataframe.at[key, '_path'] = [lsp_path]
 
+            # Increment the path interfaces' _reserved_bandwidth in the interfaces_dataframe
+            for interface in lsp_path['path']:
+                _res_bw = self.lsps_dataframe.at[key, '_setup_bandwidth']
+                int_key = interface['current_node']+"___"+interface['int_name']
+                current_int_res_bw = self.interfaces_dataframe.at[int_key, '_reserved_bandwidth']
+                self.interfaces_dataframe.at[int_key, '_reserved_bandwidth'] = current_int_res_bw + _res_bw
+                self.interfaces_dataframe.at[int_key, '_lsps_egressing'].append(key)  # TODO - perhaps also add LSP's reserved_bandwidth as part of the tuple with lsp _key
+
+
+            # Recalculate interfaces' _reservable_bandwidth
+            self._recalculate_remaining_res_bw()
             import pdb
             pdb.set_trace()
 
-            # Increment the path interfaces' _reserved_bandwidth in the interfaces_dataframe
+            # TODO - update LSPs' _reserved_bandwidth??  or just change _setup_bw to _reserved_bw
+
+
+
+
+
+
+
 
 
 

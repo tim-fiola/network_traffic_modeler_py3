@@ -40,5 +40,8 @@ class SourceDestNodes(unittest.TestCase):
 
     # Validate ints['_remaining_reservable_bandwidth'] = ints['capacity']*ints['percent_reservable_bandwidth']/100 - ints['_reserved_bandwidth']
 
+    # Verify that a given interface's _reserved_bandwidth matches the sum of the LSPs' _reserved_bandwidth that cross the interface
+
+
 
 
