@@ -42,6 +42,6 @@ class SourceDestNodes(unittest.TestCase):
 
     # Verify that a given interface's _reserved_bandwidth matches the sum of the LSPs' _reserved_bandwidth that cross the interface
 
-
+    # Verify that _src_dest_nodes_agg_traffic values are only a single value per _src_dest_nodes value
 
 

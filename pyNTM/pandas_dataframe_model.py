@@ -463,7 +463,7 @@ class Model(object):
         return interfaces_dataframe, nodes_dataframe
 
     def _make_weighted_network_graph_mdg(
-            self, include_failed_circuits=True, rsvp_required=False
+            self, include_failed_circuits=False, rsvp_required=False
     ):
         """
         Returns a networkx weighted networkx multidigraph object from
@@ -677,23 +677,6 @@ class Model(object):
         self.lsps_dataframe['_reserved_bandwidth'] = None
         self.lsps_dataframe['_reserved_bandwidth'].astype(float)
 
-        # Add a _reserved_bandwidth column that will reflect how much bandwidth is
-        # reserved by LSPs and baseline it to 0
-        self.interfaces_dataframe['_reserved_bandwidth'] = None
-        self.interfaces_dataframe['_reserved_bandwidth'].astype(float)
-        self.interfaces_dataframe['_reserved_bandwidth'] = 0
-
-        # Add a _remaining_reservable_bandwidth column that will reflect how much
-        # bandwidth is left to be reserved by LSPs
-        self.interfaces_dataframe['_remaining_reservable_bandwidth'] = None
-        self.interfaces_dataframe['_remaining_reservable_bandwidth'].astype(float)
-        self._recalculate_remaining_res_bw()  # TODO - can this be moved/removed?
-
-        # Add a _lsps_egressing column that will hold a list of LSPs that egress that interface
-        self.interfaces_dataframe['_lsps_egressing'] = None
-        self.interfaces_dataframe['_lsps_egressing'].astype(object)
-        self.interfaces_dataframe['_lsps_egressing'] = np.empty((len(self.interfaces_dataframe), 0)).tolist()
-
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
 
@@ -833,9 +816,6 @@ class Model(object):
 
             # Recalculate interfaces' _reservable_bandwidth
             self._recalculate_remaining_res_bw()
-            import pdb
-            pdb.set_trace()
-
             # TODO - update LSPs' _reserved_bandwidth??  or just change _setup_bw to _reserved_bw
 
 
@@ -1016,24 +996,24 @@ class Model(object):
         self.demands_dataframe["_src_dest_nodes"] = self.demands_dataframe['source'] + "___" \
                                                     + self.demands_dataframe['dest']
 
-    def _populate_dmd_src_dest_agg_traffic(self):
-        """
-        Populates the sum of the 'traffic' values for demands with common _src_dest_nodes
-        value.  Adds this sum in a _src_dest_nodes_agg_traffic column
-
-        """
-
-        # Find the unique demand groups
-        unique_dmd_groups = self.demands_dataframe._src_dest_nodes.unique()
-
-        for dmd_group in unique_dmd_groups:  # TODO - can this be done without a python iteration?
-            # Sum up the traffic for each unique demand group
-            traff_sum = self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes']
-                                                   == dmd_group, 'traffic'].sum()
-
-            # Populate traffic sum for each demand group in a new _src_dest_nodes_agg_traffic column
-            self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] ==
-                                       dmd_group, '_src_dest_nodes_agg_traffic'] = traff_sum
+    # def _populate_dmd_src_dest_agg_traffic(self):  # TODO - this may not be needed; remove if so
+    #     """
+    #     Populates the sum of the 'traffic' values for demands with common _src_dest_nodes
+    #     value.  Adds this sum in a _src_dest_nodes_agg_traffic column
+    #
+    #     """
+    #
+    #     # Find the unique demand groups
+    #     unique_dmd_groups = self.demands_dataframe._src_dest_nodes.unique()
+    #
+    #     for dmd_group in unique_dmd_groups:  # TODO - can this be done without a python iteration?
+    #         # Sum up the traffic for each unique demand group
+    #         traff_sum = self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes']
+    #                                                == dmd_group, 'traffic'].sum()
+    #
+    #         # Populate traffic sum for each demand group in a new _src_dest_nodes_agg_traffic column
+    #         self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] ==
+    #                                    dmd_group, '_src_dest_nodes_agg_traffic'] = traff_sum
 
     def converge_model(self):
         """
@@ -1051,9 +1031,35 @@ class Model(object):
         # Populate _src_dest_nodes column in demands_dataframe
         self._populate_dmd_src_dest_nodes()
 
-        # Populate the amount of aggregate traffic for
-        # each _src_dest_nodes column in demands_dataframe
-        self._populate_dmd_src_dest_agg_traffic()
+        # Add an empty _path column in the demands_dataframe
+        self.demands_dataframe['_path'] = None
+        self.demands_dataframe['_path'].astype(object)
+
+        # # Populate the amount of aggregate traffic for  # TODO - remove this
+        # # each _src_dest_nodes column in demands_dataframe
+        # self._populate_dmd_src_dest_agg_traffic()
+
+        # Add a _reserved_bandwidth column that will reflect how much bandwidth is
+        # reserved by LSPs and baseline it to 0
+        self.interfaces_dataframe['_reserved_bandwidth'] = None
+        self.interfaces_dataframe['_reserved_bandwidth'].astype(float)
+        self.interfaces_dataframe['_reserved_bandwidth'] = 0
+
+        # Add a _remaining_reservable_bandwidth column that will reflect how much
+        # bandwidth is left to be reserved by LSPs
+        self.interfaces_dataframe['_remaining_reservable_bandwidth'] = None
+        self.interfaces_dataframe['_remaining_reservable_bandwidth'].astype(float)
+        self._recalculate_remaining_res_bw()  # TODO - can this be moved/removed?
+
+        # Add a _lsps_egressing column that will hold a list of LSPs that egress that interface
+        self.interfaces_dataframe['_lsps_egressing'] = None
+        self.interfaces_dataframe['_lsps_egressing'].astype(object)
+        self.interfaces_dataframe['_lsps_egressing'] = np.empty((len(self.interfaces_dataframe), 0)).tolist()
+
+        # Add a _demands_egressing column that will hold a list of demands that egress that interface
+        self.interfaces_dataframe['_demands_egressing'] = None
+        self.interfaces_dataframe['_demands_egressing'].astype(object)
+        self.interfaces_dataframe['_demands_egressing'] = np.empty((len(self.interfaces_dataframe), 0)).tolist()
 
         # Add _circuit_failed and _interface_failed status columns and compute values of each
         self._set_circuit_and_int_status()
@@ -1062,7 +1068,63 @@ class Model(object):
         self._route_lsps()
 
         # Route the Demands
-        # TODO
+        self._route_demands()
+
+    def _route_demands(self):
+        """
+        Route the traffic demands in the demands_dataframe
+        """
+
+        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
+
+        # Find the unique _src_dest_nodes values in demands_dataframe
+        src_dest_groups = self.demands_dataframe['_src_dest_nodes'].unique().tolist()
+
+        for src_dest_group in src_dest_groups:
+            print(src_dest_group)
+
+            # Define a list to hold the ordered demand path info
+            demand_path = []
+
+            # Find the aggregate traffic for all the demands in the src_dest_group
+            demands = self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] == src_dest_group]
+            agg_traffic = demands['traffic'].sum()
+
+            # Find all LSPs that can carry the agg_traffic from source to destination (matching src_dest_group)
+            lsps_src_dest = self.lsps_dataframe[self.lsps_dataframe['_src_dest_nodes'] == src_dest_group]
+            if lsps_src_dest.empty:
+                print("no lsps for {}".format(lsps_src_dest))
+                # There are no LSPs that can carry the demand(s) from source to destination
+                # Continue to the traditional SPF routing for the demand(s) in src_dest_group
+                pass
+            else:
+                # Within the LSPs that have matching source/dest pairs, find the LSP(s) with the lowest metric
+                # Find lsps that have a manual metric assigned, find the metrics, then find the lowest metric
+                manual_metrics = lsps_src_dest.loc[
+                    lsps_src_dest['manual_metric'].notna()
+                ]['manual_metric'].unique().tolist()   # TODO - what if this is null??
+
+                lowest_metric = min(manual_metrics)
+
+                # Find the lowest LSP path metric for the LSPs that don't have a manual metric assigned
+
+
+
+
+
+            # Route the demands in src_dest_group via SPF
+            print("traditional routing for {}".format(src_dest_group))
+            print()
+
+
+
+
+
+
+
+
+
+
 
 
     def _set_circuit_and_int_status(self):

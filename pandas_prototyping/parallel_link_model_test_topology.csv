@@ -70,8 +70,9 @@ A,D,20,dmd_a_d_3
 A,Y,20,dmd_a_y_1
 
 RSVP_LSP_TABLE
-source,dest,name
+source,dest,name,,manual_metric
 A,D,lsp_a_d_1
 A,D,lsp_a_d_2
+A,D,lsp_a_d_3,,6
 F,E,lsp_f_e_1
 A,F,lsp_a_f_1
