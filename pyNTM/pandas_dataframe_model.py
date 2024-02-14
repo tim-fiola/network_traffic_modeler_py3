@@ -1102,11 +1102,18 @@ class Model(object):
                 # Find lsps that have a manual metric assigned, find the metrics, then find the lowest metric
                 manual_metrics = lsps_src_dest.loc[
                     lsps_src_dest['manual_metric'].notna()
-                ]['manual_metric'].unique().tolist()   # TODO - what if this is null??
+                ]['manual_metric'].unique().tolist()   # TODO - what if manual_metrics is null??
 
-                lowest_metric = min(manual_metrics)
+                lowest_manual_metric = min(manual_metrics)
 
-                # Find the lowest LSP path metric for the LSPs that don't have a manual metric assigned
+                # Find the LSP path metric for all the LSPs in lsp_src_dest
+                routed_path_metrics = [path[0]['path_cost'] for path in lsps_src_dest['_path'].tolist()]
+                min_path_metric = min(routed_path_metrics)
+
+                # For each LSP in lsps_src_dest, add column _net_path_metric
+
+
+                # Route the demands across the LSP(s) with the lowest metric
 
 
 
