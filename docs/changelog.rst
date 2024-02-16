@@ -1,6 +1,12 @@
 Changelog
 =========
 
+4.0
+-----
+* Changed from a class-based architecture to a Pandas Dataframe based architecture
+* Removed "include_failed_circuits" argument from "_make_weighted_network_graph_mdg" as there is no compelling use case for that knob.  The workaround is to make sure all interfaces are not set to failed prior to running a simulation.
+* Fixed a bug that may have resulted in specific LSPs to be modeled as Unrouted in certain situations
+
 3.4.1
 -----
 * Updated test environment to Focal linux (from Xenial) to allow ``dash`` and ``dash-cytoscape`` package import in CI/CD for visualization

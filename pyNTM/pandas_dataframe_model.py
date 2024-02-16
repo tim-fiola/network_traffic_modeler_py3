@@ -14,6 +14,8 @@ import pandas as pd
 import random
 
 import networkx as nx
+from networkx.algorithms.shortest_paths.generic import shortest_path
+from networkx.classes.function import path_weight
 
 '''
 To set a value in a specific cell in a dataframe:
@@ -462,16 +464,49 @@ class Model(object):
 
         return interfaces_dataframe, nodes_dataframe
 
-    def _make_weighted_network_graph_mdg(
-            self, include_failed_circuits=False, rsvp_required=False
+    def _make_weighted_network_graph_mdg(self):
+        """
+        Returns a networkx weighted networkx multidigraph object from
+        the input Model object for non-RSVP SPF path finding
+
+        :return: networkx multidigraph with edges that conform to the
+        rsvp_required parameters
+        """
+
+        G = nx.MultiDiGraph()
+
+        # Get all the edges that meet failed=True/False criteria
+
+        considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe
+                                                              ['_interface_failed'] == False]
+
+        # Need to create edge_names in form (node_name, remote_node_name,
+        # {"cost": cost,
+        # "interface": interface_name,
+        # "circuit_id": circuit_id,
+        # "remaining_reservable_bw": _remaining_reservable_bandwidth })
+
+        df = considered_interfaces
+        edge_names = [(df.loc[x, 'node_name'], df.loc[x, 'remote_node_name'],
+                       {"cost": df.loc[x, 'cost'],
+                        "interface": df.loc[x, 'interface_name'],
+                        "circuit_id": df.loc[x, "circuit_id"]})
+                      for x in df.index.tolist()
+                    ]
+        # Add edges to networkx DiGraph
+        G.add_edges_from(edge_names)
+
+        # Add all the nodes
+        G.add_nodes_from(considered_interfaces.index.tolist())
+
+        return G
+
+    def _make_weighted_network_graph_mdg_rsvp(
+            self, required_reservable_bw=0
     ):
         """
         Returns a networkx weighted networkx multidigraph object from
-        the input Model object
-
-        :param include_failed_circuits: include interfaces from currently failed
-        circuits in the graph?
-        :param rsvp_required: True|False; only consider rsvp_enabled interfaces?
+        the input Model object for RSVP path finding
 
         # TODO - add param for the amount of reservable_bandwidth needed
 
@@ -482,38 +517,29 @@ class Model(object):
         G = nx.MultiDiGraph()
 
         # Get all the edges that meet failed=True/False criteria
-        if include_failed_circuits is False:
-            considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe
-                                                                  ['_interface_failed'] == False]
 
-        elif include_failed_circuits is True:
-            # TODO - only allow considered_interfaces to have interfaces with enough reservable_bandwidth
-            considered_interfaces = self.interfaces_dataframe
+        # TODO - only allow considered_interfaces to have interfaces with enough reservable_bandwidth
+        considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe
+                                                              ['_interface_failed'] == False]
+
+        # Find the rsvp_enabled interfaces that also have enough _remaining_reservable_bandwidth
+        # TODO - look at making this a single query for both conditions
+        df_rsvp = considered_interfaces.loc[considered_interfaces['rsvp_enabled_bool'] == True]
+        df_res_bw = df_rsvp.loc[df_rsvp['_remaining_reservable_bandwidth'] >= required_reservable_bw]
 
         # Need to create edge_names in form (node_name, remote_node_name,
         # {"cost": cost,
         # "interface": interface_name,
         # "circuit_id": circuit_id,
         # "remaining_reservable_bw": _remaining_reservable_bandwidth })
-        if rsvp_required is True:
-            df = considered_interfaces.loc[considered_interfaces['rsvp_enabled_bool'] == True]
+        edge_names = [(df_res_bw.loc[x, 'node_name'], df_res_bw.loc[x, 'remote_node_name'],
+                       {"cost": df_res_bw.loc[x, 'cost'],
+                        "interface": df_res_bw.loc[x, 'interface_name'],
+                        "circuit_id": df_res_bw.loc[x, "circuit_id"],
+                        "remaining_reservable_bw": df_res_bw.loc[x, "_remaining_reservable_bandwidth"]})
+                      for x in df_res_bw.index.tolist()
+        ]
 
-            # TODO - need to only add edges with enough reservable bandwidth; are we doing this already?
-            edge_names = [(df.loc[x, 'node_name'], df.loc[x, 'remote_node_name'],
-                           {"cost": df.loc[x, 'cost'],
-                            "interface": df.loc[x, 'interface_name'],
-                            "circuit_id": df.loc[x, "circuit_id"],
-                            "remaining_reservable_bw": df.loc[x, "_remaining_reservable_bandwidth"]})
-                          for x in df.index.tolist()
-            ]
-        else:
-            df = considered_interfaces
-            edge_names = [(df.loc[x, 'node_name'], df.loc[x, 'remote_node_name'],
-                           {"cost": df.loc[x, 'cost'],
-                            "interface": df.loc[x, 'interface_name'],
-                            "circuit_id": df.loc[x, "circuit_id"]})
-                          for x in df.index.tolist()
-            ]
         # Add edges to networkx DiGraph
         G.add_edges_from(edge_names)
 
@@ -681,6 +707,10 @@ class Model(object):
         self.lsps_dataframe['_reserved_bandwidth'] = None
         self.lsps_dataframe['_reserved_bandwidth'].astype(float)
 
+        # Add column _shortest_path_cost to lsps_dataframe
+        self.lsps_dataframe['_shortest_path_cost'] = None
+        self.lsps_dataframe['_shortest_path_cost'].astype(float)
+
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
 
@@ -709,19 +739,16 @@ class Model(object):
 
         """
 
-        # Get the LSPs in the LSP group from the lsps_dataframe
-        lsps = self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group]
-
         source_node, dest_node = lsp_group.split('___')
 
-        G = self._make_weighted_network_graph_mdg(
-            include_failed_circuits=False,
-            rsvp_required=True,
+        ### Find path metric in networkx (zero required_reservable_bw since we want actual shortest path)
+        # Make a networkx graph
+        G = self._make_weighted_network_graph_mdg_rsvp(
+            required_reservable_bw=0
         )
 
         # Get the shortest paths in networkx multidigraph
         try:
-
             nx_sp = list(
                 nx.all_shortest_paths(
                     G,
@@ -732,36 +759,77 @@ class Model(object):
             )
         except nx.exception.NetworkXNoPath:
             # There is no path
-            # Find the row of the lsp in the lsps_dataframe and update the _path,
+            # Find the row of the lsp_group (_src_dest_nodes) in the lsps_dataframe and update the _path,
             # _routed, and _reserved_bandwidth cells
-            self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_routed'] = False
-            self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_path'] = []
-            self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
+            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                    lsp_group, '_routed'] = False
+            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                    lsp_group, '_path'] = []
+            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                    lsp_group, '_reserved_bandwidth'] = np.nan
+            return  # TODO - can/should continue work here instead?
 
-        # Convert node hop by hop paths from G into Interface-based paths
-        all_paths = self._get_all_paths_mdg(G, nx_sp)
+        path = shortest_path(G, source_node, dest_node, weight='cost')
+        lowest_metric = path_weight(G, path, weight="cost")
 
-        # Make sure that each path in all_paths only has a single link
-        # between each node.  This is path normalization
-        candidate_path_info = self._normalize_multidigraph_paths(all_paths)
+        # Populate the '_shortest_path_cost' for each LSP in lsp_group in lsps_dataframe
+        self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                lsp_group, '_shortest_path_cost'] = lowest_metric
 
-        # Get the lowest cost path from the candidate_path_info
-        lowest_metric = min([path['path_cost'] for path in candidate_path_info])  # TODO - this may already be returning all paths that have the lowest metric - may be unnecessary to find the min
+        # Get the LSPs in the LSP group from the lsps_dataframe
+        lsp_indices = (self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group]).index.to_list()
 
         import pdb
         pdb.set_trace()
 
-        for lsp in lsps.iterrows():  # TODO - redo this without iterrows()
+        for lsp_index in lsp_indices:
 
             # Establish candidate paths with enough reservable bandwidth
             candidate_path_info_w_reservable_bw = []
 
+            lsp_info = self.lsps_dataframe.loc[lsp_index]
+
             # Get the LSP's _setup_bandwidth
-            setup_bw = lsp[1]['_setup_bandwidth']
+            setup_bw = lsp_info['_setup_bandwidth']
+
+            # Find the paths that have _remaining_reservable_bandwidth >= setup_bw
+            G = self._make_weighted_network_graph_mdg_rsvp(
+                required_reservable_bw=setup_bw
+            )
+
+            # Get the shortest paths in networkx multidigraph
+            try:
+                nx_sp = list(
+                    nx.all_shortest_paths(
+                        G,
+                        source_node,
+                        dest_node,
+                        weight="cost",
+                    )
+                )
+            except nx.exception.NetworkXNoPath:
+                # There is no path
+                # Find the row of the lsp_group (_src_dest_nodes) in the lsps_dataframe and update the _path,
+                # _routed, and _reserved_bandwidth cells
+                import pdb
+                pdb.set_trace()
+                self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                        lsp_group, '_routed'] = False
+                self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                        lsp_group, '_path'] = []
+                self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
+                                        lsp_group, '_reserved_bandwidth'] = np.nan
+
+            # Convert node hop by hop paths from G into Interface-based paths
+            all_paths = self._get_all_paths_mdg(G, nx_sp)
+
+            # Make sure that each path in all_paths only has a single link
+            # between each node.  This is path normalization
+            candidate_path_info = self._normalize_multidigraph_paths(all_paths)
 
             # Determine if there are paths that have enough _remaining_reservable_bandwidth
             for path in candidate_path_info:
-                # Get the interface in the candidate path with the minimum remaining_reservable_bw
+                # Get the interface in the candidate path with the minimum _remaining_reservable_bw
                 # and compare it to the setup_bw for the LSP
                 if min(hop["remaining_reservable_bw"] for hop in path) >= setup_bw:
                     candidate_path_info_w_reservable_bw.append(path)
@@ -830,9 +898,28 @@ class Model(object):
             import pdb
             pdb.set_trace()
 
-    def find_path_metrics(self, candidate_path_info_w_reservable_bw):
+    def find_path_metrics(self, path_info):
+        """
+
+        Args:
+            path_info: list of paths with each path in the format shown in this example:
+              [{'current_node': 'A',
+              'int_cost': 4.0,
+              'int_name': 'A-to-B_2',
+              'remaining_reservable_bw': 50.0},
+              {'current_node': 'B',
+              'int_cost': 4.0,
+              'int_name': 'B-to-D_2',
+              'remaining_reservable_bw': 200.0}]
+
+              This example above shows a path with 2 hops
+
+
+        Returns: The path info # TODO - finish this description when you have an example
+
+        """
         paths_w_metrics = []
-        for path in candidate_path_info_w_reservable_bw:
+        for path in path_info:
             path_cost = 0
             for hop in path:
                 path_cost += hop['int_cost']

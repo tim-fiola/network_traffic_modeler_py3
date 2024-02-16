@@ -51,6 +51,7 @@ E,-60,124
 F,2,35
 G,30,90
 H,52,124
+Z
 
 DEMANDS_TABLE
 source,dest,traffic,name
@@ -76,3 +77,4 @@ A,D,lsp_a_d_2
 A,D,lsp_a_d_3,,6
 F,E,lsp_f_e_1
 A,F,lsp_a_f_1
+A,Z,lsp_a_z_1

@@ -45,3 +45,6 @@ class SourceDestNodes(unittest.TestCase):
     # Verify that _src_dest_nodes_agg_traffic values are only a single value per _src_dest_nodes value
 
 
+    # Have an LSP take the shortest path,using all of the bandwidth; have a 2nd LSP take the non-shortest path
+
+
