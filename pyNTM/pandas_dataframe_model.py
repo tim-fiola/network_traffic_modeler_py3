@@ -711,6 +711,10 @@ class Model(object):
         self.lsps_dataframe['_shortest_path_cost'] = None
         self.lsps_dataframe['_shortest_path_cost'].astype(float)
 
+        # Add column _on_shortest_path to lsps_dataframe
+        self.lsps_dataframe['_on_shortest_path'] = None
+        self.lsps_dataframe['_on_shortest_path'].astype(bool)
+
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
 
@@ -761,12 +765,9 @@ class Model(object):
             # There is no path
             # Find the row of the lsp_group (_src_dest_nodes) in the lsps_dataframe and update the _path,
             # _routed, and _reserved_bandwidth cells
-            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
-                                    lsp_group, '_routed'] = False
-            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
-                                    lsp_group, '_path'] = []
-            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
-                                    lsp_group, '_reserved_bandwidth'] = np.nan
+            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group, '_routed'] = False
+            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group, '_path'] = np.nan
+            self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group, '_reserved_bandwidth'] = np.nan
             return  # TODO - can/should continue work here instead?
 
         path = shortest_path(G, source_node, dest_node, weight='cost')
@@ -778,9 +779,6 @@ class Model(object):
 
         # Get the LSPs in the LSP group from the lsps_dataframe
         lsp_indices = (self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group]).index.to_list()
-
-        import pdb
-        pdb.set_trace()
 
         for lsp_index in lsp_indices:
 
@@ -811,12 +809,10 @@ class Model(object):
                 # There is no path
                 # Find the row of the lsp_group (_src_dest_nodes) in the lsps_dataframe and update the _path,
                 # _routed, and _reserved_bandwidth cells
-                import pdb
-                pdb.set_trace()
                 self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
                                         lsp_group, '_routed'] = False
                 self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
-                                        lsp_group, '_path'] = []
+                                        lsp_group, '_path'] = np.nan
                 self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
                                         lsp_group, '_reserved_bandwidth'] = np.nan
 
@@ -828,40 +824,35 @@ class Model(object):
             candidate_path_info = self._normalize_multidigraph_paths(all_paths)
 
             # Determine if there are paths that have enough _remaining_reservable_bandwidth
-            for path in candidate_path_info:
-                # Get the interface in the candidate path with the minimum _remaining_reservable_bw
-                # and compare it to the setup_bw for the LSP
-                if min(hop["remaining_reservable_bw"] for hop in path) >= setup_bw:
-                    candidate_path_info_w_reservable_bw.append(path)
+            # for path in candidate_path_info:
+            #     # Get the interface in the candidate path with the minimum _remaining_reservable_bw
+            #     # and compare it to the setup_bw for the LSP
+            #     if min(hop["remaining_reservable_bw"] for hop in path) >= setup_bw:
+            #         candidate_path_info_w_reservable_bw.append(path)
 
             # Make sure there is at least 1 candidate path available
-            if not candidate_path_info_w_reservable_bw:
-                # Set the LSP _routed to False and the _reserved_bandwidth to np.nan
-                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_routed'] = False
-                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
-                continue
+            # if not candidate_path_info_w_reservable_bw:
+            #     # Set the LSP _routed to False and the _reserved_bandwidth to np.nan
+            #     self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_routed'] = False
+            #     self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
+            #     continue
 
             # Find path metrics
-            paths_w_metrics = self.find_path_metrics(candidate_path_info_w_reservable_bw)
+            paths_w_metrics = self.find_path_metrics(candidate_path_info)
 
             # Find the path(s) with the lowest metric
-            lowest_metric = min([path['path_cost'] for path in paths_w_metrics])
-            lowest_metric_paths = [path for path in paths_w_metrics if path['path_cost'] == lowest_metric]
+            # lowest_metric = min([path['path_cost'] for path in paths_w_metrics])
+            # lowest_metric_paths = [path for path in paths_w_metrics if path['path_cost'] == lowest_metric]
 
-            # If multiple lowest_metric_paths, find those with the fewest hops
-            if not lowest_metric_paths:
-                # Set the LSP _routed to False and the _reserved_bandwidth to np.nan
-                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_routed'] = False
-                self.lsps_dataframe.loc[self.lsps_dataframe['_key'] == lsp[1]['_key'], '_reserved_bandwidth'] = np.nan
-                continue
-            elif len(lowest_metric_paths) > 1:
+            # If multiple paths_w_metrics, find those with the fewest hops
+            if len(paths_w_metrics) > 1:
                 # Find the path with the lowest path metric
                 fewest_hops = min(
-                    len(path['path']) for path in lowest_metric_paths
+                    len(path['path']) for path in paths_w_metrics
                 )
                 lowest_hop_count_paths = [
                     path
-                    for path in lowest_metric_paths
+                    for path in paths_w_metrics
                     if len(path['path']) == fewest_hops
                 ]
                 if len(lowest_hop_count_paths) > 1:
@@ -869,34 +860,32 @@ class Model(object):
                 else:
                     lsp_path = lowest_hop_count_paths[0]
             else:
-                lsp_path = lowest_metric_paths[0]
+                lsp_path = paths_w_metrics[0]
 
             # Remove the remaining_reservable_bw from the lsp_path interfaces since it's not useful anymore
             for interface in lsp_path['path']:
                 del (interface['remaining_reservable_bw'])
 
-            # Construct the _key(index)
-            key = lsp[1]['_src_dest_nodes'] + '___' + lsp[1]['name']
             # Populate the lsp_path in the lsps_dataframe in a list
-            self.lsps_dataframe.at[key, '_path'] = [lsp_path]
+            self.lsps_dataframe.at[lsp_index, '_path'] = [lsp_path]
 
             # Increment the path interfaces' _reserved_bandwidth in the interfaces_dataframe
             for interface in lsp_path['path']:
-                _res_bw = self.lsps_dataframe.at[key, '_setup_bandwidth']
+                _res_bw = self.lsps_dataframe.at[lsp_index, '_setup_bandwidth']
                 int_key = interface['current_node']+"___"+interface['int_name']
                 current_int_res_bw = self.interfaces_dataframe.at[int_key, '_reserved_bandwidth']
                 self.interfaces_dataframe.at[int_key, '_reserved_bandwidth'] = current_int_res_bw + _res_bw
-                self.interfaces_dataframe.at[int_key, '_lsps_egressing'].append(key)  # TODO - perhaps also add LSP's reserved_bandwidth as part of the tuple with lsp _key
-
+                self.interfaces_dataframe.at[int_key, '_lsps_egressing'].append(lsp_index)
 
             # Recalculate interfaces' _reservable_bandwidth
             self._recalculate_remaining_res_bw()
             # TODO - update LSPs' _reserved_bandwidth??  or just change _setup_bw to _reserved_bw
 
-            # Populate the shortest path value for the lsps in lsp_group
-            # TODO - find where we calculated this before and move it here
-            import pdb
-            pdb.set_trace()
+            # Populate the _on_shortest_path value for the lsp with lsp_index  # TODO - maybe put if/then in the query
+            if lsp_path['path_cost'] == lowest_metric:
+                self.lsps_dataframe.at[lsp_index, '_on_shortest_path'] = True
+            else:
+                self.lsps_dataframe.at[lsp_index, '_on_shortest_path'] = False
 
     def find_path_metrics(self, path_info):
         """
@@ -1161,7 +1150,7 @@ class Model(object):
         Route the traffic demands in the demands_dataframe
         """
 
-        G = self._make_weighted_network_graph_mdg(include_failed_circuits=False)
+        G = self._make_weighted_network_graph_mdg()
 
         # Find the unique _src_dest_nodes values in demands_dataframe
         src_dest_groups = self.demands_dataframe['_src_dest_nodes'].unique().tolist()
