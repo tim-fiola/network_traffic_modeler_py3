@@ -720,7 +720,6 @@ class Model(object):
         self.lsps_dataframe['_effective_path_cost'] = None
         self.lsps_dataframe['_effective_path_cost'].astype(float)
 
-
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
 
@@ -751,7 +750,7 @@ class Model(object):
 
         source_node, dest_node = lsp_group.split('___')
 
-        ### Find path metric in networkx (zero required_reservable_bw since we want actual shortest path)
+        # ## Find path metric in networkx (zero required_reservable_bw since we want actual shortest path) ## #
         # Make a networkx graph
         G = self._make_weighted_network_graph_mdg_rsvp(
             required_reservable_bw=0
@@ -768,7 +767,7 @@ class Model(object):
                 )
             )
         except nx.exception.NetworkXNoPath:
-            # There is no path
+            # There is no path.
             # Find the row of the lsp_group (_src_dest_nodes) in the lsps_dataframe and update the _path,
             # _routed, and _reserved_bandwidth cells
             self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group, '_routed'] = False
@@ -1119,7 +1118,7 @@ class Model(object):
         # reserved by LSPs and baseline it to 0
         self.interfaces_dataframe['_reserved_bandwidth'] = None
         self.interfaces_dataframe['_reserved_bandwidth'].astype(float)
-        self.interfaces_dataframe['_reserved_bandwidth'] = 0
+        self.interfaces_dataframe['_reserved_bandwidth'] = 0.0
 
         # Add a _remaining_reservable_bandwidth column that will reflect how much
         # bandwidth is left to be reserved by LSPs
@@ -1154,13 +1153,12 @@ class Model(object):
         # Add an empty _pct_utilization column in the interfaces_dataframe; this will be utilization in pct
         self.interfaces_dataframe['_pct_utilization'] = None
         self.interfaces_dataframe['_pct_utilization'].astype(float)
+        self.interfaces_dataframe['_pct_utilization'] = 0.0
 
         # Add an empty _traffic column in the interfaces_dataframe
         self.interfaces_dataframe['_traffic'] = None
         self.interfaces_dataframe['_traffic'].astype(float)
-
-
-
+        self.interfaces_dataframe['_traffic'] = 0.0
 
         G = self._make_weighted_network_graph_mdg()
 
@@ -1185,11 +1183,6 @@ class Model(object):
                 # Continue to the traditional SPF routing for the demand(s) in src_dest_group
                 pass
             else:
-                # Find lsps that have a manual metric assigned, find the metrics, then find the lowest metric
-                manual_metrics = lsps_src_dest.loc[
-                    lsps_src_dest['manual_metric'].notna()
-                ]['manual_metric'].unique().tolist()
-
                 # Find the lowest metric for the LSPs in lsps_src_dest
                 lowest_metric = min(lsps_src_dest['_effective_path_cost'].to_list())
 
@@ -1198,20 +1191,40 @@ class Model(object):
 
                 ### Route the demands across the lowest_metric_lsps ###
 
-                # Update the demand path(s)
+                # Update the demand path(s) to the LSPs in lowest_metric_lsps for each of the lsps in ls
+                for demand in demands.index.to_list():
+                    self.demands_dataframe.at[demand, '_path'] = lowest_metric_lsps.index.to_list()
 
-                # Update _utlization for the interfaces that the demand(s) egress
+                # Update the interfaces dataframe
+                for lsp in lsps_src_dest.index.to_list():
+                    # Get the interfaces in the lsp's _path, which is a list that holds a dict
+                    path_interfaces = lsps_src_dest.at[lsp, '_path'][0]['path']
 
-                # Update the _demands_egressing column for the interfaces that the demand(s) egress
+                    # Craft the keys for each interface in path_interfaces
+                    interface_key_list = [interface['current_node']+"___"+interface['int_name'] for
+                                          interface in path_interfaces]
 
-                # Update the _pct_utilization column for the interfaces that the demand(s) egress
+                    for interface in interface_key_list:
+                        # Update the _traffic column for the interfaces that the lsp(s) ride
+                        self.interfaces_dataframe.at[interface, '_traffic'] = \
+                            self.interfaces_dataframe.at[interface, '_traffic'] + agg_traffic/len(lsps_src_dest)
 
-                # Update the _traffic column for the interfaces that the demand(s) egress
+                        # Update _pct_utlization for the interfaces that the demand(s) egress
+                        self.interfaces_dataframe.at[interface, '_pct_utilization'] = \
+                            self.interfaces_dataframe.at[interface, '_traffic']/\
+                            self.interfaces_dataframe.at[interface, 'capacity']
+
+                        # Update the _demands_egressing column for the interfaces that the demand(s) egress
+                        import pdb
+                        pdb.set_trace()
+
+
+                    # Update the list of demands the lsp carries
 
 
 
-                import pdb
-                pdb.set_trace()
+
+
 
 
 
@@ -1245,11 +1258,13 @@ class Model(object):
 
         ckt_ids = self.validated_circuit_ids()
 
-        # Add a new column2 to interfaces_dataframe with dtype bool
+        # Add a new column _circuit_failed to interfaces_dataframe with dtype bool
         self.interfaces_dataframe['_circuit_failed'] = None
         self.interfaces_dataframe['_circuit_failed'].astype(bool)
-        self.interfaces_dataframe['_interface_failed'] = None
-        self.interfaces_dataframe['_interface_failed'].astype(bool)
+
+        # Add a new column _interface_failed to interfaces_dataframe with dtype bool
+        self.interfaces_dataframe['_interface_failed'] = 0
+
 
         for ckt_id in ckt_ids:  # TODO - is there a way to avoid doing a python iteration?
             ckt_ints = self.interfaces_dataframe[self.interfaces_dataframe['circuit_id'] == ckt_id]
