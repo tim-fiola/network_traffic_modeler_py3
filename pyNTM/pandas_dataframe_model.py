@@ -165,7 +165,7 @@ class Model(object):
             lsps_dataframe = cls._add_lsps_from_data(lsp_lines, nodes_dataframe)
         except ValueError:
             print("RSVP_LSP_TABLE not in file; no LSPs added to model")
-            lsps_dataframe = pd.DataFrame
+            lsps_dataframe = None
         except ModelException as e:
             err_msg = e.args[0]
             raise ModelException(err_msg)
@@ -177,7 +177,11 @@ class Model(object):
         interfaces_dataframe =  interfaces_dataframe.set_index('_key')
         nodes_dataframe = nodes_dataframe.set_index('node_name')
         demands_dataframe = demands_dataframe.set_index('_key')
-        lsps_dataframe = lsps_dataframe.set_index('_key')
+        try:
+            lsps_dataframe = lsps_dataframe.set_index('_key')
+        except AttributeError:
+            # Accounts for if model does not include an RSVP_LSP_TABLE
+            pass
 
         return cls(interfaces_dataframe, nodes_dataframe, demands_dataframe, lsps_dataframe)
 
@@ -686,8 +690,11 @@ class Model(object):
         Populates the _src_dest_nodes column in the lsps_dataframe
 
         """
-
-        self.lsps_dataframe["_src_dest_nodes"] = self.lsps_dataframe['source'] + "___" + self.lsps_dataframe['dest']
+        try:
+            self.lsps_dataframe["_src_dest_nodes"] = self.lsps_dataframe['source'] + "___" + self.lsps_dataframe['dest']
+        except TypeError:
+            # Model may not have RSVP LSPs; so pass
+            pass
 
     def _route_lsps(self):
         """
@@ -1157,8 +1164,11 @@ class Model(object):
         # Add _circuit_failed and _interface_failed status columns and compute values of each
         self._set_circuit_and_int_status()
 
-        # Route the LSPs
-        self._route_lsps()
+        # Route the LSPs, if present
+        try:
+            self._route_lsps()
+        except TypeError:
+            pass
 
         # Route the Demands
         self._route_demands()
@@ -1190,12 +1200,14 @@ class Model(object):
             agg_traffic = round(demands['traffic'].sum(), 2)
 
             # Find all LSPs that can carry the agg_traffic from source to destination (matching src_dest_group)
-            lsps_src_dest = self.lsps_dataframe[self.lsps_dataframe['_src_dest_nodes'] == src_dest_group]
-            if lsps_src_dest.empty:  # TODO - extract this to its own method _route_demands_via_spf; for some reason it pycharm won't do this
-                self._route_demands_via_spf(G, agg_traffic, demands, src_dest_group)
-
+            if self.lsps_dataframe:
+                lsps_src_dest = self.lsps_dataframe[self.lsps_dataframe['_src_dest_nodes'] == src_dest_group]
+                if lsps_src_dest.empty:
+                    self._route_demands_via_spf(G, agg_traffic, demands, src_dest_group)
+                else:
+                    self._route_demands_via_source_dest_lsps(agg_traffic, demands, lsps_src_dest)
             else:
-                self._route_demands_via_source_dest_lsps(agg_traffic, demands, lsps_src_dest)
+                self._route_demands_via_spf(G, agg_traffic, demands, src_dest_group)
 
     def _route_demands_via_spf(self, G, agg_traffic, demands, src_dest_group):
         # There are no LSPs that can carry the demand(s) from source to destination

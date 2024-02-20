@@ -48,3 +48,5 @@ class SourceDestNodes(unittest.TestCase):
     # Have an LSP take the shortest path,using all of the bandwidth; have a 2nd LSP take the non-shortest path
 
     # Make sure component interface goes to _interface_failed = True if the other interface in the circuit fails
+
+    # Adding LSPs to model that had none prior
