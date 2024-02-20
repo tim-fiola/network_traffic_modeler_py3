@@ -22,6 +22,8 @@ To set a value in a specific cell in a dataframe:
     model.interfaces_dataframe.at[1, '_reserved_bandwidth'] = 102
 '''
 
+# TODO - figure out if to_list() can be replaced with tolist() en masse; some of the tolist references
+#  have to do with numpy, vs pandas, so replace the pandas tolists with to_list
 
 @dataclass
 class Model(object):
@@ -689,8 +691,7 @@ class Model(object):
 
     def _route_lsps(self):
         """
-        Route LSPs
-        Returns:
+        Route LSPs in model
 
         """
         # Add column _routed to lsps_dataframe
@@ -719,6 +720,11 @@ class Model(object):
         # each LSP's manual_metric or its shortest_path_cost
         self.lsps_dataframe['_effective_path_cost'] = None
         self.lsps_dataframe['_effective_path_cost'].astype(float)
+
+        # Add column _demands to hold a list of demands a given LSP carries
+        self.lsps_dataframe['_demands'] = None
+        self.lsps_dataframe['_demands'].astype(object)
+        self.lsps_dataframe['_demands'] = np.empty((len(self.lsps_dataframe), 0)).tolist()
 
         # Get parallel LSP Groups
         parallel_lsp_groups = self.lsps_dataframe._src_dest_nodes.unique()
@@ -1160,6 +1166,7 @@ class Model(object):
         self.interfaces_dataframe['_traffic'].astype(float)
         self.interfaces_dataframe['_traffic'] = 0.0
 
+        # Graph for routing demands via SPF
         G = self._make_weighted_network_graph_mdg()
 
         # Find the unique _src_dest_nodes values in demands_dataframe
@@ -1167,9 +1174,6 @@ class Model(object):
 
         for src_dest_group in src_dest_groups:
             print(src_dest_group)
-
-            # Define a list to hold the ordered demand path info
-            demand_path = []
 
             # Find the aggregate traffic for all the demands in the src_dest_group
             demands = self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] == src_dest_group]
@@ -1180,73 +1184,103 @@ class Model(object):
             if lsps_src_dest.empty:
                 print("no lsps for {}".format(lsps_src_dest))
                 # There are no LSPs that can carry the demand(s) from source to destination
-                # Continue to the traditional SPF routing for the demand(s) in src_dest_group
-                pass
+                # Route the demands in src_dest_group via SPF
+                print("traditional routing for {}".format(src_dest_group))
+                node_info = src_dest_group.split('___')
+                source_node = node_info[0]
+                dest_node = node_info[1]
+                path = shortest_path(G, source_node, dest_node, weight='cost')
+                import pdb
+                pdb.set_trace()
+
+                # try:
+                #     nx_sp = list(
+                #         nx.all_shortest_paths(
+                #             G,
+                #             source_node,
+                #             dest_node,
+                #             weight="cost",
+                #         )
+                #     )
+                # except nx.exception.NetworkXNoPath:
+                #     # There is no path.
+                #     # Find the row of the lsp_group (_src_dest_nodes) in the lsps_dataframe and update the _path,
+                #     # _routed, and _reserved_bandwidth cells
+                #     self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group, '_routed'] = False
+                #     self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] == lsp_group, '_path'] = np.nan
+                #     self.lsps_dataframe.loc[
+                #         self.lsps_dataframe['_src_dest_nodes'] == lsp_group, '_reserved_bandwidth'] = np.nan
+                #     return  # TODO - can/should continue work here instead?
+                # # Convert node hop by hop paths from G into Interface-based paths
+                # all_paths = self._get_all_paths_mdg(G, nx_sp)
+                # # Make sure that each path in all_paths only has a single link between each node.  This is path normalization
+                # candidate_path_info = self._normalize_multidigraph_paths(all_paths)
+                #
+                # # Find path metrics
+                # paths_w_metrics = self.find_path_metrics(candidate_path_info)
+
             else:
-                # Find the lowest metric for the LSPs in lsps_src_dest
-                lowest_metric = min(lsps_src_dest['_effective_path_cost'].to_list())
+                self._route_demands_via_source_dest_lsps(agg_traffic, demands, lsps_src_dest)
 
-                # Get all the LSPs in lsps_src_dest with the lowest_metric
-                lowest_metric_lsps = lsps_src_dest.loc[lsps_src_dest['_effective_path_cost'] == lowest_metric]
-
-                ### Route the demands across the lowest_metric_lsps ###
-
-                # Update the demand path(s) to the LSPs in lowest_metric_lsps for each of the lsps in ls
-                for demand in demands.index.to_list():
-                    self.demands_dataframe.at[demand, '_path'] = lowest_metric_lsps.index.to_list()
-
-                # Update the interfaces dataframe
-                for lsp in lsps_src_dest.index.to_list():
-                    # Get the interfaces in the lsp's _path, which is a list that holds a dict
-                    path_interfaces = lsps_src_dest.at[lsp, '_path'][0]['path']
-
-                    # Craft the keys for each interface in path_interfaces
-                    interface_key_list = [interface['current_node']+"___"+interface['int_name'] for
-                                          interface in path_interfaces]
-
-                    for interface in interface_key_list:
-                        # Update the _traffic column for the interfaces that the lsp(s) ride
-                        self.interfaces_dataframe.at[interface, '_traffic'] = \
-                            self.interfaces_dataframe.at[interface, '_traffic'] + agg_traffic/len(lsps_src_dest)
-
-                        # Update _pct_utlization for the interfaces that the demand(s) egress
-                        self.interfaces_dataframe.at[interface, '_pct_utilization'] = \
-                            self.interfaces_dataframe.at[interface, '_traffic']/\
-                            self.interfaces_dataframe.at[interface, 'capacity']
-
-                        # Update the _demands_egressing column for the interfaces that the demand(s) egress
-                        import pdb
-                        pdb.set_trace()
-
-
-                    # Update the list of demands the lsp carries
-
-
-
-
-
-
-
-
-
-
-            # Route the demands in src_dest_group via SPF
-            print("traditional routing for {}".format(src_dest_group))
-            print()
-
-    def find_min_path_metric(self, lsps_src_dest):   # TODO - this is flawed, get this value from the G itself
+    def _route_demands_via_source_dest_lsps(self, agg_traffic, demands, lsps_src_dest):
         """
-        Find the routed_path_metrics for each of the LSPs in lsps_src_dest and then
-        return the minimum value.
+        Routes the demands in demands over the LSPs in lsps_src_dest
         Args:
-            lsps_src_dest: dataframe with LSPs to consider
-
-        Returns: lowest path metric
+            agg_traffic: sum of traffic in demands
+            demands: demands from model that have same _src_dest_nodes value as lsps_src_dest
+            lsps_src_dest: LSPs from model that have same _src_dest_nodes value as demands
 
         """
-        routed_path_metrics = [path[0]['path_cost'] for path in lsps_src_dest['_path'].tolist()]
-        min_path_metric = min(routed_path_metrics)
-        return min_path_metric
+        # Find the lowest metric for the LSPs in lsps_src_dest
+        lowest_metric = min(lsps_src_dest['_effective_path_cost'].to_list())
+        # Get all the LSPs in lsps_src_dest with the lowest_metric
+        lowest_metric_lsps = lsps_src_dest.loc[lsps_src_dest['_effective_path_cost'] == lowest_metric]
+        # ## Route the demands across the lowest_metric_lsps ## #
+        # Update the demand path(s) to the LSPs in lowest_metric_lsps for each of the lsps in ls
+        for demand in demands.index.to_list():
+            self.demands_dataframe.at[demand, '_path'] = lowest_metric_lsps.index.to_list()
+        # Update the interfaces dataframe
+        for lsp in lowest_metric_lsps.index.to_list():
+            # Get the interfaces in the lsp's _path, which is a list that holds a dict
+            path_interfaces = lsps_src_dest.at[lsp, '_path'][0]['path']
+
+            # Craft the keys for each interface in path_interfaces
+            interface_key_list = [interface['current_node'] + "___" + interface['int_name'] for
+                                  interface in path_interfaces]
+
+            for interface in interface_key_list:
+                # Update the _traffic column for the interfaces that the lsp(s) ride
+                self.interfaces_dataframe.at[interface, '_traffic'] = \
+                    self.interfaces_dataframe.at[interface, '_traffic'] + agg_traffic / len(lowest_metric_lsps)
+
+                # Update _pct_utlization for the interfaces that the demand(s) egress
+                self.interfaces_dataframe.at[interface, '_pct_utilization'] = \
+                    self.interfaces_dataframe.at[interface, '_traffic'] / \
+                    self.interfaces_dataframe.at[interface, 'capacity']
+
+                # Update the _demands_egressing column for the interfaces that the demand(s) egress
+                for demand_index in demands.index.to_list():
+                    demand_traffic = self.demands_dataframe.at[demand_index, 'traffic']
+                    self.interfaces_dataframe.at[interface, '_demands_egressing']. \
+                        append({'demand': demand_index, 'traffic': demand_traffic / len(lowest_metric_lsps)})
+
+            # Update the list of demands the lsp carries
+            for demand in demands.index.to_list():
+                self.lsps_dataframe.at[lsp, '_demands'].append(demand)
+
+    # def find_min_path_metric(self, lsps_src_dest):   # TODO - this is flawed, get this value from the G itself
+    #     """
+    #     Find the routed_path_metrics for each of the LSPs in lsps_src_dest and then
+    #     return the minimum value.
+    #     Args:
+    #         lsps_src_dest: dataframe with LSPs to consider
+    #
+    #     Returns: lowest path metric
+    #
+    #     """
+    #     routed_path_metrics = [path[0]['path_cost'] for path in lsps_src_dest['_path'].tolist()]
+    #     min_path_metric = min(routed_path_metrics)
+    #     return min_path_metric
 
     def _set_circuit_and_int_status(self):
 

@@ -51,6 +51,7 @@ E,-60,124
 F,2,35
 G,30,90
 H,52,124
+W
 Z
 
 DEMANDS_TABLE
@@ -69,6 +70,7 @@ A,D,20,dmd_a_d_1
 A,D,20,dmd_a_d_2
 A,D,20,dmd_a_d_3
 A,Y,20,dmd_a_y_1
+A,W,15,dmd_a_w_1
 
 RSVP_LSP_TABLE
 source,dest,name,,manual_metric
@@ -77,4 +79,5 @@ A,D,lsp_a_d_2
 A,D,lsp_a_d_3,,6
 F,E,lsp_f_e_1
 A,F,lsp_a_f_1
+A,F,lsp_a_f_2
 A,Z,lsp_a_z_1
