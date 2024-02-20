@@ -1242,6 +1242,11 @@ class Model(object):
         # Find path metrics
         paths_w_metrics = self.find_path_metrics(candidate_path_info)
 
+        import pdb
+        pdb.set_trace()
+        # Calculate the splits and assign traffic accordingly to account for hop-by-hop load balancing
+
+
         # Append the SPF paths to the demands _path columns
         for path in paths_w_metrics:
             for demand_key in demands.index.to_list():

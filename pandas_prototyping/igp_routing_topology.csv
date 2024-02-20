@@ -14,6 +14,8 @@ D,F,D-to-F,10,300,6
 F,D,F-to-D,10,300,6
 A,D,A-to-D,40,20,7
 D,A,D-to-A,40,20,7
+A,D,A-to-D_2,40,20,70
+D,A,D-to-A_2,40,20,70
 B,G,B-to-G,10,100,8
 G,D,G-to-D,10,100,9
 G,B,G-to-B,10,100,8
@@ -31,4 +33,4 @@ G,30,30
 
 DEMANDS_TABLE
 source,dest,traffic,name
-A,F,40,dmd_a_f_1
+A,F,60,dmd_a_f_1
