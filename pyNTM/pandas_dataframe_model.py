@@ -174,7 +174,7 @@ class Model(object):
         nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes())
 
         # Set the dataframe indices to the _key column (node_name is the key for nodes_dataframe)
-        interfaces_dataframe =  interfaces_dataframe.set_index('_key')
+        interfaces_dataframe = interfaces_dataframe.set_index('_key')
         nodes_dataframe = nodes_dataframe.set_index('node_name')
         demands_dataframe = demands_dataframe.set_index('_key')
         try:
@@ -525,8 +525,7 @@ class Model(object):
         # Get all the edges that meet failed=True/False criteria
 
         # TODO - only allow considered_interfaces to have interfaces with enough reservable_bandwidth
-        considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe
-                                                              ['_interface_failed'] == False]
+        considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe['_interface_failed'] == False]
 
         # Find the rsvp_enabled interfaces that also have enough _remaining_reservable_bandwidth
         # TODO - look at making this a single query for both conditions
@@ -1232,19 +1231,77 @@ class Model(object):
             self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] == src_dest_group, '_path'] = np.nan
             return  # TODO - can/should continue work here instead?
         # Mark demands as _routed = True
-        self.demands_dataframe.loc[
-            self.demands_dataframe['_src_dest_nodes'] == src_dest_group, '_routed'] = True
+        self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] == src_dest_group, '_routed'] = True
         # Convert node hop by hop paths from G into Interface-based paths
         all_paths = self._get_all_paths_mdg(G, nx_sp)
         # Make sure that each path in all_paths only has a single link between
         # each node.  This is path normalization
         candidate_path_info = self._normalize_multidigraph_paths(all_paths)
         # Find path metrics
-        paths_w_metrics = self.find_path_metrics(candidate_path_info)
+        paths_w_metrics = self.find_path_metrics(candidate_path_info)  # TODO - get this to have remote node name as well??
+
+
+
+
+        # ## This next part is designed to get the amount of splits that the demand(s) will hit at    ## #
+        # ## each node.  This is important to understand in order to allocate each unique demand path ## #
+        # ## the correct amount of traffic.  This is needed to simulate how per-hop ECMP works.       ## #
+        # ## There is likely an elegant solution to this problem; I'm not sure that the below is that ## #
+        # ## specific elegant solution, but it does work properly.                                    ## #
+
+        # Get all pairs of nodes and each of the next hop nodes for that node in a dict
+        # Ex: {'A_D': 2, 'D_F': 1, 'A_B': 1, 'B_D': 1, 'B_G': 1, 'G_D': 1}
+        next_hop_dict = {}
+        # Get a set of all nodes in the path, except the destination node
+        # Ex: {'B', 'G', 'A', 'D'}
+        node_set = set()
+
+        # Populate the next_hop_dict; initialize all keys to 0
+        for nx_sp_path in nx_sp:
+            for x in range(0, len(nx_sp_path)-1):
+                next_hop_pair = nx_sp_path[x]+'_'+nx_sp_path[x+1]
+                next_hop_dict[next_hop_pair] = 0
+                node_set.add(nx_sp_path[x])
+
+        # Populate the amount of links between each node pair key in next_hop_dict
+        for node_pair in next_hop_dict:
+            source, dest = node_pair.split('_')
+            df_query = "node_name == '{}' and remote_node_name == '{}'".format(source, dest)
+            node_splits = len(self.interfaces_dataframe.query(df_query))
+            next_hop_dict[node_pair] += node_splits
+
+        # Make a dict that has the nodes as keys and the total amount of next hop interfaces as values
+        node_split_dict = dict.fromkeys(node_set, 0)
+
+        # Parse the next_hop_dict for total splits at each node
+        # We want a final node_split_dict that looks like this: {'A': 3, 'B': 2, 'D': 1, 'G': 1}
+        for node_pair, next_hop_count in next_hop_dict.items():
+            current_node = node_pair.split('_')[0]
+            node_split_dict[current_node] += next_hop_count
+
+        # Find the largest amount of splits in node_split_dict and the proportion of the agg_traffic
+        # that is to go on each *unique* path
+        max_split = max(node_split_dict.values())
+
+
+
+
+
+
+
+
+
+
 
         import pdb
         pdb.set_trace()
-        # Calculate the splits and assign traffic accordingly to account for hop-by-hop load balancing
+
+
+
+
+
+
+
 
 
         # Append the SPF paths to the demands _path columns
@@ -1260,8 +1317,8 @@ class Model(object):
 
                 # Update each interface in the demand path(s) for _traffic
                 self.interfaces_dataframe.at[interface_key, '_traffic'] = \
-                    self.interfaces_dataframe.at[interface_key, '_traffic'] + round(agg_traffic / len(paths_w_metrics),
-                                                                                    2)
+                    self.interfaces_dataframe.at[interface_key, '_traffic'] + \
+                    round(agg_traffic / len(paths_w_metrics), 2)  # TODO - fix this traffic calculation to account for the splits
 
                 # Update each interface in the demand path(s) for _demands_egressing
                 for demand_index in demands.index.to_list():
