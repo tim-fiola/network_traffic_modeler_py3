@@ -22,8 +22,6 @@ To set a value in a specific cell in a dataframe:
     model.interfaces_dataframe.at[1, '_reserved_bandwidth'] = 102
 '''
 
-# TODO - figure out if to_list() can be replaced with tolist() en masse; some of the tolist references
-#  have to do with numpy, vs pandas, so replace the pandas tolists with to_list
 
 @dataclass
 class Model(object):
@@ -53,7 +51,7 @@ class Model(object):
 
     @staticmethod
     def lsp_column_names():
-        return ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']  # TODO make dtypes dict
+        return ['source', 'dest', 'name', '_key', 'configured_setup_bw', 'manual_metric']
 
     @staticmethod
     def lsps_dataframe_dtypes():
@@ -388,7 +386,7 @@ class Model(object):
                     capacity,
                     circuit_id,
                 ] = interface_line.split(",")
-                rsvp_enabled_bool = True  # TODO - change this to False?  Why are we defaulting to True?
+                rsvp_enabled_bool = True
                 percent_reservable_bandwidth = 100  # TODO - change this to 0?
             elif len(interface_line.split(",")) == 7:
                 line_data = [
@@ -524,8 +522,6 @@ class Model(object):
         G = nx.MultiDiGraph()
 
         # Get all the edges that meet failed=True/False criteria
-
-        # TODO - only allow considered_interfaces to have interfaces with enough reservable_bandwidth
         considered_interfaces = self.interfaces_dataframe.loc[self.interfaces_dataframe['_interface_failed'] == False]
 
         # Find the rsvp_enabled interfaces that also have enough _remaining_reservable_bandwidth
@@ -1098,25 +1094,6 @@ class Model(object):
 
         self.demands_dataframe["_src_dest_nodes"] = self.demands_dataframe['source'] + "___" \
                                                     + self.demands_dataframe['dest']
-
-    # def _populate_dmd_src_dest_agg_traffic(self):  # TODO - this may not be needed; remove if so
-    #     """
-    #     Populates the sum of the 'traffic' values for demands with common _src_dest_nodes
-    #     value.  Adds this sum in a _src_dest_nodes_agg_traffic column
-    #
-    #     """
-    #
-    #     # Find the unique demand groups
-    #     unique_dmd_groups = self.demands_dataframe._src_dest_nodes.unique()
-    #
-    #     for dmd_group in unique_dmd_groups:  # TODO - can this be done without a python iteration?
-    #         # Sum up the traffic for each unique demand group
-    #         traff_sum = self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes']
-    #                                                == dmd_group, 'traffic'].sum()
-    #
-    #         # Populate traffic sum for each demand group in a new _src_dest_nodes_agg_traffic column
-    #         self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] ==
-    #                                    dmd_group, '_src_dest_nodes_agg_traffic'] = traff_sum
 
     def converge_model(self):
         """
