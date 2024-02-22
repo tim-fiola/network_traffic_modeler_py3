@@ -1209,7 +1209,7 @@ class Model(object):
                 self._route_demands_via_spf(G, agg_traffic, demands, src_dest_group)
 
     def _route_demands_via_spf(self, G, agg_traffic, demands, src_dest_group):
-        # There are no LSPs that can carry the demand(s) from source to destination
+        # There are no LSPs that can carry the demand_index(s) from source to destination
         # Route the demands in src_dest_group via SPF
         node_info = src_dest_group.split('___')
         source_node = node_info[0]
@@ -1240,8 +1240,8 @@ class Model(object):
         # Find path metrics
         paths_w_metrics = self.find_path_metrics(candidate_path_info)  # TODO - get this to have remote node name as well??
 
-        # ## This next part is designed to get the amount of splits that the demand(s) will hit at    ## #
-        # ## each node.  This is important to understand in order to allocate each unique demand path ## #
+        # ## This next part is designed to get the amount of splits that the demand_index(s) will hit at    ## #
+        # ## each node.  This is important to understand in order to allocate each unique demand_index path ## #
         # ## the correct amount of traffic.  This is needed to simulate how per-hop ECMP works.       ## #
         # ## There is likely an elegant solution to this problem; I'm not sure that the below is that ## #
         # ## specific elegant solution, but it does work properly.                                    ## #
@@ -1277,8 +1277,9 @@ class Model(object):
             node_split_dict[current_node] += next_hop_count
 
         # Iterate over the demands to fill in the interfaces and demands dataframes
-        for demand in demands.index.to_list():
+        for demand_index in demands.index.to_list():
             # ## Update the interfaces dataframe # ##
+            demand_traffic = self.demands_dataframe.at[demand_index, 'traffic']
             for path in paths_w_metrics:
                 # Craft the interface key for each hop
 
@@ -1287,39 +1288,31 @@ class Model(object):
                 cumulative_splits_for_path = 1
                 # Craft the node path from the path
                 nodes_on_path = [hop['current_node'] for hop in path['path']]
-                # Use the node_split_dict to calculate the total times the demand is split on the given path
+                # Use the node_split_dict to calculate the total times the demand_index is split on the given path
                 for node in nodes_on_path:
                     cumulative_splits_for_path *= node_split_dict[node]
 
                 for hop in path['path']:
                     interface_key = hop['current_node'] + "___" + hop['int_name']
 
-                    # Update each interface in the demand path(s) for _traffic
+                    # Update each interface in the demand_index path(s) for _traffic
                     self.interfaces_dataframe.at[interface_key, '_traffic'] = \
                         self.interfaces_dataframe.at[interface_key, '_traffic'] + \
-                        round(agg_traffic / cumulative_splits_for_path, 2)  # TODO - update this with demand traffic
+                        round(demand_traffic / cumulative_splits_for_path, 2)
 
-                    # Update each interface in the demand path(s) for _demands_egressing
-                    for demand_index in demands.index.to_list():
-                        self.interfaces_dataframe.at[interface_key, '_demands_egressing'].append(
-                            {'demand': demand_index, 'traffic': round(agg_traffic / cumulative_splits_for_path, 2)}  # TODO - update this with demand traffic
-                        )
+                    # Update each interface in the demand_index path(s) for _demands_egressing
+                    self.interfaces_dataframe.at[interface_key, '_demands_egressing'].append(
+                        {'demand_index': demand_index, 'traffic': round(demand_traffic / cumulative_splits_for_path, 2)}  # TODO - update this with demand_index traffic
+                    )
 
-                    # Update each interface in the demand path(s) for the _pct_utilization
+                    # Update each interface in the demand_index path(s) for the _pct_utilization
                     self.interfaces_dataframe.at[interface_key, '_pct_utilization'] = \
                         round(self.interfaces_dataframe.at[interface_key, '_traffic'] / \
                               self.interfaces_dataframe.at[interface_key, 'capacity'], 2)
 
-                import pdb
-                pdb.set_trace()
-                # Update the demand with the path info, including the traffic on each ECMP path
-                path_w_traffic = path['traffic_on_path'] = round(agg_traffic / cumulative_splits_for_path, 2)
-                self.demands_dataframe.at[interface_key, '_path'].append(path_w_traffic)
-
-    # # Append the SPF paths to the demands _path columns
-    # for path in paths_w_metrics:
-    #     for demand_key in demands.index.to_list():
-    #         self.demands_dataframe.at[demand_key, '_path'].append(path)
+                # Update the demand_index with the path info, including the traffic on each ECMP path
+                path['traffic_on_path'] = round(demand_traffic / cumulative_splits_for_path, 2)
+                self.demands_dataframe.at[demand_index, '_path'].append(path)
 
     def _route_demands_via_source_dest_lsps(self, agg_traffic, demands, lsps_src_dest):
         """
