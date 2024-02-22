@@ -514,10 +514,11 @@ class Model(object):
         Returns a networkx weighted networkx multidigraph object from
         the input Model object for RSVP path finding
 
-        # TODO - add param for the amount of reservable_bandwidth needed
+        required_reservable_bw: Minimum amount of _remaining_reservable_bandwidth
+        required on each interface in the path
 
         :return: networkx multidigraph with edges that conform to the
-        rsvp_required parameters
+        _remaining_reservable_bandwidth parameters
         """
 
         G = nx.MultiDiGraph()
@@ -674,7 +675,7 @@ class Model(object):
         self.uniqueness_check(self.lsps_dataframe, 'name', 'lsp')
 
         # Verify that each circuit_id appears exactly twice
-        circuit_ids_validated = self._circuit_ids_validated(self.interfaces_dataframe)
+        self._circuit_ids_validated(self.interfaces_dataframe)
 
         # Verify circuit component interfaces have matching capacity
         self.mismatched_circuit_capacities()
@@ -915,20 +916,38 @@ class Model(object):
         """
 
         Args:
-            path_info: list of paths with each path in the format shown in this example:
-              [{'current_node': 'A',
-              'int_cost': 4.0,
-              'int_name': 'A-to-B_2',
-              'remaining_reservable_bw': 50.0},
-              {'current_node': 'B',
-              'int_cost': 4.0,
-              'int_name': 'B-to-D_2',
-              'remaining_reservable_bw': 200.0}]
+            path_info: list of paths with each path in the format shown in this example::
+             [[{'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D'},
+              {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+             [{'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D_2'},
+              {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+             [{'current_node': 'A', 'int_cost': 20.0, 'int_name': 'A-to-B'},
+              {'current_node': 'B', 'int_cost': 20.0, 'int_name': 'B-to-D'},
+              {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+             [{'current_node': 'A', 'int_cost': 20.0, 'int_name': 'A-to-B'},
+              {'current_node': 'B', 'int_cost': 10.0, 'int_name': 'B-to-G'},
+              {'current_node': 'G', 'int_cost': 10.0, 'int_name': 'G-to-D'},
+              {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}]]
 
-              This example above shows a path with 2 hops
 
-
-        Returns: The path info # TODO - finish this description when you have an example
+        Returns: path_w_metrics, which is a list of path info dicts.  Here is an example::
+                [
+                    {'path': [{'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D'},
+                               {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+                      '         path_cost': 50.0},
+                     {'path': [{'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D_2'},
+                               {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+                                'path_cost': 50.0},
+                     {'path': [{'current_node': 'A', 'int_cost': 20.0, 'int_name': 'A-to-B'},
+                               {'current_node': 'B', 'int_cost': 20.0, 'int_name': 'B-to-D'},
+                               {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+                                'path_cost': 50.0},
+                     {'path': [{'current_node': 'A', 'int_cost': 20.0, 'int_name': 'A-to-B'},
+                               {'current_node': 'B', 'int_cost': 10.0, 'int_name': 'B-to-G'},
+                               {'current_node': 'G', 'int_cost': 10.0, 'int_name': 'G-to-D'},
+                               {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+                                'path_cost': 50.0}
+                  ]
 
         """
         paths_w_metrics = []
@@ -952,41 +971,26 @@ class Model(object):
         :return: List of lists.  Each component list is a list with a unique
         Interface combination for the egress Interfaces from source to destination
 
-        path_info example from source node 'B' to destination node 'D'.
-        Example::
+        Example path_info input::
+        [
+            {'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D'},
+            {'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D_2'}
+        ],
+        [
+            {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}
+        ]
 
-            [
-                [[Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                        remote_node_object = Node('D'), circuit_id = '3')]], # there is 1 interface from B to D and a
-                        complete path
-                [[Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                        remote_node_object = Node('G'), circuit_id = '28'),
-                  Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                        remote_node_object = Node('G'), circuit_id = '8'),
-                  Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                        remote_node_object = Node('G'), circuit_id = '18')], # there are 3 interfaces from B to G
-                [Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                        remote_node_object = Node('D'), circuit_id = '9')]] # there is 1 int from G to D; end of path 2
-            ]
 
-        Example::
+        path_info example from source node 'A' to destination node 'F' has 2 paths now, once
+        the 2 interfaces between 'A' and 'D' have been accounted for.
+        Example path_list output::
 
-            [
-                [Interface(name = 'B-to-D', cost = 20, capacity = 125, node_object = Node('B'),
-                    remote_node_object = Node('D'), circuit_id = '3')], # this is a path with one hop
-                [Interface(name = 'B-to-G_3', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '28'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G_2', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '18'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')], # this is a path with 2 hops
-                [Interface(name = 'B-to-G', cost = 10, capacity = 100, node_object = Node('B'),
-                    remote_node_object = Node('G'), circuit_id = '8'),
-                 Interface(name = 'G-to-D', cost = 10, capacity = 100, node_object = Node('G'),
-                    remote_node_object = Node('D'), circuit_id = '9')]  # this is a path with 2 hops
-            ]
+        [
+             [{'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D'},
+              {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}],
+             [{'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D_2'},
+              {'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}]
+        ]
 
         """
         # List to hold unique path(s)
@@ -996,7 +1000,6 @@ class Model(object):
             path = list(itertools.product(*path))
             for path_option in path:
                 path_list.append(list(path_option))
-
         return path_list
 
     def _get_all_paths_mdg(self, G, nx_sp, rsvp=False):
@@ -1008,7 +1011,7 @@ class Model(object):
         Interface objects in edge data
         :param nx_sp:  List of node paths in G
 
-        Example::
+        Example of G::
 
             nx_sp from A to D in graph G::
              [['A', 'D'], ['A', 'B', 'D'], ['A', 'B', 'G', 'D']]
@@ -1019,22 +1022,21 @@ class Model(object):
 
         Example return::
 
-            all_paths from 'A' to 'D' is a list of lists; notice that there are
-            two Interfaces that could be transited from Node 'B' to Node 'G' # TODO - update this example
-            [[[Interface(name = 'A-to-D', cost = 40, capacity = 20.0, node_object = Node('A'),
-                remote_node_object = Node('D'), circuit_id = 1)]],
-            [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
-                remote_node_object = Node('B'), circuit_id = 2)],
-             [Interface(name = 'B-to-D', cost = 20, capacity = 125.0, node_object = Node('B'),
-                remote_node_object = Node('D'), circuit_id = 3)]],
-            [[Interface(name = 'A-to-B', cost = 20, capacity = 125.0, node_object = Node('A'),
-                remote_node_object = Node('B'), circuit_id = 4)],
-             [Interface(name = 'B-to-G', cost = 10, capacity = 100.0, node_object = Node('B'),
-                remote_node_object = Node('G'), circuit_id = 5),
-              Interface(name = 'B-to-G_2', cost = 10, capacity = 50.0, node_object = Node('B'),
-                remote_node_object = Node('G'), circuit_id = 6)],
-            [Interface(name = 'G-to-D', cost = 10, capacity = 100.0, node_object = Node('G'),
-                remote_node_object = Node('D'), circuit_id = 7)]]]
+            all_paths from 'A' to 'F' is a list of lists; notice that there are
+            two Interfaces that could be transited from Node 'A' to Node 'D'.
+            There will be a later function (_normalize_multidigraph_paths) that
+            normalizes this type of path info to create all the path options
+            for paths that have a more than a single interface between each nodes
+        [
+          [
+            [{'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D'},
+               {'current_node': 'A', 'int_cost': 40.0, 'int_name': 'A-to-D_2'}],
+              [{'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}]],
+             [[{'current_node': 'A', 'int_cost': 20.0, 'int_name': 'A-to-B'}],
+              [{'current_node': 'B', 'int_cost': 20.0, 'int_name': 'B-to-D'}],
+              [{'current_node': 'D', 'int_cost': 10.0, 'int_name': 'D-to-F'}]
+            ]
+          ]
 
         """
 
@@ -1229,7 +1231,7 @@ class Model(object):
             # _routed, and _reserved_bandwidth cells
             self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] == src_dest_group, '_routed'] = False
             self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] == src_dest_group, '_path'] = np.nan
-            return  # TODO - can/should continue work here instead?
+            return  # TODO - can/should 'continue' work here instead?
         # Mark demands as _routed = True
         self.demands_dataframe.loc[self.demands_dataframe['_src_dest_nodes'] == src_dest_group, '_routed'] = True
         # Convert node hop by hop paths from G into Interface-based paths
@@ -1238,7 +1240,7 @@ class Model(object):
         # each node.  This is path normalization
         candidate_path_info = self._normalize_multidigraph_paths(all_paths)
         # Find path metrics
-        paths_w_metrics = self.find_path_metrics(candidate_path_info)  # TODO - get this to have remote node name as well??
+        paths_w_metrics = self.find_path_metrics(candidate_path_info)
 
         # ## This next part is designed to get the amount of splits that the demand_index(s) will hit at    ## #
         # ## each node.  This is important to understand in order to allocate each unique demand_index path ## #
@@ -1268,6 +1270,8 @@ class Model(object):
             next_hop_dict[node_pair] += node_splits
 
         # Make a dict that has the nodes as keys and the total amount of next hop interfaces as values
+        # Ex: {'A': 0, 'B': 0, 'D': 0, 'G': 0}
+        # Ex after it's filled out: {'A': 3, 'B': 2, 'D': 1, 'G': 1}
         node_split_dict = dict.fromkeys(node_set, 0)
 
         # Parse the next_hop_dict for total splits at each node
@@ -1291,7 +1295,6 @@ class Model(object):
                 # Use the node_split_dict to calculate the total times the demand_index is split on the given path
                 for node in nodes_on_path:
                     cumulative_splits_for_path *= node_split_dict[node]
-
                 for hop in path['path']:
                     interface_key = hop['current_node'] + "___" + hop['int_name']
 
@@ -1302,7 +1305,7 @@ class Model(object):
 
                     # Update each interface in the demand_index path(s) for _demands_egressing
                     self.interfaces_dataframe.at[interface_key, '_demands_egressing'].append(
-                        {'demand_index': demand_index, 'traffic': round(demand_traffic / cumulative_splits_for_path, 2)}  # TODO - update this with demand_index traffic
+                        {'demand_index': demand_index, 'traffic': round(demand_traffic / cumulative_splits_for_path, 2)}
                     )
 
                     # Update each interface in the demand_index path(s) for the _pct_utilization
@@ -1323,13 +1326,15 @@ class Model(object):
             lsps_src_dest: LSPs from model that have same _src_dest_nodes value as demands
 
         """
+        demand_indices = demands.index.to_list
+
         # Find the lowest metric for the LSPs in lsps_src_dest
         lowest_metric = min(lsps_src_dest['_effective_path_cost'].to_list())
         # Get all the LSPs in lsps_src_dest with the lowest_metric
         lowest_metric_lsps = lsps_src_dest.loc[lsps_src_dest['_effective_path_cost'] == lowest_metric]
         # ## Route the demands across the lowest_metric_lsps ## #
         # Update the demand path(s) to the LSPs in lowest_metric_lsps for each of the lsps in ls
-        for demand in demands.index.to_list():  # TODO - get the demand indices separated; they are used like 4 times here
+        for demand in demand_indices:
             self.demands_dataframe.at[demand, '_path'] = lowest_metric_lsps.index.to_list()
             # Mark the demand as routed
             self.demands_dataframe.at[demand, '_routed'] = True
@@ -1353,14 +1358,14 @@ class Model(object):
                     self.interfaces_dataframe.at[interface, 'capacity'], 2)
 
                 # Update the _demands_egressing column for the interfaces that the demand(s) egress
-                for demand_index in demands.index.to_list():
+                for demand_index in demand_indices:
                     demand_traffic = self.demands_dataframe.at[demand_index, 'traffic']
                     self.interfaces_dataframe.at[interface, '_demands_egressing']. \
                         append({'demand': demand_index, 'traffic': round(demand_traffic / len(lowest_metric_lsps), 2)})
 
             # Update the list of demands the lsp carries
-            for demand in demands.index.to_list():
-                traffic = round(agg_traffic/len(demands.index.to_list()), 2)
+            for demand in demand_indices:
+                traffic = round(agg_traffic/len(demand_indices), 2)
                 self.lsps_dataframe.at[lsp, '_demands'].append({'demand': demand, 'traffic': traffic})
 
     def _set_circuit_and_int_status(self):

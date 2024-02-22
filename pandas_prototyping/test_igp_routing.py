@@ -18,3 +18,7 @@ model.converge_model()
 
 print("Interfaces Dataframe _traffic and _demands_egressing columns:")
 print(model.interfaces_dataframe[['_traffic', '_demands_egressing']])
+print()
+print()
+print("Demands dataframe at specific demand's '_path' column value:")
+pprint(model.demands_dataframe.at['A___F___dmd_a_f_1', '_path'])
