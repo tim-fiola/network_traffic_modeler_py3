@@ -16,4 +16,5 @@ from pyNTM import Model
 model = Model.load_model_file("igp_routing_topology.csv")
 model.converge_model()
 
+print("Interfaces Dataframe _traffic and _demands_egressing columns:")
 print(model.interfaces_dataframe[['_traffic', '_demands_egressing']])

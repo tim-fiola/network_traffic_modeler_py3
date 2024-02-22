@@ -33,4 +33,5 @@ G,30,30
 
 DEMANDS_TABLE
 source,dest,traffic,name
-A,F,60,dmd_a_f_1
+A,F,50,dmd_a_f_1
+A,F,10,dmd_a_f_2
