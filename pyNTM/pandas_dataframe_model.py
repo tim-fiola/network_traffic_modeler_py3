@@ -171,15 +171,32 @@ class Model(object):
         # Specify data types in each column for nodes_dataframe
         nodes_dataframe = nodes_dataframe.astype(dtype=cls.nodes_dataframe_dtypes())
 
+
+        # Check for interface _key uniqueness
+        cls.uniqueness_check(interfaces_dataframe, '_key', 'Interface')
+
         # Set the dataframe indices to the _key column (node_name is the key for nodes_dataframe)
         interfaces_dataframe = interfaces_dataframe.set_index('_key')
+
+        # Check for node node_name uniqueness
+        cls.uniqueness_check(nodes_dataframe, 'node_name', 'Node')
+
+        # Set the nodes_dataframe index to node_name
         nodes_dataframe = nodes_dataframe.set_index('node_name')
+
+        # Check for demand _key uniqueness
+        cls.uniqueness_check(demands_dataframe, '_key', 'Demand')
+
+        # Set the demands_dataframe index to _key
         demands_dataframe = demands_dataframe.set_index('_key')
-        try:
+
+        # Check for lsp _key uniqueness
+        if lsps_dataframe is not None:
+            print("Checking LSP _key uniqueness.")
+            cls.uniqueness_check(lsps_dataframe, '_key', 'LSP')
+            # Set the lsps_dataframe key to _key
             lsps_dataframe = lsps_dataframe.set_index('_key')
-        except AttributeError:
-            # Accounts for if model does not include an RSVP_LSP_TABLE
-            pass
+
 
         return cls(interfaces_dataframe, nodes_dataframe, demands_dataframe, lsps_dataframe)
 
@@ -222,9 +239,6 @@ class Model(object):
         lsps_dataframe = pd.DataFrame(lsps_list, columns=cls.lsp_column_names()). \
             astype(dtype=cls.lsps_dataframe_dtypes())
 
-        # Check for LSP _key uniqueness
-        cls.uniqueness_check(lsps_dataframe, '_key', 'LSP')
-
         return lsps_dataframe
 
     @classmethod
@@ -238,6 +252,10 @@ class Model(object):
 
             Raises exception if duplicate found
         """
+        print()
+        print()
+        print(dataframe)
+        print(column_name_to_check_for_duplicates)
         duplicate_item_check = dataframe[column_name_to_check_for_duplicates].duplicated()
         duplicate_indices = duplicate_item_check.index[duplicate_item_check == True]
         if len(duplicate_indices) != 0:
@@ -457,14 +475,10 @@ class Model(object):
 
         # Create the Node and Interface dataframes
         nodes_dataframe = pd.DataFrame(node_list, columns=cls.nodes_dataframe_column_names())
-        # Check for duplicates in nodes_dataframe
-        cls.uniqueness_check(nodes_dataframe, 'node_name', 'node')
+
 
         interfaces_dataframe = pd.DataFrame(interface_list, columns=cls.interface_dataframe_column_names())
         interfaces_dataframe = interfaces_dataframe.astype(dtype=cls.interface_dataframe_dtypes(cls))
-
-        # Check for uniqueness in interfaces_dataframe
-        cls.uniqueness_check(interfaces_dataframe, '_key', 'interface')
 
         return interfaces_dataframe, nodes_dataframe
 
@@ -612,7 +626,6 @@ class Model(object):
     def mismatched_circuit_capacities(self):
         """
         Verify that the interface capacities that have a common circuit_id have matching capacities
-        Verify that there are only 2 instances of a given circuit_id in the interfaces_dataframe
         Returns: A list of interfaces with common ciruit_id but whose capacities don't match
 
         """
@@ -622,13 +635,13 @@ class Model(object):
         # Query the interfaces for a given id to make sure the capacities match
         for ckt_id in self.validated_circuit_ids():  # TODO - see if we can get rid of the python iteration
             capacities = self.interfaces_dataframe.loc[self.interfaces_dataframe['circuit_id'] == ckt_id]['capacity']
-            # Verify that there are only 2 rows
-            if len(capacities != 2):
-                ckt_ids_w_mismatched_capacities.append(ckt_id)
-                error_msg = "The circuit_id {} has {} entries in the interfaces_dataframe; there must be exactly 2" \
-                            "entries with a given circuit_id.  Check input data". \
-                    format(ckt_id, len(capacities))
-                raise ModelException(error_msg)
+            # # Verify that there are only 2 rows  # TODO - remove this
+            # if len(capacities) != 2:
+            #     ckt_ids_w_mismatched_capacities.append(ckt_id)
+            #     error_msg = "The circuit_id {} has {} entries in the interfaces_dataframe; there must be exactly 2" \
+            #                 " entries with a given circuit_id.  Check input data". \
+            #         format(ckt_id, len(capacities))
+            #     raise ModelException(error_msg)
             # Verify that the capacities match in the 2 rows with the common circuit_id
             if capacities.values[0] != capacities.values[1]:
                 ckt_ids_w_mismatched_capacities.append(ckt_id)
@@ -659,25 +672,35 @@ class Model(object):
         """
         Validates that data fed into the model creates a valid network model
         """
-        # Verify no duplicate node names
 
-        # Check for duplicates in nodes_dataframe
-        self.uniqueness_check(self.nodes_dataframe, 'node_name', 'node')
+        # if self.lsps_dataframe:
+        #     # Check for LSP _key uniqueness
+        #     self.uniqueness_check(self.lsps_dataframe, '_key', 'LSP')
+        #
+        # # Check for duplicates in nodes_dataframe
+        # self.uniqueness_check(self.nodes_dataframe, 'node_name', 'node')
+        #
+        # # Check for uniqueness for interface names in interfaces_dataframe
+        # self.uniqueness_check(self.interfaces_dataframe, '_key', 'interface')
 
-        # Check for uniqueness for interface names in interfaces_dataframe
-        self.uniqueness_check(self.interfaces_dataframe, '_key', 'interface')
-
-        # Validate LSP name uniqueness check
-        self.uniqueness_check(self.lsps_dataframe, 'name', 'lsp')
+        # # Validate LSP name uniqueness check - # TODO - this is not needed
+        # self.uniqueness_check(self.lsps_dataframe, 'name', 'lsp')
 
         # Verify that each circuit_id appears exactly twice
-        self._circuit_ids_validated(self.interfaces_dataframe)
+        self._circuit_ids_validated()
 
         # Verify circuit component interfaces have matching capacity
         self.mismatched_circuit_capacities()
 
         # Validate RSVP reserved bandwidth is not gt interface capacity
         self._reserved_bw_error_checks()
+
+        # Validate demands have value > 0
+        invalid_demand_values = self.demands_dataframe.loc[self.demands_dataframe['traffic'] <= 0]
+        if len(invalid_demand_values) > 0:
+            error_msg = "Demand 'traffic' values must be > 0.  The following demands have invalid " \
+                        "'traffic' values:\n{}".format(invalid_demand_values)
+            raise ModelException(error_msg)
 
         # Verify no SRLG errors  # TODO - add this when srlgs are in model
 
@@ -1142,6 +1165,8 @@ class Model(object):
         # Add _circuit_failed and _interface_failed status columns and compute values of each
         self._set_circuit_and_int_status()
 
+        self.validate_model()
+
         # Route the LSPs, if present
         try:
             self._route_lsps()
@@ -1178,7 +1203,7 @@ class Model(object):
             agg_traffic = round(demands['traffic'].sum(), 2)
 
             # Find all LSPs that can carry the agg_traffic from source to destination (matching src_dest_group)
-            if self.lsps_dataframe:
+            if self.lsps_dataframe is not None:
                 lsps_src_dest = self.lsps_dataframe[self.lsps_dataframe['_src_dest_nodes'] == src_dest_group]
                 if lsps_src_dest.empty:
                     self._route_demands_via_spf(G, agg_traffic, demands, src_dest_group)
@@ -1303,14 +1328,14 @@ class Model(object):
             lsps_src_dest: LSPs from model that have same _src_dest_nodes value as demands
 
         """
-        demand_indices = demands.index.to_list
+        demand_indices = demands.index.to_list()
 
         # Find the lowest metric for the LSPs in lsps_src_dest
         lowest_metric = min(lsps_src_dest['_effective_path_cost'].to_list())
         # Get all the LSPs in lsps_src_dest with the lowest_metric
         lowest_metric_lsps = lsps_src_dest.loc[lsps_src_dest['_effective_path_cost'] == lowest_metric]
         # ## Route the demands across the lowest_metric_lsps ## #
-        # Update the demand path(s) to the LSPs in lowest_metric_lsps for each of the lsps in ls
+        # Update the demand path(s) to the LSPs in lowest_metric_lsps for each of the lsps in lsps_src_dest
         for demand in demand_indices:
             self.demands_dataframe.at[demand, '_path'] = lowest_metric_lsps.index.to_list()
             # Mark the demand as routed

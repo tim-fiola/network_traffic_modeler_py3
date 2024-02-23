@@ -1,5 +1,5 @@
 """A Class to represent Shared Risk Link Groups (SRLGs) in a Model"""
-from .exceptions import ModelException
+from pyNTM.exceptions import ModelException
 
 
 class SRLG(object):

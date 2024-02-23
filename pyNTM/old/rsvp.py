@@ -1,7 +1,7 @@
 """A class to represent an RSVP label-switched-path in the network model """
 
 import random
-from .exceptions import ModelException
+from pyNTM.exceptions import ModelException
 
 
 class RSVP_LSP(object):

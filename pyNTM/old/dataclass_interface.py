@@ -1,4 +1,4 @@
-from .exceptions import ModelException
+from pyNTM.exceptions import ModelException
 
 from dataclasses import dataclass
 from .dataclass_node import Node

@@ -5,8 +5,8 @@ from dash import html
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 
-from .rsvp import RSVP_LSP
-from .demand import Demand
+from pyNTM.old.rsvp import RSVP_LSP
+from pyNTM.old.demand import Demand
 
 import json
 

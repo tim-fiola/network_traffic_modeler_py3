@@ -1,6 +1,6 @@
 
-from .exceptions import ModelException
-from .utilities import find_end_index
+from pyNTM.exceptions import ModelException
+from pyNTM.utilities import find_end_index
 
 from .dataclass_node import Node
 from .dataclass_interface import Interface

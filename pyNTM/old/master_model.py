@@ -10,7 +10,7 @@ FlexModel or PerformanceModel
 """
 
 from .demand import Demand
-from .exceptions import ModelException
+from pyNTM.exceptions import ModelException
 from .interface import Interface
 from .node import Node
 from .rsvp import RSVP_LSP

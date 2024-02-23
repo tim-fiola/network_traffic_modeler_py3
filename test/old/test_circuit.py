@@ -1,11 +1,5 @@
 import unittest
 
-from pyNTM import Node
-from pyNTM import PerformanceModel
-from pyNTM import Circuit
-from pyNTM import Interface
-
-
 class TestCircuit(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -13,7 +7,7 @@ class TestCircuit(unittest.TestCase):
         self.node_a = Node(name="nodeA", lat=0, lon=0)
         self.node_b = Node(name="nodeB", lat=0, lon=0)
         self.interface_a = Interface(
-            name="inerfaceA-to-B",
+            name="interfaceA-to-B",
             cost=4,
             capacity=100,
             node_object=self.node_a,
@@ -47,7 +41,7 @@ class TestCircuit(unittest.TestCase):
     def test_key(self):
         self.assertEqual(
             self.circuit._key(),
-            (("inerfaceA-to-B", "nodeA"), ("inerfaceB-to-A", "nodeB")),
+            (("interfaceA-to-B", "nodeA"), ("interfaceB-to-A", "nodeB")),
         )
 
     def test_get_circuit_interfaces(self):

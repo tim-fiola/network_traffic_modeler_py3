@@ -27,10 +27,10 @@ from dataclasses import dataclass
 
 from .circuit import Circuit
 from .interface import Interface
-from .exceptions import ModelException
+from pyNTM.exceptions import ModelException
 from .master_model import _MasterModel
 from .rsvp import RSVP_LSP
-from .utilities import find_end_index
+from pyNTM.utilities import find_end_index
 from .node import Node
 
 

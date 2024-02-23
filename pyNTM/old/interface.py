@@ -1,6 +1,6 @@
 """An object representing a Node interface"""
 
-from .exceptions import ModelException
+from pyNTM.exceptions import ModelException
 
 # from .rsvp import RSVP_LSP
 from .srlg import SRLG

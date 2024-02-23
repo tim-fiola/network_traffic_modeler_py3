@@ -1,11 +1,7 @@
 import unittest
 
-from pyNTM import Node
-from pyNTM import Demand
-from pyNTM import FlexModel
-from pyNTM import PerformanceModel
-from pyNTM import Interface
-from pyNTM import RSVP_LSP
+from pyNTM import Model
+
 
 
 class TestDemand(unittest.TestCase):
@@ -69,7 +65,7 @@ class TestDemand(unittest.TestCase):
         )
 
     def test_demand_behavior(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
 
         model.update_simulation()
 
