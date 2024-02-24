@@ -405,7 +405,7 @@ class Model(object):
                     circuit_id,
                 ] = interface_line.split(",")
                 rsvp_enabled_bool = True
-                percent_reservable_bandwidth = 100  # TODO - change this to 0?
+                percent_reservable_bandwidth = 0
             elif len(interface_line.split(",")) == 7:
                 line_data = [
                     node_name,
@@ -420,7 +420,7 @@ class Model(object):
                     rsvp_enabled_bool = True
                 else:
                     rsvp_enabled_bool = False
-                percent_reservable_bandwidth = 100
+                percent_reservable_bandwidth = 0
             elif len(interface_line.split(",")) >= 8:
                 line_data = [
                     node_name,
