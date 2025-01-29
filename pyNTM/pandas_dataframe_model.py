@@ -252,10 +252,6 @@ class Model(object):
 
             Raises exception if duplicate found
         """
-        print()
-        print()
-        print(dataframe)
-        print(column_name_to_check_for_duplicates)
         duplicate_item_check = dataframe[column_name_to_check_for_duplicates].duplicated()
         duplicate_indices = duplicate_item_check.index[duplicate_item_check == True]
         if len(duplicate_indices) != 0:
@@ -405,7 +401,7 @@ class Model(object):
                     circuit_id,
                 ] = interface_line.split(",")
                 rsvp_enabled_bool = True
-                percent_reservable_bandwidth = 0
+                percent_reservable_bandwidth = 100
             elif len(interface_line.split(",")) == 7:
                 line_data = [
                     node_name,
@@ -418,9 +414,10 @@ class Model(object):
                 ] = interface_line.split(",")
                 if rsvp_enabled in [True, "T", "True", "true"]:
                     rsvp_enabled_bool = True
+                    percent_reservable_bandwidth = 100
                 else:
                     rsvp_enabled_bool = False
-                percent_reservable_bandwidth = 0
+                    percent_reservable_bandwidth = 0
             elif len(interface_line.split(",")) >= 8:
                 line_data = [
                     node_name,
@@ -515,7 +512,7 @@ class Model(object):
         G.add_edges_from(edge_names)
 
         # Add all the nodes
-        G.add_nodes_from(considered_interfaces.index.tolist())
+        G.add_nodes_from(self.nodes_dataframe.index.tolist())
 
         return G
 
@@ -560,7 +557,7 @@ class Model(object):
         G.add_edges_from(edge_names)
 
         # Add all the nodes
-        G.add_nodes_from(considered_interfaces.index.tolist())
+        G.add_nodes_from(self.nodes_dataframe.index.tolist())
 
         return G
 
@@ -771,8 +768,8 @@ class Model(object):
         Recalculates the _remaining_reservable_bandwidth column for the interfaces_dataframe
         """
         self.interfaces_dataframe['_remaining_reservable_bandwidth'] = \
-            round(self.interfaces_dataframe['capacity'] * self.interfaces_dataframe['percent_reservable_bandwidth'] \
-            / 100 - self.interfaces_dataframe['_reserved_bandwidth'], 2)
+            round((self.interfaces_dataframe['capacity'] * self.interfaces_dataframe['percent_reservable_bandwidth'] \
+            / 100) - self.interfaces_dataframe['_reserved_bandwidth'], 2)
 
     def _find_lsp_paths(self, lsp_group):
         """
@@ -879,6 +876,7 @@ class Model(object):
                                     lsp_group, '_path'] = np.nan
             self.lsps_dataframe.loc[self.lsps_dataframe['_src_dest_nodes'] ==
                                     lsp_group, '_reserved_bandwidth'] = np.nan
+            return
 
         # Convert node hop by hop paths from G into Interface-based paths
         all_paths = self._get_all_paths_mdg(G, nx_sp, rsvp=True)
@@ -1152,6 +1150,7 @@ class Model(object):
         self.interfaces_dataframe['_remaining_reservable_bandwidth'].astype(float)
         self._recalculate_remaining_res_bw()  # TODO - can this be moved/removed?
 
+
         # Add a _lsps_egressing column that will hold a list of LSPs that egress that interface
         self.interfaces_dataframe['_lsps_egressing'] = None
         self.interfaces_dataframe['_lsps_egressing'].astype(object)
@@ -1343,11 +1342,17 @@ class Model(object):
         # Update the interfaces dataframe
         for lsp in lowest_metric_lsps.index.to_list():
             # Get the interfaces in the lsp's _path, which is a list that holds a dict
-            path_interfaces = lsps_src_dest.at[lsp, '_path'][0]['path']
+            try:
+                path_interfaces = lsps_src_dest.at[lsp, '_path'][0]['path']
+            except:
+                import pdb
+                pdb.set_trace()
+
 
             # Craft the keys for each interface in path_interfaces
             interface_key_list = [interface['current_node'] + "___" + interface['int_name'] for
                                   interface in path_interfaces]
+
 
             for interface in interface_key_list:
                 # Update the _traffic column for the interfaces that the lsp(s) ride

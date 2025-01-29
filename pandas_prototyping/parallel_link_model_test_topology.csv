@@ -71,6 +71,7 @@ A,D,20,dmd_a_d_2
 A,D,20,dmd_a_d_3
 A,Y,20,dmd_a_y_1
 A,W,15,dmd_a_w_1
+A,Z,12,dmd_a_z_1
 
 RSVP_LSP_TABLE
 source,dest,name,,manual_metric
