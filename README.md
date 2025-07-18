@@ -1,3 +1,11 @@
+A message to the community: I was going to make some updates to pyNTM but then realized that at some point, Circle testing stopped accepting/honoring the free credits.  
+I am going to look into porting the unit testing pipeline to GitHub actions.
+If you've already done this, please feel free to send an PR.
+
+Thank you!
+-Tim
+
+
 
 [![PyPI](https://img.shields.io/pypi/v/pyntm.svg)](https://pypi.python.org/pypi/pyNTM)
 [![Build Status](https://app.travis-ci.com/tim-fiola/network_traffic_modeler_py3.svg?branch=master)](https://app.travis-ci.com/tim-fiola/network_traffic_modeler_py3)
