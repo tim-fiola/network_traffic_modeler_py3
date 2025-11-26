@@ -1,6 +1,6 @@
 name: CI
 
-# Event triggers define when this workflow runs.
+# Event triggers define when this workflow runs.  Bumping to trigger
 # We target pushes to the main branch and any pull request targeting the main branch.
 on:
   push:
