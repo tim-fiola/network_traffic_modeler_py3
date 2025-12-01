@@ -53,7 +53,7 @@ jobs:
 
       - name: Check Formatting (Black)
         #  confirms usage of Black. --check ensures it fails on unformatted code.
-        run: black --check.
+        run: black --check
 
       - name: Run Linter (Flake8)
         #  confirms usage of Flake8.
