@@ -10,6 +10,7 @@ on:
   pull_request:
     branches:
       - "master"
+      - "tim-fiola-github-actions-migration"
   # Allows manual triggering from the GitHub Actions tab
   workflow_dispatch: {}
 
