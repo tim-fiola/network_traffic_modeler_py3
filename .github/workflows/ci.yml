@@ -1,30 +1,22 @@
 name: CI
 
-# Event triggers define when this workflow runs.  Bumping to trigger
-# We target pushes to the main branch and any pull request targeting the main branch.
 on:
   push:
     branches:
       - "master"
       - "tim-fiola-github-actions-migration"
-    tags: [ "v*" ]  # Run on version tags for release readiness
+    tags:
+      - "v*"
   pull_request:
     branches:
       - "master"
-  # Allows manual triggering from the GitHub Actions tab
   workflow_dispatch: {}
 
-# Concurrency groups allow us to cancel in-progress builds for the same PR.
-# This saves runner minutes and ensures developers see the result of their latest commit faster.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # -----------------------------------------------------------------------------
-  # JOB 1: Code Quality (Static Analysis)
-  # This job runs first. If it fails, the expensive test matrix is skipped.
-  # -----------------------------------------------------------------------------
   quality:
     name: Code Quality Check
     runs-on: ubuntu-latest
@@ -32,7 +24,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # Shallow clone is sufficient for linting
+          fetch-depth: 1
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v5
@@ -43,8 +35,6 @@ jobs:
       - name: Install Linting Tools
         run: |
           python -m pip install --upgrade pip
-          # We attempt to install from requirements_dev.txt, but fallback to direct install
-          # to ensure the pipeline is robust even if the file is missing/renamed.
           if [ -f requirements_dev.txt ]; then 
             pip install -r requirements_dev.txt
           else
@@ -52,55 +42,42 @@ jobs:
           fi
 
       - name: Check Formatting (Black)
-        #  confirms usage of Black. --check ensures it fails on unformatted code.
-        run: black --check
+        # Fixed: Added space between --check and .
+        run: black --check .
 
       - name: Run Linter (Flake8)
-        #  confirms usage of Flake8.
-        # We report statistics and exit with error on syntax errors (E9, F63, etc.)
-        run: flake8. --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Fixed: Added space between flake8 and .
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
-  # -----------------------------------------------------------------------------
-  # JOB 2: Test Matrix (Unit & Integration Tests)
-  # This runs the actual simulation engine tests across multiple Python versions.
-  # -----------------------------------------------------------------------------
   tests:
     name: Test (Python ${{ matrix.python-version }})
-    needs: quality  # Dependency: Quality job must pass first
+    needs: quality
     runs-on: ubuntu-latest
-    
+
     strategy:
-      fail-fast: false  # Don't cancel other matrix jobs if one version fails
+      fail-fast: false
       matrix:
-        # [1, 2, 3] inform this list.
-        # We include 3.11 to satisfy issue #59.
-        # We include pypy-3.9 to satisfy performance requirements.
         python-version: ["3.8", "3.9", "3.10", "3.11", "pypy-3.9"]
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          # Fetch full history might be needed if tests rely on git tags/versioning
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip' # Hashes requirements.txt for caching
+          cache: 'pip'
 
       - name: Install Dependencies
-        # This step handles the 'numpy evolutions' risk by installing pinned requirements first.
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
-          # Install the package itself in editable mode
-          pip install -e.
+          pip install -e .
 
       - name: Run Tests
-        #  confirms "python -m pytest" usage.
-        # The verbose flag helps in debugging convergence issues in logs.
         run: |
           python -m pytest --verbose
