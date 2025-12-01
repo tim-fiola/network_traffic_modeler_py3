@@ -6,11 +6,11 @@ on:
   push:
     branches:
       - "master"
+      - "tim-fiola-github-actions-migration"
     tags: [ "v*" ]  # Run on version tags for release readiness
   pull_request:
     branches:
       - "master"
-      - "tim-fiola-github-actions-migration"
   # Allows manual triggering from the GitHub Actions tab
   workflow_dispatch: {}
 
