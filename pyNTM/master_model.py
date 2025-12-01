@@ -121,12 +121,12 @@ class _MasterModel(object):
         lsps_routed_with_demands_gen = iter(lsps_routed_with_demands)
 
         # Update generators in simulation_data
-        simulation_data[
-            "routed LSPs with no demands generator"
-        ] = lsps_routed_no_demands_gen
-        simulation_data[
-            "routed LSPs with demands generator"
-        ] = lsps_routed_with_demands_gen
+        simulation_data["routed LSPs with no demands generator"] = (
+            lsps_routed_no_demands_gen
+        )
+        simulation_data["routed LSPs with demands generator"] = (
+            lsps_routed_with_demands_gen
+        )
         simulation_data["demands riding LSPs generator"] = dmds_riding_lsps_gen
 
         return simulation_data

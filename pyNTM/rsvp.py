@@ -1,4 +1,4 @@
-"""A class to represent an RSVP label-switched-path in the network model """
+"""A class to represent an RSVP label-switched-path in the network model"""
 
 import random
 from .exceptions import ModelException
