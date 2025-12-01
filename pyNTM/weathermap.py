@@ -967,7 +967,6 @@ class WeatherMap(object):  # pragma: no cover
             Output("interfaces-on-node", "options"), [Input("find-node", "value")]
         )
         def interfaces_on_node(node):
-
             if node:
                 node = self.model.get_node_object(node)
                 interfaces_on_node = node.interfaces(self.model)
@@ -1577,7 +1576,6 @@ class WeatherMap(object):  # pragma: no cover
         def display_selected_demand_data(
             int_demand, src_dest_demand, dmd_on_lsp, clear_int_button
         ):
-
             ctx = dash.callback_context
 
             if ctx.triggered[0]["prop_id"] == "clear-dmd-button.n_clicks":
@@ -1755,7 +1753,6 @@ class WeatherMap(object):  # pragma: no cover
             [Input("selected-demand-output", "children")],
         )
         def demand_interfaces(demand):
-
             if demand:
                 if (
                     no_selected_demand_text not in demand

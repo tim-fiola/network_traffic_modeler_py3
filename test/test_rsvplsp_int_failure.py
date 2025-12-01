@@ -3,7 +3,6 @@ from pyNTM import PerformanceModel
 
 
 class TestRSVPLSPIntFailure(unittest.TestCase):
-
     # This next section will see if the LSPs behave as expected
     # to the failed interface int_a_c
     # def test_fail_interface(self):

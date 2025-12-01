@@ -4,7 +4,6 @@ from pyNTM import PerformanceModel
 
 
 class TestRSVPLSPTraffAdd(unittest.TestCase):
-
     # Validate the reserved and setup bandwidths of lsp_a_d_1, lsp_a_d_2
     # One of the lsp_a_d_1 or lsp_a_d_2 LSPs will not be able to signal
     # with int_a_b failed; the one that does signal will reserved will
@@ -412,7 +411,6 @@ class TestRSVPLSPTraffAdd(unittest.TestCase):
     # int_a_c has 150 capacity; one lsp_a_d_1/2 will take 125 of
     # that reserved_bandwidth; there will be a 25 unit remainder
     def test_int_bw(self):
-
         model = PerformanceModel()
         model.rsvp_lsp_objects = set([])
         model.demand_objects = set([])
