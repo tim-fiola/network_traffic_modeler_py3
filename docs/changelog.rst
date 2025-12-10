@@ -1,6 +1,12 @@
 Changelog
 =========
 
+3.4.2
+-----
+* Migrated from TravisCI to GitHub actions for testing pipeline
+* Added Python support for 3.9, 3.10, 3.11
+* Supported Python versions are 3.8-3.11 and pypy3.9
+
 3.4.1
 -----
 * Updated test environment to Focal linux (from Xenial) to allow ``dash`` and ``dash-cytoscape`` package import in CI/CD for visualization
