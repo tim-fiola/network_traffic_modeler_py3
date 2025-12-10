@@ -1,11 +1,12 @@
 Changelog
 =========
 
-3.4.2
+3.5.1
 -----
 * Migrated from TravisCI to GitHub actions for testing pipeline
 * Added Python support for 3.9, 3.10, 3.11
 * Supported Python versions are 3.8-3.11 and pypy3.9
+* These changes will allow development to move forward while keeping the robust 90+% code testing coverage in place
 
 3.4.1
 -----
