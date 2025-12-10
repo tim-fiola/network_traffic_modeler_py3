@@ -1,14 +1,3 @@
-# ***A message to the community***: 
-I was going to make some updates to pyNTM but then realized that at some point, TravisCI stopped accepting/honoring the free credits.  
-I am going to look into porting the unit testing pipeline to GitHub actions.
-If you've already done this, please feel free to send an PR.
-
-Thank you!
-
--Tim
-
-
-
 [![PyPI](https://img.shields.io/pypi/v/pyntm.svg)](https://pypi.python.org/pypi/pyNTM)
 [![CI](https://github.com/tim-fiola/network_traffic_modeler_py3/actions/workflows/ci.yml/badge.svg)](https://github.com/tim-fiola/network_traffic_modeler_py3/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/tim-fiola/network_traffic_modeler_py3/badge.svg?branch=master)](https://coveralls.io/github/tim-fiola/network_traffic_modeler_py3?branch=master)
