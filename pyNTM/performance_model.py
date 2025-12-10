@@ -1293,7 +1293,6 @@ class PerformanceModel(_MasterModel):
 
                 # Get the interfaces for each LSP in the demand's path
                 for lsp in lsps_for_demand:
-
                     lsp_path_interfaces = lsp.path["interfaces"]
 
                     # Now that all interfaces are known,

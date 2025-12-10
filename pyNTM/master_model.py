@@ -121,12 +121,12 @@ class _MasterModel(object):
         lsps_routed_with_demands_gen = iter(lsps_routed_with_demands)
 
         # Update generators in simulation_data
-        simulation_data[
-            "routed LSPs with no demands generator"
-        ] = lsps_routed_no_demands_gen
-        simulation_data[
-            "routed LSPs with demands generator"
-        ] = lsps_routed_with_demands_gen
+        simulation_data["routed LSPs with no demands generator"] = (
+            lsps_routed_no_demands_gen
+        )
+        simulation_data["routed LSPs with demands generator"] = (
+            lsps_routed_with_demands_gen
+        )
         simulation_data["demands riding LSPs generator"] = dmds_riding_lsps_gen
 
         return simulation_data
@@ -244,7 +244,6 @@ class _MasterModel(object):
 
         # Route LSPs by source, dest (parallel) groups
         for group, lsps in parallel_lsp_groups.items():
-
             num_lsps_in_group = len(lsps)
 
             print(
@@ -755,7 +754,6 @@ class _MasterModel(object):
             self.get_node_object(interface_object.node_object.name).failed is False
             and self.get_node_object(remote_interface.node_object.name).failed is False
         ):
-
             remote_interface.failed = False
             remote_interface.reserved_bandwidth = 0
             interface_object.failed = False
@@ -816,7 +814,6 @@ class _MasterModel(object):
         ints_to_unfail_iterator = iter(self.get_node_interfaces(node_name))
 
         for interface in ints_to_unfail_iterator:
-
             # Unfail the interfaces if the remote node is not failed
             if not interface.remote_node_object.failed:
                 # Unfail the specific interface

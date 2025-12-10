@@ -79,15 +79,18 @@ class Interface(object):
         return hash(self.name + self.node_object.name)
 
     def __repr__(self):
-        return "%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
-remote_node_object = %r, circuit_id = %r)" % (
-            self.__class__.__name__,
-            self.name,
-            self.cost,
-            self.capacity,
-            self.node_object,
-            self.remote_node_object,
-            self.circuit_id,
+        return (
+            "%s(name = %r, cost = %s, capacity = %s, node_object = %r, \
+remote_node_object = %r, circuit_id = %r)"
+            % (
+                self.__class__.__name__,
+                self.name,
+                self.cost,
+                self.capacity,
+                self.node_object,
+                self.remote_node_object,
+                self.circuit_id,
+            )
         )
 
     @property
@@ -291,7 +294,6 @@ remote_node_object = %r, circuit_id = %r)" % (
             demand for demand in model.demand_objects if demand.path != "Unrouted"
         )
         for demand in routed_demands:
-
             for dmd_path in demand.path:
                 # If dmd_path is an RSVP LSP and self is in dmd_path.path['interfaces'] ,
                 # look at the LSP path and get demands on the LSP and add them to dmd_set

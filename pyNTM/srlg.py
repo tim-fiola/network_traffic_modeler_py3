@@ -1,4 +1,5 @@
 """A Class to represent Shared Risk Link Groups (SRLGs) in a Model"""
+
 from .exceptions import ModelException
 
 

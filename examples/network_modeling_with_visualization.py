@@ -6,6 +6,7 @@ Requirements:
     - access to graph_network folder in syspath
 
 """
+
 # This is a temp hack to get this to see pyNTM and let it import
 import sys  # noqa
 

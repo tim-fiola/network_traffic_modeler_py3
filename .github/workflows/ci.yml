@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "master"
+      - "tim-fiola-github-actions-migration"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - "master"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: 'pip'
+
+      - name: Install Linting Tools
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements_dev.txt ]; then 
+            pip install -r requirements_dev.txt
+          else
+            pip install black flake8
+          fi
+
+      - name: Validate black version
+        # Fixed: Added space between --check and .
+        run: black --version
+
+      - name: Check Formatting (Black)
+        # Fixed: Added space between --check and .
+        run: black --check .
+
+      - name: Run Linter (Flake8)
+        # Fixed: Added space between flake8 and .
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  tests:
+    name: Test (Python ${{ matrix.python-version }})
+    needs: quality
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "pypy-3.9"]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
+          pip install -e .
+
+      - name: Run Tests
+        run: |
+          python -m pytest --verbose

@@ -1,4 +1,4 @@
-"""A class to represent an RSVP label-switched-path in the network model """
+"""A class to represent an RSVP label-switched-path in the network model"""
 
 import random
 from .exceptions import ModelException
@@ -37,7 +37,6 @@ class RSVP_LSP(object):
         configured_setup_bandwidth=None,
         configured_manual_metric=None,
     ):
-
         self.source_node_object = source_node_object
         self.dest_node_object = dest_node_object
         self.lsp_name = lsp_name
