@@ -4,8 +4,17 @@
 [![Documentation Status](https://readthedocs.org/projects/pyntm/badge/?version=latest)](https://pyntm.readthedocs.io/en/latest/?badge=latest)
 
 
+**pyNTM 4.0.1** is here!  This update clears some technical debt such as migrating the testing from Travis to GitHub actions and updating some packages to clear some problems with outdated dependencies.  It also updates the python and pypy versions.
+
+This release lays the groundwork for additional features to be added.
+
+**HELP**: If you have experience optimizing code for performance and care to contribute, I'm happy to consider pull requests.  The current code base is logically sound and will give good results, but I know that it needs to be optimized for performance (code performance optimization is not my specialty).  In effect, this means that it takes longer for the model to converge, *especially* for models with large amounts of RSVP LSPs.  
+
+
 pyNTM: network_traffic_modeler_py3
 ==================================
+
+Written by the author of the Junos Networking Technology Series book "This Week: Deploying MPLS", pyNTM (Network Traffic Modeler) is designed to answer the following questions for service-provider OSPF/IS-IS and MPLS WAN networks such as:
 
 * How will a failure on your wide area network (WAN) affect link utilizations? 
 * What about a layer 3 node failure?
