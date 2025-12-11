@@ -1,6 +1,11 @@
 Changelog
 =========
 
+4.0.0
+-----
+* Dropped support for Python 3.8, 3.9
+* Dropped support for pypy3.9; added support for pypy3.10
+
 3.5.1
 -----
 * Migrated from TravisCI to GitHub actions for testing pipeline
@@ -23,7 +28,6 @@ Changelog
   * PerformanceModel had ``manual_metric`` column name in docstrings and examples
   * Standardized column name to ``manual_metric``
   * This was a purely cosmetic change as the actual ``manual_metric`` is based on the column's order in the table, not the specific column name
-
 
 3.4.0
 -----

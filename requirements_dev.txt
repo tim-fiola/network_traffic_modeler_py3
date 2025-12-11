@@ -7,3 +7,4 @@ pytest-cov
 pytest-flake8
 pytest-mccabe
 coveralls
+numpy<2.0.0
