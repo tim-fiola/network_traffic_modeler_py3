@@ -1,6 +1,11 @@
 Changelog
 =========
 
+4.0.1
+-----
+* Added fixed for readthedocs build
+
+
 4.0.0
 -----
 * Dropped support for Python 3.8, 3.9
