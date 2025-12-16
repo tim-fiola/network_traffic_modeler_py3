@@ -1,6 +1,6 @@
 [![PyPI](https://img.shields.io/pypi/v/pyntm.svg)](https://pypi.python.org/pypi/pyNTM)
 [![CI](https://github.com/tim-fiola/network_traffic_modeler_py3/actions/workflows/ci.yml/badge.svg)](https://github.com/tim-fiola/network_traffic_modeler_py3/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/tim-fiola/network_traffic_modeler_py3/badge.svg?branch=master)](https://coveralls.io/github/tim-fiola/network_traffic_modeler_py3?branch=master)
+[![codecov](https://codecov.io/gh/tim-fiola/network_traffic_modeler_py3/graph/badge.svg?token=YOUR_TOKEN_HERE)](https://codecov.io/gh/tim-fiola/network_traffic_modeler_py3)
 [![Documentation Status](https://readthedocs.org/projects/pyntm/badge/?version=latest)](https://pyntm.readthedocs.io/en/latest/?badge=latest)
 
 
