@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pyNTM Interactive Network Visualization</title>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; overflow: hidden; }
+
+  #network-container {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  #legend {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(30, 30, 50, 0.92);
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    z-index: 10;
+    backdrop-filter: blur(6px);
+  }
+  #legend h3 {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #ccc;
+    border-bottom: 1px solid #444;
+    padding-bottom: 4px;
+  }
+
+  #controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(30, 30, 50, 0.92);
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    z-index: 10;
+    backdrop-filter: blur(6px);
+  }
+  #controls h3 {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #ccc;
+    border-bottom: 1px solid #444;
+    padding-bottom: 4px;
+  }
+  #controls label {
+    display: block;
+    margin: 6px 0;
+    cursor: pointer;
+  }
+  #controls button {
+    margin-top: 8px;
+    padding: 5px 12px;
+    background: #334;
+    color: #ddd;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  #controls button:hover { background: #445; }
+
+  #info-panel {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(30, 30, 50, 0.92);
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    z-index: 10;
+    max-width: 500px;
+    backdrop-filter: blur(6px);
+    display: none;
+  }
+  #info-panel h3 {
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #ccc;
+  }
+  #info-panel table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  #info-panel td {
+    padding: 2px 10px 2px 0;
+  }
+  #info-panel .label-cell {
+    color: #999;
+  }
+</style>
+</head>
+<body>
+
+<div id="network-container"></div>
+
+<div id="legend">
+  <h3>Utilization</h3>
+  <div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#4169E1;margin-right:8px;border-radius:2px;'></div><span>0-24%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#228B22;margin-right:8px;border-radius:2px;'></div><span>25-49%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FFD700;margin-right:8px;border-radius:2px;'></div><span>50-74%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FF4500;margin-right:8px;border-radius:2px;'></div><span>75-89%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#8B0000;margin-right:8px;border-radius:2px;'></div><span>90-99%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#9400D3;margin-right:8px;border-radius:2px;'></div><span>100%+</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#696969;margin-right:8px;border-radius:2px;border-top:2px dashed #696969;background:none;'></div><span>Failed</span></div>
+</div>
+
+<div id="controls">
+  <h3>Controls</h3>
+  <label><input type="checkbox" id="toggle-physics"> Enable physics</label>
+  <label><input type="checkbox" id="toggle-labels" checked> Show edge arrows</label>
+  <button id="btn-fit">Fit to screen</button>
+  <button id="btn-reset">Reset positions</button>
+</div>
+
+<div id="info-panel">
+  <h3 id="info-title"></h3>
+  <div id="info-body"></div>
+</div>
+
+<script>
+(function() {
+  var nodesData = [{"id": "E", "label": "E", "x": -300, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "E (Active)\n\n  E-to-B -> B  cap: 200  util: 22.5%\n  E-to-D -> D  cap: 100  util: 15.0%\n  E-to-F -> F  cap: 100  util: 11.0%\n  E-to-H -> H  cap: 100  util: 20.0%"}, {"id": "A", "label": "A", "x": 125, "y": 0, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "A (Active)\n\n  A-to-B -> B  cap: 100  util: 136.0%\n  A-to-C -> C  cap: 200  util: 10.0%\n  A-to-D -> D  cap: 150  util: 80.0%"}, {"id": "C", "label": "C", "x": 300, "y": 315, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "C (Active)\n\n  C-to-A -> A  cap: 200  util: 10.0%\n  C-to-D -> D  cap: 150  util: 0.0%"}, {"id": "F", "label": "F", "x": 10, "y": -175, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "F (Active)\n\n  F-to-B -> B  cap: 100  util: 25.0%\n  F-to-D -> D  cap: 100  util: 0.0%\n  F-to-E -> E  cap: 100  util: 105.0%"}, {"id": "B", "label": "B", "x": 155, "y": 885, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "B (Active)\n\n  B-to-A -> A  cap: 100  util: 20.0%\n  B-to-D -> D  cap: 200  util: 7.5%\n  B-to-E -> E  cap: 200  util: 45.0%\n  B-to-F -> F  cap: 100  util: 11.0%"}, {"id": "D", "label": "D", "x": 310, "y": -185, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "D (Active)\n\n  D-to-A -> A  cap: 150  util: 6.7%\n  D-to-B -> B  cap: 200  util: 0.0%\n  D-to-C -> C  cap: 150  util: 0.0%\n  D-to-E -> E  cap: 100  util: 0.0%\n  D-to-F -> F  cap: 100  util: 0.0%\n  D-to-G -> G  cap: 50  util: 60.0%\n  D-to-H -> H  cap: 100  util: 0.0%"}, {"id": "H", "label": "H", "x": 260, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "H (Active)\n\n  H-to-D -> D  cap: 100  util: 0.0%\n  H-to-E -> E  cap: 100  util: 0.0%\n  H-to-G -> G  cap: 150  util: 0.0%"}, {"id": "G", "label": "G", "x": 150, "y": -450, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "G (Active)\n\n  G-to-D -> D  cap: 50  util: 0.0%\n  G-to-H -> H  cap: 150  util: 0.0%"}];
+  var edgesData = [{"from": "D", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-A\nFrom: D\nTo: A\nCapacity: 150\nUtilization: 6.7%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "A", "to": "D", "color": {"color": "#FF4500", "highlight": "#FF4500"}, "title": "A-to-D\nFrom: A\nTo: D\nCapacity: 150\nUtilization: 80.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-C\nFrom: D\nTo: C\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "C", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-D\nFrom: C\nTo: D\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "F", "to": "B", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "F-to-B\nFrom: F\nTo: B\nCapacity: 100\nUtilization: 25.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-F\nFrom: B\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "H", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-E\nFrom: H\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-H\nFrom: E\nTo: H\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-E\nFrom: D\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-D\nFrom: E\nTo: D\nCapacity: 100\nUtilization: 15.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "A", "to": "B", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "A-to-B\nFrom: A\nTo: B\nCapacity: 100\nUtilization: 136.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-A\nFrom: B\nTo: A\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "H", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-D\nFrom: H\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-H\nFrom: D\nTo: H\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-B\nFrom: D\nTo: B\nCapacity: 200\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-D\nFrom: B\nTo: D\nCapacity: 200\nUtilization: 7.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "A", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "A-to-C\nFrom: A\nTo: C\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "C", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-A\nFrom: C\nTo: A\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "G", "color": {"color": "#FFD700", "highlight": "#FFD700"}, "title": "D-to-G\nFrom: D\nTo: G\nCapacity: 50\nUtilization: 60.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "G", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-D\nFrom: G\nTo: D\nCapacity: 50\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-B\nFrom: E\nTo: B\nCapacity: 200\nUtilization: 22.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "E", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "B-to-E\nFrom: B\nTo: E\nCapacity: 200\nUtilization: 45.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "H", "to": "G", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-G\nFrom: H\nTo: G\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "G", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-H\nFrom: G\nTo: H\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-F\nFrom: D\nTo: F\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "F", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "F-to-D\nFrom: F\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-F\nFrom: E\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "F", "to": "E", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "F-to-E\nFrom: F\nTo: E\nCapacity: 100\nUtilization: 105.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}];
+
+  var nodes = new vis.DataSet(nodesData);
+  var edges = new vis.DataSet(edgesData);
+
+  var container = document.getElementById('network-container');
+  var data = { nodes: nodes, edges: edges };
+
+  var options = {
+    physics: {
+      enabled: false
+    },
+    interaction: {
+      hover: true,
+      tooltipDelay: 150,
+      zoomView: true,
+      dragView: true,
+      dragNodes: true,
+      multiselect: true
+    },
+    edges: {
+      font: { size: 10, color: '#999', face: 'arial' },
+      smooth: {
+        type: 'curvedCW',
+        roundness: 0.2
+      },
+      hoverWidth: 1.5
+    },
+    nodes: {
+      font: { color: '#eeeeee' }
+    }
+  };
+
+  var network = new vis.Network(container, data, options);
+
+  // Store original positions for reset
+  var originalPositions = {};
+  nodesData.forEach(function(n) {
+    originalPositions[n.id] = { x: n.x, y: n.y };
+  });
+
+  // --- Controls ---
+  document.getElementById('toggle-physics').addEventListener('change', function() {
+    network.setOptions({ physics: { enabled: this.checked } });
+  });
+
+  document.getElementById('toggle-labels').addEventListener('change', function() {
+    var show = this.checked;
+    var updates = [];
+    edgesData.forEach(function(e, i) {
+      updates.push({
+        id: i + 1,
+        arrows: { to: { enabled: show, scaleFactor: 0.8 } }
+      });
+    });
+    // vis.js auto-assigns numeric IDs starting from 1
+    edges.forEach(function(e) {
+      edges.update({ id: e.id, arrows: { to: { enabled: show, scaleFactor: 0.8 } } });
+    });
+  });
+
+  document.getElementById('btn-fit').addEventListener('click', function() {
+    network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', function() {
+    var updates = [];
+    for (var id in originalPositions) {
+      updates.push({ id: id, x: originalPositions[id].x, y: originalPositions[id].y });
+    }
+    nodes.update(updates);
+    network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+  });
+
+  // --- Info Panel on click ---
+  var infoPanel = document.getElementById('info-panel');
+  var infoTitle = document.getElementById('info-title');
+  var infoBody = document.getElementById('info-body');
+
+  network.on('click', function(params) {
+    if (params.nodes.length > 0) {
+      var nodeId = params.nodes[0];
+      var node = nodes.get(nodeId);
+      infoTitle.textContent = 'Node: ' + node.label;
+      infoBody.innerText = node.title || '';
+      infoPanel.style.display = 'block';
+    } else if (params.edges.length > 0) {
+      var edgeId = params.edges[0];
+      var edge = edges.get(edgeId);
+      infoTitle.textContent = 'Interface';
+      infoBody.innerText = edge.title || '';
+      infoPanel.style.display = 'block';
+    } else {
+      infoPanel.style.display = 'none';
+    }
+  });
+
+  // Initial fit
+  network.once('afterDrawing', function() {
+    network.fit({ animation: false });
+  });
+})();
+</script>
+</body>
+</html>
