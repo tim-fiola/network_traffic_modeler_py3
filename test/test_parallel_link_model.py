@@ -223,7 +223,7 @@ class TestModel(unittest.TestCase):
         )
 
     def test_interface_fields_missing_model_file_load(self):
-        err_msg = "node_name, remote_node_name, name, cost, capacity, circuit_id must be defined for line"
+        err_msg = "node_name, remote_node_name, name, cost, capacity must be defined for line"
         with self.assertRaises(ModelException) as context:
             FlexModel.load_model_file(
                 "test/interface_field_info_missing_routing_topology_multidigraph.csv"

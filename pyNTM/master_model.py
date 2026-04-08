@@ -9,6 +9,8 @@ This cannot be used to instantiate a functioning model directly.  Use a subclass
 FlexModel or PerformanceModel
 """
 
+from collections import defaultdict
+
 from .demand import Demand
 from .exceptions import ModelException
 from .interface import Interface
@@ -373,27 +375,16 @@ class _MasterModel(object):
 
         if self._parallel_lsp_groups != {}:
             return self._parallel_lsp_groups
-        src_node_names = {lsp.source_node_object.name for lsp in self.rsvp_lsp_objects}
-        dest_node_names = {lsp.dest_node_object.name for lsp in self.rsvp_lsp_objects}
 
-        parallel_lsp_groups = {}
+        groups = defaultdict(list)
+        for lsp in self.rsvp_lsp_objects:
+            key = "{}-{}".format(
+                lsp.source_node_object.name, lsp.dest_node_object.name
+            )
+            groups[key].append(lsp)
 
-        for src_node_name in src_node_names:
-            for dest_node_name in dest_node_names:
-                key = "{}-{}".format(src_node_name, dest_node_name)
-                parallel_lsp_groups[key] = []
-                for lsp in self.rsvp_lsp_objects:
-                    if (
-                        lsp.source_node_object.name == src_node_name
-                        and lsp.dest_node_object.name == dest_node_name
-                    ):
-                        parallel_lsp_groups[key].append(lsp)
-
-                if not parallel_lsp_groups[key]:
-                    del parallel_lsp_groups[key]
-
-        self._parallel_lsp_groups = parallel_lsp_groups
-        return parallel_lsp_groups
+        self._parallel_lsp_groups = dict(groups)
+        return self._parallel_lsp_groups
 
     def parallel_demand_groups(self):
         """
@@ -410,26 +401,14 @@ class _MasterModel(object):
             'F-E': [Demand(source = F, dest = E, traffic = 400, name = 'dmd_f_e_1')]}
         """
 
-        src_node_names = {dmd.source_node_object.name for dmd in self.demand_objects}
-        dest_node_names = {dmd.dest_node_object.name for dmd in self.demand_objects}
+        groups = defaultdict(list)
+        for dmd in self.demand_objects:
+            key = "{}-{}".format(
+                dmd.source_node_object.name, dmd.dest_node_object.name
+            )
+            groups[key].append(dmd)
 
-        parallel_demand_groups = {}
-
-        for src_node_name in src_node_names:
-            for dest_node_name in dest_node_names:
-                key = "{}-{}".format(src_node_name, dest_node_name)
-                parallel_demand_groups[key] = []
-                for dmd in self.demand_objects:
-                    if (
-                        dmd.source_node_object.name == src_node_name
-                        and dmd.dest_node_object.name == dest_node_name
-                    ):
-                        parallel_demand_groups[key].append(dmd)
-
-                if parallel_demand_groups[key] == []:
-                    del parallel_demand_groups[key]
-
-        return parallel_demand_groups
+        return dict(groups)
 
     def _unique_interface_per_node(self):
         """

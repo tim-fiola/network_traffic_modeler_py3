@@ -46,6 +46,7 @@ class RSVP_LSP(object):
         self.configured_setup_bandwidth = configured_setup_bandwidth
         self._manual_metric = "not set"
         self.initial_manual_metric = configured_manual_metric
+        self._cached_effective_metric = None
 
     @property
     def _key(self):
@@ -295,13 +296,11 @@ class RSVP_LSP(object):
 
         source_dest_match_traffic = total_traffic / len(min_cost_parallel_lsps)
 
-        from .performance_model import PerformanceModel, Model
-
-        if isinstance(model, PerformanceModel) or isinstance(model, Model):
-            # If it's PerformanceModel, IGP shortcuts not supported, all traffic
-            # routes on the parallel LSPs
+        # Check if any node has IGP shortcuts enabled; if not, all traffic
+        # routes directly on the parallel LSPs
+        if not any(node.igp_shortcuts_enabled for node in model.node_objects):
             return source_dest_match_traffic
-        else:  # FlexModel/Parallel_Link_Model
+        else:
             igp_shortcut_traffic = 0
             # Account for possible IGP shortcut splits
             for demand_object in self.demands_on_lsp(model):
@@ -319,15 +318,28 @@ class RSVP_LSP(object):
         metric for the shortest possible path from LSP's source to dest,
         regardless of whether the LSP takes that shortest path or not.
 
+        Results are cached per simulation run; cache is cleared when
+        clear_effective_metric_cache() is called (during update_simulation).
+
         :param model: model object containing self
         :return: metric for the LSP's shortest possible path
         """
+        if self._cached_effective_metric is not None:
+            return self._cached_effective_metric
+
         if self.manual_metric != "not set":
             self.initial_manual_metric = None
-            return self.manual_metric
+            result = self.manual_metric
         elif "Unrouted" in self.path:
-            return "Unrouted"
+            result = "Unrouted"
         else:
-            return model.get_shortest_path(
+            result = model.get_shortest_path(
                 self.source_node_object.name, self.dest_node_object.name, needed_bw=0
             )["cost"]
+
+        self._cached_effective_metric = result
+        return result
+
+    def clear_effective_metric_cache(self):
+        """Clear cached effective_metric so it is recomputed next call."""
+        self._cached_effective_metric = None
