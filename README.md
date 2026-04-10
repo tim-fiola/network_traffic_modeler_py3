@@ -8,8 +8,6 @@
 
 **Note:** As of 5.0.0, pypy support has been dropped. CPython performance improvements have closed the gap, and maintaining pypy compatibility added complexity without meaningful benefit.
 
-**HELP**: If you have experience optimizing code for performance and care to contribute, I'm happy to consider pull requests.  The current code base is logically sound and will give good results, but I know that it needs to be optimized for performance (code performance optimization is not my specialty).  In effect, this means that it takes longer for the model to converge, *especially* for models with large amounts of RSVP LSPs.  
-
 
 pyNTM: network_traffic_modeler_py3
 ==================================
