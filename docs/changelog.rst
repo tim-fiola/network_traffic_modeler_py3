@@ -1,6 +1,37 @@
 Changelog
 =========
 
+5.0.0
+-----
+
+**Unified Model**
+
+* Consolidated ``FlexModel`` and ``PerformanceModel`` into a single ``Model`` class (``pyNTM.model.Model``) with the full feature set: parallel links, IGP shortcuts, RSVP LSPs, and SRLGs
+* The canonical class is now ``Model``; ``FlexModel``, ``PerformanceModel``, ``Parallel_Link_Model`` remain as backward-compatible aliases
+* ``Model.load_model_file()`` auto-detects both legacy file formats (with and without ``circuit_id`` column)
+* ``Model.add_circuit()`` auto-assigns ``circuit_id`` when not provided
+* Removed the ``isinstance(model, PerformanceModel)`` check in ``RSVP_LSP.traffic_on_lsp()``; replaced with a capability check on ``igp_shortcuts_enabled``
+
+**RSVP LSP Performance Improvements**
+
+* ``parallel_lsp_groups()`` and ``parallel_demand_groups()`` rewritten from O(N^2 * M) nested loops to O(L) single-pass grouping
+* ``RSVP_LSP.effective_metric()`` results are now cached per simulation run, avoiding repeated full shortest-path computations
+* ``_determine_lsp_state_info()`` shares the weighted network graph across LSPs in the same parallel group instead of rebuilding it per-LSP
+* Replaced O(n) ``list.index()`` calls with ``enumerate()`` in path conversion methods
+
+**Interactive Visualization**
+
+* New ``model.visualize()`` method generates a self-contained HTML visualization and opens it in the browser
+* Draggable nodes for rearranging the network topology layout
+* Per-direction interface coloring by utilization with a toggleable legend to filter by utilization range
+* Demand path tracing: select a demand to see its traffic, LSPs, and interfaces with path highlighting
+* RSVP LSP path tracing: select an LSP to see traffic carried, reserved bandwidth, demands, and interfaces
+* Interface inspection by node: select a node to list all interfaces with utilization, demands, and LSPs
+* Cross-linked navigation: click any demand, LSP, or interface in any panel to make it the active selection
+* Tooltips on hover showing interface name, endpoints, capacity, and utilization
+* The legacy ``WeatherMap`` class (Dash/Cytoscape) is deprecated in favor of ``model.visualize()``
+
+
 4.0.1
 -----
 * Added fixed for readthedocs build

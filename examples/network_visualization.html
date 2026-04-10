@@ -7,19 +7,78 @@
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; overflow: hidden; }
+  body { font-family: Arial, sans-serif; background: #d2c6a5; color: #222; overflow: hidden; }
 
   #network-container {
-    width: 100vw;
-    height: 100vh;
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    right: 320px;
   }
 
+  /* --- Right sidebar --- */
+  #sidebar {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 320px;
+    background: rgba(245, 240, 230, 0.97);
+    border-left: 1px solid #aaa;
+    overflow-y: auto;
+    padding: 12px 14px;
+    font-size: 13px;
+    z-index: 20;
+  }
+  #sidebar h3 {
+    font-size: 14px;
+    color: #333;
+    border-bottom: 1px solid #aaa;
+    padding-bottom: 4px;
+    margin: 14px 0 8px 0;
+  }
+  #sidebar h3:first-child { margin-top: 0; }
+  #sidebar select {
+    width: 100%;
+    padding: 5px;
+    margin: 4px 0 6px 0;
+    background: #fff;
+    color: #222;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  #sidebar button {
+    padding: 4px 10px;
+    background: #e8e4dc;
+    color: #333;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin: 2px 4px 2px 0;
+  }
+  #sidebar button:hover { background: #d5d0c5; }
+  #sidebar label {
+    display: block;
+    margin: 5px 0;
+    cursor: pointer;
+  }
+  .path-info {
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: pre-wrap;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  /* --- Legend overlay --- */
   #legend {
     position: absolute;
     top: 12px;
     left: 12px;
-    background: rgba(30, 30, 50, 0.92);
-    border: 1px solid #444;
+    background: rgba(245, 240, 230, 0.95);
+    border: 1px solid #aaa;
     border-radius: 6px;
     padding: 12px 16px;
     font-size: 13px;
@@ -29,53 +88,18 @@
   #legend h3 {
     margin-bottom: 8px;
     font-size: 14px;
-    color: #ccc;
-    border-bottom: 1px solid #444;
+    color: #333;
+    border-bottom: 1px solid #aaa;
     padding-bottom: 4px;
   }
 
-  #controls {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(30, 30, 50, 0.92);
-    border: 1px solid #444;
-    border-radius: 6px;
-    padding: 12px 16px;
-    font-size: 13px;
-    z-index: 10;
-    backdrop-filter: blur(6px);
-  }
-  #controls h3 {
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: #ccc;
-    border-bottom: 1px solid #444;
-    padding-bottom: 4px;
-  }
-  #controls label {
-    display: block;
-    margin: 6px 0;
-    cursor: pointer;
-  }
-  #controls button {
-    margin-top: 8px;
-    padding: 5px 12px;
-    background: #334;
-    color: #ddd;
-    border: 1px solid #555;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-  #controls button:hover { background: #445; }
-
+  /* --- Info panel --- */
   #info-panel {
     position: absolute;
     bottom: 12px;
     left: 12px;
-    background: rgba(30, 30, 50, 0.92);
-    border: 1px solid #444;
+    background: rgba(245, 240, 230, 0.95);
+    border: 1px solid #aaa;
     border-radius: 6px;
     padding: 12px 16px;
     font-size: 13px;
@@ -89,34 +113,38 @@
     font-size: 14px;
     color: #ccc;
   }
-  #info-panel table {
-    border-collapse: collapse;
-    width: 100%;
-  }
-  #info-panel td {
-    padding: 2px 10px 2px 0;
-  }
-  #info-panel .label-cell {
-    color: #999;
-  }
 </style>
 </head>
 <body>
 
 <div id="network-container"></div>
 
-<div id="legend">
-  <h3>Utilization</h3>
-  <div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#4169E1;margin-right:8px;border-radius:2px;'></div><span>0-24%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#228B22;margin-right:8px;border-radius:2px;'></div><span>25-49%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FFD700;margin-right:8px;border-radius:2px;'></div><span>50-74%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FF4500;margin-right:8px;border-radius:2px;'></div><span>75-89%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#8B0000;margin-right:8px;border-radius:2px;'></div><span>90-99%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#9400D3;margin-right:8px;border-radius:2px;'></div><span>100%+</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#696969;margin-right:8px;border-radius:2px;border-top:2px dashed #696969;background:none;'></div><span>Failed</span></div>
-</div>
-
-<div id="controls">
+<div id="sidebar">
   <h3>Controls</h3>
   <label><input type="checkbox" id="toggle-physics"> Enable physics</label>
   <label><input type="checkbox" id="toggle-labels" checked> Show edge arrows</label>
   <button id="btn-fit">Fit to screen</button>
   <button id="btn-reset">Reset positions</button>
+
+  <h3>Demands</h3>
+  <select id="demand-select">
+    <option value="">-- Select a demand --</option>
+  </select>
+  <button id="btn-clear-demand">Clear</button>
+  <div id="demand-info" class="path-info" style="display:none;"></div>
+
+  <h3>RSVP LSPs</h3>
+  <select id="lsp-select">
+    <option value="">-- Select an LSP --</option>
+  </select>
+  <button id="btn-clear-lsp">Clear</button>
+  <div id="lsp-info" class="path-info" style="display:none;"></div>
+
+  <h3>Utilization Legend</h3>
+  <div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#4169E1;margin-right:8px;border-radius:2px;'></div><span>0-24%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#228B22;margin-right:8px;border-radius:2px;'></div><span>25-49%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FFD700;margin-right:8px;border-radius:2px;'></div><span>50-74%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FF4500;margin-right:8px;border-radius:2px;'></div><span>75-89%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#8B0000;margin-right:8px;border-radius:2px;'></div><span>90-99%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#9400D3;margin-right:8px;border-radius:2px;'></div><span>100%+</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#696969;margin-right:8px;border-radius:2px;border-top:2px dashed #696969;background:none;'></div><span>Failed</span></div>
 </div>
+
+<div id="legend" style="display:none;"></div>
 
 <div id="info-panel">
   <h3 id="info-title"></h3>
@@ -125,8 +153,13 @@
 
 <script>
 (function() {
-  var nodesData = [{"id": "E", "label": "E", "x": -300, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "E (Active)\n\n  E-to-B -> B  cap: 200  util: 22.5%\n  E-to-D -> D  cap: 100  util: 15.0%\n  E-to-F -> F  cap: 100  util: 11.0%\n  E-to-H -> H  cap: 100  util: 20.0%"}, {"id": "A", "label": "A", "x": 125, "y": 0, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "A (Active)\n\n  A-to-B -> B  cap: 100  util: 136.0%\n  A-to-C -> C  cap: 200  util: 10.0%\n  A-to-D -> D  cap: 150  util: 80.0%"}, {"id": "C", "label": "C", "x": 300, "y": 315, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "C (Active)\n\n  C-to-A -> A  cap: 200  util: 10.0%\n  C-to-D -> D  cap: 150  util: 0.0%"}, {"id": "F", "label": "F", "x": 10, "y": -175, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "F (Active)\n\n  F-to-B -> B  cap: 100  util: 25.0%\n  F-to-D -> D  cap: 100  util: 0.0%\n  F-to-E -> E  cap: 100  util: 105.0%"}, {"id": "B", "label": "B", "x": 155, "y": 885, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "B (Active)\n\n  B-to-A -> A  cap: 100  util: 20.0%\n  B-to-D -> D  cap: 200  util: 7.5%\n  B-to-E -> E  cap: 200  util: 45.0%\n  B-to-F -> F  cap: 100  util: 11.0%"}, {"id": "D", "label": "D", "x": 310, "y": -185, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "D (Active)\n\n  D-to-A -> A  cap: 150  util: 6.7%\n  D-to-B -> B  cap: 200  util: 0.0%\n  D-to-C -> C  cap: 150  util: 0.0%\n  D-to-E -> E  cap: 100  util: 0.0%\n  D-to-F -> F  cap: 100  util: 0.0%\n  D-to-G -> G  cap: 50  util: 60.0%\n  D-to-H -> H  cap: 100  util: 0.0%"}, {"id": "H", "label": "H", "x": 260, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "H (Active)\n\n  H-to-D -> D  cap: 100  util: 0.0%\n  H-to-E -> E  cap: 100  util: 0.0%\n  H-to-G -> G  cap: 150  util: 0.0%"}, {"id": "G", "label": "G", "x": 150, "y": -450, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#eeeeee", "vadjust": 33}, "borderWidth": 2, "title": "G (Active)\n\n  G-to-D -> D  cap: 50  util: 0.0%\n  G-to-H -> H  cap: 150  util: 0.0%"}];
-  var edgesData = [{"from": "D", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-A\nFrom: D\nTo: A\nCapacity: 150\nUtilization: 6.7%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "A", "to": "D", "color": {"color": "#FF4500", "highlight": "#FF4500"}, "title": "A-to-D\nFrom: A\nTo: D\nCapacity: 150\nUtilization: 80.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-C\nFrom: D\nTo: C\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "C", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-D\nFrom: C\nTo: D\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "F", "to": "B", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "F-to-B\nFrom: F\nTo: B\nCapacity: 100\nUtilization: 25.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-F\nFrom: B\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "H", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-E\nFrom: H\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-H\nFrom: E\nTo: H\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-E\nFrom: D\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-D\nFrom: E\nTo: D\nCapacity: 100\nUtilization: 15.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "A", "to": "B", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "A-to-B\nFrom: A\nTo: B\nCapacity: 100\nUtilization: 136.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-A\nFrom: B\nTo: A\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "H", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-D\nFrom: H\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-H\nFrom: D\nTo: H\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-B\nFrom: D\nTo: B\nCapacity: 200\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-D\nFrom: B\nTo: D\nCapacity: 200\nUtilization: 7.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "A", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "A-to-C\nFrom: A\nTo: C\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "C", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-A\nFrom: C\nTo: A\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "G", "color": {"color": "#FFD700", "highlight": "#FFD700"}, "title": "D-to-G\nFrom: D\nTo: G\nCapacity: 50\nUtilization: 60.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "G", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-D\nFrom: G\nTo: D\nCapacity: 50\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-B\nFrom: E\nTo: B\nCapacity: 200\nUtilization: 22.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "B", "to": "E", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "B-to-E\nFrom: B\nTo: E\nCapacity: 200\nUtilization: 45.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "H", "to": "G", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-G\nFrom: H\nTo: G\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "G", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-H\nFrom: G\nTo: H\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "D", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-F\nFrom: D\nTo: F\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "F", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "F-to-D\nFrom: F\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "E", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-F\nFrom: E\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"from": "F", "to": "E", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "F-to-E\nFrom: F\nTo: E\nCapacity: 100\nUtilization: 105.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}];
+  var nodesData = [{"id": "F", "label": "F", "x": 10, "y": -175, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "F (Active)\n\n  F-to-B -> B  cap: 100  util: 25.0%\n  F-to-D -> D  cap: 100  util: 0.0%\n  F-to-E -> E  cap: 100  util: 105.0%"}, {"id": "A", "label": "A", "x": 125, "y": 0, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "A (Active)\n\n  A-to-B -> B  cap: 100  util: 136.0%\n  A-to-C -> C  cap: 200  util: 10.0%\n  A-to-D -> D  cap: 150  util: 80.0%"}, {"id": "G", "label": "G", "x": 150, "y": -450, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "G (Active)\n\n  G-to-D -> D  cap: 50  util: 0.0%\n  G-to-H -> H  cap: 150  util: 0.0%"}, {"id": "D", "label": "D", "x": 310, "y": -185, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "D (Active)\n\n  D-to-A -> A  cap: 150  util: 6.7%\n  D-to-B -> B  cap: 200  util: 0.0%\n  D-to-C -> C  cap: 150  util: 0.0%\n  D-to-E -> E  cap: 100  util: 0.0%\n  D-to-F -> F  cap: 100  util: 0.0%\n  D-to-G -> G  cap: 50  util: 60.0%\n  D-to-H -> H  cap: 100  util: 0.0%"}, {"id": "C", "label": "C", "x": 300, "y": 315, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "C (Active)\n\n  C-to-A -> A  cap: 200  util: 10.0%\n  C-to-D -> D  cap: 150  util: 0.0%"}, {"id": "E", "label": "E", "x": -300, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "E (Active)\n\n  E-to-B -> B  cap: 200  util: 22.5%\n  E-to-D -> D  cap: 100  util: 15.0%\n  E-to-F -> F  cap: 100  util: 11.0%\n  E-to-H -> H  cap: 100  util: 20.0%"}, {"id": "B", "label": "B", "x": 155, "y": 885, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "B (Active)\n\n  B-to-A -> A  cap: 100  util: 20.0%\n  B-to-D -> D  cap: 200  util: 7.5%\n  B-to-E -> E  cap: 200  util: 45.0%\n  B-to-F -> F  cap: 100  util: 11.0%"}, {"id": "H", "label": "H", "x": 260, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "H (Active)\n\n  H-to-D -> D  cap: 100  util: 0.0%\n  H-to-E -> E  cap: 100  util: 0.0%\n  H-to-G -> G  cap: 150  util: 0.0%"}];
+  var edgesData = [{"id": "B-to-A__B", "from": "B", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-A\nFrom: B\nTo: A\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "A-to-B__A", "from": "A", "to": "B", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "A-to-B\nFrom: A\nTo: B\nCapacity: 100\nUtilization: 136.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "B-to-F__B", "from": "B", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-F\nFrom: B\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "F-to-B__F", "from": "F", "to": "B", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "F-to-B\nFrom: F\nTo: B\nCapacity: 100\nUtilization: 25.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-H__E", "from": "E", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-H\nFrom: E\nTo: H\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "H-to-E__H", "from": "H", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-E\nFrom: H\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "B-to-E__B", "from": "B", "to": "E", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "B-to-E\nFrom: B\nTo: E\nCapacity: 200\nUtilization: 45.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-B__E", "from": "E", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-B\nFrom: E\nTo: B\nCapacity: 200\nUtilization: 22.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-C__D", "from": "D", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-C\nFrom: D\nTo: C\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "C-to-D__C", "from": "C", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-D\nFrom: C\nTo: D\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "B-to-D__B", "from": "B", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-D\nFrom: B\nTo: D\nCapacity: 200\nUtilization: 7.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-B__D", "from": "D", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-B\nFrom: D\nTo: B\nCapacity: 200\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-F__E", "from": "E", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-F\nFrom: E\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "F-to-E__F", "from": "F", "to": "E", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "F-to-E\nFrom: F\nTo: E\nCapacity: 100\nUtilization: 105.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-F__D", "from": "D", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-F\nFrom: D\nTo: F\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "F-to-D__F", "from": "F", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "F-to-D\nFrom: F\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-D__E", "from": "E", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-D\nFrom: E\nTo: D\nCapacity: 100\nUtilization: 15.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-E__D", "from": "D", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-E\nFrom: D\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-G__D", "from": "D", "to": "G", "color": {"color": "#FFD700", "highlight": "#FFD700"}, "title": "D-to-G\nFrom: D\nTo: G\nCapacity: 50\nUtilization: 60.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "G-to-D__G", "from": "G", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-D\nFrom: G\nTo: D\nCapacity: 50\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "A-to-C__A", "from": "A", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "A-to-C\nFrom: A\nTo: C\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "C-to-A__C", "from": "C", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-A\nFrom: C\nTo: A\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "H-to-G__H", "from": "H", "to": "G", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-G\nFrom: H\nTo: G\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "G-to-H__G", "from": "G", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-H\nFrom: G\nTo: H\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "A-to-D__A", "from": "A", "to": "D", "color": {"color": "#FF4500", "highlight": "#FF4500"}, "title": "A-to-D\nFrom: A\nTo: D\nCapacity: 150\nUtilization: 80.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-A__D", "from": "D", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-A\nFrom: D\nTo: A\nCapacity: 150\nUtilization: 6.7%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "H-to-D__H", "from": "H", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-D\nFrom: H\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-H__D", "from": "D", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-H\nFrom: D\nTo: H\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}];
+  var demandsData = [{"label": "A -> B ('', traffic=50)", "edge_ids": ["A-to-B__A"], "node_ids": ["A", "B"]}, {"label": "A -> D ('', traffic=120)", "edge_ids": ["A-to-D__A"], "node_ids": ["A", "D"]}, {"label": "A -> E ('', traffic=24)", "edge_ids": ["A-to-B__A", "B-to-E__B"], "node_ids": ["A", "B", "E"]}, {"label": "A -> F ('', traffic=22)", "edge_ids": ["A-to-B__A", "B-to-E__B", "B-to-F__B", "E-to-F__E"], "node_ids": ["A", "B", "E", "F"]}, {"label": "A -> H ('', traffic=20)", "edge_ids": ["A-to-B__A", "B-to-E__B", "E-to-H__E"], "node_ids": ["A", "B", "E", "H"]}, {"label": "B -> G ('', traffic=30)", "edge_ids": ["B-to-D__B", "B-to-E__B", "D-to-G__D", "E-to-D__E"], "node_ids": ["B", "D", "E", "G"]}, {"label": "C -> E ('', traffic=20)", "edge_ids": ["A-to-B__A", "B-to-E__B", "C-to-A__C"], "node_ids": ["A", "B", "C", "E"]}, {"label": "D -> A ('', traffic=10)", "edge_ids": ["D-to-A__D"], "node_ids": ["A", "D"]}, {"label": "E -> C ('', traffic=20)", "edge_ids": ["A-to-C__A", "B-to-A__B", "E-to-B__E"], "node_ids": ["A", "B", "C", "E"]}, {"label": "F -> B ('', traffic=50)", "edge_ids": ["E-to-B__E", "F-to-B__F", "F-to-E__F"], "node_ids": ["B", "E", "F"]}, {"label": "F -> E ('', traffic=80)", "edge_ids": ["F-to-E__F"], "node_ids": ["E", "F"]}];
+  var lspsData = [];
+
+  var DEMAND_COLOR = '#FF69B4';
+  var LSP_COLOR = '#00FFFF';
 
   var nodes = new vis.DataSet(nodesData);
   var edges = new vis.DataSet(edgesData);
@@ -135,9 +168,7 @@
   var data = { nodes: nodes, edges: edges };
 
   var options = {
-    physics: {
-      enabled: false
-    },
+    physics: { enabled: false },
     interaction: {
       hover: true,
       tooltipDelay: 150,
@@ -148,23 +179,190 @@
     },
     edges: {
       font: { size: 10, color: '#999', face: 'arial' },
-      smooth: {
-        type: 'curvedCW',
-        roundness: 0.2
-      },
+      smooth: { type: 'curvedCW', roundness: 0.2 },
       hoverWidth: 1.5
     },
     nodes: {
-      font: { color: '#eeeeee' }
+      font: { color: '#222222' }
     }
   };
 
   var network = new vis.Network(container, data, options);
 
+  // Store original edge styles for restore
+  var originalEdgeStyles = {};
+  edgesData.forEach(function(e) {
+    originalEdgeStyles[e.id] = {
+      color: e.color,
+      width: e.width,
+      dashes: e.dashes || false
+    };
+  });
+
+  // Store original node styles for restore
+  var originalNodeStyles = {};
+  nodesData.forEach(function(n) {
+    originalNodeStyles[n.id] = {
+      color: JSON.parse(JSON.stringify(n.color)),
+      borderWidth: n.borderWidth
+    };
+  });
+
   // Store original positions for reset
   var originalPositions = {};
   nodesData.forEach(function(n) {
     originalPositions[n.id] = { x: n.x, y: n.y };
+  });
+
+  // --- Populate dropdowns ---
+  var demandSelect = document.getElementById('demand-select');
+  demandsData.forEach(function(d, i) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = d.label;
+    demandSelect.appendChild(opt);
+  });
+
+  var lspSelect = document.getElementById('lsp-select');
+  lspsData.forEach(function(l, i) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = l.label;
+    lspSelect.appendChild(opt);
+  });
+
+  // --- Highlight / restore helpers ---
+  function restoreAllEdges() {
+    var updates = [];
+    edges.forEach(function(e) {
+      var orig = originalEdgeStyles[e.id];
+      if (orig) {
+        updates.push({
+          id: e.id,
+          color: orig.color,
+          width: orig.width,
+          dashes: orig.dashes
+        });
+      }
+    });
+    edges.update(updates);
+  }
+
+  function restoreAllNodes() {
+    var updates = [];
+    nodes.forEach(function(n) {
+      var orig = originalNodeStyles[n.id];
+      if (orig) {
+        updates.push({
+          id: n.id,
+          color: JSON.parse(JSON.stringify(orig.color)),
+          borderWidth: orig.borderWidth
+        });
+      }
+    });
+    nodes.update(updates);
+  }
+
+  function dimAllEdges() {
+    var updates = [];
+    edges.forEach(function(e) {
+      updates.push({
+        id: e.id,
+        color: { color: 'rgba(160,150,130,0.45)', highlight: 'rgba(160,150,130,0.45)' },
+        width: 1
+      });
+    });
+    edges.update(updates);
+  }
+
+  function highlightEdges(edgeIds, color, width) {
+    var updates = [];
+    edgeIds.forEach(function(eid) {
+      updates.push({
+        id: eid,
+        color: { color: color, highlight: color },
+        width: width,
+        dashes: false
+      });
+    });
+    edges.update(updates);
+  }
+
+  function highlightNodes(nodeIds, borderColor) {
+    var updates = [];
+    nodeIds.forEach(function(nid) {
+      var orig = originalNodeStyles[nid];
+      if (orig) {
+        var c = JSON.parse(JSON.stringify(orig.color));
+        c.border = borderColor;
+        updates.push({ id: nid, color: c, borderWidth: 4 });
+      }
+    });
+    nodes.update(updates);
+  }
+
+  // --- Demand selection ---
+  demandSelect.addEventListener('change', function() {
+    restoreAllEdges();
+    restoreAllNodes();
+    lspSelect.value = '';
+    document.getElementById('lsp-info').style.display = 'none';
+    var idx = this.value;
+    var infoDiv = document.getElementById('demand-info');
+    if (idx === '') {
+      infoDiv.style.display = 'none';
+      return;
+    }
+    var d = demandsData[parseInt(idx)];
+    if (d.edge_ids.length === 0) {
+      infoDiv.textContent = 'Demand is unrouted';
+      infoDiv.style.display = 'block';
+      return;
+    }
+    dimAllEdges();
+    highlightEdges(d.edge_ids, DEMAND_COLOR, 5);
+    highlightNodes(d.node_ids, DEMAND_COLOR);
+    infoDiv.textContent = 'Path edges: ' + d.edge_ids.length + '\nNodes: ' + d.node_ids.join(', ');
+    infoDiv.style.display = 'block';
+  });
+
+  document.getElementById('btn-clear-demand').addEventListener('click', function() {
+    demandSelect.value = '';
+    document.getElementById('demand-info').style.display = 'none';
+    restoreAllEdges();
+    restoreAllNodes();
+  });
+
+  // --- LSP selection ---
+  lspSelect.addEventListener('change', function() {
+    restoreAllEdges();
+    restoreAllNodes();
+    demandSelect.value = '';
+    document.getElementById('demand-info').style.display = 'none';
+    var idx = this.value;
+    var infoDiv = document.getElementById('lsp-info');
+    if (idx === '') {
+      infoDiv.style.display = 'none';
+      return;
+    }
+    var l = lspsData[parseInt(idx)];
+    if (l.edge_ids.length === 0) {
+      infoDiv.textContent = 'LSP is unrouted';
+      infoDiv.style.display = 'block';
+      return;
+    }
+    dimAllEdges();
+    highlightEdges(l.edge_ids, LSP_COLOR, 5);
+    highlightNodes(l.node_ids, LSP_COLOR);
+    infoDiv.textContent = 'Path edges: ' + l.edge_ids.length + '\nNodes: ' + l.node_ids.join(', ');
+    infoDiv.style.display = 'block';
+  });
+
+  document.getElementById('btn-clear-lsp').addEventListener('click', function() {
+    lspSelect.value = '';
+    document.getElementById('lsp-info').style.display = 'none';
+    restoreAllEdges();
+    restoreAllNodes();
   });
 
   // --- Controls ---
@@ -174,14 +372,6 @@
 
   document.getElementById('toggle-labels').addEventListener('change', function() {
     var show = this.checked;
-    var updates = [];
-    edgesData.forEach(function(e, i) {
-      updates.push({
-        id: i + 1,
-        arrows: { to: { enabled: show, scaleFactor: 0.8 } }
-      });
-    });
-    // vis.js auto-assigns numeric IDs starting from 1
     edges.forEach(function(e) {
       edges.update({ id: e.id, arrows: { to: { enabled: show, scaleFactor: 0.8 } } });
     });

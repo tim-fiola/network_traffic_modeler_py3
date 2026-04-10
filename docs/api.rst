@@ -1,6 +1,13 @@
 API
 =======
 
+Model
+-----------
+.. autoclass:: pyNTM.model.Model
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 _MasterModel
 --------------
 .. autoclass:: pyNTM.master_model._MasterModel
@@ -8,16 +15,16 @@ _MasterModel
     :undoc-members:
     :show-inheritance:
 
-PerformanceModel
------------------
+PerformanceModel (legacy alias)
+--------------------------------
 .. autoclass:: pyNTM.performance_model.PerformanceModel
     :members:
     :undoc-members:
     :show-inheritance:
 
-FlexModel
-------------
-.. autoclass:: pyNTM.flex_model.FlexModel
+InteractiveVisualization
+-------------------------
+.. autoclass:: pyNTM.interactive_visualization.InteractiveVisualization
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,14 +1,17 @@
 """
 Backward compatibility shim.
 
-FlexModel is now defined in pyNTM.model.  This module re-exports it
-so that existing code using ``from pyNTM.flex_model import FlexModel``
-continues to work.
+FlexModel is now a subclass alias for Model, defined in pyNTM.model.
 """
 
-from .model import FlexModel  # noqa: F401
+from .model import Model
+
+
+class FlexModel(Model):
+    """Backward-compatible alias for Model."""
+    pass
 
 
 class Parallel_Link_Model(FlexModel):
-    """Legacy alias for FlexModel, kept for backward compatibility."""
+    """Legacy alias for Model, kept for backward compatibility."""
     pass
