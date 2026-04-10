@@ -76,8 +76,6 @@ class Model(object):
         self.srlg_objects = set()
         self._parallel_lsp_groups = {}
 
-
-
     def simulation_diagnostics(self):
         """
         Analyzes simulation results and looks for the following:
@@ -413,9 +411,7 @@ class Model(object):
 
         groups = defaultdict(list)
         for lsp in self.rsvp_lsp_objects:
-            key = "{}-{}".format(
-                lsp.source_node_object.name, lsp.dest_node_object.name
-            )
+            key = "{}-{}".format(lsp.source_node_object.name, lsp.dest_node_object.name)
             groups[key].append(lsp)
 
         self._parallel_lsp_groups = dict(groups)
@@ -438,9 +434,7 @@ class Model(object):
 
         groups = defaultdict(list)
         for dmd in self.demand_objects:
-            key = "{}-{}".format(
-                dmd.source_node_object.name, dmd.dest_node_object.name
-            )
+            key = "{}-{}".format(dmd.source_node_object.name, dmd.dest_node_object.name)
             groups[key].append(dmd)
 
         return dict(groups)
@@ -1258,9 +1252,11 @@ class Model(object):
             model.visualize('my_network.html')       # saves to specific path
         """
         from .interactive_visualization import InteractiveVisualization
+
         vis = InteractiveVisualization(self)
-        return vis.create_visualization(output_file=output_file,
-                                        open_browser=open_browser)
+        return vis.create_visualization(
+            output_file=output_file, open_browser=open_browser
+        )
 
     def add_network_interfaces_from_list(self, network_interfaces):
         """
@@ -3230,5 +3226,3 @@ class Model(object):
                 node_set.add(new_interface.remote_node_object)
 
         return interface_set, node_set
-
-

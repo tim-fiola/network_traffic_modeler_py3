@@ -9,4 +9,5 @@ from .model import Model
 
 class PerformanceModel(Model):
     """Backward-compatible alias for Model."""
+
     pass

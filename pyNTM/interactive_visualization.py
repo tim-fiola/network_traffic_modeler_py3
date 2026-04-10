@@ -41,19 +41,19 @@ class InteractiveVisualization(object):
         # Utilization color thresholds: list of (upper_bound, color, label)
         # Checked in order; first match wins. None upper_bound = catch-all for 100%+
         self.util_ranges = [
-            (25, "#4169E1", "0-24%"),     # Royal Blue
-            (50, "#228B22", "25-49%"),     # Forest Green
-            (75, "#FFD700", "50-74%"),     # Gold
-            (90, "#FF4500", "75-89%"),     # Orange Red
-            (100, "#8B0000", "90-99%"),    # Dark Red
-            (None, "#9400D3", "100%+"),    # Dark Violet
+            (25, "#4169E1", "0-24%"),  # Royal Blue
+            (50, "#228B22", "25-49%"),  # Forest Green
+            (75, "#FFD700", "50-74%"),  # Gold
+            (90, "#FF4500", "75-89%"),  # Orange Red
+            (100, "#8B0000", "90-99%"),  # Dark Red
+            (None, "#9400D3", "100%+"),  # Dark Violet
         ]
-        self.failed_color = "#696969"      # Dim Grey
+        self.failed_color = "#696969"  # Dim Grey
         self.failed_label = "Failed"
 
         # Node styling
-        self.node_color = "#90EE90"        # Light green
-        self.node_failed_color = "#FF0000" # Red
+        self.node_color = "#90EE90"  # Light green
+        self.node_failed_color = "#FF0000"  # Red
         self.node_border_color = "#696969"
         self.node_size = 25
         self.node_font_size = 14
@@ -64,7 +64,7 @@ class InteractiveVisualization(object):
 
         # Path highlight colors
         self.demand_highlight_color = "#FF69B4"  # Hot pink
-        self.lsp_highlight_color = "#00FFFF"     # Cyan
+        self.lsp_highlight_color = "#00FFFF"  # Cyan
 
     def _get_utilization_color(self, utilization):
         """Return the color for a given utilization percentage."""
@@ -109,30 +109,32 @@ class InteractiveVisualization(object):
             border_color = "#B73239" if node.failed else self.node_border_color
             shape = "diamond" if node.failed else "dot"
 
-            nodes.append({
-                "id": node.name,
-                "label": node.name,
-                "x": x,
-                "y": y,
-                "color": {
-                    "background": bg_color,
-                    "border": border_color,
-                    "highlight": {
+            nodes.append(
+                {
+                    "id": node.name,
+                    "label": node.name,
+                    "x": x,
+                    "y": y,
+                    "color": {
                         "background": bg_color,
-                        "border": "#333333",
+                        "border": border_color,
+                        "highlight": {
+                            "background": bg_color,
+                            "border": "#333333",
+                        },
                     },
-                },
-                "shape": shape,
-                "size": self.node_size,
-                "font": {
-                    "size": self.node_font_size,
-                    "face": "arial",
-                    "color": "#222222",
-                    "vadjust": self.node_size + 8,
-                },
-                "borderWidth": 2,
-                "title": self._node_tooltip(node),
-            })
+                    "shape": shape,
+                    "size": self.node_size,
+                    "font": {
+                        "size": self.node_font_size,
+                        "face": "arial",
+                        "color": "#222222",
+                        "vadjust": self.node_size + 8,
+                    },
+                    "borderWidth": 2,
+                    "title": self._node_tooltip(node),
+                }
+            )
         return nodes
 
     def _node_tooltip(self, node):
@@ -146,10 +148,14 @@ class InteractiveVisualization(object):
                 util_str = "Down"
             else:
                 util_str = "{:.1f}%".format(util)
-            lines.append("  {} -> {}  cap: {}  util: {}".format(
-                intf.name, intf.remote_node_object.name,
-                intf.capacity, util_str,
-            ))
+            lines.append(
+                "  {} -> {}  cap: {}  util: {}".format(
+                    intf.name,
+                    intf.remote_node_object.name,
+                    intf.capacity,
+                    util_str,
+                )
+            )
         return "\n".join(lines)
 
     @staticmethod
@@ -172,67 +178,78 @@ class InteractiveVisualization(object):
             node_b = int_b.node_object.name
 
             # Avoid duplicate circuits
-            ckt_key = frozenset([
-                (int_a.name, node_a),
-                (int_b.name, node_b),
-            ])
+            ckt_key = frozenset(
+                [
+                    (int_a.name, node_a),
+                    (int_b.name, node_b),
+                ]
+            )
             if ckt_key in seen_circuits:
                 continue
             seen_circuits.add(ckt_key)
 
             # Edge for int_a direction: node_a -> node_b
             color_a = self._get_utilization_color(int_a.utilization)
-            edges.append({
-                "id": self._edge_id(int_a),
-                "from": node_a,
-                "to": node_b,
-                "color": {"color": color_a, "highlight": color_a},
-                "title": self._edge_tooltip(int_a),
-                "width": self.edge_width,
-                "arrows": {
-                    "to": {"enabled": True, "scaleFactor": self.edge_arrow_scale}
-                },
-                "smooth": {"type": "curvedCW", "roundness": 0.2},
-                "dashes": int_a.utilization == "Int is down",
-                "util_range": self._get_utilization_label(int_a.utilization),
-            })
+            edges.append(
+                {
+                    "id": self._edge_id(int_a),
+                    "from": node_a,
+                    "to": node_b,
+                    "color": {"color": color_a, "highlight": color_a},
+                    "title": self._edge_tooltip(int_a),
+                    "width": self.edge_width,
+                    "arrows": {
+                        "to": {"enabled": True, "scaleFactor": self.edge_arrow_scale}
+                    },
+                    "smooth": {"type": "curvedCW", "roundness": 0.2},
+                    "dashes": int_a.utilization == "Int is down",
+                    "util_range": self._get_utilization_label(int_a.utilization),
+                }
+            )
 
             # Edge for int_b direction: node_b -> node_a
             color_b = self._get_utilization_color(int_b.utilization)
-            edges.append({
-                "id": self._edge_id(int_b),
-                "from": node_b,
-                "to": node_a,
-                "color": {"color": color_b, "highlight": color_b},
-                "title": self._edge_tooltip(int_b),
-                "width": self.edge_width,
-                "arrows": {
-                    "to": {"enabled": True, "scaleFactor": self.edge_arrow_scale}
-                },
-                "smooth": {"type": "curvedCW", "roundness": 0.2},
-                "dashes": int_b.utilization == "Int is down",
-                "util_range": self._get_utilization_label(int_b.utilization),
-            })
+            edges.append(
+                {
+                    "id": self._edge_id(int_b),
+                    "from": node_b,
+                    "to": node_a,
+                    "color": {"color": color_b, "highlight": color_b},
+                    "title": self._edge_tooltip(int_b),
+                    "width": self.edge_width,
+                    "arrows": {
+                        "to": {"enabled": True, "scaleFactor": self.edge_arrow_scale}
+                    },
+                    "smooth": {"type": "curvedCW", "roundness": 0.2},
+                    "dashes": int_b.utilization == "Int is down",
+                    "util_range": self._get_utilization_label(int_b.utilization),
+                }
+            )
 
         return edges
 
     def _build_demands_data(self):
         """Build a list of demands with their path edge IDs and interface details."""
         demands = []
-        for dmd in sorted(self.model.demand_objects,
-                          key=lambda d: (d.source_node_object.name,
-                                         d.dest_node_object.name, d.name)):
+        for dmd in sorted(
+            self.model.demand_objects,
+            key=lambda d: (d.source_node_object.name, d.dest_node_object.name, d.name),
+        ):
             if dmd.path == "Unrouted":
-                demands.append({
-                    "label": "{} -> {} ({}) [Unrouted]".format(
-                        dmd.source_node_object.name,
-                        dmd.dest_node_object.name, dmd.name),
-                    "traffic": dmd.traffic,
-                    "edge_ids": [],
-                    "node_ids": [],
-                    "interfaces": [],
-                    "lsps": [],
-                })
+                demands.append(
+                    {
+                        "label": "{} -> {} ({}) [Unrouted]".format(
+                            dmd.source_node_object.name,
+                            dmd.dest_node_object.name,
+                            dmd.name,
+                        ),
+                        "traffic": dmd.traffic,
+                        "edge_ids": [],
+                        "node_ids": [],
+                        "interfaces": [],
+                        "lsps": [],
+                    }
+                )
                 continue
 
             edge_ids = set()
@@ -247,71 +264,102 @@ class InteractiveVisualization(object):
                             for intf in hop.path["interfaces"]:
                                 eid = self._edge_id(intf)
                                 if eid not in edge_ids:
-                                    intf_details.append({
-                                        "label": "{} ({} -> {})".format(
-                                            intf.name, intf.node_object.name,
-                                            intf.remote_node_object.name),
-                                        "node": intf.node_object.name,
-                                        "edge_id": eid,
-                                    })
+                                    intf_details.append(
+                                        {
+                                            "label": "{} ({} -> {})".format(
+                                                intf.name,
+                                                intf.node_object.name,
+                                                intf.remote_node_object.name,
+                                            ),
+                                            "node": intf.node_object.name,
+                                            "edge_id": eid,
+                                        }
+                                    )
                                 edge_ids.add(eid)
                                 node_ids.add(intf.node_object.name)
                                 node_ids.add(intf.remote_node_object.name)
                     else:
                         eid = self._edge_id(hop)
                         if eid not in edge_ids:
-                            intf_details.append({
-                                "label": "{} ({} -> {})".format(
-                                    hop.name, hop.node_object.name,
-                                    hop.remote_node_object.name),
-                                "node": hop.node_object.name,
-                                "edge_id": eid,
-                            })
+                            intf_details.append(
+                                {
+                                    "label": "{} ({} -> {})".format(
+                                        hop.name,
+                                        hop.node_object.name,
+                                        hop.remote_node_object.name,
+                                    ),
+                                    "node": hop.node_object.name,
+                                    "edge_id": eid,
+                                }
+                            )
                         edge_ids.add(eid)
                         node_ids.add(hop.node_object.name)
                         node_ids.add(hop.remote_node_object.name)
 
             lsp_details = []
-            for lsp in sorted(lsp_set,
-                              key=lambda l: (l.source_node_object.name,
-                                             l.dest_node_object.name, l.lsp_name)):
-                lsp_details.append({
-                    "label": "{} -> {} ({})".format(
-                        lsp.source_node_object.name,
-                        lsp.dest_node_object.name, lsp.lsp_name),
-                    "index": self._lsp_index(lsp),
-                })
+            for lsp in sorted(
+                lsp_set,
+                key=lambda l: (
+                    l.source_node_object.name,
+                    l.dest_node_object.name,
+                    l.lsp_name,
+                ),
+            ):
+                lsp_details.append(
+                    {
+                        "label": "{} -> {} ({})".format(
+                            lsp.source_node_object.name,
+                            lsp.dest_node_object.name,
+                            lsp.lsp_name,
+                        ),
+                        "index": self._lsp_index(lsp),
+                    }
+                )
 
-            demands.append({
-                "label": "{} -> {} ({}, traffic={})".format(
-                    dmd.source_node_object.name,
-                    dmd.dest_node_object.name, dmd.name, dmd.traffic),
-                "traffic": dmd.traffic,
-                "edge_ids": sorted(edge_ids),
-                "node_ids": sorted(node_ids),
-                "interfaces": intf_details,
-                "lsps": lsp_details,
-            })
+            demands.append(
+                {
+                    "label": "{} -> {} ({}, traffic={})".format(
+                        dmd.source_node_object.name,
+                        dmd.dest_node_object.name,
+                        dmd.name,
+                        dmd.traffic,
+                    ),
+                    "traffic": dmd.traffic,
+                    "edge_ids": sorted(edge_ids),
+                    "node_ids": sorted(node_ids),
+                    "interfaces": intf_details,
+                    "lsps": lsp_details,
+                }
+            )
         return demands
 
     def _build_lsps_data(self):
         """Build a list of LSPs with their path edge IDs and details."""
         lsps = []
-        for lsp in sorted(self.model.rsvp_lsp_objects,
-                          key=lambda l: (l.source_node_object.name,
-                                         l.dest_node_object.name, l.lsp_name)):
+        for lsp in sorted(
+            self.model.rsvp_lsp_objects,
+            key=lambda l: (
+                l.source_node_object.name,
+                l.dest_node_object.name,
+                l.lsp_name,
+            ),
+        ):
             if "Unrouted" in str(lsp.path):
-                lsps.append({
-                    "label": "{} -> {} ({}) [Unrouted]".format(
-                        lsp.source_node_object.name,
-                        lsp.dest_node_object.name, lsp.lsp_name),
-                    "traffic": 0,
-                    "reserved_bw": 0,
-                    "edge_ids": [],
-                    "node_ids": [],
-                    "interfaces": [],
-                    "demands": [],
-                })
+                lsps.append(
+                    {
+                        "label": "{} -> {} ({}) [Unrouted]".format(
+                            lsp.source_node_object.name,
+                            lsp.dest_node_object.name,
+                            lsp.lsp_name,
+                        ),
+                        "traffic": 0,
+                        "reserved_bw": 0,
+                        "edge_ids": [],
+                        "node_ids": [],
+                        "interfaces": [],
+                        "demands": [],
+                    }
+                )
                 continue
 
             edge_ids = []
@@ -322,13 +370,17 @@ class InteractiveVisualization(object):
                 edge_ids.append(eid)
                 node_ids.add(intf.node_object.name)
                 node_ids.add(intf.remote_node_object.name)
-                intf_details.append({
-                    "label": "{} ({} -> {})".format(
-                        intf.name, intf.node_object.name,
-                        intf.remote_node_object.name),
-                    "node": intf.node_object.name,
-                    "edge_id": eid,
-                })
+                intf_details.append(
+                    {
+                        "label": "{} ({} -> {})".format(
+                            intf.name,
+                            intf.node_object.name,
+                            intf.remote_node_object.name,
+                        ),
+                        "node": intf.node_object.name,
+                        "edge_id": eid,
+                    }
+                )
 
             traffic = lsp.traffic_on_lsp(self.model)
             res_bw = lsp.reserved_bandwidth
@@ -336,27 +388,44 @@ class InteractiveVisualization(object):
                 res_bw = 0
 
             dmd_details = []
-            for dmd in sorted(lsp.demands_on_lsp(self.model),
-                              key=lambda d: (d.source_node_object.name,
-                                             d.dest_node_object.name, d.name)):
-                dmd_details.append({
-                    "label": "{} -> {} ({})".format(
-                        dmd.source_node_object.name,
-                        dmd.dest_node_object.name, dmd.name),
-                    "index": self._demand_index(dmd),
-                })
+            for dmd in sorted(
+                lsp.demands_on_lsp(self.model),
+                key=lambda d: (
+                    d.source_node_object.name,
+                    d.dest_node_object.name,
+                    d.name,
+                ),
+            ):
+                dmd_details.append(
+                    {
+                        "label": "{} -> {} ({})".format(
+                            dmd.source_node_object.name,
+                            dmd.dest_node_object.name,
+                            dmd.name,
+                        ),
+                        "index": self._demand_index(dmd),
+                    }
+                )
 
-            lsps.append({
-                "label": "{} -> {} ({})".format(
-                    lsp.source_node_object.name,
-                    lsp.dest_node_object.name, lsp.lsp_name),
-                "traffic": round(traffic, 2) if isinstance(traffic, float) else traffic,
-                "reserved_bw": round(res_bw, 2) if isinstance(res_bw, float) else res_bw,
-                "edge_ids": edge_ids,
-                "node_ids": sorted(node_ids),
-                "interfaces": intf_details,
-                "demands": dmd_details,
-            })
+            lsps.append(
+                {
+                    "label": "{} -> {} ({})".format(
+                        lsp.source_node_object.name,
+                        lsp.dest_node_object.name,
+                        lsp.lsp_name,
+                    ),
+                    "traffic": (
+                        round(traffic, 2) if isinstance(traffic, float) else traffic
+                    ),
+                    "reserved_bw": (
+                        round(res_bw, 2) if isinstance(res_bw, float) else res_bw
+                    ),
+                    "edge_ids": edge_ids,
+                    "node_ids": sorted(node_ids),
+                    "interfaces": intf_details,
+                    "demands": dmd_details,
+                }
+            )
         return lsps
 
     def _build_interfaces_by_node(self):
@@ -374,42 +443,53 @@ class InteractiveVisualization(object):
                 # Demands on this interface
                 dmd_labels = []
                 for dmd in intf.demands(self.model):
-                    dmd_labels.append({
-                        "label": "{} -> {} ({})".format(
-                            dmd.source_node_object.name,
-                            dmd.dest_node_object.name, dmd.name),
-                        "type": "demand",
-                        "index": self._demand_index(dmd),
-                    })
+                    dmd_labels.append(
+                        {
+                            "label": "{} -> {} ({})".format(
+                                dmd.source_node_object.name,
+                                dmd.dest_node_object.name,
+                                dmd.name,
+                            ),
+                            "type": "demand",
+                            "index": self._demand_index(dmd),
+                        }
+                    )
 
                 # LSPs on this interface
                 lsp_labels = []
                 for lsp in intf.lsps(self.model):
-                    lsp_labels.append({
-                        "label": "{} -> {} ({})".format(
-                            lsp.source_node_object.name,
-                            lsp.dest_node_object.name, lsp.lsp_name),
-                        "type": "lsp",
-                        "index": self._lsp_index(lsp),
-                    })
+                    lsp_labels.append(
+                        {
+                            "label": "{} -> {} ({})".format(
+                                lsp.source_node_object.name,
+                                lsp.dest_node_object.name,
+                                lsp.lsp_name,
+                            ),
+                            "type": "lsp",
+                            "index": self._lsp_index(lsp),
+                        }
+                    )
 
-                intfs.append({
-                    "name": intf.name,
-                    "remote": intf.remote_node_object.name,
-                    "capacity": intf.capacity,
-                    "utilization": util_str,
-                    "edge_id": self._edge_id(intf),
-                    "demands": dmd_labels,
-                    "lsps": lsp_labels,
-                })
+                intfs.append(
+                    {
+                        "name": intf.name,
+                        "remote": intf.remote_node_object.name,
+                        "capacity": intf.capacity,
+                        "utilization": util_str,
+                        "edge_id": self._edge_id(intf),
+                        "demands": dmd_labels,
+                        "lsps": lsp_labels,
+                    }
+                )
             nodes_dict[node.name] = intfs
         return nodes_dict
 
     def _demand_index(self, dmd):
         """Return the index of a demand in the sorted demand list."""
-        sorted_dmds = sorted(self.model.demand_objects,
-                             key=lambda d: (d.source_node_object.name,
-                                            d.dest_node_object.name, d.name))
+        sorted_dmds = sorted(
+            self.model.demand_objects,
+            key=lambda d: (d.source_node_object.name, d.dest_node_object.name, d.name),
+        )
         for i, d in enumerate(sorted_dmds):
             if d is dmd:
                 return i
@@ -417,9 +497,14 @@ class InteractiveVisualization(object):
 
     def _lsp_index(self, lsp):
         """Return the index of an LSP in the sorted LSP list."""
-        sorted_lsps = sorted(self.model.rsvp_lsp_objects,
-                             key=lambda l: (l.source_node_object.name,
-                                            l.dest_node_object.name, l.lsp_name))
+        sorted_lsps = sorted(
+            self.model.rsvp_lsp_objects,
+            key=lambda l: (
+                l.source_node_object.name,
+                l.dest_node_object.name,
+                l.lsp_name,
+            ),
+        )
         for i, l in enumerate(sorted_lsps):
             if l is lsp:
                 return i
