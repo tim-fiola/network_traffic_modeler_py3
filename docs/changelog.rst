@@ -4,6 +4,11 @@ Changelog
 5.0.0
 -----
 
+**Dropped pypy Support**
+
+* Removed pypy from the CI test matrix and development requirements
+* CPython performance improvements have closed the gap, making pypy support unnecessary
+
 **Unified Model**
 
 * Consolidated ``FlexModel`` and ``PerformanceModel`` into a single ``Model`` class (``pyNTM.model.Model``) with the full feature set: parallel links, IGP shortcuts, RSVP LSPs, and SRLGs
@@ -40,13 +45,13 @@ Changelog
 4.0.0
 -----
 * Dropped support for Python 3.8, 3.9
-* Dropped support for pypy3.9; added support for pypy3.10
+* Dropped support for pypy3.9; added support for pypy3.10 (pypy support fully removed in 5.0.0)
 
 3.5.1
 -----
 * Migrated from TravisCI to GitHub actions for testing pipeline
 * Added Python support for 3.9, 3.10, 3.11
-* Supported Python versions are 3.8-3.11 and pypy3.9
+* Supported Python versions are 3.8-3.11 and pypy3.9 (pypy support fully removed in 5.0.0)
 * These changes will allow development to move forward while keeping the robust 90+% code testing coverage in place
 
 3.4.1
