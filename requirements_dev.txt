@@ -1,7 +1,7 @@
 sphinx
 sphinx_rtd_theme
 pre-commit
-black==25.11.0
+black==26.3.1
 flake8
 pytest>=7.0.0
 pytest-cov
