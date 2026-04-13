@@ -8,6 +8,9 @@
 
 **Note:** As of 5.0.0, pypy support has been dropped. CPython performance improvements have closed the gap, and maintaining pypy compatibility added complexity without meaningful benefit.
 
+**Note:** 5.0.0 was developed with the help of Claude Code.  This was a big step because the scope of the changes I have been wanting to make would have taken months, if not years, for me to get done as the sole maintainer of this project.  What did **NOT** change, however, was the testing rigor: the tests that I had meticulously crafted to ensure correct behavior received only minor updates to account for the changes in the Model class, so you can be assured that tests that rely on my deep knowledge of RSVP and other WAN features are still present.  Additionally, the code has 98% testing coverage, which is a slight improvement over prior.  
+
+
 
 pyNTM: network_traffic_modeler_py3
 ==================================
@@ -26,11 +29,6 @@ This is a network traffic modeler written in python 3. The main use cases involv
 This library allows users to define a layer 3 network topology, define a traffic matrix, and then run a simulation to determine how the traffic will traverse the topology, traverse a modified topology, and fail over. If you've used Cariden MATE or WANDL, this code solves for some of the same basic use cases those do.  This package is in no way related to those, or any, commercial products.  IGP and RSVP routing is supported. 
 
 pyNTM can be used as an open source solution to answer WAN planning questions; you can also run pyNTM alongside a commercial solution as a validation/check on the commercial solution.
-
-
-Training
-=========
-See the training modules at https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-
 
 
 Documentation
