@@ -12,7 +12,7 @@ Since there is a lot of information needed to create a model, using the model fi
 
 The network model file is a **tab-separated** values file.
 
-The sections below describe the model file's table headers for the FlexModel and PerformanceModel subclasses.
+The sections below describe the model file's table headers.
 
 Model File Interface Headers
 ----------------------------
@@ -21,33 +21,27 @@ Interfaces represent the logical interfaces on a layer 3 Node (Router).
 In the context of a simulation, demands (traffic) egress interfaces.
 A circuit is created when two *matching* interfaces (one in each direction) are paired to form a bi-directional connection between layer 3 nodes.
 
-The process of *matching* circuits depends on the model object used.
+The model supports two interface table formats, which are auto-detected based on the header line:
 
-Since there can only be a single connection (circuit) between any two nodes, the ``PerformanceModel`` automatically matches the interfaces into circuits.
+* **Without circuit_id** - interfaces between the same two nodes are automatically paired into circuits
+* **With circuit_id** - a ``circuit_id`` column is used to explicitly match interfaces into circuits, which is required when there are multiple parallel circuits between the same nodes
 
-The ``FlexModel`` requires a ``circuit_id`` to appropriately match two interfaces into a circuit. The ``circuit_id`` must be included for each interface in the model file's ``INTERFACES_TABLE``.
-There must be exactly two instances of a given ``circuit_id`` in the ``INTERFACES_TABLE``: any more or any less will result in extra/unmatched interfaces and will cause an error when the file is loaded.
+INTERFACES_TABLE (without circuit_id)
+*************************************
 
-PerformanceModel Interfaces
-***************************
-
-INTERFACES_TABLE
-
-* ``node_object_name`` - name of node	where interface resides
-* ``remote_node_object_name``	- name of remote node
+* ``node_object_name`` - name of node where interface resides
+* ``remote_node_object_name`` - name of remote node
 * ``name`` - interface name
 * ``cost`` - IGP cost/metric for interface
 * ``capacity`` - capacity
 * ``rsvp_enabled`` (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
 * ``percent_reservable_bandwidth`` (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
 
-FlexModel Interfaces
-********************
+INTERFACES_TABLE (with circuit_id)
+**********************************
 
-INTERFACES_TABLE
-
-* ``node_object_name`` - name of node	where interface resides
-* ``remote_node_object_name``	- name of remote node
+* ``node_object_name`` - name of node where interface resides
+* ``remote_node_object_name`` - name of remote node
 * ``name`` - interface name
 * ``cost`` - IGP cost/metric for interface
 * ``capacity`` - capacity
@@ -58,7 +52,6 @@ INTERFACES_TABLE
 
 * ``rsvp_enabled`` (optional) - is interface allowed to carry RSVP LSPs? True|False; default is True
 * ``percent_reservable_bandwidth`` (optional) - percent of capacity allowed to be reserved by RSVP LSPs; this value should be given as a percentage value - ie 80% would be given as 80, NOT .80.  Default is 100
-* ``manual_metric`` (optional) - manually assigned metric for LSP, if not using default metric from topology shortest path
 
 .. important::
    Column order matters. If you wish to use an optional column to the right of an optional column you don't want to specify a value for, you must still include the optional headers to the left of the column you wish to specify a value for.
@@ -85,25 +78,14 @@ However, the ``NODES`` table does have a couple of use cases:
 .. note::
    ``lat`` and ``lon`` can be used instead for (y, x) grid coordinates; there are no restrictions on the integer values those attributes can have.
 
-PerformanceModel Nodes
-**********************
-
 NODES_TABLE
-
-* ``name`` - name of node
-* ``lon``	- longitude (or y-coordinate) (optional)
-* ``lat`` - latitude (or x-coordinate) (optional)
-
-
-FlexModel Nodes
-***************
-
-NODES_TABLE
+***********
 
 * ``name`` - name of node
 * ``lon`` - longitude (or y-coordinate) (optional)
 * ``lat`` - latitude (or x-coordinate) (optional)
-* ``igp_shortcuts_enabled`` (default=``False``) - Indicates if IGP shortcuts enabled for the Node
+* ``igp_shortcuts_enabled`` (default=``False``) - Indicates if IGP shortcuts enabled for the Node (optional)
+
   * If ``True``, network internal traffic transiting the layer 3 node can now use LSPs en route to the destination, if they are available
 
 .. important::
@@ -122,10 +104,10 @@ Model File Demand Headers
 
 Demands represent traffic on the network. Each demand represents an amount of traffic ingressing the network at a specific layer 3 (source) node and egressing the network at a specific layer 3 (destination) node.
 
-PerformanceModel and FlexModel Demands
-**************************************
+DEMANDS_TABLE
+*************
 
-For both model classes, the ``DEMANDS_TABLE`` table has four headers, all of which are required:
+The ``DEMANDS_TABLE`` table has four headers, all of which are required:
 
 * ``source`` - the source node for the traffic; the node in the model where the traffic originates
 * ``dest`` - the destination node for the traffic; the node in the model where the traffic terminates
@@ -137,8 +119,8 @@ For both model classes, the ``DEMANDS_TABLE`` table has four headers, all of whi
 RSVP LSPs
 ---------
 
-PerformanceModel and FlexModel RSVP LSPs
-****************************************
+RSVP_LSP_TABLE
+**************
 
 The ``RSVP_LSP_TABLE`` has the following columns:
 

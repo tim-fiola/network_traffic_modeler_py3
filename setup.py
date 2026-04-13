@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 with open("requirements.txt", "r") as fs:
     reqs = [r for r in fs.read().splitlines() if (len(r) > 0 and not r.startswith("#"))]
 
-version = "4.0.1"
+version = "5.0.0"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

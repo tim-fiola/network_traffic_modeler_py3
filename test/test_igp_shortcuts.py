@@ -162,16 +162,15 @@ class TestIGPShortcuts(unittest.TestCase):
         self.assertEqual(lsp_d_f_1.traffic_on_lsp(model), 8.0)
 
     def test_igp_shortcut_perf_model(self):
+        """PerformanceModel (now unified) supports igp_shortcuts_enabled."""
         model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
 
         node_a = model.get_node_object("A")
         node_a.igp_shortcuts_enabled = True
 
-        err_msg = "igp_shortcuts_enabled not allowed in PerformanceModel, but present on these Nodes"
-
-        with self.assertRaises(ModelException) as context:
-            model.update_simulation()
-        self.assertIn(err_msg, context.exception.args[0][1][0].keys())
+        # The unified model supports IGP shortcuts; should not raise
+        model.update_simulation()
+        self.assertTrue(node_a.igp_shortcuts_enabled)
 
     # If one LSP from B to D is assigned a lower metric, traffic should
     # not split at A

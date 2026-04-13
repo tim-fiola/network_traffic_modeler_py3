@@ -203,7 +203,9 @@ class TestModel(unittest.TestCase):
         )
 
     def test_interface_fields_missing_model_file_load(self):
-        err_msg = "node_name, remote_node_name, name, cost, and capacity must be defined for line"
+        err_msg = (
+            "node_name, remote_node_name, name, cost, capacity must be defined for line"
+        )
         with self.assertRaises(ModelException) as context:
             PerformanceModel.load_model_file(
                 "test/interface_field_info_missing_routing_topology.csv"
@@ -346,20 +348,21 @@ class TestModel(unittest.TestCase):
 
         self.assertTrue(isinstance(ckt, Circuit))
 
-    def test_add_duplicate_int(self):
+    def test_add_parallel_int(self):
+        """Adding a parallel interface (different circuit_id) should work
+        in the unified model."""
         model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         node_a = model.get_node_object("A")
         node_b = model.get_node_object("B")
-        duplicate_int = Interface("A-to-B", 100, 125, node_a, node_b, 80)
-        model.interface_objects.add(duplicate_int)
+        parallel_int_a = Interface("A-to-B-v2", 100, 125, node_a, node_b, 80)
+        parallel_int_b = Interface("B-to-A-v2", 100, 125, node_b, node_a, 80)
+        model.interface_objects.add(parallel_int_a)
+        model.interface_objects.add(parallel_int_b)
+        model.update_simulation()
 
-        err_msg = "multiple links between nodes detected; not allowed in Model object(use Parallel_Link_Model)"
-
-        with self.assertRaises(ModelException) as context:
-            model.update_simulation()
-        self.assertIn(err_msg, context.exception.args[0][1][0].keys())
+        self.assertIn(parallel_int_a, model.interface_objects)
 
     def test_int_not_in_ckt(self):
         model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
@@ -474,5 +477,5 @@ class TestModel(unittest.TestCase):
         model = Model.load_model_file("test/model_test_topology.csv")
         self.assertEqual(
             model.__repr__(),
-            "PerformanceModel(Interfaces: 18, Nodes: 7, Demands: 4, RSVP_LSPs: 3)",
+            "Model(Interfaces: 18, Nodes: 7, Demands: 4, RSVP_LSPs: 3)",
         )

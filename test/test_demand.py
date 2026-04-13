@@ -189,17 +189,17 @@ class TestDemand(unittest.TestCase):
 
         dmd_path_detail = {
             "path_0": {
-                "interfaces": [int_a_d, int_d_f],
+                "items": [int_a_d, int_d_f],
                 "path_traffic": 20.0,
                 "splits": {int_a_d: 2, int_d_f: 2},
             },
             "path_1": {
-                "interfaces": [int_a_b, int_b_d, int_d_f],
+                "items": [int_a_b, int_b_d, int_d_f],
                 "path_traffic": 10.0,
                 "splits": {int_b_d: 4, int_a_b: 2, int_d_f: 4},
             },
             "path_2": {
-                "interfaces": [int_a_b, int_b_g, int_g_d, int_d_f],
+                "items": [int_a_b, int_b_g, int_g_d, int_d_f],
                 "path_traffic": 10.0,
                 "splits": {int_a_b: 2, int_b_g: 4, int_g_d: 4, int_d_f: 4},
             },
@@ -277,24 +277,10 @@ class TestDemand(unittest.TestCase):
             [26.6667, 26.6667, 26.6667],
         )
 
-        # Confirm the splits
-        self.assertIn(3, dmd_a_e_1.path_detail["path_0"]["splits"].values())
-        self.assertIn(3, dmd_a_e_1.path_detail["path_1"]["splits"].values())
-        self.assertIn(3, dmd_a_e_1.path_detail["path_2"]["splits"].values())
-
-        # Confirm the 'items' in each path are the key in the 'splits' for the path
-        self.assertTrue(
-            dmd_a_e_1.path_detail["path_0"]["items"][0]
-            in dmd_a_e_1.path_detail["path_0"]["splits"].keys()
-        )
-        self.assertTrue(
-            dmd_a_e_1.path_detail["path_1"]["items"][0]
-            in dmd_a_e_1.path_detail["path_1"]["splits"].keys()
-        )
-        self.assertTrue(
-            dmd_a_e_1.path_detail["path_2"]["items"][0]
-            in dmd_a_e_1.path_detail["path_2"]["splits"].keys()
-        )
+        # Confirm the items in each path are LSPs
+        self.assertEqual(len(dmd_a_e_1.path_detail["path_0"]["items"]), 1)
+        self.assertEqual(len(dmd_a_e_1.path_detail["path_1"]["items"]), 1)
+        self.assertEqual(len(dmd_a_e_1.path_detail["path_2"]["items"]), 1)
 
     def test_lsp_demand_path_detail_flex_model_lsp_routed(self):
         model = FlexModel.load_model_file(

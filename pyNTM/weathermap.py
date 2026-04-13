@@ -13,6 +13,11 @@ import json
 
 class WeatherMap(object):  # pragma: no cover
     """
+    .. deprecated::
+        The WeatherMap class is deprecated. Use ``model.visualize()`` instead,
+        which provides an interactive visualization with draggable nodes,
+        demand/LSP path tracing, and no server dependency.
+
     A class to create an interactive visualization of a pyNTM Model object.
     """
 
@@ -1838,6 +1843,6 @@ class WeatherMap(object):  # pragma: no cover
 
         # ## END OF CALLBACK DEFS ## #
 
-        app.run_server()
+        app.run()
 
         return app

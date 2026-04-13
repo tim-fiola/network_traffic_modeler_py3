@@ -4,11 +4,12 @@
 [![Documentation Status](https://readthedocs.org/projects/pyntm/badge/?version=latest)](https://pyntm.readthedocs.io/en/latest/?badge=latest)
 
 
-**pyNTM 4.0.1** is here!  This update clears some technical debt such as migrating the testing from Travis to GitHub actions and updating some packages to clear some problems with outdated dependencies.  It also updates the python and pypy versions.
+**pyNTM 5.0.0** is here!  This release unifies all model classes into a single ``Model`` class, adds significant RSVP LSP performance improvements, and introduces an interactive browser-based network visualization.
 
-This release lays the groundwork for additional features to be added.
+**Note:** As of 5.0.0, pypy support has been dropped. CPython performance improvements have closed the gap, and maintaining pypy compatibility added complexity without meaningful benefit.
 
-**HELP**: If you have experience optimizing code for performance and care to contribute, I'm happy to consider pull requests.  The current code base is logically sound and will give good results, but I know that it needs to be optimized for performance (code performance optimization is not my specialty).  In effect, this means that it takes longer for the model to converge, *especially* for models with large amounts of RSVP LSPs.  
+**Note:** 5.0.0 was developed with the help of Claude Code.  This was a big step because the scope of the changes I have been wanting to make would have taken months, if not years, for me to get done as the sole maintainer of this project.  What did **NOT** change, however, was the testing rigor: the tests that I had meticulously crafted to ensure correct behavior received only minor updates to account for the changes in the Model class, so you can be assured that tests that rely on my deep knowledge of RSVP and other WAN features are still present.  Additionally, the code has 98% testing coverage, which is a slight improvement over prior.  
+
 
 
 pyNTM: network_traffic_modeler_py3
@@ -28,11 +29,6 @@ This is a network traffic modeler written in python 3. The main use cases involv
 This library allows users to define a layer 3 network topology, define a traffic matrix, and then run a simulation to determine how the traffic will traverse the topology, traverse a modified topology, and fail over. If you've used Cariden MATE or WANDL, this code solves for some of the same basic use cases those do.  This package is in no way related to those, or any, commercial products.  IGP and RSVP routing is supported. 
 
 pyNTM can be used as an open source solution to answer WAN planning questions; you can also run pyNTM alongside a commercial solution as a validation/check on the commercial solution.
-
-
-Training
-=========
-See the training modules at https://github.com/tim-fiola/TRAINING---network_traffic_modeler_py3-pyNTM-
 
 
 Documentation
@@ -60,59 +56,45 @@ pip3 install --upgrade pyNTM
 ```
 
 
-pyNTM Model Classes
+pyNTM Model Class
 ==================================
-In pyNTM, the Model objects house the network topology objects: traffic Demands, layer 3 Nodes, Circuits, Shared Risk Link Groups (SRLGs), Interfaces, etc.  The Model classes control how all the contained objects interact with each other during Model convergence to produce simulation results.
+In pyNTM, the Model object houses the network topology objects: traffic Demands, layer 3 Nodes, Circuits, Shared Risk Link Groups (SRLGs), Interfaces, etc.  The Model class controls how all the contained objects interact with each other during Model convergence to produce simulation results.
 
-There are two subclasses of Model objects: the PerformanceModel object and the newer FlexModel object (introduced in version 1.6).  
-Starting in version 1.7, what used to be called the Model class is now the PerformanceModel Class.  The former Parallel_Link_Model
-class is now known as the FlexModel class.  
-There are two main differences between the two types of objects:
-- The PerformanceModel object only allows a single Circuit between two layer 3 Nodes; while the FlexModel allows multiple Circuits between the same two Nodes.
-- The Performance Model will have better performance (measured in time to converge) than the FlexModel.  This is because the FlexModel has additional checks to account for potential multiple Circuits between Nodes and other topology features such as IGP shortcuts.
-
-The legacy Model and Parallel_Link_Model should still work as they have been made subclasses of the PerformanceModel and FlexModel classes, respectively.
-
-The PerformanceModel class is good to use for the following topology criteria:
-- There is only one link (Circuit) between each layer 3 Node
-- IGP-only routing and/or RSVP LSP routing with no IGP shortcuts (traffic source and destination matches LSP source and destination)
-
-
-Which Model Class To Use
-==================================
-All model classes support:
+The model class is ``Model``.  It supports all pyNTM features:
 - IGP routing
-- RSVP LSPs carrying traffic demands that have matching source and destination as the RSVP LSPs
-- RSVP auto-bandwidth or fixed bandwidth
-- RSVP LSP manual metrics
+- Multiple Circuits (parallel links) between layer 3 Nodes
+- RSVP LSPs with bandwidth reservation, auto-bandwidth, and manual metrics
+- RSVP LSP IGP shortcuts, whereby LSPs can carry traffic demands downstream
+- SRLG (Shared Risk Link Group) support
+- Interactive visualization
 
-The PerformanceModel class allows for:
-- Single Circuits between 2 Nodes
-- Error messages if it detects use of IGP shortcuts or multiple Circuits between 2 Nodes
+The legacy class names ``FlexModel``, ``PerformanceModel``, and ``Parallel_Link_Model`` are available as aliases for backward compatibility.
 
-The FlexModel class allows for:
-- Multiple Circuits between 2 Nodes
-- RSVP LSP IGP shortcuts, whereby LSPs can carry traffic demands downstream, even if the demand does not have matching source and destination as the LSP
-
-In some cases, it's completely valid to model multiple Circuits between Nodes as a single Circuit.  For example: in the case where there are multiple Circuits between Nodes but each Interface has the same metric and the use case is to model capacity between Nodes, it's often valid to combine the Circuit capacities and model as a single Circuit.  In this case, the PerformanceModel object is recommended as it will give better performance.
-
-If it is important to keep each Circuit modeled separately because the parallel Interfaces have different metrics and/or differences in their capabilities to route RSVP, the FlexModel is the better choice.
-
-If there is any doubt as to which class to use, use the FlexModel class.
- 
-Optimization
-==================================
- 
-There are two main areas where we are looking to optimize:
-- Performance - converging the model to produce a simulation, especially in a model with RSVP LSPs, is intensive.  Improving the time it takes to converge the simulation results in better productivity and improved user experience
-  - pyNTM supports the pypy3 interpreter, which results in 60-90% better performance than the python3 interpreter
-  - In this case, *performance* refers to how long it takes to converge a model to produce a simulation; for larger models, pypy3 provides much better performance
-- Data retrieval - the simulation produces an extraordinary amount of data.  Currently, the model is only retaining a fraction of the data generated during the model convergence.  It's our goal to introduce something like an sqlite database in the model objects to hold all this information.  This will improve user experience and allow SQL queries against the model object.
-
+Model files from either the old PerformanceModel format (without circuit_id column) or FlexModel format (with circuit_id column) are automatically detected and loaded correctly.
 
 Visualization
 =============
-Info about the new WeatherMap class that provides visualization is available in the wiki: https://github.com/tim-fiola/network_traffic_modeler_py3/wiki/Visualizing-the-network-with-the-WeatherMap-Class
+pyNTM includes an interactive network visualization that runs in the browser.  After running a simulation, call ``visualize()`` on the model:
+
+```python
+from pyNTM import Model
+
+model = Model.load_model_file('network.csv')
+model.update_simulation()
+model.visualize()                    # opens in default browser
+model.visualize('output.html')       # saves to a specific file
+```
+
+The visualization features:
+- **Draggable nodes** for rearranging the topology layout
+- **Per-direction utilization coloring** on each interface with a toggleable legend to filter by utilization range
+- **Demand path tracing** - select a demand to highlight its path, see traffic, LSPs it rides, and interfaces it transits
+- **RSVP LSP path tracing** - select an LSP to see its traffic, reserved bandwidth, demands it carries, and interfaces
+- **Interface inspection by node** - select a node to list its interfaces with utilization, demands, and LSPs on each
+- **Cross-linked navigation** - click any demand, LSP, or interface in any panel to make it the active selection
+- **Tooltips** on hover showing interface name, endpoints, capacity, and utilization
+
+The legacy ``WeatherMap`` class (``pyNTM.weathermap``) using Dash/Cytoscape is deprecated in favor of the new ``model.visualize()`` method.
 
 
 License

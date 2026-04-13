@@ -26,30 +26,37 @@ From these primitives, the model can construct higher-level objects such as:
 The model produces a simulation of the network behavior by applying the traffic demand objects to the network topology, routing the traffic demands across the topology as a real network would.
 The model produces a simulation when its ``update_simulation()`` method is called.
 
-Model Type Subclasses
-*********************
+The Model Class
+***************
 
-There are two network model subclasses: ``FlexModel`` and ``PerformanceModel``.
-
-In general, the ``FlexModel`` can accommodate more topology variations, but at the price of a slightly longer convergence time while the ``PerformanceModel`` can only handle
-simpler network architectures, but with the benefit of better convergence time.
-
-All model classes support:
+The model class is ``Model``.  It supports all pyNTM features:
 
 * IGP routing
-* RSVP LSPs carrying traffic demands that have matching source and destination as the RSVP LSPs
-* RSVP auto-bandwidth or fixed bandwidth
-* RSVP LSP manual metrics
-
-The ``PerformanceModel`` class allows for:
-
-* Single circuits between 2 Nodes
-* Error messages if it detects use of IGP shortcuts or multiple Circuits between 2 Nodes
-
-The ``FlexModel`` class allows for:
-
-* Multiple Circuits between 2 Nodes
+* Multiple Circuits (parallel links) between layer 3 Nodes
+* RSVP LSPs with bandwidth reservation, auto-bandwidth, and manual metrics
 * RSVP LSP IGP shortcuts, whereby LSPs can carry traffic demands downstream, even if the demand does not have matching source and destination as the LSP
+* SRLG (Shared Risk Link Group) support
+* Interactive visualization via ``model.visualize()``
+
+The legacy class names ``FlexModel``, ``PerformanceModel``, and ``Parallel_Link_Model`` are available as aliases for backward compatibility.
+
+Model files from either the old PerformanceModel format (without ``circuit_id`` column) or FlexModel format (with ``circuit_id`` column) are automatically detected and loaded correctly by ``load_model_file()``.
+
+Quick Start
+***********
+
+::
+
+    from pyNTM import Model
+
+    model = Model.load_model_file('network.csv')
+    model.update_simulation()
+
+    # Inspect results
+    model.display_interfaces_traffic()
+
+    # Visualize in the browser
+    model.visualize()
 
 How do I know the simulations work correctly?
 **********************************************
@@ -62,7 +69,7 @@ There are many safeguards in place to ensure the simulation's mechanics are corr
 
     * This helps ensure that functionality works as expected and that new features and fixes don't break prior functionality
 
-  * There are over 300 unit and functional tests in the pyNTM CI/CD pipeline
+  * There are over 270 unit and functional tests in the pyNTM CI/CD pipeline
   * There are dozens of topology-specific functional tests in the pyNTM CI/CD pipeline that ensure the simulation works properly for different topologies, and more are added for each new feature
 
 * The model object has internal checks that happen automatically during the ``update_simulation()`` execution:
@@ -74,11 +81,6 @@ There are many safeguards in place to ensure the simulation's mechanics are corr
   * Validates that the capacities of each of the component interfaces in a circuit match
   * Validates that each node in an SRLG has the SRLG in the node's ``srlgs`` set
   * No duplicate node names are present in the topology
-
-The PerformanceModel subclass also verifies that
-
-* IGP shortcuts are not enabled for nodes
-* There is no more than a single circuit (edge) between any two nodes
 
 Note that there are more checks involving RSVP than IGP/ECMP routing because there are more mechanics involved when RSVP is running, whereas the straight IGP/ECMP routing is much simpler.
 
