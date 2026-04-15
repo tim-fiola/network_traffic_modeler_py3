@@ -4,11 +4,9 @@ sys.path.append("../")
 
 from pprint import pprint
 
-from pyNTM import FlexModel
-from pyNTM.weathermap import WeatherMap
+from pyNTM import Model
 
-# Make the Parallel_Link_Model
-model = FlexModel.load_model_file("model_test_topology_flexmodel.csv")
+model = Model.load_model_file("model_test_topology_flexmodel.csv")
 model.update_simulation()
 
 print()
@@ -65,5 +63,4 @@ print()
 # Create visualization
 print("Creating visualization:")
 
-vis = WeatherMap(model)
-vis.create_weathermap()
+model.visualize()

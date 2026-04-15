@@ -163,13 +163,33 @@ class InteractiveVisualization(object):
         """Stable edge ID for an interface: 'intName__nodeName'."""
         return "{}__{}".format(interface.name, interface.node_object.name)
 
+    @staticmethod
+    def _clean_name(name):
+        """
+        Return a display-friendly name, or None for placeholder/empty values.
+
+        Demand and LSP names coming from the model may be None, empty strings,
+        or literal placeholder strings like "''" or "none" used in CSV model
+        files. These shouldn't be shown in the UI.
+        """
+        if name is None:
+            return None
+        cleaned = str(name).strip().strip("'\"")
+        if not cleaned or cleaned.lower() == "none":
+            return None
+        return cleaned
+
     def _build_edges(self):
         """
         Build vis.js edge data. Each circuit produces two directed edges,
         one per interface direction, each color-coded by its own utilization.
+        Parallel circuits between the same pair of nodes are rendered with
+        incrementing curve roundness so each one is visually distinct.
         """
         edges = []
         seen_circuits = set()
+        # Track number of circuits rendered between each unordered node pair
+        parallel_counts = {}
 
         for ckt in self.model.circuit_objects:
             int_a = ckt.interface_a
@@ -188,7 +208,13 @@ class InteractiveVisualization(object):
                 continue
             seen_circuits.add(ckt_key)
 
-            # Edge for int_a direction: node_a -> node_b
+            # Compute roundness offset for parallel circuits
+            node_pair = frozenset([node_a, node_b])
+            parallel_idx = parallel_counts.get(node_pair, 0)
+            parallel_counts[node_pair] = parallel_idx + 1
+            roundness = 0.2 + (parallel_idx * 0.2)
+
+            # Edge for int_a direction: node_a -> node_b (curves clockwise)
             color_a = self._get_utilization_color(int_a.utilization)
             edges.append(
                 {
@@ -201,13 +227,14 @@ class InteractiveVisualization(object):
                     "arrows": {
                         "to": {"enabled": True, "scaleFactor": self.edge_arrow_scale}
                     },
-                    "smooth": {"type": "curvedCW", "roundness": 0.2},
+                    "smooth": {"type": "curvedCW", "roundness": roundness},
                     "dashes": int_a.utilization == "Int is down",
                     "util_range": self._get_utilization_label(int_a.utilization),
                 }
             )
 
-            # Edge for int_b direction: node_b -> node_a
+            # Edge for int_b direction: node_b -> node_a (curves counter-clockwise
+            # so the return direction renders on the opposite side of the circuit)
             color_b = self._get_utilization_color(int_b.utilization)
             edges.append(
                 {
@@ -220,7 +247,7 @@ class InteractiveVisualization(object):
                     "arrows": {
                         "to": {"enabled": True, "scaleFactor": self.edge_arrow_scale}
                     },
-                    "smooth": {"type": "curvedCW", "roundness": 0.2},
+                    "smooth": {"type": "curvedCCW", "roundness": roundness},
                     "dashes": int_b.utilization == "Int is down",
                     "util_range": self._get_utilization_label(int_b.utilization),
                 }
@@ -236,12 +263,14 @@ class InteractiveVisualization(object):
             key=lambda d: (d.source_node_object.name, d.dest_node_object.name, d.name),
         ):
             if dmd.path == "Unrouted":
+                name = self._clean_name(dmd.name)
+                name_part = " ({})".format(name) if name else ""
                 demands.append(
                     {
-                        "label": "{} -> {} ({}) [Unrouted]".format(
+                        "label": "{} -> {}{} [Unrouted]".format(
                             dmd.source_node_object.name,
                             dmd.dest_node_object.name,
-                            dmd.name,
+                            name_part,
                         ),
                         "traffic": dmd.traffic,
                         "edge_ids": [],
@@ -305,24 +334,27 @@ class InteractiveVisualization(object):
                     l.lsp_name,
                 ),
             ):
+                lsp_name = self._clean_name(lsp.lsp_name)
+                lsp_name_part = " ({})".format(lsp_name) if lsp_name else ""
                 lsp_details.append(
                     {
-                        "label": "{} -> {} ({})".format(
+                        "label": "{} -> {}{}".format(
                             lsp.source_node_object.name,
                             lsp.dest_node_object.name,
-                            lsp.lsp_name,
+                            lsp_name_part,
                         ),
                         "index": self._lsp_index(lsp),
                     }
                 )
 
+            name = self._clean_name(dmd.name)
+            name_part = " ({}, traffic={})".format(name, dmd.traffic) if name else " (traffic={})".format(dmd.traffic)
             demands.append(
                 {
-                    "label": "{} -> {} ({}, traffic={})".format(
+                    "label": "{} -> {}{}".format(
                         dmd.source_node_object.name,
                         dmd.dest_node_object.name,
-                        dmd.name,
-                        dmd.traffic,
+                        name_part,
                     ),
                     "traffic": dmd.traffic,
                     "edge_ids": sorted(edge_ids),
@@ -345,12 +377,14 @@ class InteractiveVisualization(object):
             ),
         ):
             if "Unrouted" in str(lsp.path):
+                lsp_name = self._clean_name(lsp.lsp_name)
+                lsp_name_part = " ({})".format(lsp_name) if lsp_name else ""
                 lsps.append(
                     {
-                        "label": "{} -> {} ({}) [Unrouted]".format(
+                        "label": "{} -> {}{} [Unrouted]".format(
                             lsp.source_node_object.name,
                             lsp.dest_node_object.name,
-                            lsp.lsp_name,
+                            lsp_name_part,
                         ),
                         "traffic": 0,
                         "reserved_bw": 0,
@@ -396,23 +430,27 @@ class InteractiveVisualization(object):
                     d.name,
                 ),
             ):
+                dmd_name = self._clean_name(dmd.name)
+                dmd_name_part = " ({})".format(dmd_name) if dmd_name else ""
                 dmd_details.append(
                     {
-                        "label": "{} -> {} ({})".format(
+                        "label": "{} -> {}{}".format(
                             dmd.source_node_object.name,
                             dmd.dest_node_object.name,
-                            dmd.name,
+                            dmd_name_part,
                         ),
                         "index": self._demand_index(dmd),
                     }
                 )
 
+            lsp_name = self._clean_name(lsp.lsp_name)
+            lsp_name_part = " ({})".format(lsp_name) if lsp_name else ""
             lsps.append(
                 {
-                    "label": "{} -> {} ({})".format(
+                    "label": "{} -> {}{}".format(
                         lsp.source_node_object.name,
                         lsp.dest_node_object.name,
-                        lsp.lsp_name,
+                        lsp_name_part,
                     ),
                     "traffic": (
                         round(traffic, 2) if isinstance(traffic, float) else traffic
@@ -443,12 +481,14 @@ class InteractiveVisualization(object):
                 # Demands on this interface
                 dmd_labels = []
                 for dmd in intf.demands(self.model):
+                    dmd_name = self._clean_name(dmd.name)
+                    dmd_name_part = " ({})".format(dmd_name) if dmd_name else ""
                     dmd_labels.append(
                         {
-                            "label": "{} -> {} ({})".format(
+                            "label": "{} -> {}{}".format(
                                 dmd.source_node_object.name,
                                 dmd.dest_node_object.name,
-                                dmd.name,
+                                dmd_name_part,
                             ),
                             "type": "demand",
                             "index": self._demand_index(dmd),
@@ -458,12 +498,14 @@ class InteractiveVisualization(object):
                 # LSPs on this interface
                 lsp_labels = []
                 for lsp in intf.lsps(self.model):
+                    lsp_name = self._clean_name(lsp.lsp_name)
+                    lsp_name_part = " ({})".format(lsp_name) if lsp_name else ""
                     lsp_labels.append(
                         {
-                            "label": "{} -> {} ({})".format(
+                            "label": "{} -> {}{}".format(
                                 lsp.source_node_object.name,
                                 lsp.dest_node_object.name,
-                                lsp.lsp_name,
+                                lsp_name_part,
                             ),
                             "type": "lsp",
                             "index": self._lsp_index(lsp),

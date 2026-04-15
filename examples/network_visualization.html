@@ -8,117 +8,50 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #d2c6a5; color: #222; overflow: hidden; }
-
-  #network-container {
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
-    right: 320px;
-  }
-
-  /* --- Right sidebar --- */
+  #network-container { position: absolute; top: 0; left: 0; bottom: 0; right: 340px; }
   #sidebar {
-    position: absolute;
-    top: 0; right: 0; bottom: 0;
-    width: 320px;
-    background: rgba(245, 240, 230, 0.97);
-    border-left: 1px solid #aaa;
-    overflow-y: auto;
-    padding: 12px 14px;
-    font-size: 13px;
-    z-index: 20;
+    position: absolute; top: 0; right: 0; bottom: 0; width: 340px;
+    background: rgba(245,240,230,0.97); border-left: 1px solid #aaa;
+    overflow-y: auto; padding: 10px 12px; font-size: 13px; z-index: 20;
   }
   #sidebar h3 {
-    font-size: 14px;
-    color: #333;
-    border-bottom: 1px solid #aaa;
-    padding-bottom: 4px;
-    margin: 14px 0 8px 0;
+    font-size: 13px; color: #333; border-bottom: 1px solid #aaa;
+    padding-bottom: 3px; margin: 12px 0 6px 0;
   }
   #sidebar h3:first-child { margin-top: 0; }
   #sidebar select {
-    width: 100%;
-    padding: 5px;
-    margin: 4px 0 6px 0;
-    background: #fff;
-    color: #222;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    font-size: 12px;
+    width: 100%; padding: 4px; margin: 3px 0 5px 0;
+    background: #fff; color: #222; border: 1px solid #aaa; border-radius: 3px; font-size: 12px;
   }
   #sidebar button {
-    padding: 4px 10px;
-    background: #e8e4dc;
-    color: #333;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    margin: 2px 4px 2px 0;
+    padding: 3px 8px; background: #e8e4dc; color: #333;
+    border: 1px solid #aaa; border-radius: 3px; cursor: pointer; font-size: 11px; margin: 2px 3px 2px 0;
   }
   #sidebar button:hover { background: #d5d0c5; }
-  #sidebar label {
-    display: block;
-    margin: 5px 0;
-    cursor: pointer;
+  #sidebar label { display: block; margin: 4px 0; cursor: pointer; font-size: 12px; }
+  .detail-box {
+    margin-top: 4px; padding: 5px 7px; background: rgba(0,0,0,0.05);
+    border-radius: 3px; font-size: 11px; max-height: 220px; overflow-y: auto; display: none;
   }
-  .path-info {
-    margin-top: 6px;
-    padding: 6px 8px;
-    background: rgba(0,0,0,0.05);
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: pre-wrap;
-    max-height: 150px;
-    overflow-y: auto;
-  }
-
-  /* --- Legend overlay --- */
-  #legend {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: rgba(245, 240, 230, 0.95);
-    border: 1px solid #aaa;
-    border-radius: 6px;
-    padding: 12px 16px;
-    font-size: 13px;
-    z-index: 10;
-    backdrop-filter: blur(6px);
-  }
-  #legend h3 {
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: #333;
-    border-bottom: 1px solid #aaa;
-    padding-bottom: 4px;
-  }
-
-  /* --- Info panel --- */
+  .detail-box .intf-line { margin: 1px 0; }
+  .obj-link { color: #1a5fa0; cursor: pointer; text-decoration: underline; }
+  .obj-link:hover { color: #0d3a6e; }
+  .intf-item { padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.08); }
+  .intf-item:last-child { border-bottom: none; }
+  .intf-header { font-weight: bold; margin-bottom: 2px; }
+  .legend-item.disabled { opacity: 0.35; text-decoration: line-through; }
+  .intf-sub { margin-left: 8px; font-size: 11px; color: #555; }
   #info-panel {
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    background: rgba(245, 240, 230, 0.95);
-    border: 1px solid #aaa;
-    border-radius: 6px;
-    padding: 12px 16px;
-    font-size: 13px;
-    z-index: 10;
-    max-width: 500px;
-    backdrop-filter: blur(6px);
-    display: none;
+    position: absolute; bottom: 12px; left: 12px;
+    background: rgba(245,240,230,0.95); border: 1px solid #aaa;
+    border-radius: 6px; padding: 10px 14px; font-size: 13px;
+    z-index: 10; max-width: 500px; display: none;
   }
-  #info-panel h3 {
-    margin-bottom: 6px;
-    font-size: 14px;
-    color: #ccc;
-  }
+  #info-panel h3 { margin-bottom: 4px; font-size: 14px; color: #333; }
 </style>
 </head>
 <body>
-
 <div id="network-container"></div>
-
 <div id="sidebar">
   <h3>Controls</h3>
   <label><input type="checkbox" id="toggle-physics"> Enable physics</label>
@@ -127,24 +60,22 @@
   <button id="btn-reset">Reset positions</button>
 
   <h3>Demands</h3>
-  <select id="demand-select">
-    <option value="">-- Select a demand --</option>
-  </select>
+  <select id="demand-select"><option value="">-- Select a demand --</option></select>
   <button id="btn-clear-demand">Clear</button>
-  <div id="demand-info" class="path-info" style="display:none;"></div>
+  <div id="demand-info" class="detail-box"></div>
 
   <h3>RSVP LSPs</h3>
-  <select id="lsp-select">
-    <option value="">-- Select an LSP --</option>
-  </select>
+  <select id="lsp-select"><option value="">-- Select an LSP --</option></select>
   <button id="btn-clear-lsp">Clear</button>
-  <div id="lsp-info" class="path-info" style="display:none;"></div>
+  <div id="lsp-info" class="detail-box"></div>
+
+  <h3>Interfaces by Node</h3>
+  <select id="node-select"><option value="">-- Select a node --</option></select>
+  <div id="intf-list" class="detail-box"></div>
 
   <h3>Utilization Legend</h3>
-  <div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#4169E1;margin-right:8px;border-radius:2px;'></div><span>0-24%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#228B22;margin-right:8px;border-radius:2px;'></div><span>25-49%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FFD700;margin-right:8px;border-radius:2px;'></div><span>50-74%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#FF4500;margin-right:8px;border-radius:2px;'></div><span>75-89%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#8B0000;margin-right:8px;border-radius:2px;'></div><span>90-99%</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#9400D3;margin-right:8px;border-radius:2px;'></div><span>100%+</span></div><div style='display:flex;align-items:center;margin:3px 0;'><div style='width:30px;height:4px;background:#696969;margin-right:8px;border-radius:2px;border-top:2px dashed #696969;background:none;'></div><span>Failed</span></div>
+  <div class='legend-item' data-range='0-24%' style='display:flex;align-items:center;margin:3px 0;cursor:pointer;'><div style='width:30px;height:4px;background:#4169E1;margin-right:8px;border-radius:2px;'></div><span>0-24%</span></div><div class='legend-item' data-range='25-49%' style='display:flex;align-items:center;margin:3px 0;cursor:pointer;'><div style='width:30px;height:4px;background:#228B22;margin-right:8px;border-radius:2px;'></div><span>25-49%</span></div><div class='legend-item' data-range='50-74%' style='display:flex;align-items:center;margin:3px 0;cursor:pointer;'><div style='width:30px;height:4px;background:#FFD700;margin-right:8px;border-radius:2px;'></div><span>50-74%</span></div><div class='legend-item' data-range='75-89%' style='display:flex;align-items:center;margin:3px 0;cursor:pointer;'><div style='width:30px;height:4px;background:#FF4500;margin-right:8px;border-radius:2px;'></div><span>75-89%</span></div><div class='legend-item' data-range='90-99%' style='display:flex;align-items:center;margin:3px 0;cursor:pointer;'><div style='width:30px;height:4px;background:#8B0000;margin-right:8px;border-radius:2px;'></div><span>90-99%</span></div><div class='legend-item' data-range='100%+' style='display:flex;align-items:center;margin:3px 0;cursor:pointer;'><div style='width:30px;height:4px;background:#9400D3;margin-right:8px;border-radius:2px;'></div><span>100%+</span></div><div class='legend-item' data-range='Failed' style='display:flex;align-items:center;margin:3px 0;cursor:pointer;'><div style='width:30px;height:4px;margin-right:8px;border-radius:2px;border-top:2px dashed #696969;background:none;'></div><span>Failed</span></div>
 </div>
-
-<div id="legend" style="display:none;"></div>
 
 <div id="info-panel">
   <h3 id="info-title"></h3>
@@ -153,270 +84,259 @@
 
 <script>
 (function() {
-  var nodesData = [{"id": "F", "label": "F", "x": 10, "y": -175, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "F (Active)\n\n  F-to-B -> B  cap: 100  util: 25.0%\n  F-to-D -> D  cap: 100  util: 0.0%\n  F-to-E -> E  cap: 100  util: 105.0%"}, {"id": "A", "label": "A", "x": 125, "y": 0, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "A (Active)\n\n  A-to-B -> B  cap: 100  util: 136.0%\n  A-to-C -> C  cap: 200  util: 10.0%\n  A-to-D -> D  cap: 150  util: 80.0%"}, {"id": "G", "label": "G", "x": 150, "y": -450, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "G (Active)\n\n  G-to-D -> D  cap: 50  util: 0.0%\n  G-to-H -> H  cap: 150  util: 0.0%"}, {"id": "D", "label": "D", "x": 310, "y": -185, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "D (Active)\n\n  D-to-A -> A  cap: 150  util: 6.7%\n  D-to-B -> B  cap: 200  util: 0.0%\n  D-to-C -> C  cap: 150  util: 0.0%\n  D-to-E -> E  cap: 100  util: 0.0%\n  D-to-F -> F  cap: 100  util: 0.0%\n  D-to-G -> G  cap: 50  util: 60.0%\n  D-to-H -> H  cap: 100  util: 0.0%"}, {"id": "C", "label": "C", "x": 300, "y": 315, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "C (Active)\n\n  C-to-A -> A  cap: 200  util: 10.0%\n  C-to-D -> D  cap: 150  util: 0.0%"}, {"id": "E", "label": "E", "x": -300, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "E (Active)\n\n  E-to-B -> B  cap: 200  util: 22.5%\n  E-to-D -> D  cap: 100  util: 15.0%\n  E-to-F -> F  cap: 100  util: 11.0%\n  E-to-H -> H  cap: 100  util: 20.0%"}, {"id": "B", "label": "B", "x": 155, "y": 885, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "B (Active)\n\n  B-to-A -> A  cap: 100  util: 20.0%\n  B-to-D -> D  cap: 200  util: 7.5%\n  B-to-E -> E  cap: 200  util: 45.0%\n  B-to-F -> F  cap: 100  util: 11.0%"}, {"id": "H", "label": "H", "x": 260, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "H (Active)\n\n  H-to-D -> D  cap: 100  util: 0.0%\n  H-to-E -> E  cap: 100  util: 0.0%\n  H-to-G -> G  cap: 150  util: 0.0%"}];
-  var edgesData = [{"id": "B-to-A__B", "from": "B", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-A\nFrom: B\nTo: A\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "A-to-B__A", "from": "A", "to": "B", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "A-to-B\nFrom: A\nTo: B\nCapacity: 100\nUtilization: 136.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "B-to-F__B", "from": "B", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-F\nFrom: B\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "F-to-B__F", "from": "F", "to": "B", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "F-to-B\nFrom: F\nTo: B\nCapacity: 100\nUtilization: 25.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-H__E", "from": "E", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-H\nFrom: E\nTo: H\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "H-to-E__H", "from": "H", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-E\nFrom: H\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "B-to-E__B", "from": "B", "to": "E", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "B-to-E\nFrom: B\nTo: E\nCapacity: 200\nUtilization: 45.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-B__E", "from": "E", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-B\nFrom: E\nTo: B\nCapacity: 200\nUtilization: 22.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-C__D", "from": "D", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-C\nFrom: D\nTo: C\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "C-to-D__C", "from": "C", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-D\nFrom: C\nTo: D\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "B-to-D__B", "from": "B", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-D\nFrom: B\nTo: D\nCapacity: 200\nUtilization: 7.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-B__D", "from": "D", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-B\nFrom: D\nTo: B\nCapacity: 200\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-F__E", "from": "E", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-F\nFrom: E\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "F-to-E__F", "from": "F", "to": "E", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "F-to-E\nFrom: F\nTo: E\nCapacity: 100\nUtilization: 105.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-F__D", "from": "D", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-F\nFrom: D\nTo: F\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "F-to-D__F", "from": "F", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "F-to-D\nFrom: F\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "E-to-D__E", "from": "E", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-D\nFrom: E\nTo: D\nCapacity: 100\nUtilization: 15.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-E__D", "from": "D", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-E\nFrom: D\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-G__D", "from": "D", "to": "G", "color": {"color": "#FFD700", "highlight": "#FFD700"}, "title": "D-to-G\nFrom: D\nTo: G\nCapacity: 50\nUtilization: 60.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "G-to-D__G", "from": "G", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-D\nFrom: G\nTo: D\nCapacity: 50\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "A-to-C__A", "from": "A", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "A-to-C\nFrom: A\nTo: C\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "C-to-A__C", "from": "C", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-A\nFrom: C\nTo: A\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "H-to-G__H", "from": "H", "to": "G", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-G\nFrom: H\nTo: G\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "G-to-H__G", "from": "G", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-H\nFrom: G\nTo: H\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "A-to-D__A", "from": "A", "to": "D", "color": {"color": "#FF4500", "highlight": "#FF4500"}, "title": "A-to-D\nFrom: A\nTo: D\nCapacity: 150\nUtilization: 80.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-A__D", "from": "D", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-A\nFrom: D\nTo: A\nCapacity: 150\nUtilization: 6.7%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "H-to-D__H", "from": "H", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-D\nFrom: H\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}, {"id": "D-to-H__D", "from": "D", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-H\nFrom: D\nTo: H\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false}];
-  var demandsData = [{"label": "A -> B ('', traffic=50)", "edge_ids": ["A-to-B__A"], "node_ids": ["A", "B"]}, {"label": "A -> D ('', traffic=120)", "edge_ids": ["A-to-D__A"], "node_ids": ["A", "D"]}, {"label": "A -> E ('', traffic=24)", "edge_ids": ["A-to-B__A", "B-to-E__B"], "node_ids": ["A", "B", "E"]}, {"label": "A -> F ('', traffic=22)", "edge_ids": ["A-to-B__A", "B-to-E__B", "B-to-F__B", "E-to-F__E"], "node_ids": ["A", "B", "E", "F"]}, {"label": "A -> H ('', traffic=20)", "edge_ids": ["A-to-B__A", "B-to-E__B", "E-to-H__E"], "node_ids": ["A", "B", "E", "H"]}, {"label": "B -> G ('', traffic=30)", "edge_ids": ["B-to-D__B", "B-to-E__B", "D-to-G__D", "E-to-D__E"], "node_ids": ["B", "D", "E", "G"]}, {"label": "C -> E ('', traffic=20)", "edge_ids": ["A-to-B__A", "B-to-E__B", "C-to-A__C"], "node_ids": ["A", "B", "C", "E"]}, {"label": "D -> A ('', traffic=10)", "edge_ids": ["D-to-A__D"], "node_ids": ["A", "D"]}, {"label": "E -> C ('', traffic=20)", "edge_ids": ["A-to-C__A", "B-to-A__B", "E-to-B__E"], "node_ids": ["A", "B", "C", "E"]}, {"label": "F -> B ('', traffic=50)", "edge_ids": ["E-to-B__E", "F-to-B__F", "F-to-E__F"], "node_ids": ["B", "E", "F"]}, {"label": "F -> E ('', traffic=80)", "edge_ids": ["F-to-E__F"], "node_ids": ["E", "F"]}];
+  var nodesData = [{"id": "H", "label": "H", "x": 260, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "H (Active)\n\n  H-to-D -> D  cap: 100  util: 0.0%\n  H-to-E -> E  cap: 100  util: 0.0%\n  H-to-G -> G  cap: 150  util: 0.0%"}, {"id": "B", "label": "B", "x": 155, "y": 885, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "B (Active)\n\n  B-to-A -> A  cap: 100  util: 20.0%\n  B-to-D -> D  cap: 200  util: 7.5%\n  B-to-E -> E  cap: 200  util: 45.0%\n  B-to-F -> F  cap: 100  util: 11.0%"}, {"id": "F", "label": "F", "x": 10, "y": -175, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "F (Active)\n\n  F-to-B -> B  cap: 100  util: 25.0%\n  F-to-D -> D  cap: 100  util: 0.0%\n  F-to-E -> E  cap: 100  util: 105.0%"}, {"id": "D", "label": "D", "x": 310, "y": -185, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "D (Active)\n\n  D-to-A -> A  cap: 150  util: 6.7%\n  D-to-B -> B  cap: 200  util: 0.0%\n  D-to-C -> C  cap: 150  util: 0.0%\n  D-to-E -> E  cap: 100  util: 0.0%\n  D-to-F -> F  cap: 100  util: 0.0%\n  D-to-G -> G  cap: 50  util: 60.0%\n  D-to-H -> H  cap: 100  util: 0.0%"}, {"id": "A", "label": "A", "x": 125, "y": 0, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "A (Active)\n\n  A-to-B -> B  cap: 100  util: 136.0%\n  A-to-C -> C  cap: 200  util: 10.0%\n  A-to-D -> D  cap: 150  util: 80.0%"}, {"id": "C", "label": "C", "x": 300, "y": 315, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "C (Active)\n\n  C-to-A -> A  cap: 200  util: 10.0%\n  C-to-D -> D  cap: 150  util: 0.0%"}, {"id": "G", "label": "G", "x": 150, "y": -450, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "G (Active)\n\n  G-to-D -> D  cap: 50  util: 0.0%\n  G-to-H -> H  cap: 150  util: 0.0%"}, {"id": "E", "label": "E", "x": -300, "y": -620, "color": {"background": "#90EE90", "border": "#696969", "highlight": {"background": "#90EE90", "border": "#333333"}}, "shape": "dot", "size": 25, "font": {"size": 14, "face": "arial", "color": "#222222", "vadjust": 33}, "borderWidth": 2, "title": "E (Active)\n\n  E-to-B -> B  cap: 200  util: 22.5%\n  E-to-D -> D  cap: 100  util: 15.0%\n  E-to-F -> F  cap: 100  util: 11.0%\n  E-to-H -> H  cap: 100  util: 20.0%"}];
+  var edgesData = [{"id": "A-to-B__A", "from": "A", "to": "B", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "A-to-B\nFrom: A\nTo: B\nCapacity: 100\nUtilization: 136.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "100%+"}, {"id": "B-to-A__B", "from": "B", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-A\nFrom: B\nTo: A\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "G-to-H__G", "from": "G", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-H\nFrom: G\nTo: H\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "H-to-G__H", "from": "H", "to": "G", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-G\nFrom: H\nTo: G\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "D-to-B__D", "from": "D", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-B\nFrom: D\nTo: B\nCapacity: 200\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "B-to-D__B", "from": "B", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-D\nFrom: B\nTo: D\nCapacity: 200\nUtilization: 7.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "A-to-D__A", "from": "A", "to": "D", "color": {"color": "#FF4500", "highlight": "#FF4500"}, "title": "A-to-D\nFrom: A\nTo: D\nCapacity: 150\nUtilization: 80.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "75-89%"}, {"id": "D-to-A__D", "from": "D", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-A\nFrom: D\nTo: A\nCapacity: 150\nUtilization: 6.7%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "C-to-D__C", "from": "C", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-D\nFrom: C\nTo: D\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "D-to-C__D", "from": "D", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-C\nFrom: D\nTo: C\nCapacity: 150\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "B-to-E__B", "from": "B", "to": "E", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "B-to-E\nFrom: B\nTo: E\nCapacity: 200\nUtilization: 45.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "25-49%"}, {"id": "E-to-B__E", "from": "E", "to": "B", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-B\nFrom: E\nTo: B\nCapacity: 200\nUtilization: 22.5%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "D-to-E__D", "from": "D", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-E\nFrom: D\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "E-to-D__E", "from": "E", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-D\nFrom: E\nTo: D\nCapacity: 100\nUtilization: 15.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "B-to-F__B", "from": "B", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "B-to-F\nFrom: B\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "F-to-B__F", "from": "F", "to": "B", "color": {"color": "#228B22", "highlight": "#228B22"}, "title": "F-to-B\nFrom: F\nTo: B\nCapacity: 100\nUtilization: 25.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "25-49%"}, {"id": "D-to-G__D", "from": "D", "to": "G", "color": {"color": "#FFD700", "highlight": "#FFD700"}, "title": "D-to-G\nFrom: D\nTo: G\nCapacity: 50\nUtilization: 60.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "50-74%"}, {"id": "G-to-D__G", "from": "G", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "G-to-D\nFrom: G\nTo: D\nCapacity: 50\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "E-to-H__E", "from": "E", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-H\nFrom: E\nTo: H\nCapacity: 100\nUtilization: 20.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "H-to-E__H", "from": "H", "to": "E", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-E\nFrom: H\nTo: E\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "D-to-F__D", "from": "D", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-F\nFrom: D\nTo: F\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "F-to-D__F", "from": "F", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "F-to-D\nFrom: F\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "C-to-A__C", "from": "C", "to": "A", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "C-to-A\nFrom: C\nTo: A\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "A-to-C__A", "from": "A", "to": "C", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "A-to-C\nFrom: A\nTo: C\nCapacity: 200\nUtilization: 10.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "E-to-F__E", "from": "E", "to": "F", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "E-to-F\nFrom: E\nTo: F\nCapacity: 100\nUtilization: 11.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "F-to-E__F", "from": "F", "to": "E", "color": {"color": "#9400D3", "highlight": "#9400D3"}, "title": "F-to-E\nFrom: F\nTo: E\nCapacity: 100\nUtilization: 105.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "100%+"}, {"id": "D-to-H__D", "from": "D", "to": "H", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "D-to-H\nFrom: D\nTo: H\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}, {"id": "H-to-D__H", "from": "H", "to": "D", "color": {"color": "#4169E1", "highlight": "#4169E1"}, "title": "H-to-D\nFrom: H\nTo: D\nCapacity: 100\nUtilization: 0.0%", "width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.8}}, "smooth": {"type": "curvedCCW", "roundness": 0.2}, "dashes": false, "util_range": "0-24%"}];
+  var demandsData = [{"label": "A -> B (traffic=50)", "traffic": 50, "edge_ids": ["A-to-B__A"], "node_ids": ["A", "B"], "interfaces": [{"label": "A-to-B (A -> B)", "node": "A", "edge_id": "A-to-B__A"}], "lsps": []}, {"label": "A -> D (traffic=120)", "traffic": 120, "edge_ids": ["A-to-D__A"], "node_ids": ["A", "D"], "interfaces": [{"label": "A-to-D (A -> D)", "node": "A", "edge_id": "A-to-D__A"}], "lsps": []}, {"label": "A -> E (traffic=24)", "traffic": 24, "edge_ids": ["A-to-B__A", "B-to-E__B"], "node_ids": ["A", "B", "E"], "interfaces": [{"label": "A-to-B (A -> B)", "node": "A", "edge_id": "A-to-B__A"}, {"label": "B-to-E (B -> E)", "node": "B", "edge_id": "B-to-E__B"}], "lsps": []}, {"label": "A -> F (traffic=22)", "traffic": 22, "edge_ids": ["A-to-B__A", "B-to-E__B", "B-to-F__B", "E-to-F__E"], "node_ids": ["A", "B", "E", "F"], "interfaces": [{"label": "A-to-B (A -> B)", "node": "A", "edge_id": "A-to-B__A"}, {"label": "B-to-F (B -> F)", "node": "B", "edge_id": "B-to-F__B"}, {"label": "B-to-E (B -> E)", "node": "B", "edge_id": "B-to-E__B"}, {"label": "E-to-F (E -> F)", "node": "E", "edge_id": "E-to-F__E"}], "lsps": []}, {"label": "A -> H (traffic=20)", "traffic": 20, "edge_ids": ["A-to-B__A", "B-to-E__B", "E-to-H__E"], "node_ids": ["A", "B", "E", "H"], "interfaces": [{"label": "A-to-B (A -> B)", "node": "A", "edge_id": "A-to-B__A"}, {"label": "B-to-E (B -> E)", "node": "B", "edge_id": "B-to-E__B"}, {"label": "E-to-H (E -> H)", "node": "E", "edge_id": "E-to-H__E"}], "lsps": []}, {"label": "B -> G (traffic=30)", "traffic": 30, "edge_ids": ["B-to-D__B", "B-to-E__B", "D-to-G__D", "E-to-D__E"], "node_ids": ["B", "D", "E", "G"], "interfaces": [{"label": "B-to-D (B -> D)", "node": "B", "edge_id": "B-to-D__B"}, {"label": "D-to-G (D -> G)", "node": "D", "edge_id": "D-to-G__D"}, {"label": "B-to-E (B -> E)", "node": "B", "edge_id": "B-to-E__B"}, {"label": "E-to-D (E -> D)", "node": "E", "edge_id": "E-to-D__E"}], "lsps": []}, {"label": "C -> E (traffic=20)", "traffic": 20, "edge_ids": ["A-to-B__A", "B-to-E__B", "C-to-A__C"], "node_ids": ["A", "B", "C", "E"], "interfaces": [{"label": "C-to-A (C -> A)", "node": "C", "edge_id": "C-to-A__C"}, {"label": "A-to-B (A -> B)", "node": "A", "edge_id": "A-to-B__A"}, {"label": "B-to-E (B -> E)", "node": "B", "edge_id": "B-to-E__B"}], "lsps": []}, {"label": "D -> A (traffic=10)", "traffic": 10, "edge_ids": ["D-to-A__D"], "node_ids": ["A", "D"], "interfaces": [{"label": "D-to-A (D -> A)", "node": "D", "edge_id": "D-to-A__D"}], "lsps": []}, {"label": "E -> C (traffic=20)", "traffic": 20, "edge_ids": ["A-to-C__A", "B-to-A__B", "E-to-B__E"], "node_ids": ["A", "B", "C", "E"], "interfaces": [{"label": "E-to-B (E -> B)", "node": "E", "edge_id": "E-to-B__E"}, {"label": "B-to-A (B -> A)", "node": "B", "edge_id": "B-to-A__B"}, {"label": "A-to-C (A -> C)", "node": "A", "edge_id": "A-to-C__A"}], "lsps": []}, {"label": "F -> B (traffic=50)", "traffic": 50, "edge_ids": ["E-to-B__E", "F-to-B__F", "F-to-E__F"], "node_ids": ["B", "E", "F"], "interfaces": [{"label": "F-to-B (F -> B)", "node": "F", "edge_id": "F-to-B__F"}, {"label": "F-to-E (F -> E)", "node": "F", "edge_id": "F-to-E__F"}, {"label": "E-to-B (E -> B)", "node": "E", "edge_id": "E-to-B__E"}], "lsps": []}, {"label": "F -> E (traffic=80)", "traffic": 80, "edge_ids": ["F-to-E__F"], "node_ids": ["E", "F"], "interfaces": [{"label": "F-to-E (F -> E)", "node": "F", "edge_id": "F-to-E__F"}], "lsps": []}];
   var lspsData = [];
+  var interfacesByNode = {"A": [{"name": "A-to-B", "remote": "B", "capacity": 100, "utilization": "136.0%", "edge_id": "A-to-B__A", "demands": [{"label": "A -> B", "type": "demand", "index": 0}, {"label": "A -> F", "type": "demand", "index": 3}, {"label": "A -> E", "type": "demand", "index": 2}, {"label": "A -> H", "type": "demand", "index": 4}, {"label": "C -> E", "type": "demand", "index": 6}], "lsps": []}, {"name": "A-to-C", "remote": "C", "capacity": 200, "utilization": "10.0%", "edge_id": "A-to-C__A", "demands": [{"label": "E -> C", "type": "demand", "index": 8}], "lsps": []}, {"name": "A-to-D", "remote": "D", "capacity": 150, "utilization": "80.0%", "edge_id": "A-to-D__A", "demands": [{"label": "A -> D", "type": "demand", "index": 1}], "lsps": []}], "B": [{"name": "B-to-A", "remote": "A", "capacity": 100, "utilization": "20.0%", "edge_id": "B-to-A__B", "demands": [{"label": "E -> C", "type": "demand", "index": 8}], "lsps": []}, {"name": "B-to-D", "remote": "D", "capacity": 200, "utilization": "7.5%", "edge_id": "B-to-D__B", "demands": [{"label": "B -> G", "type": "demand", "index": 5}], "lsps": []}, {"name": "B-to-E", "remote": "E", "capacity": 200, "utilization": "45.0%", "edge_id": "B-to-E__B", "demands": [{"label": "A -> F", "type": "demand", "index": 3}, {"label": "A -> E", "type": "demand", "index": 2}, {"label": "A -> H", "type": "demand", "index": 4}, {"label": "C -> E", "type": "demand", "index": 6}, {"label": "B -> G", "type": "demand", "index": 5}], "lsps": []}, {"name": "B-to-F", "remote": "F", "capacity": 100, "utilization": "11.0%", "edge_id": "B-to-F__B", "demands": [{"label": "A -> F", "type": "demand", "index": 3}], "lsps": []}], "C": [{"name": "C-to-A", "remote": "A", "capacity": 200, "utilization": "10.0%", "edge_id": "C-to-A__C", "demands": [{"label": "C -> E", "type": "demand", "index": 6}], "lsps": []}, {"name": "C-to-D", "remote": "D", "capacity": 150, "utilization": "0.0%", "edge_id": "C-to-D__C", "demands": [], "lsps": []}], "D": [{"name": "D-to-A", "remote": "A", "capacity": 150, "utilization": "6.7%", "edge_id": "D-to-A__D", "demands": [{"label": "D -> A", "type": "demand", "index": 7}], "lsps": []}, {"name": "D-to-B", "remote": "B", "capacity": 200, "utilization": "0.0%", "edge_id": "D-to-B__D", "demands": [], "lsps": []}, {"name": "D-to-C", "remote": "C", "capacity": 150, "utilization": "0.0%", "edge_id": "D-to-C__D", "demands": [], "lsps": []}, {"name": "D-to-E", "remote": "E", "capacity": 100, "utilization": "0.0%", "edge_id": "D-to-E__D", "demands": [], "lsps": []}, {"name": "D-to-F", "remote": "F", "capacity": 100, "utilization": "0.0%", "edge_id": "D-to-F__D", "demands": [], "lsps": []}, {"name": "D-to-G", "remote": "G", "capacity": 50, "utilization": "60.0%", "edge_id": "D-to-G__D", "demands": [{"label": "B -> G", "type": "demand", "index": 5}], "lsps": []}, {"name": "D-to-H", "remote": "H", "capacity": 100, "utilization": "0.0%", "edge_id": "D-to-H__D", "demands": [], "lsps": []}], "E": [{"name": "E-to-B", "remote": "B", "capacity": 200, "utilization": "22.5%", "edge_id": "E-to-B__E", "demands": [{"label": "F -> B", "type": "demand", "index": 9}, {"label": "E -> C", "type": "demand", "index": 8}], "lsps": []}, {"name": "E-to-D", "remote": "D", "capacity": 100, "utilization": "15.0%", "edge_id": "E-to-D__E", "demands": [{"label": "B -> G", "type": "demand", "index": 5}], "lsps": []}, {"name": "E-to-F", "remote": "F", "capacity": 100, "utilization": "11.0%", "edge_id": "E-to-F__E", "demands": [{"label": "A -> F", "type": "demand", "index": 3}], "lsps": []}, {"name": "E-to-H", "remote": "H", "capacity": 100, "utilization": "20.0%", "edge_id": "E-to-H__E", "demands": [{"label": "A -> H", "type": "demand", "index": 4}], "lsps": []}], "F": [{"name": "F-to-B", "remote": "B", "capacity": 100, "utilization": "25.0%", "edge_id": "F-to-B__F", "demands": [{"label": "F -> B", "type": "demand", "index": 9}], "lsps": []}, {"name": "F-to-D", "remote": "D", "capacity": 100, "utilization": "0.0%", "edge_id": "F-to-D__F", "demands": [], "lsps": []}, {"name": "F-to-E", "remote": "E", "capacity": 100, "utilization": "105.0%", "edge_id": "F-to-E__F", "demands": [{"label": "F -> B", "type": "demand", "index": 9}, {"label": "F -> E", "type": "demand", "index": 10}], "lsps": []}], "G": [{"name": "G-to-D", "remote": "D", "capacity": 50, "utilization": "0.0%", "edge_id": "G-to-D__G", "demands": [], "lsps": []}, {"name": "G-to-H", "remote": "H", "capacity": 150, "utilization": "0.0%", "edge_id": "G-to-H__G", "demands": [], "lsps": []}], "H": [{"name": "H-to-D", "remote": "D", "capacity": 100, "utilization": "0.0%", "edge_id": "H-to-D__H", "demands": [], "lsps": []}, {"name": "H-to-E", "remote": "E", "capacity": 100, "utilization": "0.0%", "edge_id": "H-to-E__H", "demands": [], "lsps": []}, {"name": "H-to-G", "remote": "G", "capacity": 150, "utilization": "0.0%", "edge_id": "H-to-G__H", "demands": [], "lsps": []}]};
 
   var DEMAND_COLOR = '#FF69B4';
   var LSP_COLOR = '#00FFFF';
 
   var nodes = new vis.DataSet(nodesData);
   var edges = new vis.DataSet(edgesData);
-
   var container = document.getElementById('network-container');
-  var data = { nodes: nodes, edges: edges };
-
-  var options = {
+  var network = new vis.Network(container, { nodes: nodes, edges: edges }, {
     physics: { enabled: false },
-    interaction: {
-      hover: true,
-      tooltipDelay: 150,
-      zoomView: true,
-      dragView: true,
-      dragNodes: true,
-      multiselect: true
-    },
-    edges: {
-      font: { size: 10, color: '#999', face: 'arial' },
-      smooth: { type: 'curvedCW', roundness: 0.2 },
-      hoverWidth: 1.5
-    },
-    nodes: {
-      font: { color: '#222222' }
-    }
-  };
-
-  var network = new vis.Network(container, data, options);
-
-  // Store original edge styles for restore
-  var originalEdgeStyles = {};
-  edgesData.forEach(function(e) {
-    originalEdgeStyles[e.id] = {
-      color: e.color,
-      width: e.width,
-      dashes: e.dashes || false
-    };
+    interaction: { hover: true, tooltipDelay: 150, zoomView: true, zoomSpeed: 0.3, dragView: true, dragNodes: true },
+    edges: { font: { size: 10, color: '#999', face: 'arial' }, smooth: { type: 'curvedCW', roundness: 0.2 }, hoverWidth: 1.5 },
+    nodes: { font: { color: '#222222' } }
   });
 
-  // Store original node styles for restore
-  var originalNodeStyles = {};
+  // --- Store originals ---
+  var origEdge = {}, origNode = {}, origPos = {};
+  edgesData.forEach(function(e) { origEdge[e.id] = { color: e.color, width: e.width, dashes: e.dashes || false, util_range: e.util_range }; });
+  var hiddenRanges = {};
   nodesData.forEach(function(n) {
-    originalNodeStyles[n.id] = {
-      color: JSON.parse(JSON.stringify(n.color)),
-      borderWidth: n.borderWidth
-    };
-  });
-
-  // Store original positions for reset
-  var originalPositions = {};
-  nodesData.forEach(function(n) {
-    originalPositions[n.id] = { x: n.x, y: n.y };
+    origNode[n.id] = { color: JSON.parse(JSON.stringify(n.color)), borderWidth: n.borderWidth };
+    origPos[n.id] = { x: n.x, y: n.y };
   });
 
   // --- Populate dropdowns ---
   var demandSelect = document.getElementById('demand-select');
-  demandsData.forEach(function(d, i) {
-    var opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = d.label;
-    demandSelect.appendChild(opt);
-  });
-
   var lspSelect = document.getElementById('lsp-select');
+  var nodeSelect = document.getElementById('node-select');
+
+  demandsData.forEach(function(d, i) {
+    var o = document.createElement('option'); o.value = i; o.textContent = d.label; demandSelect.appendChild(o);
+  });
   lspsData.forEach(function(l, i) {
-    var opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = l.label;
-    lspSelect.appendChild(opt);
+    var o = document.createElement('option'); o.value = i; o.textContent = l.label; lspSelect.appendChild(o);
+  });
+  Object.keys(interfacesByNode).sort().forEach(function(name) {
+    var o = document.createElement('option'); o.value = name; o.textContent = name; nodeSelect.appendChild(o);
   });
 
-  // --- Highlight / restore helpers ---
-  function restoreAllEdges() {
-    var updates = [];
-    edges.forEach(function(e) {
-      var orig = originalEdgeStyles[e.id];
-      if (orig) {
-        updates.push({
-          id: e.id,
-          color: orig.color,
-          width: orig.width,
-          dashes: orig.dashes
-        });
-      }
-    });
-    edges.update(updates);
+  // --- Helpers ---
+  function restoreAll() {
+    var eu = [], nu = [];
+    edges.forEach(function(e) { var o = origEdge[e.id]; if(o) eu.push({ id:e.id, color:o.color, width:o.width, dashes:o.dashes }); });
+    nodes.forEach(function(n) { var o = origNode[n.id]; if(o) nu.push({ id:n.id, color:JSON.parse(JSON.stringify(o.color)), borderWidth:o.borderWidth }); });
+    edges.update(eu); nodes.update(nu);
   }
-
-  function restoreAllNodes() {
-    var updates = [];
-    nodes.forEach(function(n) {
-      var orig = originalNodeStyles[n.id];
-      if (orig) {
-        updates.push({
-          id: n.id,
-          color: JSON.parse(JSON.stringify(orig.color)),
-          borderWidth: orig.borderWidth
-        });
-      }
-    });
-    nodes.update(updates);
+  function dimAll() {
+    var u = [];
+    edges.forEach(function(e) { u.push({ id:e.id, color:{ color:'rgba(160,150,130,0.45)', highlight:'rgba(160,150,130,0.45)' }, width:1 }); });
+    edges.update(u);
   }
-
-  function dimAllEdges() {
-    var updates = [];
-    edges.forEach(function(e) {
-      updates.push({
-        id: e.id,
-        color: { color: 'rgba(160,150,130,0.45)', highlight: 'rgba(160,150,130,0.45)' },
-        width: 1
-      });
-    });
-    edges.update(updates);
+  function hlEdges(ids, color, w) {
+    var u = []; ids.forEach(function(id) { u.push({ id:id, color:{ color:color, highlight:color }, width:w, dashes:false }); }); edges.update(u);
   }
-
-  function highlightEdges(edgeIds, color, width) {
-    var updates = [];
-    edgeIds.forEach(function(eid) {
-      updates.push({
-        id: eid,
-        color: { color: color, highlight: color },
-        width: width,
-        dashes: false
-      });
-    });
-    edges.update(updates);
+  function hlNodes(ids, bc) {
+    var u = []; ids.forEach(function(id) {
+      var o = origNode[id]; if(o) { var c = JSON.parse(JSON.stringify(o.color)); c.border = bc; u.push({ id:id, color:c, borderWidth:4 }); }
+    }); nodes.update(u);
   }
-
-  function highlightNodes(nodeIds, borderColor) {
-    var updates = [];
-    nodeIds.forEach(function(nid) {
-      var orig = originalNodeStyles[nid];
-      if (orig) {
-        var c = JSON.parse(JSON.stringify(orig.color));
-        c.border = borderColor;
-        updates.push({ id: nid, color: c, borderWidth: 4 });
-      }
-    });
-    nodes.update(updates);
-  }
-
-  // --- Demand selection ---
-  demandSelect.addEventListener('change', function() {
-    restoreAllEdges();
-    restoreAllNodes();
-    lspSelect.value = '';
+  function clearSelections() {
+    demandSelect.value = ''; lspSelect.value = ''; nodeSelect.value = '';
+    document.getElementById('demand-info').style.display = 'none';
     document.getElementById('lsp-info').style.display = 'none';
-    var idx = this.value;
-    var infoDiv = document.getElementById('demand-info');
-    if (idx === '') {
-      infoDiv.style.display = 'none';
-      return;
-    }
-    var d = demandsData[parseInt(idx)];
+    document.getElementById('intf-list').style.display = 'none';
+    restoreAll();
+  }
+
+  // --- Select demand by index ---
+  function selectDemand(idx) {
+    clearSelections();
+    demandSelect.value = idx;
+    var d = demandsData[idx];
+    var info = document.getElementById('demand-info');
     if (d.edge_ids.length === 0) {
-      infoDiv.textContent = 'Demand is unrouted';
-      infoDiv.style.display = 'block';
-      return;
+      info.innerHTML = '<b>Traffic:</b> ' + d.traffic + '<br>Demand is unrouted';
+      info.style.display = 'block'; return;
     }
-    dimAllEdges();
-    highlightEdges(d.edge_ids, DEMAND_COLOR, 5);
-    highlightNodes(d.node_ids, DEMAND_COLOR);
-    infoDiv.textContent = 'Path edges: ' + d.edge_ids.length + '\nNodes: ' + d.node_ids.join(', ');
-    infoDiv.style.display = 'block';
-  });
-
-  document.getElementById('btn-clear-demand').addEventListener('click', function() {
-    demandSelect.value = '';
-    document.getElementById('demand-info').style.display = 'none';
-    restoreAllEdges();
-    restoreAllNodes();
-  });
-
-  // --- LSP selection ---
-  lspSelect.addEventListener('change', function() {
-    restoreAllEdges();
-    restoreAllNodes();
-    demandSelect.value = '';
-    document.getElementById('demand-info').style.display = 'none';
-    var idx = this.value;
-    var infoDiv = document.getElementById('lsp-info');
-    if (idx === '') {
-      infoDiv.style.display = 'none';
-      return;
+    dimAll(); hlEdges(d.edge_ids, DEMAND_COLOR, 5); hlNodes(d.node_ids, DEMAND_COLOR);
+    var html = '<b>Traffic:</b> ' + d.traffic;
+    if (d.lsps && d.lsps.length > 0) {
+      html += '<br><b>LSPs:</b>';
+      d.lsps.forEach(function(l) {
+        html += '<div class="intf-line">&bull; <span class="obj-link" data-action="lsp" data-index="' + l.index + '">' + l.label + '</span></div>';
+      });
     }
-    var l = lspsData[parseInt(idx)];
+    html += '<br><b>Interfaces:</b>';
+    d.interfaces.forEach(function(intf) {
+      html += '<div class="intf-line">&bull; <span class="obj-link" data-action="intf" data-node="' + intf.node + '" data-edge="' + intf.edge_id + '">' + intf.label + '</span></div>';
+    });
+    info.innerHTML = html; info.style.display = 'block';
+  }
+
+  // --- Select LSP by index ---
+  function selectLsp(idx) {
+    clearSelections();
+    lspSelect.value = idx;
+    var l = lspsData[idx];
+    var info = document.getElementById('lsp-info');
     if (l.edge_ids.length === 0) {
-      infoDiv.textContent = 'LSP is unrouted';
-      infoDiv.style.display = 'block';
-      return;
+      info.textContent = 'LSP is unrouted';
+      info.style.display = 'block'; return;
     }
-    dimAllEdges();
-    highlightEdges(l.edge_ids, LSP_COLOR, 5);
-    highlightNodes(l.node_ids, LSP_COLOR);
-    infoDiv.textContent = 'Path edges: ' + l.edge_ids.length + '\nNodes: ' + l.node_ids.join(', ');
-    infoDiv.style.display = 'block';
+    dimAll(); hlEdges(l.edge_ids, LSP_COLOR, 5); hlNodes(l.node_ids, LSP_COLOR);
+    var html = '<b>Traffic:</b> ' + l.traffic + '&emsp;<b>Reserved BW:</b> ' + l.reserved_bw;
+    if (l.demands && l.demands.length > 0) {
+      html += '<br><b>Demands:</b>';
+      l.demands.forEach(function(d) {
+        html += '<div class="intf-line">&bull; <span class="obj-link" data-action="demand" data-index="' + d.index + '">' + d.label + '</span></div>';
+      });
+    }
+    html += '<br><b>Interfaces:</b>';
+    l.interfaces.forEach(function(intf) {
+      html += '<div class="intf-line">&bull; <span class="obj-link" data-action="intf" data-node="' + intf.node + '" data-edge="' + intf.edge_id + '">' + intf.label + '</span></div>';
+    });
+    info.innerHTML = html; info.style.display = 'block';
+  }
+
+  // --- Demand / LSP dropdown handlers ---
+  demandSelect.addEventListener('change', function() {
+    if (this.value === '') { clearSelections(); return; }
+    selectDemand(parseInt(this.value));
+  });
+  document.getElementById('btn-clear-demand').addEventListener('click', clearSelections);
+
+  lspSelect.addEventListener('change', function() {
+    if (this.value === '') { clearSelections(); return; }
+    selectLsp(parseInt(this.value));
+  });
+  document.getElementById('btn-clear-lsp').addEventListener('click', clearSelections);
+
+  // --- Interface by node ---
+  nodeSelect.addEventListener('change', function() {
+    restoreAll();
+    demandSelect.value = ''; lspSelect.value = '';
+    document.getElementById('demand-info').style.display = 'none';
+    document.getElementById('lsp-info').style.display = 'none';
+    var listDiv = document.getElementById('intf-list');
+    var nodeName = this.value;
+    if (!nodeName) { listDiv.style.display = 'none'; return; }
+    var intfs = interfacesByNode[nodeName] || [];
+    if (intfs.length === 0) { listDiv.textContent = 'No interfaces'; listDiv.style.display = 'block'; return; }
+    var html = '';
+    intfs.forEach(function(intf) {
+      html += '<div class="intf-item">';
+      html += '<div class="intf-header">' + intf.name + ' &rarr; ' + intf.remote + '</div>';
+      html += '<div class="intf-sub">cap: ' + intf.capacity + '&emsp;util: ' + intf.utilization + '</div>';
+      if (intf.demands.length > 0) {
+        html += '<div class="intf-sub"><b>Demands:</b></div>';
+        intf.demands.forEach(function(d) {
+          html += '<div class="intf-sub"><span class="obj-link" data-action="demand" data-index="' + d.index + '">' + d.label + '</span></div>';
+        });
+      }
+      if (intf.lsps.length > 0) {
+        html += '<div class="intf-sub"><b>LSPs:</b></div>';
+        intf.lsps.forEach(function(l) {
+          html += '<div class="intf-sub"><span class="obj-link" data-action="lsp" data-index="' + l.index + '">' + l.label + '</span></div>';
+        });
+      }
+      if (intf.demands.length === 0 && intf.lsps.length === 0) {
+        html += '<div class="intf-sub" style="color:#999;">No demands or LSPs</div>';
+      }
+      html += '</div>';
+    });
+    listDiv.innerHTML = html; listDiv.style.display = 'block';
   });
 
-  document.getElementById('btn-clear-lsp').addEventListener('click', function() {
-    lspSelect.value = '';
-    document.getElementById('lsp-info').style.display = 'none';
-    restoreAllEdges();
-    restoreAllNodes();
+  // --- Select interface: switch to Interfaces by Node view, highlight the edge ---
+  function selectInterface(nodeName, edgeId) {
+    clearSelections();
+    nodeSelect.value = nodeName;
+    // Trigger the node select change to populate the interface list
+    nodeSelect.dispatchEvent(new Event('change'));
+    // Highlight just this one edge
+    dimAll();
+    hlEdges([edgeId], '#e67300', 5);
+    hlNodes([nodeName], '#e67300');
+  }
+
+  // Event delegation for clickable links in sidebar panels
+  document.getElementById('sidebar').addEventListener('click', function(evt) {
+    // Clickable object links (demands, LSPs, interfaces)
+    var el = evt.target.closest('.obj-link');
+    if (el) {
+      var action = el.getAttribute('data-action');
+      if (action === 'demand') selectDemand(parseInt(el.getAttribute('data-index')));
+      else if (action === 'lsp') selectLsp(parseInt(el.getAttribute('data-index')));
+      else if (action === 'intf') selectInterface(el.getAttribute('data-node'), el.getAttribute('data-edge'));
+      return;
+    }
+    // Legend toggle
+    var legendEl = evt.target.closest('.legend-item');
+    if (legendEl) {
+      var range = legendEl.getAttribute('data-range');
+      if (hiddenRanges[range]) {
+        delete hiddenRanges[range];
+        legendEl.classList.remove('disabled');
+      } else {
+        hiddenRanges[range] = true;
+        legendEl.classList.add('disabled');
+      }
+      // Apply: hide/show edges by util_range
+      var updates = [];
+      edges.forEach(function(e) {
+        var o = origEdge[e.id];
+        if (o && hiddenRanges[o.util_range]) {
+          updates.push({ id: e.id, hidden: true });
+        } else {
+          updates.push({ id: e.id, hidden: false });
+        }
+      });
+      edges.update(updates);
+    }
   });
 
   // --- Controls ---
   document.getElementById('toggle-physics').addEventListener('change', function() {
     network.setOptions({ physics: { enabled: this.checked } });
   });
-
   document.getElementById('toggle-labels').addEventListener('change', function() {
     var show = this.checked;
-    edges.forEach(function(e) {
-      edges.update({ id: e.id, arrows: { to: { enabled: show, scaleFactor: 0.8 } } });
-    });
+    edges.forEach(function(e) { edges.update({ id: e.id, arrows: { to: { enabled: show, scaleFactor: 0.8 } } }); });
   });
-
   document.getElementById('btn-fit').addEventListener('click', function() {
     network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
   });
-
   document.getElementById('btn-reset').addEventListener('click', function() {
-    var updates = [];
-    for (var id in originalPositions) {
-      updates.push({ id: id, x: originalPositions[id].x, y: originalPositions[id].y });
-    }
-    nodes.update(updates);
-    network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+    var u = []; for (var id in origPos) u.push({ id: id, x: origPos[id].x, y: origPos[id].y });
+    nodes.update(u); network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
   });
 
   // --- Info Panel on click ---
   var infoPanel = document.getElementById('info-panel');
   var infoTitle = document.getElementById('info-title');
   var infoBody = document.getElementById('info-body');
-
   network.on('click', function(params) {
     if (params.nodes.length > 0) {
-      var nodeId = params.nodes[0];
-      var node = nodes.get(nodeId);
-      infoTitle.textContent = 'Node: ' + node.label;
-      infoBody.innerText = node.title || '';
+      var n = nodes.get(params.nodes[0]);
+      infoTitle.textContent = 'Node: ' + n.label;
+      infoBody.innerText = n.title || '';
       infoPanel.style.display = 'block';
     } else if (params.edges.length > 0) {
-      var edgeId = params.edges[0];
-      var edge = edges.get(edgeId);
+      var e = edges.get(params.edges[0]);
       infoTitle.textContent = 'Interface';
-      infoBody.innerText = edge.title || '';
+      infoBody.innerText = e.title || '';
       infoPanel.style.display = 'block';
-    } else {
-      infoPanel.style.display = 'none';
-    }
+    } else { infoPanel.style.display = 'none'; }
   });
 
-  // Initial fit
-  network.once('afterDrawing', function() {
-    network.fit({ animation: false });
-  });
+  network.once('afterDrawing', function() { network.fit({ animation: false }); });
 })();
 </script>
 </body>

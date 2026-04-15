@@ -14,9 +14,9 @@ sys.path.append("../")
 
 from pprint import pprint
 
-from pyNTM import PerformanceModel
+from pyNTM import Model
 
-model = PerformanceModel.load_model_file("traffic_eng_example_model.csv")
+model = Model.load_model_file("traffic_eng_example_model.csv")
 model.update_simulation()
 
 int_a_b = model.get_interface_object("A-to-B", "A")

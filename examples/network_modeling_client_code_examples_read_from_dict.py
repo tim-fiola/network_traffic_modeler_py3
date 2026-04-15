@@ -11,7 +11,7 @@ import sys  # noqa
 
 sys.path.append("../")  # noqa
 
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pyNTM import Node
 
 # Try/except in case there are mpld3/tkinter import errors in graph_network_interactive
@@ -385,7 +385,7 @@ source = "A"
 dest = "B"
 
 # Define a network model and load interfaces
-model1 = PerformanceModel()
+model1 = Model()
 model1.add_network_interfaces_from_list(network_interfaces)
 print("model1 is type", type(model1))
 print()

@@ -3,7 +3,7 @@ import sys  # noqa
 
 sys.path.append("../")  # noqa
 
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pprint import pprint
 
 
@@ -15,7 +15,7 @@ from pprint import pprint
 #       their reserved bandwidth accordingly
 # 5.  A non lsp demand will properly route
 
-model = PerformanceModel.load_model_file("lsp_model_test_file.csv")
+model = Model.load_model_file("lsp_model_test_file.csv")
 model.update_simulation()
 
 # Test 1

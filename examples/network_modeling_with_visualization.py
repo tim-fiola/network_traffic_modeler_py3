@@ -12,10 +12,8 @@ import sys  # noqa
 
 sys.path.append("../")  # noqa
 
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pyNTM import Node
-
-from pyNTM.weathermap import WeatherMap
 
 from pprint import pprint
 import time
@@ -23,7 +21,7 @@ import time
 t1 = time.time()
 
 # Load a network Model file with info on nodes, interfaces, and demands
-model1 = PerformanceModel.load_model_file("sample_network_model_file.csv")
+model1 = Model.load_model_file("sample_network_model_file.csv")
 model1.update_simulation()
 
 print("model1 is type", type(model1))
@@ -205,5 +203,4 @@ print()
 
 print("Making interactive network graph in browser.")
 
-vis = WeatherMap(model1)
-vis.create_weathermap()
+model1.visualize()

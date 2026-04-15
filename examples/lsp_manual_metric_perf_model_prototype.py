@@ -3,10 +3,10 @@ import sys
 sys.path.append("../")
 
 from pprint import pprint
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pyNTM import RSVP_LSP
 
-model = PerformanceModel.load_model_file("perf_model_lsp_metric.csv")
+model = Model.load_model_file("perf_model_lsp_metric.csv")
 model.update_simulation()
 
 lsp_a_d_1 = model.get_rsvp_lsp("A", "D", "lsp_a_d_1")
