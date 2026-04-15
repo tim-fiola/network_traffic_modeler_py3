@@ -1,12 +1,12 @@
 """
-Confirming behavior of Demand in Parallel_Link_Model
+Confirming behavior of Demand in Model
 """
 
 import unittest
 
 from pyNTM import Node
 from pyNTM import Demand
-from pyNTM import FlexModel
+from pyNTM import Model
 from pyNTM import Interface
 from pyNTM import RSVP_LSP
 
@@ -38,7 +38,7 @@ class TestDemand(unittest.TestCase):
             dest_node_object=self.node_b,
             lsp_name="A-to-B",
         )
-        self.model = FlexModel(
+        self.model = Model(
             interface_objects=set([self.interface_a, self.interface_b]),
             node_objects=set([self.node_a, self.node_b]),
             demand_objects=set([]),
@@ -72,7 +72,7 @@ class TestDemand(unittest.TestCase):
         )
 
     def test_demand_behavior(self):
-        model = FlexModel.load_model_file("test/parallel_link_model_test_topology.csv")
+        model = Model.load_model_file("test/parallel_link_model_test_topology.csv")
 
         model.update_simulation()
 
@@ -130,7 +130,7 @@ class TestDemand(unittest.TestCase):
             circuit_id=1,
         )
         dmd_a_d = Demand(node_a, node_d, traffic=10)
-        model = FlexModel(
+        model = Model(
             interface_objects=set([interface_a, interface_b]),
             node_objects=set([node_a, node_b, node_d]),
             demand_objects=set([dmd_a_d]),
@@ -170,7 +170,7 @@ class TestDemand(unittest.TestCase):
             source_node_object=node_a, dest_node_object=node_b, lsp_name="lsp_a_b"
         )
 
-        model = FlexModel(
+        model = Model(
             interface_objects=set([interface_a, interface_b]),
             node_objects=set([node_a, node_b, node_d]),
             demand_objects=set([dmd_a_b]),

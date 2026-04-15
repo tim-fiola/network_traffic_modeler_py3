@@ -1,7 +1,6 @@
 import unittest
-from pyNTM import FlexModel
+from pyNTM import Model
 from pyNTM import ModelException
-from pyNTM import PerformanceModel
 
 
 class TestIGPShortcuts(unittest.TestCase):
@@ -14,7 +13,7 @@ class TestIGPShortcuts(unittest.TestCase):
         # The demands should take LSPs starting on the first
         # node that has shortcuts and should take the LSP that
         # leads it closest to the demand destination
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
         model.update_simulation()
@@ -70,7 +69,7 @@ class TestIGPShortcuts(unittest.TestCase):
 
     def test_igp_shortcut_node_attributes(self):
         # The IGP shortcut attribute should be True
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
 
@@ -81,7 +80,7 @@ class TestIGPShortcuts(unittest.TestCase):
     # Remove igp_shortcuts_enabled on node B, traffic should appear on lsp_c_e_1
     # and disappear from lsp_b_d_1/2 and lsp_d_f_1
     def test_remove_shortcuts_node_b(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
 
@@ -123,7 +122,7 @@ class TestIGPShortcuts(unittest.TestCase):
         Test LSP and Interface traffic.
         """
 
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
         model.update_simulation()
@@ -162,8 +161,8 @@ class TestIGPShortcuts(unittest.TestCase):
         self.assertEqual(lsp_d_f_1.traffic_on_lsp(model), 8.0)
 
     def test_igp_shortcut_perf_model(self):
-        """PerformanceModel (now unified) supports igp_shortcuts_enabled."""
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        """Model (now unified) supports igp_shortcuts_enabled."""
+        model = Model.load_model_file("test/igp_routing_topology.csv")
 
         node_a = model.get_node_object("A")
         node_a.igp_shortcuts_enabled = True
@@ -175,7 +174,7 @@ class TestIGPShortcuts(unittest.TestCase):
     # If one LSP from B to D is assigned a lower metric, traffic should
     # not split at A
     def test_changed_metric(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
 
@@ -280,7 +279,7 @@ class TestIGPShortcuts(unittest.TestCase):
 
     # If an LSP from A to F is added, all traffic should take that LSP
     def test_direct_lsp_preemption(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
         dmd_a_f_1 = model.get_demand_object("A", "F", "dmd_a_f_1")

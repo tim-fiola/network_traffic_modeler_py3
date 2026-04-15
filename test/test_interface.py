@@ -2,7 +2,7 @@ import unittest
 
 from pyNTM import Node
 from pyNTM import Interface
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pyNTM import ModelException
 
 
@@ -69,7 +69,7 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(100, self.interface_a.reservable_bandwidth)
 
     def test_int_fail(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -85,7 +85,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(int_b_a.failed)
 
     def test_int_fail_2(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -101,7 +101,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(int_b_a.failed)
 
     def test_demands_non_failed_int(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -109,7 +109,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(int_a_b.demands(model) != [])
 
     def test_traffic_non_failed_int(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -117,7 +117,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(int_a_b.traffic, 20)
 
     def test_demands_non_failed(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -126,7 +126,7 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(int_a_b.demands(model), [dmd_a_f_1])
 
     def test_traffic_failed_int(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
         model.fail_interface("A-to-B", "A")
         model.update_simulation()
@@ -136,7 +136,7 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(int_a_b.traffic, "Down")
 
     def test_dmd_failed_int(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
         model.fail_interface("A-to-B", "A")
         model.update_simulation()
@@ -146,7 +146,7 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(int_a_b.demands(model), [])
 
     def test_bad_failed_status(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -157,7 +157,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue("must be boolean value" in context.exception.args[0])
 
     def test_failed_node(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -168,7 +168,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(int_a_b.failed)
 
     def test_remote_int_failed(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_b_a = model.get_interface_object("B-to-A", "B")
@@ -179,7 +179,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(int_b_a.failed)
 
     def test_unfail_int_failed_node(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -196,7 +196,7 @@ class TestInterface(unittest.TestCase):
 
     # Test __ne__ method against Nodes with same names as nodes in the Model
     def test_not_equal(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -212,7 +212,7 @@ class TestInterface(unittest.TestCase):
         self.assertFalse(int_a_b == int_a_b_prime)
 
     def test_get_ckt(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
         int_a_b = model.get_interface_object("A-to-B", "A")
 
@@ -222,7 +222,7 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(ckt1, ckt2)
 
     def test_utilization(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
         int_a_b = model.get_interface_object("A-to-B", "A")
 
@@ -235,7 +235,7 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(int_a_b.utilization, "Int is down")
 
     def test_int_cost_not_integer(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         int_a_b = model.get_interface_object("A-to-B", "A")
@@ -248,7 +248,7 @@ class TestInterface(unittest.TestCase):
 
     # Test failed interface makes circuit.failed=True
     def test_ckt_failure(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         model.fail_interface("A-to-B", "A")
@@ -259,7 +259,7 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(ckt_1.failed(model))
 
     def test_ckt_non_failure(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         ckt_1 = model.get_circuit_object_from_interface("A-to-B", "A")
@@ -267,7 +267,7 @@ class TestInterface(unittest.TestCase):
         self.assertFalse(ckt_1.failed(model))
 
     def test_equality(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
         ckt_1 = model.get_circuit_object_from_interface("A-to-B", "A")
         int_a, int_b = ckt_1.get_circuit_interfaces(model)
@@ -275,7 +275,7 @@ class TestInterface(unittest.TestCase):
         self.assertNotEqual(int_a, int_b)
 
     def test_reserved_bw_failed(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
         int_a_b = model.get_interface_object("A-to-B", "A")
 
@@ -287,7 +287,7 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(int_a_b.reserved_bandwidth, 0)
 
     def test_unfail_interface(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
         int_a_b = model.get_interface_object("A-to-B", "A")
         int_b_a = model.get_interface_object("B-to-A", "B")
@@ -303,7 +303,7 @@ class TestInterface(unittest.TestCase):
         self.assertFalse(int_a_b.failed)
 
     def test_demands_on_interface_via_lsps(self):
-        model = PerformanceModel.load_model_file("test/model_test_topology.csv")
+        model = Model.load_model_file("test/model_test_topology.csv")
         model.update_simulation()
         int_a_b = model.get_interface_object("A-to-B", "A")
         dmd_a_d_2 = model.get_demand_object("A", "D", "dmd_a_d_2")  # Rides an LSP

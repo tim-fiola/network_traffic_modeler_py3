@@ -1,7 +1,7 @@
 import unittest
 
 from pyNTM import Node
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pyNTM import Interface
 from pyNTM import ModelException
 
@@ -28,7 +28,7 @@ class TestNode(unittest.TestCase):
             remote_node_object=self.node_a,
             circuit_id=1,
         )
-        self.model = PerformanceModel(
+        self.model = Model(
             interface_objects=set([self.interface_a, self.interface_b]),
             node_objects=set([self.node_a, self.node_b]),
             demand_objects=set([]),
@@ -78,7 +78,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual({self.node_b}, node_list)
 
     def test_fail_node(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
         model.update_simulation()
 
         model.fail_node("A")

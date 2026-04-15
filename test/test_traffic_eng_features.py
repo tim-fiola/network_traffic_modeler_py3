@@ -5,14 +5,13 @@ percent_reservable_bandwidth Interface attributes
 
 import unittest
 
-from pyNTM import PerformanceModel
-from pyNTM import FlexModel
+from pyNTM import Model
 
 
 class TestModel(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.model = PerformanceModel.load_model_file("test/traffic_eng_test_model.csv")
+        self.model = Model.load_model_file("test/traffic_eng_test_model.csv")
         self.model.update_simulation()
 
         self.int_a_b = self.model.get_interface_object("A-to-B", "A")
@@ -51,7 +50,7 @@ class TestModel(unittest.TestCase):
 class TestParallelLinkModel(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.model = FlexModel.load_model_file(
+        self.model = Model.load_model_file(
             "test/traffic_eng_test_parallel_link_model.csv"
         )
         self.model.update_simulation()

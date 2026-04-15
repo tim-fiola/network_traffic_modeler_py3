@@ -1,11 +1,11 @@
 import unittest
 
-from pyNTM import PerformanceModel
+from pyNTM import Model
 
 
 class TestIGPRouting(unittest.TestCase):
     def test_ecmp(self):
-        model8 = PerformanceModel()
+        model8 = Model()
         model8.rsvp_lsp_objects = set([])
         model8.demand_objects = set([])
 

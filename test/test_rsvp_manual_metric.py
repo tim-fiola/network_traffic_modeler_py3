@@ -1,13 +1,12 @@
 import unittest
-from pyNTM import FlexModel
+from pyNTM import Model
 from pyNTM import ModelException
-from pyNTM import PerformanceModel
 
 
 class TestIGPShortcutsFlexModel(unittest.TestCase):
-    # Load FlexModel, verify LSP metrics
+    # Load Model, verify LSP metrics
     def test_model_load_flex_model(self):
-        model = FlexModel.load_model_file("test/manual_lsp_metric_test_flex_model.csv")
+        model = Model.load_model_file("test/manual_lsp_metric_test_flex_model.csv")
         model.update_simulation()
         lsp_b_d_1 = model.get_rsvp_lsp("B", "D", "lsp_b_d_1")
         lsp_b_d_2 = model.get_rsvp_lsp("B", "D", "lsp_b_d_2")
@@ -42,7 +41,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # Parallel LSPs in IGP shortcuts, but one with a lower metric;
     # traffic should only take lower metric LSP
     def test_manual_lsp_metric_efficacy(self):
-        model = FlexModel.load_model_file("test/manual_lsp_metric_test_flex_model.csv")
+        model = Model.load_model_file("test/manual_lsp_metric_test_flex_model.csv")
         model.update_simulation()
         lsp_b_d_1 = model.get_rsvp_lsp("B", "D", "lsp_b_d_1")
         lsp_b_d_2 = model.get_rsvp_lsp("B", "D", "lsp_b_d_2")
@@ -57,7 +56,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # Parallel LSPs source-dest, but one with a lower metric;
     # traffic should only take lower metric LSP
     def test_manual_lsp_metric_efficacy_2(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/flex_model_parallel_source_dest_lsps.csv"
         )
         model.update_simulation()
@@ -71,7 +70,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
     # 2 LSP source-dest, but with higher than default metric;
     # traffic should take LSPs due to better protocol preference;
     def test_manual_lsp_metric_higher_than_igp_metric(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/flex_model_parallel_source_dest_lsps.csv"
         )
         model.update_simulation()
@@ -89,7 +88,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
 
     # Reset a manual metric to default using -1
     def test_lsp_reset_manual_lsp_metric(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/flex_model_parallel_source_dest_lsps.csv"
         )
         model.update_simulation()
@@ -109,7 +108,7 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
 
     # Assign a bad LSP metric (float, string); make sure it fails
     def test_lsp_bad_manual_lsp_metric(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/flex_model_parallel_source_dest_lsps.csv"
         )
         model.update_simulation()
@@ -125,9 +124,9 @@ class TestIGPShortcutsFlexModel(unittest.TestCase):
 
 
 class TestIGPShortcutsPerfModel(unittest.TestCase):
-    # Load PerformanceModel, verify LSP metrics and LSP routing
+    # Load Model, verify LSP metrics and LSP routing
     def test_model_load_perf_model(self):
-        model = PerformanceModel.load_model_file(
+        model = Model.load_model_file(
             "test/lsp_manual_metric_test_model.csv"
         )
         model.update_simulation()
@@ -163,7 +162,7 @@ class TestIGPShortcutsPerfModel(unittest.TestCase):
     # Parallel LSPs source-dest, but one with a lower metric;
     # traffic should only take lower metric LSP
     def test_perf_model_metric_efficacy(self):
-        model = PerformanceModel.load_model_file(
+        model = Model.load_model_file(
             "test/lsp_manual_metric_test_model.csv"
         )
         model.update_simulation()

@@ -1,6 +1,6 @@
 import unittest
 
-from pyNTM import PerformanceModel
+from pyNTM import Model
 
 
 class TestRSVPLSPAddLSP4LSPs(unittest.TestCase):
@@ -9,7 +9,7 @@ class TestRSVPLSPAddLSP4LSPs(unittest.TestCase):
         Test that all 4 LSPs between A and D route
         """
 
-        model1 = PerformanceModel()
+        model1 = Model()
         model1.rsvp_lsp_objects = set([])
         model1.demand_objects = set([])
 

@@ -2,8 +2,7 @@ import unittest
 
 from pyNTM import Node
 from pyNTM import Demand
-from pyNTM import FlexModel
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pyNTM import Interface
 from pyNTM import RSVP_LSP
 
@@ -35,7 +34,7 @@ class TestDemand(unittest.TestCase):
             dest_node_object=self.node_b,
             lsp_name="A-to-B",
         )
-        self.model = PerformanceModel(
+        self.model = Model(
             interface_objects=set([self.interface_a, self.interface_b]),
             node_objects=set([self.node_a, self.node_b]),
             demand_objects=set([]),
@@ -69,7 +68,7 @@ class TestDemand(unittest.TestCase):
         )
 
     def test_demand_behavior(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
 
         model.update_simulation()
 
@@ -119,7 +118,7 @@ class TestDemand(unittest.TestCase):
             circuit_id=1,
         )
         dmd_a_d = Demand(node_a, node_d, traffic=10)
-        model = PerformanceModel(
+        model = Model(
             interface_objects=set([interface_a, interface_b]),
             node_objects=set([node_a, node_b, node_d]),
             demand_objects=set([dmd_a_d]),
@@ -159,7 +158,7 @@ class TestDemand(unittest.TestCase):
             source_node_object=node_a, dest_node_object=node_b, lsp_name="lsp_a_b"
         )
 
-        model = PerformanceModel(
+        model = Model(
             interface_objects=set([interface_a, interface_b]),
             node_objects=set([node_a, node_b, node_d]),
             demand_objects=set([dmd_a_b]),
@@ -174,7 +173,7 @@ class TestDemand(unittest.TestCase):
         )
 
     def test_path_detail_perf_model_igp_routed(self):
-        model = PerformanceModel.load_model_file("test/igp_routing_topology.csv")
+        model = Model.load_model_file("test/igp_routing_topology.csv")
 
         model.update_simulation()
 
@@ -212,7 +211,7 @@ class TestDemand(unittest.TestCase):
         Test demand path info for demand that takes LSPs
         :return:
         """
-        model = PerformanceModel.load_model_file("test/traffic_eng_test_model.csv")
+        model = Model.load_model_file("test/traffic_eng_test_model.csv")
 
         model.update_simulation()
 
@@ -283,7 +282,7 @@ class TestDemand(unittest.TestCase):
         self.assertEqual(len(dmd_a_e_1.path_detail["path_2"]["items"]), 1)
 
     def test_lsp_demand_path_detail_flex_model_lsp_routed(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
         model.update_simulation()
@@ -296,7 +295,7 @@ class TestDemand(unittest.TestCase):
         self.assertEqual(dmd_d_f_1.path_detail, expected_path)
 
     def test_lsp_demand_path_detail_flex_model_lsp_and_igp_routed(self):
-        model = FlexModel.load_model_file(
+        model = Model.load_model_file(
             "test/igp_shortcuts_model_mult_lsps_in_path.csv"
         )
         model.update_simulation()

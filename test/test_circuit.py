@@ -1,7 +1,7 @@
 import unittest
 
 from pyNTM import Node
-from pyNTM import PerformanceModel
+from pyNTM import Model
 from pyNTM import Circuit
 from pyNTM import Interface
 
@@ -28,7 +28,7 @@ class TestCircuit(unittest.TestCase):
             remote_node_object=self.node_a,
             circuit_id=1,
         )
-        self.model = PerformanceModel(
+        self.model = Model(
             interface_objects=set([self.interface_a, self.interface_b]),
             node_objects=set([self.node_a, self.node_b]),
             demand_objects=set([]),
